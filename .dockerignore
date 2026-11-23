@@ -1,0 +1,9 @@
+.git
+.idea
+bin
+coverage.*
+**/.env
+**/*.db
+**/*.db-shm
+**/*.db-wal
+**/storage

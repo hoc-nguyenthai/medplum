@@ -1,0 +1,52 @@
+[
+  {
+    "method": "GET",
+    "base": "https://api.example.com/storage",
+    "id": "4b1e6b7a-0f6a-4a37-9c1b-7a3f1c2d9e01",
+    "ver": "9a2f3c4d-1111-4222-8333-944455556666",
+    "project": "",
+    "expires": 1900000000,
+    "signed": "GET https://api.example.com/storage/4b1e6b7a-0f6a-4a37-9c1b-7a3f1c2d9e01/9a2f3c4d-1111-4222-8333-944455556666?Expires=1900000000",
+    "url": "https://api.example.com/storage/4b1e6b7a-0f6a-4a37-9c1b-7a3f1c2d9e01/9a2f3c4d-1111-4222-8333-944455556666?Expires=1900000000&Signature=TsgOFgtBSiauQcqROtOFQvn79d%2F7A977ijhVbX5B0cBXmQ9tD%2B8B8NZAoYR3y8GLi1zzynAheXTvzMBxVoC0Xw5VCONjKkqUbvP4VPBqAQcDIrLodUUcedeJfz4dLUHJc3fBbUeQ2zEwGd3PGzRISKjpnmuxGwhsqtQKoqyQ1bt8qMreOUbkh7uKR0QMybpfFud%2BVfuR%2BlVelmIGdl0ablT3pWqFxlnbU2J%2FQu4aLR%2BDoWBnAO8kRSEpLeoOqkwBLtGCQioNodBxlyKeoaJvS2%2FuDKPwDxoVtkIBUS0OpCJ82hfMXaVKK7TH7DUxh9sD%2BM0jtERfUwMo328%2FDK17wg%3D%3D"
+  },
+  {
+    "method": "PUT",
+    "base": "https://api.example.com/storage",
+    "id": "4b1e6b7a-0f6a-4a37-9c1b-7a3f1c2d9e01",
+    "ver": "9a2f3c4d-1111-4222-8333-944455556666",
+    "project": "",
+    "expires": 1900000000,
+    "signed": "PUT https://api.example.com/storage/4b1e6b7a-0f6a-4a37-9c1b-7a3f1c2d9e01/9a2f3c4d-1111-4222-8333-944455556666?Expires=1900000000",
+    "url": "https://api.example.com/storage/4b1e6b7a-0f6a-4a37-9c1b-7a3f1c2d9e01/9a2f3c4d-1111-4222-8333-944455556666?Expires=1900000000&Signature=d%2F6T2JXoX5stwVGLOot1aJ7zD91%2F6eEGMIMXbbGY0VR%2FN9EkaFkm%2BS%2F53ux2%2B9K8Ygi3yZ6t3XVnpNDDrWlEcpRdr7EjroxA23q0vlDLTyL0tKF9FOM0mtATmJbO9ftlsfom09gd0BNwhqfTsXuEnV8eHet17ewZSEbWvv7OmIgMMe3sFJWAltKpjdQ7zuIkUHVZut4AgT4kAtBDY6aGA0o2XA7TifqwflGUJ5f9GPamrI6%2Fa%2BXkm7IQ8gfl2PMiB2eE%2FQUff9%2F3GpD5AIEQCLpJBPnSo7c9KOxhc398UrSnL7L7UFrjMg1Gez%2BsCECaXSzS9NeNZFe6V3m3QhUrzw%3D%3D"
+  },
+  {
+    "method": "GET",
+    "base": "https://api.example.com/storage",
+    "id": "abc",
+    "ver": "v1",
+    "project": "0b3e1f2a-7c4d-4e5f-8a6b-1c2d3e4f5a6b",
+    "expires": 1900000000,
+    "signed": "GET https://api.example.com/storage/abc/v1?Expires=1900000000&Project=0b3e1f2a-7c4d-4e5f-8a6b-1c2d3e4f5a6b",
+    "url": "https://api.example.com/storage/abc/v1?Expires=1900000000&Project=0b3e1f2a-7c4d-4e5f-8a6b-1c2d3e4f5a6b&Signature=YbZw%2Blc6gpS9Sjsfg2p0V2Z1iQtWwEQHickEqffBD7kaTZ6moyj7G0kwxTn7anyKhDoTy0B8FmXR7D7VBHDOGKVUIdcalUh%2B%2FtWUbVYkSiYbik6GEidcr9sdqfG2iGrZM9qCoiP1DVkfX5vL4XFz6UTlMbu87MkjRcxiDWCMUG2ZWr5zwPjkWkRdwCQlOTGVvqVq8IRPD2p8dEf8XjIbLaoCaugo6FXs5IV5opqgIELmJUz48bFvK%2Frue6UKFY9az6R6LlGYFIURRJj3uef52lXcZi0hzzM7T8w2Blgtms0EEcfZ9ca0c18hgy9QxAtGH42FM6mGmO%2BHntVQjt9Msw%3D%3D"
+  },
+  {
+    "method": "PUT",
+    "base": "https://api.example.com/storage",
+    "id": "abc",
+    "ver": "v1",
+    "project": "0b3e1f2a-7c4d-4e5f-8a6b-1c2d3e4f5a6b",
+    "expires": 1900000000,
+    "signed": "PUT https://api.example.com/storage/abc/v1?Expires=1900000000&Project=0b3e1f2a-7c4d-4e5f-8a6b-1c2d3e4f5a6b",
+    "url": "https://api.example.com/storage/abc/v1?Expires=1900000000&Project=0b3e1f2a-7c4d-4e5f-8a6b-1c2d3e4f5a6b&Signature=LlR8lR7ohHcUojqKjP6XWWNDxkC9w%2BoDBZzp74%2FlMKbg37KXPqkT0Y%2Bhbd2LROSS5c0A%2FEiDwGLSzQu9PsF7VurlmUb%2BEDab15uaTzwlNWMpazgU5Gv16TYsOwpmuwIA67xoYgONmInfXiyCb0UmHec8Qfk6aAh78t2%2B6H%2Fvj9bOsMLaBtB4giUEErUl%2FuJK6ZJa%2FJkPNNS86lHvquva3d2KRU7d2ZRjTOOMc02FKhInJgJs7HrTGeBkQIAZJrPPCliox%2FbIm0GMWMfRDChymc6z0oLQm1ys%2BP0V4S7AJ7eT7cHLQevZmdfV5pLo7b%2BQl0OfXJlYCWXWGN8MUoTbyg%3D%3D"
+  },
+  {
+    "method": "GET",
+    "base": "http://localhost:8103/storage",
+    "id": "abc",
+    "ver": "v1",
+    "project": "",
+    "expires": 1900000000,
+    "signed": "GET http://localhost:8103/storage/abc/v1?Expires=1900000000",
+    "url": "http://localhost:8103/storage/abc/v1?Expires=1900000000&Signature=KsGoW8nzHDEcjQ5VF%2FaqaPH5Qz1%2B2TBMPQIZCErOj47d8jJk66WhSXjYQ%2BdjClTdH5zlz7ZzyFxeUV8Vl7eyVpQ05CcbqUn76Bk%2BnujNUxSBeZZx2TlmwPqhXgHUwSgVvwvyptJPprpE%2BTq877eD%2FX8MdLjjTVlZrlzHIddviVeP8jHFvZq9RakLvHBoVKemT7MZ%2BZA%2FVz4Ya3Ls8bJEsE8EGXObMv%2BAZlYLnPk5nV6697%2FI%2BERUfl%2BVYhjXT7io76XoKZl%2BFmd5JFgeStSkpj4Z9%2FFMxhjw1U1rvbAeh5BXnsOj3puHC1Qt2MPRc0xHgbT4mDlH2Wn0Vt9idnNvAw%3D%3D"
+  }
+]

@@ -1,0 +1,6234 @@
+basePath: /
+definitions:
+  application.AdminProjectView:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+      secret:
+        items:
+          $ref: '#/definitions/fhir.ProjectSetting'
+        type: array
+      setting:
+        items:
+          $ref: '#/definitions/fhir.ProjectSetting'
+        type: array
+      site:
+        items:
+          $ref: '#/definitions/fhir.ProjectSite'
+        type: array
+    type: object
+  application.LoginResult:
+    properties:
+      allowedMfaMethods:
+        items:
+          type: string
+        type: array
+      code:
+        type: string
+      email:
+        type: string
+      enrollQrCode:
+        type: string
+      enrollUri:
+        type: string
+      login:
+        type: string
+      memberships:
+        items:
+          $ref: '#/definitions/application.MembershipChoice'
+        type: array
+      mfaEnrollRequired:
+        type: boolean
+      mfaMethods:
+        items:
+          type: string
+        type: array
+      mfaRequired:
+        type: boolean
+    type: object
+  application.MFAStatusResult:
+    properties:
+      allowedMethods:
+        items:
+          type: string
+        type: array
+      email:
+        type: string
+      enrollQrCode:
+        type: string
+      enrollUri:
+        type: string
+      enrolled:
+        type: boolean
+      enrolledMethods:
+        items:
+          type: string
+        type: array
+      mfaRequired:
+        type: boolean
+    type: object
+  application.Me:
+    properties:
+      config:
+        $ref: '#/definitions/fhir.UserConfiguration'
+      membership:
+        $ref: '#/definitions/fhir.ProjectMembership'
+      profile:
+        additionalProperties:
+          type: string
+        type: object
+      project:
+        $ref: '#/definitions/fhir.Project'
+      security:
+        $ref: '#/definitions/application.UserSecurity'
+      user:
+        $ref: '#/definitions/fhir.User'
+    type: object
+  application.MembershipChoice:
+    properties:
+      id:
+        type: string
+      identifier:
+        items:
+          $ref: '#/definitions/fhir.Identifier'
+        type: array
+      profile:
+        $ref: '#/definitions/fhir.Reference'
+      project:
+        $ref: '#/definitions/fhir.Reference'
+    type: object
+  application.MethodResult:
+    properties:
+      authorizeUrl:
+        type: string
+      domain:
+        type: string
+    type: object
+  application.PreAuthorizeResult:
+    properties:
+      expiresAt:
+        type: string
+      preAuthorizedCode:
+        type: string
+    type: object
+  application.RegisteredClient:
+    properties:
+      client_id:
+        type: string
+      client_id_issued_at:
+        type: integer
+      redirect_uris:
+        items:
+          type: string
+        type: array
+    type: object
+  application.Session:
+    properties:
+      authMethod:
+        type: string
+      browser:
+        type: string
+      id:
+        type: string
+      lastUpdated:
+        type: string
+      os:
+        type: string
+      project:
+        $ref: '#/definitions/fhir.Reference'
+      remoteAddress:
+        type: string
+    type: object
+  application.UserSecurity:
+    properties:
+      memberships:
+        items:
+          $ref: '#/definitions/fhir.ProjectMembership'
+        type: array
+      mfaEnrolled:
+        type: boolean
+      mfaRequired:
+        type: boolean
+      sessions:
+        items:
+          $ref: '#/definitions/application.Session'
+        type: array
+    type: object
+  fhir.Address:
+    properties:
+      _city:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của city
+      _country:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của country
+      _district:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của district
+      _id:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của id
+      _line:
+        description: Phần mở rộng của line
+        items:
+          $ref: '#/definitions/fhir.Element'
+        type: array
+      _postalCode:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của postalCode
+      _state:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của state
+      _text:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của text
+      _type:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của type
+      _use:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của use
+      city:
+        description: Name of city, town etc.
+        type: string
+      country:
+        description: Country (e.g. can be ISO 3166 2 or 3 letter code)
+        type: string
+      district:
+        description: District name (aka county)
+        type: string
+      extension:
+        description: Additional content defined by implementations
+        items:
+          $ref: '#/definitions/fhir.Extension'
+        type: array
+      id:
+        description: Unique id for inter-element referencing
+        type: string
+      line:
+        description: Street name, number, direction & P.O. Box etc.
+        items:
+          type: string
+        type: array
+      period:
+        allOf:
+        - $ref: '#/definitions/fhir.Period'
+        description: Time period when address was/is in use
+      postalCode:
+        description: Postal code for area
+        type: string
+      state:
+        description: Sub-unit of country (abbreviations ok)
+        type: string
+      text:
+        description: Text representation of the address
+        type: string
+      type:
+        description: postal | physical | both
+        type: string
+      use:
+        description: home | work | temp | old | billing - purpose of this address
+        type: string
+    type: object
+  fhir.Age:
+    properties:
+      _code:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của code
+      _comparator:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của comparator
+      _id:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của id
+      _system:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của system
+      _unit:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của unit
+      _value:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của value
+      code:
+        description: Coded form of the unit
+        type: string
+      comparator:
+        description: < | <= | >= | > - how to understand the value
+        type: string
+      extension:
+        description: Additional content defined by implementations
+        items:
+          $ref: '#/definitions/fhir.Extension'
+        type: array
+      id:
+        description: Unique id for inter-element referencing
+        type: string
+      system:
+        description: System that defines coded unit form
+        type: string
+      unit:
+        description: Unit representation
+        type: string
+      value:
+        description: Numerical value (with implicit precision)
+        type: number
+    type: object
+  fhir.Annotation:
+    properties:
+      _authorString:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của authorString
+      _id:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của id
+      _text:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của text
+      _time:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của time
+      authorReference:
+        allOf:
+        - $ref: '#/definitions/fhir.Reference'
+        description: Individual responsible for the annotation
+      authorString:
+        description: Individual responsible for the annotation
+        type: string
+      extension:
+        description: Additional content defined by implementations
+        items:
+          $ref: '#/definitions/fhir.Extension'
+        type: array
+      id:
+        description: Unique id for inter-element referencing
+        type: string
+      text:
+        description: The annotation - text content (as markdown) (bắt buộc)
+        type: string
+      time:
+        description: When the annotation was made
+        type: string
+    type: object
+  fhir.AnyResource:
+    properties:
+      value: {}
+    type: object
+  fhir.Attachment:
+    properties:
+      _contentType:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của contentType
+      _creation:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của creation
+      _data:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của data
+      _hash:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của hash
+      _id:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của id
+      _language:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của language
+      _size:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của size
+      _title:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của title
+      _url:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của url
+      contentType:
+        description: Mime type of the content, with charset etc.
+        type: string
+      creation:
+        description: Date attachment was first created
+        type: string
+      data:
+        description: Data inline, base64ed
+        type: string
+      extension:
+        description: Additional content defined by implementations
+        items:
+          $ref: '#/definitions/fhir.Extension'
+        type: array
+      hash:
+        description: Hash of the data (sha-1, base64ed)
+        type: string
+      id:
+        description: Unique id for inter-element referencing
+        type: string
+      language:
+        description: Human language of the content (BCP-47)
+        type: string
+      size:
+        description: Number of bytes of content (if url provided)
+        type: integer
+      title:
+        description: Label to display in place of the data
+        type: string
+      url:
+        description: Uri where the data can be found
+        type: string
+    type: object
+  fhir.ClientApplication:
+    properties:
+      _accessTokenLifetime:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của accessTokenLifetime
+      _allowedOrigin:
+        description: Phần mở rộng của allowedOrigin
+        items:
+          $ref: '#/definitions/fhir.Element'
+        type: array
+      _certificateTrustStore:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của certificateTrustStore
+      _defaultScope:
+        description: Phần mở rộng của defaultScope
+        items:
+          $ref: '#/definitions/fhir.Element'
+        type: array
+      _description:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của description
+      _grantType:
+        description: Phần mở rộng của grantType
+        items:
+          $ref: '#/definitions/fhir.Element'
+        type: array
+      _id:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của id
+      _implicitRules:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của implicitRules
+      _jwksUri:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của jwksUri
+      _language:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của language
+      _launchUri:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của launchUri
+      _name:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của name
+      _pkceOptional:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của pkceOptional
+      _redirectUri:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của redirectUri
+      _redirectUris:
+        description: Phần mở rộng của redirectUris
+        items:
+          $ref: '#/definitions/fhir.Element'
+        type: array
+      _refreshTokenLifetime:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của refreshTokenLifetime
+      _responseType:
+        description: Phần mở rộng của responseType
+        items:
+          $ref: '#/definitions/fhir.Element'
+        type: array
+      _retiringSecret:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của retiringSecret
+      _secret:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của secret
+      _status:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của status
+      accessTokenLifetime:
+        description: accessTokenLifetime
+        type: string
+      allowedOrigin:
+        description: allowedOrigin
+        items:
+          type: string
+        type: array
+      certificateTrustStore:
+        description: certificateTrustStore
+        type: string
+      contained:
+        description: Contained, inline Resources
+        items:
+          $ref: '#/definitions/fhir.AnyResource'
+        type: array
+      defaultScope:
+        description: defaultScope
+        items:
+          type: string
+        type: array
+      description:
+        description: description
+        type: string
+      extension:
+        description: Additional content defined by implementations
+        items:
+          $ref: '#/definitions/fhir.Extension'
+        type: array
+      grantType:
+        description: grantType
+        items:
+          type: string
+        type: array
+      id:
+        description: Logical id of this artifact
+        type: string
+      identityProvider:
+        allOf:
+        - $ref: '#/definitions/fhir.IdentityProvider'
+        description: identityProvider
+      implicitRules:
+        description: implicitRules
+        type: string
+      jwksUri:
+        description: jwksUri
+        type: string
+      language:
+        description: language
+        type: string
+      launchIdentifierSystems:
+        description: launchIdentifierSystems
+        items:
+          $ref: '#/definitions/fhir.ClientApplicationLaunchIdentifierSystems'
+        type: array
+      launchUri:
+        description: launchUri
+        type: string
+      meta:
+        allOf:
+        - $ref: '#/definitions/fhir.Meta'
+        description: meta
+      modifierExtension:
+        description: Extensions that cannot be ignored
+        items:
+          $ref: '#/definitions/fhir.Extension'
+        type: array
+      name:
+        description: name
+        type: string
+      pkceOptional:
+        description: pkceOptional
+        type: boolean
+      redirectUri:
+        description: redirectUri
+        type: string
+      redirectUris:
+        description: redirectUris
+        items:
+          type: string
+        type: array
+      refreshTokenLifetime:
+        description: refreshTokenLifetime
+        type: string
+      resourceType:
+        type: string
+      responseType:
+        description: responseType
+        items:
+          type: string
+        type: array
+      retiringSecret:
+        description: retiringSecret
+        type: string
+      secret:
+        description: secret
+        type: string
+      signInForm:
+        allOf:
+        - $ref: '#/definitions/fhir.ClientApplicationSignInForm'
+        description: signInForm
+      status:
+        description: active | error | off
+        type: string
+      text:
+        allOf:
+        - $ref: '#/definitions/fhir.Narrative'
+        description: Text summary of the resource, for human interpretation
+    type: object
+  fhir.ClientApplicationLaunchIdentifierSystems:
+    properties:
+      _resourceType:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của resourceType
+      _system:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của system
+      resourceType:
+        description: resourceType (bắt buộc)
+        type: string
+      system:
+        description: system (bắt buộc)
+        type: string
+    type: object
+  fhir.ClientApplicationSignInForm:
+    properties:
+      _showScopeSelection:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của showScopeSelection
+      _welcomeString:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của welcomeString
+      logo:
+        allOf:
+        - $ref: '#/definitions/fhir.Attachment'
+        description: logo
+      showScopeSelection:
+        description: showScopeSelection
+        type: boolean
+      welcomeString:
+        description: welcomeString
+        type: string
+    type: object
+  fhir.CodeableConcept:
+    properties:
+      _id:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của id
+      _text:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của text
+      coding:
+        description: Code defined by a terminology system
+        items:
+          $ref: '#/definitions/fhir.Coding'
+        type: array
+      extension:
+        description: Additional content defined by implementations
+        items:
+          $ref: '#/definitions/fhir.Extension'
+        type: array
+      id:
+        description: Unique id for inter-element referencing
+        type: string
+      text:
+        description: Plain text representation of the concept
+        type: string
+    type: object
+  fhir.Coding:
+    properties:
+      _code:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của code
+      _display:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của display
+      _id:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của id
+      _system:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của system
+      _userSelected:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của userSelected
+      _version:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của version
+      code:
+        description: Symbol in syntax defined by the system
+        type: string
+      display:
+        description: Representation defined by the system
+        type: string
+      extension:
+        description: Additional content defined by implementations
+        items:
+          $ref: '#/definitions/fhir.Extension'
+        type: array
+      id:
+        description: Unique id for inter-element referencing
+        type: string
+      system:
+        description: Identity of the terminology system
+        type: string
+      userSelected:
+        description: If this coding was chosen directly by the user
+        type: boolean
+      version:
+        description: Version of the system - if relevant
+        type: string
+    type: object
+  fhir.ContactDetail:
+    properties:
+      _id:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của id
+      _name:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của name
+      extension:
+        description: Additional content defined by implementations
+        items:
+          $ref: '#/definitions/fhir.Extension'
+        type: array
+      id:
+        description: Unique id for inter-element referencing
+        type: string
+      name:
+        description: Name of an individual to contact
+        type: string
+      telecom:
+        description: Contact details for individual or organization
+        items:
+          $ref: '#/definitions/fhir.ContactPoint'
+        type: array
+    type: object
+  fhir.ContactPoint:
+    properties:
+      _id:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của id
+      _rank:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của rank
+      _system:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của system
+      _use:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của use
+      _value:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của value
+      extension:
+        description: Additional content defined by implementations
+        items:
+          $ref: '#/definitions/fhir.Extension'
+        type: array
+      id:
+        description: Unique id for inter-element referencing
+        type: string
+      period:
+        allOf:
+        - $ref: '#/definitions/fhir.Period'
+        description: Time period when the contact point was/is in use
+      rank:
+        description: Specify preferred order of use (1 = highest)
+        type: integer
+      system:
+        description: phone | fax | email | pager | url | sms | other
+        type: string
+      use:
+        description: home | work | temp | old | mobile - purpose of this contact point
+        type: string
+      value:
+        description: The actual contact point details
+        type: string
+    type: object
+  fhir.Contributor:
+    properties:
+      _id:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của id
+      _name:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của name
+      _type:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của type
+      contact:
+        description: Contact details of the contributor
+        items:
+          $ref: '#/definitions/fhir.ContactDetail'
+        type: array
+      extension:
+        description: Additional content defined by implementations
+        items:
+          $ref: '#/definitions/fhir.Extension'
+        type: array
+      id:
+        description: Unique id for inter-element referencing
+        type: string
+      name:
+        description: Who contributed the content (bắt buộc)
+        type: string
+      type:
+        description: author | editor | reviewer | endorser (bắt buộc)
+        type: string
+    type: object
+  fhir.Count:
+    properties:
+      _code:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của code
+      _comparator:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của comparator
+      _id:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của id
+      _system:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của system
+      _unit:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của unit
+      _value:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của value
+      code:
+        description: Coded form of the unit
+        type: string
+      comparator:
+        description: < | <= | >= | > - how to understand the value
+        type: string
+      extension:
+        description: Additional content defined by implementations
+        items:
+          $ref: '#/definitions/fhir.Extension'
+        type: array
+      id:
+        description: Unique id for inter-element referencing
+        type: string
+      system:
+        description: System that defines coded unit form
+        type: string
+      unit:
+        description: Unit representation
+        type: string
+      value:
+        description: Numerical value (with implicit precision)
+        type: number
+    type: object
+  fhir.DataRequirement:
+    properties:
+      _id:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của id
+      _limit:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của limit
+      _mustSupport:
+        description: Phần mở rộng của mustSupport
+        items:
+          $ref: '#/definitions/fhir.Element'
+        type: array
+      _profile:
+        description: Phần mở rộng của profile
+        items:
+          $ref: '#/definitions/fhir.Element'
+        type: array
+      _type:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của type
+      codeFilter:
+        description: What codes are expected
+        items:
+          $ref: '#/definitions/fhir.DataRequirementCodeFilter'
+        type: array
+      dateFilter:
+        description: What dates/date ranges are expected
+        items:
+          $ref: '#/definitions/fhir.DataRequirementDateFilter'
+        type: array
+      extension:
+        description: Additional content defined by implementations
+        items:
+          $ref: '#/definitions/fhir.Extension'
+        type: array
+      id:
+        description: Unique id for inter-element referencing
+        type: string
+      limit:
+        description: Number of results
+        type: integer
+      mustSupport:
+        description: Indicates specific structure elements that are referenced by
+          the knowledge module
+        items:
+          type: string
+        type: array
+      profile:
+        description: The profile of the required data
+        items:
+          type: string
+        type: array
+      sort:
+        description: Order of the results
+        items:
+          $ref: '#/definitions/fhir.DataRequirementSort'
+        type: array
+      subjectCodeableConcept:
+        allOf:
+        - $ref: '#/definitions/fhir.CodeableConcept'
+        description: E.g. Patient, Practitioner, RelatedPerson, Organization, Location,
+          Device
+      subjectReference:
+        allOf:
+        - $ref: '#/definitions/fhir.Reference'
+        description: E.g. Patient, Practitioner, RelatedPerson, Organization, Location,
+          Device
+      type:
+        description: The type of the required data (bắt buộc)
+        type: string
+    type: object
+  fhir.DataRequirementCodeFilter:
+    properties:
+      _id:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của id
+      _path:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của path
+      _searchParam:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của searchParam
+      _valueSet:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của valueSet
+      code:
+        description: What code is expected
+        items:
+          $ref: '#/definitions/fhir.Coding'
+        type: array
+      extension:
+        description: Additional content defined by implementations
+        items:
+          $ref: '#/definitions/fhir.Extension'
+        type: array
+      id:
+        description: Unique id for inter-element referencing
+        type: string
+      path:
+        description: A code-valued attribute to filter on
+        type: string
+      searchParam:
+        description: A coded (token) parameter to search on
+        type: string
+      valueSet:
+        description: Valueset for the filter
+        type: string
+    type: object
+  fhir.DataRequirementDateFilter:
+    properties:
+      _id:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của id
+      _path:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của path
+      _searchParam:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của searchParam
+      _valueDateTime:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của valueDateTime
+      extension:
+        description: Additional content defined by implementations
+        items:
+          $ref: '#/definitions/fhir.Extension'
+        type: array
+      id:
+        description: Unique id for inter-element referencing
+        type: string
+      path:
+        description: A date-valued attribute to filter on
+        type: string
+      searchParam:
+        description: A date valued parameter to search on
+        type: string
+      valueDateTime:
+        description: The value of the filter, as a Period, DateTime, or Duration value
+        type: string
+      valueDuration:
+        allOf:
+        - $ref: '#/definitions/fhir.Duration'
+        description: The value of the filter, as a Period, DateTime, or Duration value
+      valuePeriod:
+        allOf:
+        - $ref: '#/definitions/fhir.Period'
+        description: The value of the filter, as a Period, DateTime, or Duration value
+    type: object
+  fhir.DataRequirementSort:
+    properties:
+      _direction:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của direction
+      _id:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của id
+      _path:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của path
+      direction:
+        description: ascending | descending (bắt buộc)
+        type: string
+      extension:
+        description: Additional content defined by implementations
+        items:
+          $ref: '#/definitions/fhir.Extension'
+        type: array
+      id:
+        description: Unique id for inter-element referencing
+        type: string
+      path:
+        description: The name of the attribute to perform the sort (bắt buộc)
+        type: string
+    type: object
+  fhir.Distance:
+    properties:
+      _code:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của code
+      _comparator:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của comparator
+      _id:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của id
+      _system:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của system
+      _unit:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của unit
+      _value:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của value
+      code:
+        description: Coded form of the unit
+        type: string
+      comparator:
+        description: < | <= | >= | > - how to understand the value
+        type: string
+      extension:
+        description: Additional content defined by implementations
+        items:
+          $ref: '#/definitions/fhir.Extension'
+        type: array
+      id:
+        description: Unique id for inter-element referencing
+        type: string
+      system:
+        description: System that defines coded unit form
+        type: string
+      unit:
+        description: Unit representation
+        type: string
+      value:
+        description: Numerical value (with implicit precision)
+        type: number
+    type: object
+  fhir.Dosage:
+    properties:
+      _asNeededBoolean:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của asNeededBoolean
+      _id:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của id
+      _patientInstruction:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của patientInstruction
+      _sequence:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của sequence
+      _text:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của text
+      additionalInstruction:
+        description: Supplemental instruction or warnings to the patient - e.g. "with
+          meals", "may cause drowsiness"
+        items:
+          $ref: '#/definitions/fhir.CodeableConcept'
+        type: array
+      asNeededBoolean:
+        description: Take "as needed" (for x)
+        type: boolean
+      asNeededCodeableConcept:
+        allOf:
+        - $ref: '#/definitions/fhir.CodeableConcept'
+        description: Take "as needed" (for x)
+      doseAndRate:
+        description: Amount of medication administered
+        items:
+          $ref: '#/definitions/fhir.DosageDoseAndRate'
+        type: array
+      extension:
+        description: Additional content defined by implementations
+        items:
+          $ref: '#/definitions/fhir.Extension'
+        type: array
+      id:
+        description: Unique id for inter-element referencing
+        type: string
+      maxDosePerAdministration:
+        allOf:
+        - $ref: '#/definitions/fhir.Quantity'
+        description: Upper limit on medication per administration
+      maxDosePerLifetime:
+        allOf:
+        - $ref: '#/definitions/fhir.Quantity'
+        description: Upper limit on medication per lifetime of the patient
+      maxDosePerPeriod:
+        allOf:
+        - $ref: '#/definitions/fhir.Ratio'
+        description: Upper limit on medication per unit of time
+      method:
+        allOf:
+        - $ref: '#/definitions/fhir.CodeableConcept'
+        description: Technique for administering medication
+      modifierExtension:
+        description: Extensions that cannot be ignored even if unrecognized
+        items:
+          $ref: '#/definitions/fhir.Extension'
+        type: array
+      patientInstruction:
+        description: Patient or consumer oriented instructions
+        type: string
+      route:
+        allOf:
+        - $ref: '#/definitions/fhir.CodeableConcept'
+        description: How drug should enter body
+      sequence:
+        description: The order of the dosage instructions
+        type: integer
+      site:
+        allOf:
+        - $ref: '#/definitions/fhir.CodeableConcept'
+        description: Body site to administer to
+      text:
+        description: Free text dosage instructions e.g. SIG
+        type: string
+      timing:
+        allOf:
+        - $ref: '#/definitions/fhir.Timing'
+        description: When medication should be administered
+    type: object
+  fhir.DosageDoseAndRate:
+    properties:
+      _id:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của id
+      doseQuantity:
+        allOf:
+        - $ref: '#/definitions/fhir.Quantity'
+        description: Amount of medication per dose
+      doseRange:
+        allOf:
+        - $ref: '#/definitions/fhir.Range'
+        description: Amount of medication per dose
+      extension:
+        description: Additional content defined by implementations
+        items:
+          $ref: '#/definitions/fhir.Extension'
+        type: array
+      id:
+        description: Unique id for inter-element referencing
+        type: string
+      rateQuantity:
+        allOf:
+        - $ref: '#/definitions/fhir.Quantity'
+        description: Amount of medication per unit of time
+      rateRange:
+        allOf:
+        - $ref: '#/definitions/fhir.Range'
+        description: Amount of medication per unit of time
+      rateRatio:
+        allOf:
+        - $ref: '#/definitions/fhir.Ratio'
+        description: Amount of medication per unit of time
+      type:
+        allOf:
+        - $ref: '#/definitions/fhir.CodeableConcept'
+        description: The kind of dose or rate specified
+    type: object
+  fhir.Duration:
+    properties:
+      _code:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của code
+      _comparator:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của comparator
+      _id:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của id
+      _system:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của system
+      _unit:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của unit
+      _value:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của value
+      code:
+        description: Coded form of the unit
+        type: string
+      comparator:
+        description: < | <= | >= | > - how to understand the value
+        type: string
+      extension:
+        description: Additional content defined by implementations
+        items:
+          $ref: '#/definitions/fhir.Extension'
+        type: array
+      id:
+        description: Unique id for inter-element referencing
+        type: string
+      system:
+        description: System that defines coded unit form
+        type: string
+      unit:
+        description: Unit representation
+        type: string
+      value:
+        description: Numerical value (with implicit precision)
+        type: number
+    type: object
+  fhir.Element:
+    properties:
+      _id:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của id
+      extension:
+        description: Additional content defined by implementations
+        items:
+          $ref: '#/definitions/fhir.Extension'
+        type: array
+      id:
+        description: Unique id for inter-element referencing
+        type: string
+    type: object
+  fhir.Expression:
+    properties:
+      _description:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của description
+      _expression:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của expression
+      _id:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của id
+      _language:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của language
+      _name:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của name
+      _reference:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của reference
+      description:
+        description: Natural language description of the condition
+        type: string
+      expression:
+        description: Expression in specified language
+        type: string
+      extension:
+        description: Additional content defined by implementations
+        items:
+          $ref: '#/definitions/fhir.Extension'
+        type: array
+      id:
+        description: Unique id for inter-element referencing
+        type: string
+      language:
+        description: text/cql | text/fhirpath | application/x-fhir-query | etc. (bắt
+          buộc)
+        type: string
+      name:
+        description: Short name assigned to expression for reuse
+        type: string
+      reference:
+        description: Where the expression is found
+        type: string
+    type: object
+  fhir.Extension:
+    properties:
+      _id:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của id
+      _url:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của url
+      _valueBase64Binary:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của valueBase64Binary
+      _valueBoolean:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của valueBoolean
+      _valueCanonical:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của valueCanonical
+      _valueCode:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của valueCode
+      _valueDate:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của valueDate
+      _valueDateTime:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của valueDateTime
+      _valueDecimal:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của valueDecimal
+      _valueId:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của valueId
+      _valueInstant:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của valueInstant
+      _valueInteger:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của valueInteger
+      _valueMarkdown:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của valueMarkdown
+      _valueOid:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của valueOid
+      _valuePositiveInt:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của valuePositiveInt
+      _valueString:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của valueString
+      _valueTime:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của valueTime
+      _valueUnsignedInt:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của valueUnsignedInt
+      _valueUri:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của valueUri
+      _valueUrl:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của valueUrl
+      _valueUuid:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của valueUuid
+      extension:
+        description: Additional content defined by implementations
+        items:
+          $ref: '#/definitions/fhir.Extension'
+        type: array
+      id:
+        description: Unique id for inter-element referencing
+        type: string
+      url:
+        description: identifies the meaning of the extension (bắt buộc)
+        type: string
+      valueAddress:
+        allOf:
+        - $ref: '#/definitions/fhir.Address'
+        description: Value of extension
+      valueAge:
+        allOf:
+        - $ref: '#/definitions/fhir.Age'
+        description: Value of extension
+      valueAnnotation:
+        allOf:
+        - $ref: '#/definitions/fhir.Annotation'
+        description: Value of extension
+      valueAttachment:
+        allOf:
+        - $ref: '#/definitions/fhir.Attachment'
+        description: Value of extension
+      valueBase64Binary:
+        description: Value of extension
+        type: string
+      valueBoolean:
+        description: Value of extension
+        type: boolean
+      valueCanonical:
+        description: Value of extension
+        type: string
+      valueCode:
+        description: Value of extension
+        type: string
+      valueCodeableConcept:
+        allOf:
+        - $ref: '#/definitions/fhir.CodeableConcept'
+        description: Value of extension
+      valueCoding:
+        allOf:
+        - $ref: '#/definitions/fhir.Coding'
+        description: Value of extension
+      valueContactDetail:
+        allOf:
+        - $ref: '#/definitions/fhir.ContactDetail'
+        description: Value of extension
+      valueContactPoint:
+        allOf:
+        - $ref: '#/definitions/fhir.ContactPoint'
+        description: Value of extension
+      valueContributor:
+        allOf:
+        - $ref: '#/definitions/fhir.Contributor'
+        description: Value of extension
+      valueCount:
+        allOf:
+        - $ref: '#/definitions/fhir.Count'
+        description: Value of extension
+      valueDataRequirement:
+        allOf:
+        - $ref: '#/definitions/fhir.DataRequirement'
+        description: Value of extension
+      valueDate:
+        description: Value of extension
+        type: string
+      valueDateTime:
+        description: Value of extension
+        type: string
+      valueDecimal:
+        description: Value of extension
+        type: number
+      valueDistance:
+        allOf:
+        - $ref: '#/definitions/fhir.Distance'
+        description: Value of extension
+      valueDosage:
+        allOf:
+        - $ref: '#/definitions/fhir.Dosage'
+        description: Value of extension
+      valueDuration:
+        allOf:
+        - $ref: '#/definitions/fhir.Duration'
+        description: Value of extension
+      valueExpression:
+        allOf:
+        - $ref: '#/definitions/fhir.Expression'
+        description: Value of extension
+      valueHumanName:
+        allOf:
+        - $ref: '#/definitions/fhir.HumanName'
+        description: Value of extension
+      valueId:
+        description: Value of extension
+        type: string
+      valueIdentifier:
+        allOf:
+        - $ref: '#/definitions/fhir.Identifier'
+        description: Value of extension
+      valueInstant:
+        description: Value of extension
+        type: string
+      valueInteger:
+        description: Value of extension
+        type: integer
+      valueMarkdown:
+        description: Value of extension
+        type: string
+      valueMeta:
+        allOf:
+        - $ref: '#/definitions/fhir.Meta'
+        description: Value of extension
+      valueMoney:
+        allOf:
+        - $ref: '#/definitions/fhir.Money'
+        description: Value of extension
+      valueOid:
+        description: Value of extension
+        type: string
+      valueParameterDefinition:
+        allOf:
+        - $ref: '#/definitions/fhir.ParameterDefinition'
+        description: Value of extension
+      valuePeriod:
+        allOf:
+        - $ref: '#/definitions/fhir.Period'
+        description: Value of extension
+      valuePositiveInt:
+        description: Value of extension
+        type: integer
+      valueQuantity:
+        allOf:
+        - $ref: '#/definitions/fhir.Quantity'
+        description: Value of extension
+      valueRange:
+        allOf:
+        - $ref: '#/definitions/fhir.Range'
+        description: Value of extension
+      valueRatio:
+        allOf:
+        - $ref: '#/definitions/fhir.Ratio'
+        description: Value of extension
+      valueReference:
+        allOf:
+        - $ref: '#/definitions/fhir.Reference'
+        description: Value of extension
+      valueRelatedArtifact:
+        allOf:
+        - $ref: '#/definitions/fhir.RelatedArtifact'
+        description: Value of extension
+      valueSampledData:
+        allOf:
+        - $ref: '#/definitions/fhir.SampledData'
+        description: Value of extension
+      valueSignature:
+        allOf:
+        - $ref: '#/definitions/fhir.Signature'
+        description: Value of extension
+      valueString:
+        description: Value of extension
+        type: string
+      valueTime:
+        description: Value of extension
+        type: string
+      valueTiming:
+        allOf:
+        - $ref: '#/definitions/fhir.Timing'
+        description: Value of extension
+      valueTriggerDefinition:
+        allOf:
+        - $ref: '#/definitions/fhir.TriggerDefinition'
+        description: Value of extension
+      valueUnsignedInt:
+        description: Value of extension
+        type: integer
+      valueUri:
+        description: Value of extension
+        type: string
+      valueUrl:
+        description: Value of extension
+        type: string
+      valueUsageContext:
+        allOf:
+        - $ref: '#/definitions/fhir.UsageContext'
+        description: Value of extension
+      valueUuid:
+        description: Value of extension
+        type: string
+    type: object
+  fhir.HumanName:
+    properties:
+      _family:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của family
+      _given:
+        description: Phần mở rộng của given
+        items:
+          $ref: '#/definitions/fhir.Element'
+        type: array
+      _id:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của id
+      _prefix:
+        description: Phần mở rộng của prefix
+        items:
+          $ref: '#/definitions/fhir.Element'
+        type: array
+      _suffix:
+        description: Phần mở rộng của suffix
+        items:
+          $ref: '#/definitions/fhir.Element'
+        type: array
+      _text:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của text
+      _use:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của use
+      extension:
+        description: Additional content defined by implementations
+        items:
+          $ref: '#/definitions/fhir.Extension'
+        type: array
+      family:
+        description: Family name (often called 'Surname')
+        type: string
+      given:
+        description: Given names (not always 'first'). Includes middle names
+        items:
+          type: string
+        type: array
+      id:
+        description: Unique id for inter-element referencing
+        type: string
+      period:
+        allOf:
+        - $ref: '#/definitions/fhir.Period'
+        description: Time period when name was/is in use
+      prefix:
+        description: Parts that come before the name
+        items:
+          type: string
+        type: array
+      suffix:
+        description: Parts that come after the name
+        items:
+          type: string
+        type: array
+      text:
+        description: Text representation of the full name
+        type: string
+      use:
+        description: usual | official | temp | nickname | anonymous | old | maiden
+        type: string
+    type: object
+  fhir.Identifier:
+    properties:
+      _id:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của id
+      _system:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của system
+      _use:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của use
+      _value:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của value
+      assigner:
+        allOf:
+        - $ref: '#/definitions/fhir.Reference'
+        description: Organization that issued id (may be just text)
+      extension:
+        description: Additional content defined by implementations
+        items:
+          $ref: '#/definitions/fhir.Extension'
+        type: array
+      id:
+        description: Unique id for inter-element referencing
+        type: string
+      period:
+        allOf:
+        - $ref: '#/definitions/fhir.Period'
+        description: Time period when id is/was valid for use
+      system:
+        description: The namespace for the identifier value
+        type: string
+      type:
+        allOf:
+        - $ref: '#/definitions/fhir.CodeableConcept'
+        description: Description of identifier
+      use:
+        description: usual | official | temp | secondary | old (If known)
+        type: string
+      value:
+        description: The value that is unique
+        type: string
+    type: object
+  fhir.IdentityProvider:
+    properties:
+      _audience:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của audience
+      _authorizeUrl:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của authorizeUrl
+      _clientId:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của clientId
+      _clientSecret:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của clientSecret
+      _identityMappingMode:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của identityMappingMode
+      _identitySource:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của identitySource
+      _issuer:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của issuer
+      _jwksUrl:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của jwksUrl
+      _tokenAuthMethod:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của tokenAuthMethod
+      _tokenUrl:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của tokenUrl
+      _usePkce:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của usePkce
+      _useSubject:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của useSubject
+      _userInfoApiKey:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của userInfoApiKey
+      _userInfoMode:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của userInfoMode
+      _userInfoUrl:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của userInfoUrl
+      audience:
+        description: audience
+        type: string
+      authorizeUrl:
+        description: authorizeUrl
+        type: string
+      clientId:
+        description: clientId
+        type: string
+      clientSecret:
+        description: clientSecret
+        type: string
+      identityMappingMode:
+        description: Medplum identity mapping target.
+        type: string
+      identitySource:
+        description: External credential field used to identify the user.
+        type: string
+      issuer:
+        description: issuer
+        type: string
+      jwksUrl:
+        description: jwksUrl
+        type: string
+      tokenAuthMethod:
+        description: tokenAuthMethod
+        type: string
+      tokenUrl:
+        description: tokenUrl
+        type: string
+      usePkce:
+        description: Optional flag to use PKCE in the token request.
+        type: boolean
+      useSubject:
+        description: Optional flag to use the subject field instead of the email field.
+        type: boolean
+      userInfoApiKey:
+        description: Optional API key used by custom userinfo modes such as Google
+          Cloud Identity Platform.
+        type: string
+      userInfoMode:
+        description: Optional userinfo mode. Defaults to standard OIDC userinfo semantics.
+        type: string
+      userInfoUrl:
+        description: userInfoUrl
+        type: string
+    type: object
+  fhir.Meta:
+    properties:
+      _deleted:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của deleted
+      _id:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của id
+      _lastUpdated:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của lastUpdated
+      _profile:
+        description: Phần mở rộng của profile
+        items:
+          $ref: '#/definitions/fhir.Element'
+        type: array
+      _project:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của project
+      _source:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của source
+      _versionId:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của versionId
+      account:
+        allOf:
+        - $ref: '#/definitions/fhir.Reference'
+        description: Optional account reference that can be used for sub-project compartments.
+      accounts:
+        description: Optional account references that can be used for sub-project
+          compartments.
+        items:
+          $ref: '#/definitions/fhir.Reference'
+        type: array
+      author:
+        allOf:
+        - $ref: '#/definitions/fhir.Reference'
+        description: The individual, device or organization who initiated the last
+          change.
+      compartment:
+        description: The list of compartments containing this resource
+        items:
+          $ref: '#/definitions/fhir.Reference'
+        type: array
+      deleted:
+        description: True when this version represents a logical delete tombstone.
+        type: boolean
+      extension:
+        description: Additional content defined by implementations
+        items:
+          $ref: '#/definitions/fhir.Extension'
+        type: array
+      id:
+        description: Unique id for inter-element referencing
+        type: string
+      lastUpdated:
+        description: When the resource version last changed
+        type: string
+      onBehalfOf:
+        allOf:
+        - $ref: '#/definitions/fhir.Reference'
+        description: Optional individual, device, or organization for whom the change
+          was made.
+      profile:
+        description: Profiles this resource claims to conform to
+        items:
+          type: string
+        type: array
+      project:
+        description: The project that contains this resource.
+        type: string
+      security:
+        description: Security Labels applied to this resource
+        items:
+          $ref: '#/definitions/fhir.Coding'
+        type: array
+      source:
+        description: Identifies where the resource comes from
+        type: string
+      tag:
+        description: Tags applied to this resource
+        items:
+          $ref: '#/definitions/fhir.Coding'
+        type: array
+      versionId:
+        description: Version specific identifier
+        type: string
+    type: object
+  fhir.Money:
+    properties:
+      _currency:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của currency
+      _id:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của id
+      _value:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của value
+      currency:
+        description: ISO 4217 Currency Code
+        type: string
+      extension:
+        description: Additional content defined by implementations
+        items:
+          $ref: '#/definitions/fhir.Extension'
+        type: array
+      id:
+        description: Unique id for inter-element referencing
+        type: string
+      value:
+        description: Numerical value (with implicit precision)
+        type: number
+    type: object
+  fhir.Narrative:
+    properties:
+      _div:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của div
+      _id:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của id
+      _status:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của status
+      div:
+        description: Limited xhtml content (bắt buộc)
+        type: string
+      extension:
+        description: Additional content defined by implementations
+        items:
+          $ref: '#/definitions/fhir.Extension'
+        type: array
+      id:
+        description: Unique id for inter-element referencing
+        type: string
+      status:
+        description: generated | extensions | additional | empty (bắt buộc)
+        type: string
+    type: object
+  fhir.OperationOutcome:
+    properties:
+      _id:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của id
+      _implicitRules:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của implicitRules
+      _language:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của language
+      contained:
+        description: Contained, inline Resources
+        items:
+          $ref: '#/definitions/fhir.AnyResource'
+        type: array
+      extension:
+        description: Additional content defined by implementations
+        items:
+          $ref: '#/definitions/fhir.Extension'
+        type: array
+      id:
+        description: Logical id of this artifact
+        type: string
+      implicitRules:
+        description: A set of rules under which this content was created
+        type: string
+      issue:
+        description: A single issue associated with the action (bắt buộc)
+        items:
+          $ref: '#/definitions/fhir.OperationOutcomeIssue'
+        type: array
+      language:
+        description: Language of the resource content
+        type: string
+      meta:
+        allOf:
+        - $ref: '#/definitions/fhir.Meta'
+        description: Metadata about the resource
+      modifierExtension:
+        description: Extensions that cannot be ignored
+        items:
+          $ref: '#/definitions/fhir.Extension'
+        type: array
+      resourceType:
+        type: string
+      text:
+        allOf:
+        - $ref: '#/definitions/fhir.Narrative'
+        description: Text summary of the resource, for human interpretation
+    type: object
+  fhir.OperationOutcomeIssue:
+    properties:
+      _code:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của code
+      _diagnostics:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của diagnostics
+      _expression:
+        description: Phần mở rộng của expression
+        items:
+          $ref: '#/definitions/fhir.Element'
+        type: array
+      _id:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của id
+      _location:
+        description: Phần mở rộng của location
+        items:
+          $ref: '#/definitions/fhir.Element'
+        type: array
+      _severity:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của severity
+      code:
+        description: Error or warning code (bắt buộc)
+        type: string
+      details:
+        allOf:
+        - $ref: '#/definitions/fhir.CodeableConcept'
+        description: Additional details about the error
+      diagnostics:
+        description: Additional diagnostic information about the issue
+        type: string
+      expression:
+        description: FHIRPath of element(s) related to issue
+        items:
+          type: string
+        type: array
+      extension:
+        description: Additional content defined by implementations
+        items:
+          $ref: '#/definitions/fhir.Extension'
+        type: array
+      id:
+        description: Unique id for inter-element referencing
+        type: string
+      location:
+        description: 'Deprecated: Path of element(s) related to issue'
+        items:
+          type: string
+        type: array
+      modifierExtension:
+        description: Extensions that cannot be ignored even if unrecognized
+        items:
+          $ref: '#/definitions/fhir.Extension'
+        type: array
+      severity:
+        description: fatal | error | warning | information (bắt buộc)
+        type: string
+    type: object
+  fhir.ParameterDefinition:
+    properties:
+      _documentation:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của documentation
+      _id:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của id
+      _max:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của max
+      _min:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của min
+      _name:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của name
+      _profile:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của profile
+      _type:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của type
+      _use:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của use
+      documentation:
+        description: A brief description of the parameter
+        type: string
+      extension:
+        description: Additional content defined by implementations
+        items:
+          $ref: '#/definitions/fhir.Extension'
+        type: array
+      id:
+        description: Unique id for inter-element referencing
+        type: string
+      max:
+        description: Maximum cardinality (a number of *)
+        type: string
+      min:
+        description: Minimum cardinality
+        type: integer
+      name:
+        description: Name used to access the parameter value
+        type: string
+      profile:
+        description: What profile the value is expected to be
+        type: string
+      type:
+        description: What type of value (bắt buộc)
+        type: string
+      use:
+        description: in | out (bắt buộc)
+        type: string
+    type: object
+  fhir.Period:
+    properties:
+      _end:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của end
+      _id:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của id
+      _start:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của start
+      end:
+        description: End time with inclusive boundary, if not ongoing
+        type: string
+      extension:
+        description: Additional content defined by implementations
+        items:
+          $ref: '#/definitions/fhir.Extension'
+        type: array
+      id:
+        description: Unique id for inter-element referencing
+        type: string
+      start:
+        description: Starting time with inclusive boundary
+        type: string
+    type: object
+  fhir.Project:
+    properties:
+      _active:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của active
+      _checkReferencesOnWrite:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của checkReferencesOnWrite
+      _description:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của description
+      _exportedResourceType:
+        description: Phần mở rộng của exportedResourceType
+        items:
+          $ref: '#/definitions/fhir.Element'
+        type: array
+      _features:
+        description: Phần mở rộng của features
+        items:
+          $ref: '#/definitions/fhir.Element'
+        type: array
+      _id:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của id
+      _implicitRules:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của implicitRules
+      _language:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của language
+      _name:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của name
+      _strictMode:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của strictMode
+      _superAdmin:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của superAdmin
+      active:
+        description: Whether this project is in active use
+        type: boolean
+      checkReferencesOnWrite:
+        description: Whether this project uses referential integrity on write operations
+          such as 'create' and 'update'.
+        type: boolean
+      contained:
+        description: Contained, inline Resources
+        items:
+          $ref: '#/definitions/fhir.AnyResource'
+        type: array
+      defaultAccessPolicies:
+        description: defaultAccessPolicies
+        items:
+          $ref: '#/definitions/fhir.ProjectDefaultAccessPolicies'
+        type: array
+      defaultPatientAccessPolicy:
+        allOf:
+        - $ref: '#/definitions/fhir.Reference'
+        description: defaultPatientAccessPolicy
+      defaultProfile:
+        description: defaultProfile
+        items:
+          $ref: '#/definitions/fhir.ProjectDefaultProfile'
+        type: array
+      description:
+        description: description
+        type: string
+      exportedResourceType:
+        description: exportedResourceType
+        items:
+          type: string
+        type: array
+      extension:
+        description: Additional content defined by implementations
+        items:
+          $ref: '#/definitions/fhir.Extension'
+        type: array
+      features:
+        description: features
+        items:
+          type: string
+        type: array
+      id:
+        description: Logical id of this artifact
+        type: string
+      identifier:
+        description: An identifier for this project
+        items:
+          $ref: '#/definitions/fhir.Identifier'
+        type: array
+      implicitRules:
+        description: implicitRules
+        type: string
+      language:
+        description: language
+        type: string
+      link:
+        description: link
+        items:
+          $ref: '#/definitions/fhir.ProjectLink'
+        type: array
+      meta:
+        allOf:
+        - $ref: '#/definitions/fhir.Meta'
+        description: meta
+      modifierExtension:
+        description: Extensions that cannot be ignored
+        items:
+          $ref: '#/definitions/fhir.Extension'
+        type: array
+      name:
+        description: name
+        type: string
+      owner:
+        allOf:
+        - $ref: '#/definitions/fhir.Reference'
+        description: owner
+      resourceType:
+        type: string
+      secret:
+        description: secret
+        items:
+          $ref: '#/definitions/fhir.ProjectSetting'
+        type: array
+      setting:
+        description: setting
+        items:
+          $ref: '#/definitions/fhir.ProjectSetting'
+        type: array
+      site:
+        description: site
+        items:
+          $ref: '#/definitions/fhir.ProjectSite'
+        type: array
+      strictMode:
+        description: Whether this project uses strict FHIR validation.
+        type: boolean
+      superAdmin:
+        description: Whether this project is the super administrator project.
+        type: boolean
+      systemSecret:
+        description: systemSecret
+        items:
+          $ref: '#/definitions/fhir.ProjectSetting'
+        type: array
+      systemSetting:
+        description: systemSetting
+        items:
+          $ref: '#/definitions/fhir.ProjectSetting'
+        type: array
+      text:
+        allOf:
+        - $ref: '#/definitions/fhir.Narrative'
+        description: Text summary of the resource, for human interpretation
+    type: object
+  fhir.ProjectDefaultAccessPolicies:
+    properties:
+      _profileType:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của profileType
+      accessPolicy:
+        allOf:
+        - $ref: '#/definitions/fhir.Reference'
+        description: accessPolicy (bắt buộc)
+      profileType:
+        description: profileType (bắt buộc)
+        type: string
+    type: object
+  fhir.ProjectDefaultProfile:
+    properties:
+      _profile:
+        description: Phần mở rộng của profile
+        items:
+          $ref: '#/definitions/fhir.Element'
+        type: array
+      _resourceType:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của resourceType
+      profile:
+        description: profile (bắt buộc)
+        items:
+          type: string
+        type: array
+      resourceType:
+        description: resourceType (bắt buộc)
+        type: string
+    type: object
+  fhir.ProjectLink:
+    properties:
+      project:
+        allOf:
+        - $ref: '#/definitions/fhir.Reference'
+        description: project (bắt buộc)
+    type: object
+  fhir.ProjectMembership:
+    properties:
+      _active:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của active
+      _admin:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của admin
+      _externalId:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của externalId
+      _id:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của id
+      _implicitRules:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của implicitRules
+      _language:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của language
+      _userName:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của userName
+      access:
+        description: access
+        items:
+          $ref: '#/definitions/fhir.ProjectMembershipAccess'
+        type: array
+      accessPolicy:
+        allOf:
+        - $ref: '#/definitions/fhir.Reference'
+        description: accessPolicy
+      active:
+        description: Whether this patient's record is in active use
+        type: boolean
+      admin:
+        description: Whether this user is a project administrator.
+        type: boolean
+      contained:
+        description: Contained, inline Resources
+        items:
+          $ref: '#/definitions/fhir.AnyResource'
+        type: array
+      extension:
+        description: Additional content defined by implementations
+        items:
+          $ref: '#/definitions/fhir.Extension'
+        type: array
+      externalId:
+        description: externalId
+        type: string
+      id:
+        description: Logical id of this artifact
+        type: string
+      identifier:
+        description: An identifier for this ProjectMembership
+        items:
+          $ref: '#/definitions/fhir.Identifier'
+        type: array
+      implicitRules:
+        description: implicitRules
+        type: string
+      invitedBy:
+        allOf:
+        - $ref: '#/definitions/fhir.Reference'
+        description: invitedBy
+      language:
+        description: language
+        type: string
+      meta:
+        allOf:
+        - $ref: '#/definitions/fhir.Meta'
+        description: meta
+      modifierExtension:
+        description: Extensions that cannot be ignored
+        items:
+          $ref: '#/definitions/fhir.Extension'
+        type: array
+      profile:
+        allOf:
+        - $ref: '#/definitions/fhir.Reference'
+        description: profile (bắt buộc)
+      project:
+        allOf:
+        - $ref: '#/definitions/fhir.Reference'
+        description: project (bắt buộc)
+      resourceType:
+        type: string
+      text:
+        allOf:
+        - $ref: '#/definitions/fhir.Narrative'
+        description: Text summary of the resource, for human interpretation
+      user:
+        allOf:
+        - $ref: '#/definitions/fhir.Reference'
+        description: user (bắt buộc)
+      userConfiguration:
+        allOf:
+        - $ref: '#/definitions/fhir.Reference'
+        description: userConfiguration
+      userName:
+        description: userName
+        type: string
+    type: object
+  fhir.ProjectMembershipAccess:
+    properties:
+      parameter:
+        description: parameter
+        items:
+          $ref: '#/definitions/fhir.ProjectMembershipAccessParameter'
+        type: array
+      policy:
+        allOf:
+        - $ref: '#/definitions/fhir.Reference'
+        description: policy (bắt buộc)
+    type: object
+  fhir.ProjectMembershipAccessParameter:
+    properties:
+      _name:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của name
+      _valueString:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của valueString
+      name:
+        description: name (bắt buộc)
+        type: string
+      valueReference:
+        allOf:
+        - $ref: '#/definitions/fhir.Reference'
+        description: Value of the parameter. (bắt buộc)
+      valueString:
+        description: Value of the parameter. (bắt buộc)
+        type: string
+    type: object
+  fhir.ProjectSetting:
+    properties:
+      _name:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của name
+      _valueBoolean:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của valueBoolean
+      _valueDecimal:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của valueDecimal
+      _valueInteger:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của valueInteger
+      _valueString:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của valueString
+      name:
+        description: name (bắt buộc)
+        type: string
+      valueBoolean:
+        description: value[x] (bắt buộc)
+        type: boolean
+      valueDecimal:
+        description: value[x] (bắt buộc)
+        type: number
+      valueInteger:
+        description: value[x] (bắt buộc)
+        type: integer
+      valueString:
+        description: value[x] (bắt buộc)
+        type: string
+    type: object
+  fhir.ProjectSite:
+    properties:
+      _domain:
+        description: Phần mở rộng của domain
+        items:
+          $ref: '#/definitions/fhir.Element'
+        type: array
+      _googleClientId:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của googleClientId
+      _googleClientSecret:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của googleClientSecret
+      _name:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của name
+      _recaptchaSecretKey:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của recaptchaSecretKey
+      _recaptchaSiteKey:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của recaptchaSiteKey
+      domain:
+        description: domain (bắt buộc)
+        items:
+          type: string
+        type: array
+      googleClientId:
+        description: googleClientId
+        type: string
+      googleClientSecret:
+        description: googleClientSecret
+        type: string
+      name:
+        description: name (bắt buộc)
+        type: string
+      recaptchaSecretKey:
+        description: recaptchaSecretKey
+        type: string
+      recaptchaSiteKey:
+        description: recaptchaSiteKey
+        type: string
+    type: object
+  fhir.Quantity:
+    properties:
+      _code:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của code
+      _comparator:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của comparator
+      _id:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của id
+      _system:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của system
+      _unit:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của unit
+      _value:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của value
+      code:
+        description: Coded form of the unit
+        type: string
+      comparator:
+        description: < | <= | >= | > - how to understand the value
+        type: string
+      extension:
+        description: Additional content defined by implementations
+        items:
+          $ref: '#/definitions/fhir.Extension'
+        type: array
+      id:
+        description: Unique id for inter-element referencing
+        type: string
+      system:
+        description: System that defines coded unit form
+        type: string
+      unit:
+        description: Unit representation
+        type: string
+      value:
+        description: Numerical value (with implicit precision)
+        type: number
+    type: object
+  fhir.Range:
+    properties:
+      _id:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của id
+      extension:
+        description: Additional content defined by implementations
+        items:
+          $ref: '#/definitions/fhir.Extension'
+        type: array
+      high:
+        allOf:
+        - $ref: '#/definitions/fhir.Quantity'
+        description: High limit
+      id:
+        description: Unique id for inter-element referencing
+        type: string
+      low:
+        allOf:
+        - $ref: '#/definitions/fhir.Quantity'
+        description: Low limit
+    type: object
+  fhir.Ratio:
+    properties:
+      _id:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của id
+      denominator:
+        allOf:
+        - $ref: '#/definitions/fhir.Quantity'
+        description: Denominator value
+      extension:
+        description: Additional content defined by implementations
+        items:
+          $ref: '#/definitions/fhir.Extension'
+        type: array
+      id:
+        description: Unique id for inter-element referencing
+        type: string
+      numerator:
+        allOf:
+        - $ref: '#/definitions/fhir.Quantity'
+        description: Numerator value
+    type: object
+  fhir.Reference:
+    properties:
+      _display:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của display
+      _id:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của id
+      _reference:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của reference
+      _type:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của type
+      display:
+        description: Text alternative for the resource
+        type: string
+      extension:
+        description: Additional content defined by implementations
+        items:
+          $ref: '#/definitions/fhir.Extension'
+        type: array
+      id:
+        description: Unique id for inter-element referencing
+        type: string
+      identifier:
+        allOf:
+        - $ref: '#/definitions/fhir.Identifier'
+        description: Logical reference, when literal reference is not known
+      reference:
+        description: Literal reference, Relative, internal or absolute URL
+        type: string
+      type:
+        description: Type the reference refers to (e.g. "Patient")
+        type: string
+    type: object
+  fhir.RelatedArtifact:
+    properties:
+      _citation:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của citation
+      _display:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của display
+      _id:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của id
+      _label:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của label
+      _resource:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của resource
+      _type:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của type
+      _url:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của url
+      citation:
+        description: Bibliographic citation for the artifact
+        type: string
+      display:
+        description: Brief description of the related artifact
+        type: string
+      document:
+        allOf:
+        - $ref: '#/definitions/fhir.Attachment'
+        description: What document is being referenced
+      extension:
+        description: Additional content defined by implementations
+        items:
+          $ref: '#/definitions/fhir.Extension'
+        type: array
+      id:
+        description: Unique id for inter-element referencing
+        type: string
+      label:
+        description: Short label
+        type: string
+      resource:
+        description: What resource is being referenced
+        type: string
+      type:
+        description: documentation | justification | citation | predecessor | successor
+          | derived-from | depends-on | composed-of (bắt buộc)
+        type: string
+      url:
+        description: Where the artifact can be accessed
+        type: string
+    type: object
+  fhir.SampledData:
+    properties:
+      _data:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của data
+      _dimensions:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của dimensions
+      _factor:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của factor
+      _id:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của id
+      _lowerLimit:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của lowerLimit
+      _period:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của period
+      _upperLimit:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của upperLimit
+      data:
+        description: Decimal values with spaces, or "E" | "U" | "L"
+        type: string
+      dimensions:
+        description: Number of sample points at each time point (bắt buộc)
+        type: integer
+      extension:
+        description: Additional content defined by implementations
+        items:
+          $ref: '#/definitions/fhir.Extension'
+        type: array
+      factor:
+        description: Multiply data by this before adding to origin
+        type: number
+      id:
+        description: Unique id for inter-element referencing
+        type: string
+      lowerLimit:
+        description: Lower limit of detection
+        type: number
+      origin:
+        allOf:
+        - $ref: '#/definitions/fhir.Quantity'
+        description: Zero value and units (bắt buộc)
+      period:
+        description: Number of milliseconds between samples (bắt buộc)
+        type: number
+      upperLimit:
+        description: Upper limit of detection
+        type: number
+    type: object
+  fhir.Signature:
+    properties:
+      _data:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của data
+      _id:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của id
+      _sigFormat:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của sigFormat
+      _targetFormat:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của targetFormat
+      _when:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của when
+      data:
+        description: The actual signature content (XML DigSig. JWS, picture, etc.)
+        type: string
+      extension:
+        description: Additional content defined by implementations
+        items:
+          $ref: '#/definitions/fhir.Extension'
+        type: array
+      id:
+        description: Unique id for inter-element referencing
+        type: string
+      onBehalfOf:
+        allOf:
+        - $ref: '#/definitions/fhir.Reference'
+        description: The party represented
+      sigFormat:
+        description: The technical format of the signature
+        type: string
+      targetFormat:
+        description: The technical format of the signed resources
+        type: string
+      type:
+        description: Indication of the reason the entity signed the object(s) (bắt
+          buộc)
+        items:
+          $ref: '#/definitions/fhir.Coding'
+        type: array
+      when:
+        description: When the signature was created (bắt buộc)
+        type: string
+      who:
+        allOf:
+        - $ref: '#/definitions/fhir.Reference'
+        description: Who signed (bắt buộc)
+    type: object
+  fhir.Timing:
+    properties:
+      _event:
+        description: Phần mở rộng của event
+        items:
+          $ref: '#/definitions/fhir.Element'
+        type: array
+      _id:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của id
+      code:
+        allOf:
+        - $ref: '#/definitions/fhir.CodeableConcept'
+        description: BID | TID | QID | AM | PM | QD | QOD | +
+      event:
+        description: When the event occurs
+        items:
+          type: string
+        type: array
+      extension:
+        description: Additional content defined by implementations
+        items:
+          $ref: '#/definitions/fhir.Extension'
+        type: array
+      id:
+        description: Unique id for inter-element referencing
+        type: string
+      modifierExtension:
+        description: Extensions that cannot be ignored even if unrecognized
+        items:
+          $ref: '#/definitions/fhir.Extension'
+        type: array
+      repeat:
+        allOf:
+        - $ref: '#/definitions/fhir.TimingRepeat'
+        description: When the event is to occur
+    type: object
+  fhir.TimingRepeat:
+    properties:
+      _count:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của count
+      _countMax:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của countMax
+      _dayOfWeek:
+        description: Phần mở rộng của dayOfWeek
+        items:
+          $ref: '#/definitions/fhir.Element'
+        type: array
+      _duration:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của duration
+      _durationMax:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của durationMax
+      _durationUnit:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của durationUnit
+      _frequency:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của frequency
+      _frequencyMax:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của frequencyMax
+      _id:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của id
+      _offset:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của offset
+      _period:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của period
+      _periodMax:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của periodMax
+      _periodUnit:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của periodUnit
+      _timeOfDay:
+        description: Phần mở rộng của timeOfDay
+        items:
+          $ref: '#/definitions/fhir.Element'
+        type: array
+      _when:
+        description: Phần mở rộng của when
+        items:
+          $ref: '#/definitions/fhir.Element'
+        type: array
+      boundsDuration:
+        allOf:
+        - $ref: '#/definitions/fhir.Duration'
+        description: Length/Range of lengths, or (Start and/or end) limits
+      boundsPeriod:
+        allOf:
+        - $ref: '#/definitions/fhir.Period'
+        description: Length/Range of lengths, or (Start and/or end) limits
+      boundsRange:
+        allOf:
+        - $ref: '#/definitions/fhir.Range'
+        description: Length/Range of lengths, or (Start and/or end) limits
+      count:
+        description: Number of times to repeat
+        type: integer
+      countMax:
+        description: Maximum number of times to repeat
+        type: integer
+      dayOfWeek:
+        description: mon | tue | wed | thu | fri | sat | sun
+        items:
+          type: string
+        type: array
+      duration:
+        description: How long when it happens
+        type: number
+      durationMax:
+        description: How long when it happens (Max)
+        type: number
+      durationUnit:
+        description: s | min | h | d | wk | mo | a - unit of time (UCUM)
+        type: string
+      extension:
+        description: Additional content defined by implementations
+        items:
+          $ref: '#/definitions/fhir.Extension'
+        type: array
+      frequency:
+        description: Event occurs frequency times per period
+        type: integer
+      frequencyMax:
+        description: Event occurs up to frequencyMax times per period
+        type: integer
+      id:
+        description: Unique id for inter-element referencing
+        type: string
+      offset:
+        description: Minutes from event (before or after)
+        type: integer
+      period:
+        description: Event occurs frequency times per period
+        type: number
+      periodMax:
+        description: Upper limit of period (3-4 hours)
+        type: number
+      periodUnit:
+        description: s | min | h | d | wk | mo | a - unit of time (UCUM)
+        type: string
+      timeOfDay:
+        description: Time of day for action
+        items:
+          type: string
+        type: array
+      when:
+        description: Code for time period of occurrence
+        items:
+          type: string
+        type: array
+    type: object
+  fhir.TriggerDefinition:
+    properties:
+      _id:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của id
+      _name:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của name
+      _timingDate:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của timingDate
+      _timingDateTime:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của timingDateTime
+      _type:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của type
+      condition:
+        allOf:
+        - $ref: '#/definitions/fhir.Expression'
+        description: Whether the event triggers (boolean expression)
+      data:
+        description: Triggering data of the event (multiple = 'and')
+        items:
+          $ref: '#/definitions/fhir.DataRequirement'
+        type: array
+      extension:
+        description: Additional content defined by implementations
+        items:
+          $ref: '#/definitions/fhir.Extension'
+        type: array
+      id:
+        description: Unique id for inter-element referencing
+        type: string
+      name:
+        description: Name or URI that identifies the event
+        type: string
+      timingDate:
+        description: Timing of the event
+        type: string
+      timingDateTime:
+        description: Timing of the event
+        type: string
+      timingReference:
+        allOf:
+        - $ref: '#/definitions/fhir.Reference'
+        description: Timing of the event
+      timingTiming:
+        allOf:
+        - $ref: '#/definitions/fhir.Timing'
+        description: Timing of the event
+      type:
+        description: named-event | periodic | data-changed | data-added | data-modified
+          | data-removed | data-accessed | data-access-ended (bắt buộc)
+        type: string
+    type: object
+  fhir.UsageContext:
+    properties:
+      _id:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của id
+      code:
+        allOf:
+        - $ref: '#/definitions/fhir.Coding'
+        description: Type of context being specified (bắt buộc)
+      extension:
+        description: Additional content defined by implementations
+        items:
+          $ref: '#/definitions/fhir.Extension'
+        type: array
+      id:
+        description: Unique id for inter-element referencing
+        type: string
+      valueCodeableConcept:
+        allOf:
+        - $ref: '#/definitions/fhir.CodeableConcept'
+        description: Value that defines the context (bắt buộc)
+      valueQuantity:
+        allOf:
+        - $ref: '#/definitions/fhir.Quantity'
+        description: Value that defines the context (bắt buộc)
+      valueRange:
+        allOf:
+        - $ref: '#/definitions/fhir.Range'
+        description: Value that defines the context (bắt buộc)
+      valueReference:
+        allOf:
+        - $ref: '#/definitions/fhir.Reference'
+        description: Value that defines the context (bắt buộc)
+    type: object
+  fhir.User:
+    properties:
+      _admin:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của admin
+      _email:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của email
+      _emailVerified:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của emailVerified
+      _externalId:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của externalId
+      _firstName:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của firstName
+      _id:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của id
+      _implicitRules:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của implicitRules
+      _language:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của language
+      _lastName:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của lastName
+      _mfaEnrolled:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của mfaEnrolled
+      _mfaMethod:
+        description: Phần mở rộng của mfaMethod
+        items:
+          $ref: '#/definitions/fhir.Element'
+        type: array
+      _mfaRequired:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của mfaRequired
+      _mfaSecret:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của mfaSecret
+      _passwordHash:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của passwordHash
+      admin:
+        description: '@deprecated'
+        type: boolean
+      contained:
+        description: Contained, inline Resources
+        items:
+          $ref: '#/definitions/fhir.AnyResource'
+        type: array
+      email:
+        description: email
+        type: string
+      emailVerified:
+        description: emailVerified
+        type: boolean
+      extension:
+        description: Additional content defined by implementations
+        items:
+          $ref: '#/definitions/fhir.Extension'
+        type: array
+      externalId:
+        description: externalId
+        type: string
+      firstName:
+        description: firstName (bắt buộc)
+        type: string
+      id:
+        description: Logical id of this artifact
+        type: string
+      identifier:
+        description: An identifier for this user
+        items:
+          $ref: '#/definitions/fhir.Identifier'
+        type: array
+      implicitRules:
+        description: implicitRules
+        type: string
+      language:
+        description: language
+        type: string
+      lastName:
+        description: lastName (bắt buộc)
+        type: string
+      meta:
+        allOf:
+        - $ref: '#/definitions/fhir.Meta'
+        description: meta
+      mfaEnrolled:
+        description: mfaEnrolled
+        type: boolean
+      mfaMethod:
+        description: mfaMethod
+        items:
+          type: string
+        type: array
+      mfaRequired:
+        description: mfaRequired
+        type: boolean
+      mfaSecret:
+        description: mfaSecret
+        type: string
+      modifierExtension:
+        description: Extensions that cannot be ignored
+        items:
+          $ref: '#/definitions/fhir.Extension'
+        type: array
+      passwordHash:
+        description: passwordHash
+        type: string
+      project:
+        allOf:
+        - $ref: '#/definitions/fhir.Reference'
+        description: project
+      resourceType:
+        type: string
+      text:
+        allOf:
+        - $ref: '#/definitions/fhir.Narrative'
+        description: Text summary of the resource, for human interpretation
+    type: object
+  fhir.UserConfiguration:
+    properties:
+      _id:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của id
+      _implicitRules:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của implicitRules
+      _language:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của language
+      _name:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của name
+      contained:
+        description: Contained, inline Resources
+        items:
+          $ref: '#/definitions/fhir.AnyResource'
+        type: array
+      extension:
+        description: Additional content defined by implementations
+        items:
+          $ref: '#/definitions/fhir.Extension'
+        type: array
+      id:
+        description: Logical id of this artifact
+        type: string
+      implicitRules:
+        description: implicitRules
+        type: string
+      language:
+        description: language
+        type: string
+      menu:
+        description: menu
+        items:
+          $ref: '#/definitions/fhir.UserConfigurationMenu'
+        type: array
+      meta:
+        allOf:
+        - $ref: '#/definitions/fhir.Meta'
+        description: meta
+      modifierExtension:
+        description: Extensions that cannot be ignored
+        items:
+          $ref: '#/definitions/fhir.Extension'
+        type: array
+      name:
+        description: name
+        type: string
+      option:
+        description: option
+        items:
+          $ref: '#/definitions/fhir.UserConfigurationOption'
+        type: array
+      resourceType:
+        type: string
+      search:
+        description: search
+        items:
+          $ref: '#/definitions/fhir.UserConfigurationSearch'
+        type: array
+      text:
+        allOf:
+        - $ref: '#/definitions/fhir.Narrative'
+        description: Text summary of the resource, for human interpretation
+    type: object
+  fhir.UserConfigurationMenu:
+    properties:
+      _title:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của title
+      link:
+        description: link
+        items:
+          $ref: '#/definitions/fhir.UserConfigurationMenuLink'
+        type: array
+      title:
+        description: title (bắt buộc)
+        type: string
+    type: object
+  fhir.UserConfigurationMenuLink:
+    properties:
+      _name:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của name
+      _target:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của target
+      name:
+        description: name (bắt buộc)
+        type: string
+      target:
+        description: target (bắt buộc)
+        type: string
+    type: object
+  fhir.UserConfigurationOption:
+    properties:
+      _id:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của id
+      _valueBoolean:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của valueBoolean
+      _valueCode:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của valueCode
+      _valueDecimal:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của valueDecimal
+      _valueInteger:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của valueInteger
+      _valueString:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của valueString
+      id:
+        description: id (bắt buộc)
+        type: string
+      valueBoolean:
+        description: Value of option (bắt buộc)
+        type: boolean
+      valueCode:
+        description: Value of option (bắt buộc)
+        type: string
+      valueDecimal:
+        description: Value of option (bắt buộc)
+        type: number
+      valueInteger:
+        description: Value of option (bắt buộc)
+        type: integer
+      valueString:
+        description: Value of option (bắt buộc)
+        type: string
+    type: object
+  fhir.UserConfigurationSearch:
+    properties:
+      _criteria:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của criteria
+      _name:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của name
+      criteria:
+        description: criteria (bắt buộc)
+        type: string
+      name:
+        description: name (bắt buộc)
+        type: string
+    type: object
+  httpapi.AdminClientBody:
+    properties:
+      accessPolicy:
+        $ref: '#/definitions/fhir.Reference'
+      description:
+        type: string
+      grantType:
+        items:
+          type: string
+        type: array
+      name:
+        type: string
+      pkceOptional:
+        type: boolean
+      redirectUris:
+        items:
+          type: string
+        type: array
+      secret:
+        maxLength: 256
+        minLength: 32
+        type: string
+    type: object
+  httpapi.AdminProjectResponse:
+    properties:
+      project:
+        $ref: '#/definitions/application.AdminProjectView'
+    type: object
+  httpapi.AdminSetPasswordBody:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    type: object
+  httpapi.ChangePasswordBody:
+    properties:
+      newPassword:
+        type: string
+      oldPassword:
+        type: string
+    type: object
+  httpapi.EmailAttachmentBody:
+    properties:
+      cid:
+        type: string
+      content:
+        type: string
+      contentDisposition:
+        enum:
+        - attachment
+        - inline
+        type: string
+      contentType:
+        type: string
+      encoding:
+        enum:
+        - utf8
+        - base64
+        type: string
+      filename:
+        type: string
+      path:
+        example: https://example.org/file.pdf
+        type: string
+    type: object
+  httpapi.ExchangeBody:
+    properties:
+      clientId:
+        type: string
+      externalAccessToken:
+        type: string
+      membershipId:
+        type: string
+    type: object
+  httpapi.ExternalStartBody:
+    properties:
+      clientId:
+        example: a3b1c2d4-0000-4000-8000-000000000000
+        type: string
+      codeChallenge:
+        type: string
+      codeChallengeMethod:
+        enum:
+        - plain
+        - S256
+        type: string
+      launch:
+        type: string
+      nonce:
+        type: string
+      projectId:
+        type: string
+      redirectUri:
+        type: string
+      returnTo:
+        type: string
+      scope:
+        type: string
+    type: object
+  httpapi.GoogleBody:
+    properties:
+      clientId:
+        type: string
+      codeChallenge:
+        type: string
+      codeChallengeMethod:
+        enum:
+        - plain
+        - S256
+        type: string
+      createUser:
+        type: boolean
+      googleClientId:
+        type: string
+      googleCredential:
+        type: string
+      nonce:
+        type: string
+      projectId:
+        type: string
+      redirectUri:
+        type: string
+      resourceType:
+        type: string
+      scope:
+        type: string
+    type: object
+  httpapi.HealthResponse:
+    properties:
+      status:
+        example: ok
+        type: string
+    type: object
+  httpapi.IntrospectResponse:
+    properties:
+      active:
+        type: boolean
+      client_id:
+        type: string
+      exp:
+        type: integer
+      iat:
+        type: integer
+      iss:
+        type: string
+      patient:
+        type: string
+      scope:
+        type: string
+      sub:
+        type: string
+    type: object
+  httpapi.InviteBody:
+    properties:
+      email:
+        type: string
+      externalId:
+        type: string
+      firstName:
+        type: string
+      forceNewMembership:
+        type: boolean
+      lastName:
+        type: string
+      membership:
+        $ref: '#/definitions/httpapi.InviteMembershipBody'
+      mfaRequired:
+        type: boolean
+      password:
+        type: string
+      patient:
+        $ref: '#/definitions/fhir.Reference'
+      resourceType:
+        enum:
+        - Patient
+        - Practitioner
+        - RelatedPerson
+        type: string
+      scope:
+        enum:
+        - project
+        - server
+        type: string
+      sendEmail:
+        type: boolean
+      upsert:
+        type: boolean
+    type: object
+  httpapi.InviteMembershipBody:
+    properties:
+      access:
+        items:
+          $ref: '#/definitions/fhir.ProjectMembershipAccess'
+        type: array
+      accessPolicy:
+        $ref: '#/definitions/fhir.Reference'
+      active:
+        type: boolean
+      admin:
+        type: boolean
+      externalId:
+        type: string
+      profile:
+        $ref: '#/definitions/fhir.Reference'
+    type: object
+  httpapi.LoginBody:
+    properties:
+      clientId:
+        type: string
+      codeChallenge:
+        type: string
+      codeChallengeMethod:
+        enum:
+        - plain
+        - S256
+        type: string
+      email:
+        example: an@example.org
+        type: string
+      launch:
+        type: string
+      nonce:
+        type: string
+      password:
+        example: mat-khau-dai-123
+        type: string
+      projectId:
+        example: new
+        type: string
+      redirectUri:
+        type: string
+      remember:
+        type: boolean
+      resourceType:
+        example: Practitioner
+        type: string
+      scope:
+        example: openid
+        type: string
+    type: object
+  httpapi.MFADisableBody:
+    properties:
+      method:
+        enum:
+        - totp
+        - email
+        type: string
+      token:
+        type: string
+    type: object
+  httpapi.MFAEnrollBody:
+    properties:
+      method:
+        enum:
+        - totp
+        - email
+        type: string
+      token:
+        type: string
+    type: object
+  httpapi.MFALoginEnrollBody:
+    properties:
+      login:
+        type: string
+      method:
+        enum:
+        - totp
+        - email
+        type: string
+      token:
+        type: string
+    type: object
+  httpapi.MFASendEmailBody:
+    properties:
+      login:
+        type: string
+    type: object
+  httpapi.MFAVerifyBody:
+    properties:
+      login:
+        example: a3b1c2d4-0000-4000-8000-000000000000
+        type: string
+      token:
+        example: "123456"
+        type: string
+    type: object
+  httpapi.MethodBody:
+    properties:
+      clientId:
+        type: string
+      codeChallenge:
+        type: string
+      codeChallengeMethod:
+        enum:
+        - plain
+        - S256
+        type: string
+      email:
+        example: an@example.org
+        type: string
+      launch:
+        type: string
+      nonce:
+        type: string
+      projectId:
+        type: string
+      redirectUri:
+        type: string
+      returnTo:
+        type: string
+      scope:
+        type: string
+    type: object
+  httpapi.NewPatientBody:
+    properties:
+      login:
+        example: a3b1c2d4-0000-4000-8000-000000000000
+        type: string
+      projectId:
+        example: a3b1c2d4-0000-4000-8000-000000000001
+        type: string
+    type: object
+  httpapi.NewProjectBody:
+    properties:
+      login:
+        example: a3b1c2d4-0000-4000-8000-000000000000
+        type: string
+      projectName:
+        example: Bệnh viện A
+        type: string
+    type: object
+  httpapi.NewUserBody:
+    properties:
+      clientId:
+        type: string
+      codeChallenge:
+        type: string
+      codeChallengeMethod:
+        enum:
+        - plain
+        - S256
+        type: string
+      email:
+        example: an@example.org
+        type: string
+      firstName:
+        example: An
+        type: string
+      lastName:
+        example: Nguyen
+        type: string
+      nonce:
+        type: string
+      password:
+        example: mat-khau-dai-123
+        type: string
+      projectId:
+        example: new
+        type: string
+      recaptchaSiteKey:
+        type: string
+      recaptchaToken:
+        type: string
+      redirectUri:
+        type: string
+      remember:
+        type: boolean
+      scope:
+        example: openid
+        type: string
+    type: object
+  httpapi.NewUserResponse:
+    properties:
+      emailVerificationRequired:
+        type: boolean
+      login:
+        example: a3b1c2d4-0000-4000-8000-000000000000
+        type: string
+    type: object
+  httpapi.PreAuthorizeBody:
+    properties:
+      clientId:
+        example: a3b1c2d4-0000-4000-8000-000000000000
+        type: string
+      expiresIn:
+        maximum: 604800
+        minimum: 1
+        type: integer
+      nonce:
+        type: string
+      scope:
+        type: string
+    type: object
+  httpapi.ProfileBody:
+    properties:
+      login:
+        type: string
+      profile:
+        example: membership id
+        type: string
+    type: object
+  httpapi.ReadyResponse:
+    properties:
+      checks:
+        additionalProperties:
+          type: boolean
+        type: object
+      ready:
+        example: true
+        type: boolean
+    type: object
+  httpapi.RegisterBody:
+    properties:
+      redirect_uris:
+        items:
+          type: string
+        type: array
+    type: object
+  httpapi.ResetPasswordBody:
+    properties:
+      email:
+        example: an@example.org
+        type: string
+      projectId:
+        type: string
+      recaptchaSiteKey:
+        type: string
+      recaptchaToken:
+        description: RecaptchaToken và RecaptchaSiteKey chỉ cần khi máy chủ hoặc project
+          bật reCAPTCHA.
+        type: string
+      redirectUri:
+        type: string
+      sendEmail:
+        type: boolean
+    type: object
+  httpapi.RevokeBody:
+    properties:
+      loginId:
+        example: a3b1c2d4-0000-4000-8000-000000000000
+        type: string
+    type: object
+  httpapi.ScopeBody:
+    properties:
+      login:
+        type: string
+      scope:
+        example: openid profile
+        type: string
+    type: object
+  httpapi.SendEmailBody:
+    properties:
+      attachments:
+        items:
+          $ref: '#/definitions/httpapi.EmailAttachmentBody'
+        type: array
+      bcc:
+        type: string
+      cc:
+        type: string
+      from:
+        type: string
+      html:
+        type: string
+      icalEvent:
+        type: string
+      replyTo:
+        type: string
+      subject:
+        type: string
+      text:
+        type: string
+      to:
+        type: string
+    type: object
+  httpapi.SetPasswordBody:
+    properties:
+      id:
+        example: a3b1c2d4-0000-4000-8000-000000000000
+        type: string
+      password:
+        type: string
+      secret:
+        type: string
+    type: object
+  httpapi.TokenErrorBody:
+    properties:
+      error:
+        type: string
+      error_description:
+        type: string
+    type: object
+  httpapi.VerifyEmailBody:
+    properties:
+      id:
+        example: a3b1c2d4-0000-4000-8000-000000000000
+        type: string
+      secret:
+        type: string
+    type: object
+  scim.Email:
+    properties:
+      value:
+        type: string
+    type: object
+  scim.Error:
+    properties:
+      detail:
+        type: string
+      schemas:
+        items:
+          type: string
+        type: array
+      scimType:
+        type: string
+      status:
+        type: string
+    type: object
+  scim.ListResponse:
+    properties:
+      Resources:
+        items:
+          $ref: '#/definitions/scim.User'
+        type: array
+      itemsPerPage:
+        type: integer
+      schemas:
+        items:
+          type: string
+        type: array
+      startIndex:
+        type: integer
+      totalResults:
+        type: integer
+    type: object
+  scim.Meta:
+    properties:
+      lastModified:
+        type: string
+      location:
+        type: string
+      resourceType:
+        type: string
+      version:
+        type: string
+    type: object
+  scim.Name:
+    properties:
+      familyName:
+        type: string
+      givenName:
+        type: string
+    type: object
+  scim.PatchOp:
+    properties:
+      Operations:
+        items:
+          $ref: '#/definitions/scim.PatchOperation'
+        type: array
+      schemas:
+        items:
+          type: string
+        type: array
+    type: object
+  scim.PatchOperation:
+    properties:
+      op:
+        type: string
+      path:
+        type: string
+      value:
+        type: object
+    type: object
+  scim.User:
+    properties:
+      active:
+        type: boolean
+      emails:
+        items:
+          $ref: '#/definitions/scim.Email'
+        type: array
+      externalId:
+        type: string
+      id:
+        type: string
+      meta:
+        $ref: '#/definitions/scim.Meta'
+      name:
+        $ref: '#/definitions/scim.Name'
+      schemas:
+        items:
+          type: string
+        type: array
+      userName:
+        type: string
+      userType:
+        type: string
+    type: object
+info:
+  contact: {}
+  description: Dịch vụ xác thực và cấp token (port từ Medplum). Lỗi dưới /auth và
+    /admin trả OperationOutcome (application/fhir+json); lỗi /oauth2 theo RFC 6749.
+  title: Trivita Auth API
+  version: "1.0"
+paths:
+  /.well-known/jwks.json:
+    get:
+      description: 'Chỉ khóa công khai; có `ETag` và `Cache-Control: public, max-age=300`.'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: JWKS (khóa công khai để xác minh token)
+      tags:
+      - well-known
+  /.well-known/oauth-authorization-server:
+    get:
+      description: Cùng một tài liệu ở hai đường dẫn. Chỉ khai những gì đã cài.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Discovery OIDC / OAuth 2.0 authorization server
+      tags:
+      - well-known
+  /.well-known/oauth-protected-resource:
+    get:
+      description: '`resource` tùy chọn phải bắt đầu bằng địa chỉ của auth; mặc định
+        là chính auth.'
+      parameters:
+      - description: phải bắt đầu bằng địa chỉ của auth
+        in: query
+        name: resource
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Protected resource metadata (RFC 9728)
+      tags:
+      - well-known
+  /.well-known/openid-configuration:
+    get:
+      description: Cùng một tài liệu ở hai đường dẫn. Chỉ khai những gì đã cài.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Discovery OIDC / OAuth 2.0 authorization server
+      tags:
+      - well-known
+  /.well-known/smart-configuration:
+    get:
+      description: SMART on FHIR discovery, khai cùng endpoint với openid-configuration.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: SMART configuration
+      tags:
+      - well-known
+  /.well-known/smart-styles.json:
+    get:
+      description: Giá trị cố định.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: SMART style (màu, font cho ứng dụng nhúng)
+      tags:
+      - well-known
+  /admin/projects/{projectId}:
+    get:
+      description: Chỉ admin của project; projectId khác project của người gọi là
+        403. Giá trị `secret` và khóa bí mật trong `site` bị che.
+      parameters:
+      - description: id project
+        in: path
+        name: projectId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpapi.AdminProjectResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+      security:
+      - BearerAuth: []
+      summary: Đọc project của chính mình (admin)
+      tags:
+      - admin
+  /admin/projects/{projectId}/client:
+    post:
+      consumes:
+      - application/json
+      description: Tạo client và membership của nó. `secret` (tối thiểu 32 ký tự)
+        do người gọi đặt hoặc server sinh (64 ký tự hex); chỉ được trả trong phản
+        hồi này. Trường ngoài danh sách (identityProvider, signInForm, status, meta...)
+        là 400. accessPolicy phải thuộc project.
+      parameters:
+      - description: id project
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: Client
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/httpapi.AdminClientBody'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/fhir.ClientApplication'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+      security:
+      - BearerAuth: []
+      summary: Tạo ClientApplication trong project
+      tags:
+      - admin
+  /admin/projects/{projectId}/invite:
+    post:
+      consumes:
+      - application/json
+      description: Tạo (hoặc dùng lại) User, hồ sơ Patient/Practitioner/RelatedPerson
+        và ProjectMembership trong một transaction, rồi gửi thư (trừ sendEmail=false).
+        Cần email hoặc externalId. Practitioner bị chặn theo AUTH_BLOCKED_EMAIL_DOMAINS
+        và setting allowedPractitionerEmailDomain. 409 nếu user đã là member (trừ
+        upsert) hoặc externalId trùng. Gửi thư lỗi là 400 nhưng dữ liệu đã tạo (thông
+        báo nêu rõ membership). Trả ProjectMembership.
+      parameters:
+      - description: id project
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: Lời mời
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/httpapi.InviteBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/fhir.ProjectMembership'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+      security:
+      - BearerAuth: []
+      summary: Mời user vào project
+      tags:
+      - admin
+  /admin/projects/{projectId}/members/{membershipId}:
+    delete:
+      description: Không xóa chủ project hay admin cuối cùng (400). User thuộc project
+        mà hết membership thì bị xóa cùng; user dùng chung nhiều project thì giữ.
+        Token của membership bị từ chối ngay.
+      parameters:
+      - description: id project
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: id membership
+        in: path
+        name: membershipId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+      security:
+      - BearerAuth: []
+      summary: Xóa membership
+      tags:
+      - admin
+    get:
+      description: Membership không thuộc project hoặc không tồn tại đều là 403.
+      parameters:
+      - description: id project
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: id membership
+        in: path
+        name: membershipId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/fhir.ProjectMembership'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+      security:
+      - BearerAuth: []
+      summary: Đọc một membership của project
+      tags:
+      - admin
+    post:
+      consumes:
+      - application/json
+      description: Body là toàn bộ ProjectMembership (resourceType và id khớp đường
+        dẫn, nếu không 403). Chỉ admin, active, externalId, accessPolicy, access được
+        đổi; đổi user, profile hoặc project là 400. accessPolicy phải thuộc project.
+        Không hạ quyền hay vô hiệu hóa admin cuối cùng (400).
+      parameters:
+      - description: id project
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: id membership
+        in: path
+        name: membershipId
+        required: true
+        type: string
+      - description: Membership
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/fhir.ProjectMembership'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/fhir.ProjectMembership'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+      security:
+      - BearerAuth: []
+      summary: Sửa membership
+      tags:
+      - admin
+  /admin/projects/{projectId}/members/{membershipId}/mfa/reset:
+    post:
+      consumes:
+      - application/json
+      description: 'Body tùy chọn {method: totp|email} (mặc định totp). User phải
+        đang có yếu tố đó (400). Gỡ totp thì secret bị thay. Chỉ user thuộc project.'
+      parameters:
+      - description: id project
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: id membership
+        in: path
+        name: membershipId
+        required: true
+        type: string
+      - description: '{method}'
+        in: body
+        name: body
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+      security:
+      - BearerAuth: []
+      summary: Gỡ một yếu tố MFA của member
+      tags:
+      - admin
+  /admin/projects/{projectId}/members/{membershipId}/resetpassword:
+    post:
+      description: 'Chỉ user thuộc project (user phạm vi server là 403). Khác /auth/resetpassword
+        công khai, lỗi được báo rõ: thiếu email 400, chưa cấu hình thư 400, gửi thư
+        lỗi 500.'
+      parameters:
+      - description: id project
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: id membership
+        in: path
+        name: membershipId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+      security:
+      - BearerAuth: []
+      summary: Gửi thư đặt lại mật khẩu cho một member
+      tags:
+      - admin
+  /admin/projects/{projectId}/settings:
+    post:
+      consumes:
+      - application/json
+      description: Body là mảng ProjectSetting. Chỉ nhận mfaRequired (boolean), allowedMfaMethods
+        (totp,email) và appName; tên khác là 400. Thay các setting thuộc allowlist,
+        giữ nguyên setting ngoài allowlist đang có (ví dụ do vận hành đặt).
+      parameters:
+      - description: id project
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: Danh sách setting
+        in: body
+        name: body
+        required: true
+        schema:
+          items:
+            $ref: '#/definitions/fhir.ProjectSetting'
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpapi.AdminProjectResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+      security:
+      - BearerAuth: []
+      summary: Đặt các setting của project (allowlist)
+      tags:
+      - admin
+  /admin/projects/{projectId}/sites:
+    post:
+      consumes:
+      - application/json
+      description: Body là mảng ProjectSite; thay toàn bộ Project.site. googleClientId
+        và recaptchaSiteKey phải duy nhất giữa các project (409) và googleClientId
+        không được trùng Google client chính của máy chủ; cặp id/secret phải đi cùng
+        nhau. Phản hồi che khóa bí mật (`********`); gửi lại đúng giá trị che nghĩa
+        là giữ secret hiện có của site cùng tên.
+      parameters:
+      - description: id project
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: Danh sách site
+        in: body
+        name: body
+        required: true
+        schema:
+          items:
+            $ref: '#/definitions/fhir.ProjectSite'
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpapi.AdminProjectResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+      security:
+      - BearerAuth: []
+      summary: Đặt các site của project (Google, reCAPTCHA)
+      tags:
+      - admin
+  /admin/projects/setpassword:
+    post:
+      consumes:
+      - application/json
+      description: Chỉ user thuộc project của người gọi (user ở phạm vi server là
+        400 `User not found`). Kiểm mật khẩu bị rò rỉ, thu hồi mọi login của user.
+      parameters:
+      - description: email và mật khẩu mới
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/httpapi.AdminSetPasswordBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+      security:
+      - BearerAuth: []
+      summary: Đặt mật khẩu cho user của project
+      tags:
+      - admin
+  /auth/changepassword:
+    post:
+      consumes:
+      - application/json
+      description: Thu hồi MỌI phiên đăng nhập của user, kể cả phiên đang dùng.
+      parameters:
+      - description: Mật khẩu cũ và mới
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/httpapi.ChangePasswordBody'
+      produces:
+      - application/fhir+json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+      security:
+      - BearerAuth: []
+      summary: Đổi mật khẩu của chính mình
+      tags:
+      - auth
+  /auth/clientinfo/{clientId}:
+    get:
+      description: Không cần xác thực. redirect_uri (nếu gửi) phải khớp chính xác
+        một URI đã đăng ký của client. Toàn bộ signInForm là công khai.
+      parameters:
+      - description: id client
+        in: path
+        name: clientId
+        required: true
+        type: string
+      - description: URI chuyển hướng
+        in: query
+        name: redirect_uri
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/fhir.ClientApplicationSignInForm'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+      summary: Thông tin công khai của form đăng nhập của một client
+      tags:
+      - auth
+  /auth/exchange:
+    post:
+      consumes:
+      - application/json
+      description: Vỏ mỏng của grant urn:ietf:params:oauth:grant-type:token-exchange.
+        Trả BODY TOKEN (access_token, id_token, refresh_token...), KHÔNG phải LoginResult
+        như tài liệu cũ ghi. IdP cấu hình ở máy chủ bắt buộc có membershipId. Lỗi
+        validator trả OperationOutcome 400; lỗi IdP và danh tính trả {error, error_description};
+        lỗi đăng nhập (user không có...) trả OperationOutcome.
+      parameters:
+      - description: Token của IdP và client
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/httpapi.ExchangeBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/httpapi.TokenErrorBody'
+      summary: Đổi access token của IdP ngoài lấy token của auth (deprecated)
+      tags:
+      - auth
+  /auth/external:
+    get:
+      description: 'IdP chuyển trình duyệt về đây với code và state. state phải do
+        /auth/method phát (đã ký) và trình duyệt phải mang cookie auth-external-state
+        tương ứng. Thành công: 302 tới redirectUri của client kèm login và code, hoặc
+        về trang đăng nhập của app kèm login. Lỗi trả OperationOutcome JSON 400 (không
+        chuyển hướng). /auth/external/{clientId} là callback riêng của client có identityProvider.'
+      parameters:
+      - description: Client có identityProvider riêng
+        in: path
+        name: clientId
+        type: string
+      - description: Authorization code của IdP
+        in: query
+        name: code
+        required: true
+        type: string
+      - description: state do /auth/method phát
+        in: query
+        name: state
+        required: true
+        type: string
+      - description: Issuer (RFC 9207)
+        in: query
+        name: iss
+        type: string
+      responses:
+        "302":
+          description: Found
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+      summary: Callback đăng nhập qua identity provider ngoài (OIDC)
+      tags:
+      - auth
+  /auth/external/start:
+    post:
+      consumes:
+      - application/json
+      description: Với client có identityProvider (callback /auth/external/{clientId}).
+        Trả {authorizeUrl} đã kèm state do auth ký và đặt cookie liên kết trình duyệt
+        auth-external-state; app chuyển người dùng tới authorizeUrl. Đăng nhập theo
+        tên miền email dùng /auth/method.
+      parameters:
+      - description: Client và tham số đăng nhập
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/httpapi.ExternalStartBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/application.MethodResult'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+      summary: Bắt đầu đăng nhập qua identity provider RIÊNG của một client
+      tags:
+      - auth
+  /auth/google:
+    post:
+      consumes:
+      - application/json
+      description: Xác minh googleCredential (ID token RS256 của Google, aud là googleClientId)
+        rồi đăng nhập. Credential phải báo email đã xác minh. Nếu tên miền của email
+        có DomainConfiguration thì trả {domain, authorizeUrl} (kèm cookie state) thay
+        vì LoginResult. createUser cho phép tạo user mới từ credential. Thông báo
+        lỗi xác minh cố định (không lộ chi tiết).
+      parameters:
+      - description: Credential của Google
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/httpapi.GoogleBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/application.LoginResult'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+      summary: Đăng nhập bằng Google Identity Services
+      tags:
+      - auth
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: 'Trả đúng một trong các dạng LoginResult: code (đã chọn được profile),
+        memberships (chọn profile), mfaRequired hoặc mfaEnrollRequired. Khi có code
+        và login thuộc một client, đặt cookie medplum-<clientId>.'
+      parameters:
+      - description: Thông tin đăng nhập
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/httpapi.LoginBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/application.LoginResult'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+      summary: Đăng nhập bằng email và mật khẩu
+      tags:
+      - auth
+  /auth/login/{login}:
+    get:
+      parameters:
+      - description: Login id (UUID)
+        in: path
+        name: login
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/application.LoginResult'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+      summary: Trạng thái một login đang dở
+      tags:
+      - auth
+  /auth/me:
+    get:
+      description: profile chỉ có resourceType và id (hồ sơ đầy đủ nằm ở fhir-server);
+        accessPolicy chưa có ở bản này.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/application.Me'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+      security:
+      - BearerAuth: []
+      summary: Thông tin người đang đăng nhập
+      tags:
+      - auth
+  /auth/method:
+    post:
+      consumes:
+      - application/json
+      description: 'Trả {} nếu đăng nhập bằng mật khẩu; trả {domain, authorizeUrl}
+        nếu tên miền email cấu hình identity provider ngoài. Khi đăng nhập ngoài đã
+        bật, authorizeUrl đã kèm `state` do auth ký (chứa các tham số đăng nhập trong
+        body) và phản hồi đặt cookie liên kết trình duyệt `auth-external-state`: app
+        KHÔNG tự thêm state, chỉ chuyển người dùng tới authorizeUrl. Tên miền trả
+        về là chữ thường.'
+      parameters:
+      - description: Email
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/httpapi.MethodBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/application.MethodResult'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+      summary: Cách đăng nhập của một email
+      tags:
+      - auth
+  /auth/mfa/disable:
+    post:
+      consumes:
+      - application/json
+      description: Phải chứng minh một yếu tố đang có bằng token (TOTP hoặc mã email).
+        Không gỡ được yếu tố cuối khi MFA là bắt buộc. Gỡ TOTP thì secret cũ bị thay
+        bằng secret ngẫu nhiên mới. Chịu hạn mức thử như /auth/mfa/verify.
+      parameters:
+      - description: phương thức (tùy chọn) và token
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/httpapi.MFADisableBody'
+      produces:
+      - application/fhir+json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+      security:
+      - BearerAuth: []
+      summary: Tắt MFA (một phương thức hoặc tất cả)
+      tags:
+      - auth
+  /auth/mfa/enroll:
+    post:
+      consumes:
+      - application/json
+      description: 'method=email: token là mã nhận từ /auth/mfa/send-email-challenge.
+        method=totp (mặc định): token là mã của secret trong enrollUri của /auth/mfa/status.
+        Cũng chịu hạn mức thử như /auth/mfa/verify (lệch có chủ đích so với Medplum).'
+      parameters:
+      - description: phương thức và token
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/httpapi.MFAEnrollBody'
+      produces:
+      - application/fhir+json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+      security:
+      - BearerAuth: []
+      summary: Đăng ký thêm một phương thức MFA cho chính mình
+      tags:
+      - auth
+  /auth/mfa/login-enroll:
+    post:
+      consumes:
+      - application/json
+      description: 'Dùng khi MFA bắt buộc mà user chưa đăng ký (phản hồi login có
+        mfaEnrollRequired). method=email: đăng ký và gửi mã tới email (nhập mã qua
+        /auth/mfa/verify). method=totp (mặc định): gửi token của secret trong enrollUri.
+        Cùng hạn mức thử với /auth/mfa/verify.'
+      parameters:
+      - description: login, phương thức và token
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/httpapi.MFALoginEnrollBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/application.LoginResult'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+      summary: Đăng ký MFA ngay trong lúc đăng nhập
+      tags:
+      - auth
+  /auth/mfa/send-email:
+    post:
+      consumes:
+      - application/json
+      description: Chỉ cho user đã đăng ký email MFA. Gửi lại ghi đè mã cũ; tối đa
+        5 lần mỗi login trong 20 phút.
+      parameters:
+      - description: login
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/httpapi.MFASendEmailBody'
+      produces:
+      - application/fhir+json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+      summary: Gửi (lại) mã MFA qua email cho login đang chờ
+      tags:
+      - auth
+  /auth/mfa/send-email-challenge:
+    post:
+      description: Để đăng ký email MFA hoặc thỏa yếu tố email khi tắt MFA. Tối đa
+        5 lần mỗi login trong 20 phút.
+      produces:
+      - application/fhir+json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+      security:
+      - BearerAuth: []
+      summary: Gửi mã email cho phiên đang dùng
+      tags:
+      - auth
+  /auth/mfa/status:
+    get:
+      description: Danh sách phương thức đã đăng ký và được phép, project có bắt buộc
+        MFA không, và (nếu chưa đăng ký TOTP) enrollUri cùng enrollQrCode. Secret
+        trong enrollUri chỉ thành yếu tố khi chính phiên này xác nhận bằng mã.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/application.MFAStatusResult'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+      security:
+      - BearerAuth: []
+      summary: Trạng thái MFA của chính mình
+      tags:
+      - auth
+  /auth/mfa/verify:
+    post:
+      consumes:
+      - application/json
+      description: 'Mã TOTP hoặc mã email. Đúng thì login được đánh dấu đã xác minh
+        và phản hồi như /auth/login (code, memberships...). Người dùng bắt buộc MFA
+        chưa đăng ký mà nhập mã cho secret được mời của chính login này thì được đăng
+        ký TOTP luôn. Mỗi lượt thử bị giới hạn: 5 mỗi login và 20 mỗi user trong 10
+        phút; lần sai thứ 5 thu hồi login; vượt hạn mức trả 429 kèm rate-limit-reset.
+        Mã TOTP chỉ dùng một lần.'
+      parameters:
+      - description: login và mã
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/httpapi.MFAVerifyBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/application.LoginResult'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+      summary: Xác minh mã MFA khi đăng nhập
+      tags:
+      - auth
+  /auth/newpatient:
+    post:
+      consumes:
+      - application/json
+      description: Dùng login từ /auth/newuser của một user thuộc project (projectId
+        trong body của newuser). Project phải cho đăng ký mở (setting openPatientRegistration
+        và có chính sách Patient). Tạo hồ sơ Patient và membership kèm chính sách
+        đó, rồi trả code như /auth/login. Không có hạn mức riêng ngoài hạn mức chung
+        của /auth/*.
+      parameters:
+      - description: login và projectId
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/httpapi.NewPatientBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/application.LoginResult'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+      summary: Bệnh nhân tự đăng ký vào project
+      tags:
+      - auth
+  /auth/newproject:
+    post:
+      consumes:
+      - application/json
+      description: Dùng login từ /auth/newuser. Tạo project (6 chính sách mặc định,
+        client mặc định, hồ sơ Practitioner và membership admin) trong một transaction
+        rồi trả code như /auth/login. Mọi kiểm tra trạng thái login (đã thu hồi, đã
+        cấp code, đã có membership) chạy trước khi tạo project. Login còn thiếu bước
+        MFA nhận phản hồi mfaRequired hoặc mfaEnrollRequired và chưa tạo gì.
+      parameters:
+      - description: login và tên project
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/httpapi.NewProjectBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/application.LoginResult'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+      summary: Tạo project mới cho người vừa đăng ký
+      tags:
+      - auth
+  /auth/newuser:
+    post:
+      consumes:
+      - application/json
+      description: Tạo user rồi tạo Login CHƯA có membership; phản hồi không có code
+        (người dùng phải tạo hoặc chọn project/profile tiếp). reCAPTCHA kiểm trước
+        cờ đăng ký, như Medplum. projectId là "new" (tạo project mới), id của project
+        cho phép đăng ký mở, hoặc bỏ trống (user không thuộc project nào); chỉ gửi
+        clientId thì user vẫn không thuộc project nào.
+      parameters:
+      - description: Thông tin đăng ký
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/httpapi.NewUserBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpapi.NewUserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+      summary: Đăng ký tài khoản
+      tags:
+      - auth
+  /auth/preauthorize:
+    post:
+      consumes:
+      - application/json
+      description: Chỉ admin của project (không phải super admin). Header X-Medplum-On-Behalf-Of
+        chỉ ProjectMembership/<id> hoặc tham chiếu profile của thành viên đích (cùng
+        project). scope mặc định là openid cộng các scope SMART của người gọi; người
+        gọi bị giới hạn SMART chỉ mint được trong phạm vi của mình. Mã chỉ trả MỘT
+        lần (kho giữ SHA-256); đổi mã ở /oauth2/token (grant pre-authorized_code).
+      parameters:
+      - description: ProjectMembership/<id> hoặc profile của đích
+        in: header
+        name: X-Medplum-On-Behalf-Of
+        required: true
+        type: string
+      - description: Client và tham số
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/httpapi.PreAuthorizeBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/application.PreAuthorizeResult'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+      security:
+      - BearerAuth: []
+      summary: Mint pre-authorized code cho một thành viên khác của project
+      tags:
+      - auth
+  /auth/profile:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: login và id membership
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/httpapi.ProfileBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/application.LoginResult'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+      summary: Chọn profile (ProjectMembership) cho login
+      tags:
+      - auth
+  /auth/resetpassword:
+    post:
+      consumes:
+      - application/json
+      description: Luôn trả 200 khi email hợp lệ, dù có tài khoản hay không và dù
+        gửi thư có được hay không (không lộ tài khoản). Email thuộc tên miền đăng
+        nhập ngoài trả 400.
+      parameters:
+      - description: Email cần đặt lại
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/httpapi.ResetPasswordBody'
+      produces:
+      - application/fhir+json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+      summary: Yêu cầu thư đặt lại mật khẩu
+      tags:
+      - auth
+  /auth/revoke:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: loginId cần thu hồi
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/httpapi.RevokeBody'
+      produces:
+      - application/fhir+json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+      security:
+      - BearerAuth: []
+      summary: Thu hồi một phiên đăng nhập của chính mình
+      tags:
+      - auth
+  /auth/scope:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: login và scope mới
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/httpapi.ScopeBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/application.LoginResult'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+      summary: Thu hẹp scope của login
+      tags:
+      - auth
+  /auth/setpassword:
+    post:
+      consumes:
+      - application/json
+      description: Thu hồi mọi phiên đăng nhập của user. Link dùng được một lần.
+      parameters:
+      - description: id và secret của link, mật khẩu mới
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/httpapi.SetPasswordBody'
+      produces:
+      - application/fhir+json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+      summary: Đặt mật khẩu bằng link trong thư
+      tags:
+      - auth
+  /auth/verifyemail:
+    post:
+      consumes:
+      - application/json
+      description: Có redirectUri trong request thì trả 200 kèm header Location (không
+        phải 302), như Medplum.
+      parameters:
+      - description: id và secret của link
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/httpapi.VerifyEmailBody'
+      produces:
+      - application/fhir+json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+      summary: Xác minh email bằng link trong thư
+      tags:
+      - auth
+  /email/v1/send:
+    post:
+      consumes:
+      - application/json
+      description: 'Chỉ admin của project có tính năng `email`. Thứ tự lỗi: 401 chưa
+        xác thực, 400 sai kiểu (gộp mọi lỗi), 400 `Email feature is not enabled for
+        this project`, 403 `Only project administrators can send emails`, 400 cấu
+        hình SMTP của project dở, 400 `Email is not configured on this server. Set
+        up SMTP.`, 400 tệp đính kèm lỗi, 502 SMTP lỗi (thông điệp chung). Người gửi
+        `from` chỉ được dùng nếu thuộc danh sách được duyệt, không thì dùng địa chỉ
+        mặc định. Đính kèm: nội dung nhúng (content + encoding) hoặc URL https (path);
+        `Binary/<id>` đọc từ dịch vụ FHIR bằng token của người gọi (cần AUTH_EMAIL_FHIR_URL,
+        không thì 400 chưa hỗ trợ; không tồn tại hoặc không có quyền thì 400 và không
+        gửi); đường dẫn khác bị từ chối. Mọi giá trị header chứa xuống dòng bị từ
+        chối.'
+      parameters:
+      - description: Thư
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/httpapi.SendEmailBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "502":
+          description: Bad Gateway
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+      security:
+      - BearerAuth: []
+      summary: Gửi thư (admin project)
+      tags:
+      - email
+  /health/live:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpapi.HealthResponse'
+      summary: Liveness probe
+      tags:
+      - health
+  /health/ready:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpapi.ReadyResponse'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/httpapi.ReadyResponse'
+      summary: Readiness probe (kiểm tra phụ thuộc)
+      tags:
+      - health
+  /oauth2/authorize:
+    get:
+      description: |-
+        Kiểm tra tham số rồi chuyển hướng (302). Không có phiên: sang trang đăng nhập của ứng dụng (<AUTH_APP_BASE_URL>/oauth) kèm tham số; trang đó gọi /auth/login, /auth/profile, /auth/scope rồi chuyển về redirect_uri kèm code.
+        Có phiên (cookie `medplum-<client_id>` hoặc id_token_hint): tạo Login mới; prompt=none thì trả code ngay, không thì sang trang ứng dụng để xác nhận scope.
+        Lỗi về client_id hoặc redirect_uri hiển thị trực tiếp (400 văn bản); lỗi khác chuyển về redirect_uri kèm error, error_description, state và iss (RFC 9207).
+        Client không có secret bắt buộc có code_challenge (S256). PKCE không được kế thừa từ phiên cũ.
+        POST nhận cùng tham số ở form `application/x-www-form-urlencoded`.
+      parameters:
+      - description: code
+        in: query
+        name: response_type
+        required: true
+        type: string
+      - description: client_id
+        in: query
+        name: client_id
+        required: true
+        type: string
+      - description: khớp chính xác một redirect URI đã đăng ký
+        in: query
+        name: redirect_uri
+        required: true
+        type: string
+      - description: mặc định defaultScope của client
+        in: query
+        name: scope
+        type: string
+      - description: trả nguyên
+        in: query
+        name: state
+        type: string
+      - description: vào id token
+        in: query
+        name: nonce
+        type: string
+      - description: PKCE
+        in: query
+        name: code_challenge
+        type: string
+      - description: S256
+        in: query
+        name: code_challenge_method
+        type: string
+      - description: cùng scheme và host với auth hoặc fhir-server
+        in: query
+        name: aud
+        type: string
+      - description: id SmartAppLaunch
+        in: query
+        name: launch
+        type: string
+      - description: none | login
+        in: query
+        name: prompt
+        type: string
+      - description: tuổi tối đa của phiên (giây), mặc định 3600
+        in: query
+        name: max_age
+        type: integer
+      - description: id token đã cấp cho client này
+        in: query
+        name: id_token_hint
+        type: string
+      responses:
+        "302":
+          description: Found
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+      summary: Bắt đầu luồng authorization code (OAuth2/OIDC)
+      tags:
+      - oauth
+    post:
+      description: |-
+        Kiểm tra tham số rồi chuyển hướng (302). Không có phiên: sang trang đăng nhập của ứng dụng (<AUTH_APP_BASE_URL>/oauth) kèm tham số; trang đó gọi /auth/login, /auth/profile, /auth/scope rồi chuyển về redirect_uri kèm code.
+        Có phiên (cookie `medplum-<client_id>` hoặc id_token_hint): tạo Login mới; prompt=none thì trả code ngay, không thì sang trang ứng dụng để xác nhận scope.
+        Lỗi về client_id hoặc redirect_uri hiển thị trực tiếp (400 văn bản); lỗi khác chuyển về redirect_uri kèm error, error_description, state và iss (RFC 9207).
+        Client không có secret bắt buộc có code_challenge (S256). PKCE không được kế thừa từ phiên cũ.
+        POST nhận cùng tham số ở form `application/x-www-form-urlencoded`.
+      parameters:
+      - description: code
+        in: query
+        name: response_type
+        required: true
+        type: string
+      - description: client_id
+        in: query
+        name: client_id
+        required: true
+        type: string
+      - description: khớp chính xác một redirect URI đã đăng ký
+        in: query
+        name: redirect_uri
+        required: true
+        type: string
+      - description: mặc định defaultScope của client
+        in: query
+        name: scope
+        type: string
+      - description: trả nguyên
+        in: query
+        name: state
+        type: string
+      - description: vào id token
+        in: query
+        name: nonce
+        type: string
+      - description: PKCE
+        in: query
+        name: code_challenge
+        type: string
+      - description: S256
+        in: query
+        name: code_challenge_method
+        type: string
+      - description: cùng scheme và host với auth hoặc fhir-server
+        in: query
+        name: aud
+        type: string
+      - description: id SmartAppLaunch
+        in: query
+        name: launch
+        type: string
+      - description: none | login
+        in: query
+        name: prompt
+        type: string
+      - description: tuổi tối đa của phiên (giây), mặc định 3600
+        in: query
+        name: max_age
+        type: integer
+      - description: id token đã cấp cho client này
+        in: query
+        name: id_token_hint
+        type: string
+      responses:
+        "302":
+          description: Found
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+      summary: Bắt đầu luồng authorization code (OAuth2/OIDC)
+      tags:
+      - oauth
+  /oauth2/introspect:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      - application/json
+      description: 'Cần Bearer. Chỉ hỏi được token của cùng project và cùng client
+        với người gọi; refresh token đã xoay là không hoạt động. Mọi lý do không dùng
+        được đều ra `{"active": false}`.'
+      parameters:
+      - description: token cần kiểm tra
+        in: formData
+        name: token
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpapi.IntrospectResponse'
+        "400":
+          description: Token to introspect must be provided
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Kiểm tra một token (RFC 7662)
+      tags:
+      - oauth
+  /oauth2/logout:
+    get:
+      description: Cần Bearer. Thu hồi login và xóa cookie đăng nhập của client. Sau
+        đó chính access token này bị từ chối ở các route của auth (fhir-server chỉ
+        biết khi token hết hạn).
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+      security:
+      - BearerAuth: []
+      summary: Đăng xuất (thu hồi login của access token)
+      tags:
+      - oauth
+    post:
+      description: Cần Bearer. Thu hồi login và xóa cookie đăng nhập của client. Sau
+        đó chính access token này bị từ chối ở các route của auth (fhir-server chỉ
+        biết khi token hết hạn).
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+      security:
+      - BearerAuth: []
+      summary: Đăng xuất (thu hồi login của access token)
+      tags:
+      - oauth
+  /oauth2/register:
+    post:
+      consumes:
+      - application/json
+      description: 'Không phải đăng ký động theo RFC 7591: không tạo client mới và
+        không trả client_secret. Chỉ có khi bật AUTH_OAUTH_REGISTER_ENABLED. redirect_uris[0]
+        phải bằng chính xác redirect URI của một client dựng sẵn.'
+      parameters:
+      - description: redirect_uris
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/httpapi.RegisterBody'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/application.RegisteredClient'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpapi.TokenErrorBody'
+      summary: Tra client dựng sẵn theo redirect URI
+      tags:
+      - oauth
+  /oauth2/token:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: |-
+        Chỉ nhận application/x-www-form-urlencoded. Grant hiện có: client_credentials, authorization_code và refresh_token (xoay secret; dùng lại thì thu hồi Login) (PKCE bắt buộc khi Login có challenge; client xác thực bằng HTTP Basic hoặc client_id + client_secret trong body).
+        Scope do client khai không được chứa `fhir.*`; access token mang `fhir_project`, `scope` (kèm scope vai trò do auth thêm) và `fhir_access_policy` để fhir-server nhận.
+      parameters:
+      - description: client_credentials | authorization_code | refresh_token
+        in: formData
+        name: grant_type
+        required: true
+        type: string
+      - description: authorization_code
+        in: formData
+        name: code
+        type: string
+      - description: authorization_code (PKCE)
+        in: formData
+        name: code_verifier
+        type: string
+      - description: 'authorization_code: bắt buộc nếu lúc đăng nhập đã gửi'
+        in: formData
+        name: redirect_uri
+        type: string
+      - description: refresh_token
+        in: formData
+        name: refresh_token
+        type: string
+      - description: nếu không dùng Basic
+        in: formData
+        name: client_id
+        type: string
+      - description: nếu không dùng Basic
+        in: formData
+        name: client_secret
+        type: string
+      - description: mặc định openid
+        in: formData
+        name: scope
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpapi.TokenErrorBody'
+      summary: Đổi thông tin lấy token (OAuth2)
+      tags:
+      - oauth
+  /oauth2/userinfo:
+    get:
+      description: |-
+        Cần Bearer access token. Trả `sub`; thêm theo scope của login (khớp từng từ): `profile` (profile, locale, updated_at, name, given_name, family_name), `email` (email, email_verified).
+        Không có phone, address, birthdate, gender, picture: hồ sơ Patient/Practitioner nằm ở fhir-server, auth không đọc được (quyết định D-10).
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: OIDC userinfo
+      tags:
+      - oauth
+    post:
+      description: |-
+        Cần Bearer access token. Trả `sub`; thêm theo scope của login (khớp từng từ): `profile` (profile, locale, updated_at, name, given_name, family_name), `email` (email, email_verified).
+        Không có phone, address, birthdate, gender, picture: hồ sơ Patient/Practitioner nằm ở fhir-server, auth không đọc được (quyết định D-10).
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: OIDC userinfo
+      tags:
+      - oauth
+  /scim/v2/Users:
+    get:
+      description: 'Chỉ admin của project (Bearer, hoặc Basic client:secret khi AUTH_SCIM_ALLOW_BASIC)
+        và project có tính năng `scim`. filter chỉ hỗ trợ `userName eq "x"` (không
+        phân biệt hoa thường), dạng khác là 400 invalidFilter. Phân trang thật: startIndex
+        từ 1, count mặc định và trần là AUTH_SCIM_MAX_PAGE. Lỗi dạng SCIM Error.'
+      parameters:
+      - description: userName eq \
+        in: query
+        name: filter
+        type: string
+      - description: bắt đầu từ 1
+        in: query
+        name: startIndex
+        type: integer
+      - description: số kết quả
+        in: query
+        name: count
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/scim.ListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/scim.Error'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/scim.Error'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/scim.Error'
+      security:
+      - BearerAuth: []
+      summary: 'SCIM: liệt kê user của project'
+      tags:
+      - scim
+    post:
+      consumes:
+      - application/json
+      description: Chỉ userName, name, emails[0], externalId, userType (Patient|Practitioner|RelatedPerson,
+        mặc định Practitioner) và active được dùng; mọi trường khác (admin, accessPolicy,
+        groups, roles, extension) bị bỏ qua. Patient và Practitioner phải có chính
+        sách truy cập mặc định của project. 409 nếu đã là member hoặc externalId trùng.
+        Không gửi thư.
+      parameters:
+      - description: User
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/scim.User'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/scim.User'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/scim.Error'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/scim.Error'
+      security:
+      - BearerAuth: []
+      summary: 'SCIM: tạo user'
+      tags:
+      - scim
+  /scim/v2/Users/{id}:
+    delete:
+      description: Xóa membership (User thuộc project mà hết membership thì bị xóa
+        theo). Không xóa chủ project, admin cuối cùng hay membership của chính người
+        gọi (400).
+      parameters:
+      - description: id membership
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/scim.Error'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/scim.Error'
+      security:
+      - BearerAuth: []
+      summary: 'SCIM: xóa user'
+      tags:
+      - scim
+    get:
+      description: id là id của ProjectMembership. Membership ngoài project, thuộc
+        Bot/ClientApplication hoặc không tồn tại đều là 404.
+      parameters:
+      - description: id membership
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/scim.User'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/scim.Error'
+      security:
+      - BearerAuth: []
+      summary: 'SCIM: đọc một user'
+      tags:
+      - scim
+    patch:
+      consumes:
+      - application/json
+      description: PatchOp với add, replace, remove. Chỉ active, externalId, name,
+        name.givenName, name.familyName, emails ghi được; userName, userType và thuộc
+        tính chuẩn không lưu (displayName...) bị bỏ qua; đường dẫn khác (admin, accessPolicy,
+        profile...) là 400 invalidPath. add trên thuộc tính đa trị thay nguyên.
+      parameters:
+      - description: id membership
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: PatchOp
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/scim.PatchOp'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/scim.User'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/scim.Error'
+      security:
+      - BearerAuth: []
+      summary: 'SCIM: sửa user (PATCH)'
+      tags:
+      - scim
+    put:
+      consumes:
+      - application/json
+      description: 'Dùng id của đường dẫn (id trong body có và khác là 400). Chỉ ghi
+        name, externalId, emails[0], active. Đổi email của User thuộc project: emailVerified=false,
+        vô hiệu mọi security request và thu hồi mọi login (một transaction); User
+        ở phạm vi server không ghi được (đổi email là 403). userName không đổi được.'
+      parameters:
+      - description: id membership
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: User
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/scim.User'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/scim.User'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/scim.Error'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/scim.Error'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/scim.Error'
+      security:
+      - BearerAuth: []
+      summary: 'SCIM: thay user (PUT)'
+      tags:
+      - scim
+securityDefinitions:
+  BearerAuth:
+    description: Dạng "Bearer <access_token>".
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

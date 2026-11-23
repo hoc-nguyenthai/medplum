@@ -1,0 +1,24 @@
+# VÍ DỤ ingress-nginx. WebSocket cần: HTTP/1.1 Upgrade (ingress-nginx tự xử lý) và timeout đọc/ghi DÀI hơn FHIR_WS_HEARTBEAT (mặc định
+# 60s sẽ cắt socket im lặng; gateway gửi heartbeat 30s nên 3600s là dư).
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ws-gateway
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts: [ws.example.org] # ĐỔI
+      secretName: ws-example-org-tls
+  rules:
+    - host: ws.example.org # ĐỔI; khớp FHIR_WS_URL của fhir-server: wss://ws.example.org/ws/subscriptions-r4
+      http:
+        paths:
+          - path: /ws/subscriptions-r4
+            pathType: Exact
+            backend:
+              service:
+                name: ws-gateway
+                port: { name: http }

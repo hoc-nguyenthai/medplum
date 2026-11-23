@@ -1,0 +1,129 @@
+@token = thay-bang-secret-ngau-nhien-dai-hon-24-ky-tu
+@admin = thay-bang-secret-admin-dai-hon-24-ky-tu
+@base = http://127.0.0.1:8005/fhir/R4
+
+### Probe
+GET http://127.0.0.1:8005/healthz
+
+###
+GET http://127.0.0.1:8005/readyz
+
+### Khám phá (công khai): CapabilityStatement
+GET {{base}}/metadata
+
+### Tạo Patient
+POST {{base}}/Patient
+Authorization: Bearer {{token}}
+Content-Type: application/fhir+json
+
+{"resourceType": "Patient", "name": [{"family": "Nguyễn", "given": ["Văn", "A"]}], "gender": "male", "birthDate": "1990-05-01",
+ "identifier": [{"system": "http://hospital.example/mrn", "value": "12345"}]}
+
+### Tạo có điều kiện (không tạo trùng): lần hai trả 200 cùng id
+POST {{base}}/Patient
+Authorization: Bearer {{token}}
+Content-Type: application/fhir+json
+If-None-Exist: identifier=http://hospital.example/mrn|12345
+
+{"resourceType": "Patient", "identifier": [{"system": "http://hospital.example/mrn", "value": "12345"}]}
+
+### Tìm kiếm (bỏ dấu, không phân biệt hoa thường), kèm tổng số và sắp xếp
+GET {{base}}/Patient?family=nguyen&birthdate=ge1980&_sort=-birthdate&_total=accurate
+Authorization: Bearer {{token}}
+
+### Tìm theo định danh
+GET {{base}}/Patient?identifier=http://hospital.example/mrn|12345
+Authorization: Bearer {{token}}
+
+### Tìm dạng form (POST _search)
+POST {{base}}/Patient/_search
+Authorization: Bearer {{token}}
+Content-Type: application/x-www-form-urlencoded
+
+family=nguyen&_count=5
+
+### Đọc, sửa, lịch sử: thay ID bằng id nhận được ở trên
+GET {{base}}/Patient/ID
+Authorization: Bearer {{token}}
+
+###
+PUT {{base}}/Patient/ID
+Authorization: Bearer {{token}}
+Content-Type: application/fhir+json
+If-Match: W/"VERSION_ID"
+
+{"resourceType": "Patient", "id": "ID", "name": [{"family": "Nguyễn"}], "gender": "female"}
+
+###
+GET {{base}}/Patient/ID/_history
+Authorization: Bearer {{token}}
+
+### JSON Patch
+PATCH {{base}}/Patient/ID
+Authorization: Bearer {{token}}
+Content-Type: application/json-patch+json
+
+[{"op": "add", "path": "/active", "value": true}]
+
+### Xóa (sau đó đọc trả 410 Gone)
+DELETE {{base}}/Patient/ID
+Authorization: Bearer {{token}}
+
+### Transaction: Patient và Observation tham chiếu nhau bằng urn:uuid (nguyên tử: lỗi một entry thì không lưu gì)
+POST {{base}}
+Authorization: Bearer {{token}}
+Content-Type: application/fhir+json
+
+{"resourceType": "Bundle", "type": "transaction", "entry": [
+  {"fullUrl": "urn:uuid:p1", "request": {"method": "POST", "url": "Patient"},
+   "resource": {"resourceType": "Patient", "name": [{"family": "Trần"}]}},
+  {"request": {"method": "POST", "url": "Observation"},
+   "resource": {"resourceType": "Observation", "status": "final", "code": {"text": "Cân nặng"},
+                "subject": {"reference": "urn:uuid:p1"}, "valueQuantity": {"value": 70, "unit": "kg"}}}
+]}
+
+### _include / _revinclude
+GET {{base}}/Observation?_include=Observation:subject
+Authorization: Bearer {{token}}
+
+### Kiểm tra resource mà không lưu ($validate: 200 nếu hợp lệ, 400 kèm vị trí lỗi nếu không)
+POST {{base}}/Patient/$validate
+Authorization: Bearer {{token}}
+Content-Type: application/fhir+json
+
+{"resourceType": "Patient", "gender": "male"}
+
+### Hồ sơ đầy đủ của một bệnh nhân (Patient + mọi resource trong compartment); hỗ trợ _type, _since, _count
+GET {{base}}/Patient/ID/$everything?_type=Observation,Encounter&_count=500
+Authorization: Bearer {{token}}
+
+### Đăng ký Subscription rest-hook (cần FHIR_SUBSCRIPTIONS=true). Chữ ký HMAC-SHA256 ở header X-Signature nếu có subscription-secret.
+POST {{base}}/Subscription
+Authorization: Bearer {{token}}
+Content-Type: application/fhir+json
+
+{"resourceType": "Subscription", "status": "active", "reason": "Demo", "criteria": "Observation?code=http://loinc.org|29463-7",
+ "channel": {"type": "rest-hook", "endpoint": "https://example.org/hook", "header": ["X-Tenant: acme"]},
+ "extension": [{"url": "https://www.medplum.com/fhir/StructureDefinition/subscription-secret", "valueString": "doi-secret-nay"},
+               {"url": "https://medplum.com/fhir/StructureDefinition/subscription-supported-interaction", "valueCode": "create"}]}
+
+### Quản trị (cần token admin): lập lại chỉ mục search của cả kiểu, chạy nền -> 202 + Content-Location
+POST {{base}}/Patient/$reindex
+Authorization: Bearer {{admin}}
+
+### Xem trạng thái job: 202 đang chạy, 200 + AsyncJob khi xong, 500 + OperationOutcome khi lỗi
+GET {{base}}/job/JOB_ID/status
+Authorization: Bearer {{token}}
+
+### Xóa vĩnh viễn một resource và toàn bộ lịch sử (admin, không hoàn tác)
+POST {{base}}/Patient/ID/$expunge
+Authorization: Bearer {{admin}}
+
+### Bulk export toàn hệ thống (202 + Content-Location tới /bulkdata/{id}/status)
+GET {{base}}/fhir/R4/$export
+Authorization: Bearer {{token}}
+Prefer: respond-async
+
+### Terminology: mở rộng ValueSet đã lưu
+GET {{base}}/fhir/R4/ValueSet/$expand?url=http://example.org/vs/animals&count=20
+Authorization: Bearer {{token}}

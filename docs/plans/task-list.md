@@ -1,0 +1,50 @@
+# Danh sách việc
+
+Cập nhật 2026-11-21. Thứ tự ưu tiên do người dùng chốt: **hoàn thành các module và gắn thành service API trước**; việc hardening riêng lẻ (như khóa tài khoản) làm sau. Chi tiết từng việc nằm ở tài liệu được dẫn; file này chỉ là sổ theo dõi.
+
+Trạng thái: `[ ]` chưa làm, `[~]` đang chặn bởi quyết định, `[x]` xong.
+
+## Ưu tiên 1: hoàn thành module và gắn thành service API
+
+| # | Việc | Trạng thái | Ghi chú / chặn bởi | Chi tiết |
+|---|---|---|---|---|
+| 1 | `auth` P3: token và OAuth2 (`/oauth2/*`, `.well-known`, `Authenticator`, claim `fhir_membership`) | [x] xong P3 (B1-B9, 2026-11-21) | D-12 đến D-17 đã duyệt 2026-11-21. **Xong B1 đến B6**: khóa/JWKS/well-known, `client_credentials`, `authorization_code` + PKCE (code lưu băm, chiếm code nguyên tử), `refresh_token` (xoay, ân hạn, thu hồi khi dùng lại), `userinfo`/`introspect`/`logout`, `authorize` (cookie phiên, `id_token_hint`, `prompt`); token đã qua `fhirauth.Verifier` trong test. Xong thêm B7 (`private_key_jwt`, `pre-authorized_code`, `register`, tách `pkg/safehttp`) và B8 (test hai tiến trình `make test-e2e`, hợp đồng `oauth.md`, `docker-compose.auth.yml`). Còn B9 rà soát bảo mật. Claim `fhir_membership` và `Principal.Membership` chưa làm | [auth/p3-oauth2-tokens.md](auth/p3-oauth2-tokens.md) |
+| 2 | `auth` P4/P5: đăng ký, reCAPTCHA, MFA | [x] P4 và P5 xong; còn P6/P7 (#3); P4 đã duyệt, **P4 và P5 xong (2026-11-22)**: `resetpassword`, `setpassword`, `verifyemail`, `changepassword`, `newuser` + reCAPTCHA, `newproject` + thư chào, `newpatient`, bộ test S1-S17 và e2e; P5 (MFA: TOTP và mã email, hạn mức thử, mã hóa `mfaSecret`, Q8 ở token endpoint, e2e) | Kênh gửi thư thật chưa có (D4) | [auth/p4-p5-register-mfa.md](auth/p4-p5-register-mfa.md) |
+| 3 | `auth` P6/P7: đăng nhập ngoài, `domain add`, `/admin/*` HTTP, SCIM | [x] P6, P7 (HTTP, `sites`) và SCIM XONG (2026-11-22: `/admin/projects/*` và `/scim/v2/Users` mặc định tắt) | P7 HTTP đã hoãn (chỉ CLI); Q-SC-1 (Basic auth cho SCIM) | [auth/p6-p7-external-admin.md](auth/p6-p7-external-admin.md) |
+| 4 | Gói dùng chung: ~~`pkg/safehttp`~~ (xong, B7), ~~`pkg/mailer`~~ (xong 2026-11-22: lõi, SMTP, `smtptest`; `auth` dùng qua `AUTH_MAIL_PROVIDER=smtp`), ~~`pkg/binarystore`~~ (xong S1, S2, S5 2026-11-22: `Store` FS/Memory, `CheckMetadata`, `Signer` RSA-SHA256, `storetest`), `Mutate` dùng chung, `SessionBus` | [~] còn `Mutate` dùng chung, `SessionBus`; S3a, S3b xong 2026-11-22 (`pkg/fhirbinary`, `fhir-server` bật bằng `FHIR_BINARY_STORAGE`); S3c (`$presigned-url`), S6 (`rewriteAttachments`) và E5 (email đính kèm `Binary/<id>`) xong 2026-11-22; S7 (adapter S3, `pkg/binarystore/s3store`) xong 2026-11-23; còn quét mồ côi, kiểm log không ghi `Signature` | Điều kiện cho storage, webhook, dicom | [modules/README.md](modules/README.md) |
+| 5 | `email` + `storage` | [~] `pkg/mailer` (E2, E3) và route `/email/v1/send` (E4) xong; còn `storage` và E5 | M5 (object storage) chưa chốt | [modules/email-storage.md](modules/email-storage.md) |
+| 6 | `keyvalue`, `mcp` | [ ] | | [modules/keyvalue-mcp-webhook.md](modules/keyvalue-mcp-webhook.md) |
+| 7 | `scim`, `ws` còn lại (hidden fields, `unbind-from-token`, hạn mức bind), `fhircast` | [ ] | `subscriptions-r4` đã kiểm quyền lúc phát | [modules/scim-ws-fhircast.md](modules/scim-ws-fhircast.md) | Kế hoạch tách service: [modules/split-scim-ws-services.md](modules/split-scim-ws-services.md) (ws → `apps/ws-gateway`; scim ở lại `auth`). **WS-1..WS-9 xong (2026-11-22)**: `ws` và `fhircast` đã chạy trong `ws-gateway` (token của `auth` kèm `hub.url`, `hub.topic`); `scim` xong trong `auth` (2026-11-22).
+| 8 | Gói công việc kiểm kê `fhir` (17 WP; WP-1 lệch REST, các WP khác) | [ ] | WP-2a (SMART v2) xong | [modules/fhir-parity-audit.md](modules/fhir-parity-audit.md) |
+| 9 | `cds`, `webhook`, `cron`, `Bot/$execute` | [~] | Chặn bởi M1 (runtime Bot) | [cds-dicom/cds.md](cds-dicom/cds.md) |
+| 10 | `dicom` | [~] | Cần #4, #5; quyết định H1 đến H5 | [cds-dicom/dicom.md](cds-dicom/dicom.md) |
+| 11 | Chốt M1 đến M5 và H1 đến H5; lập kế hoạch mức C (`bots`, `workers`, `cloud`, `ai`) | [ ] | Quyết định của người dùng | [coverage-matrix.md](coverage-matrix.md) |
+| 12 | (một phần xong: B8 test hai tiến trình; B9 đã chạy thử `docker-compose.auth.yml` bằng Docker OK với auth + fhir-server + postgres; còn `dicomweb`, K8s) Đóng gói và chạy thành service: compose/K8s cho `fhir-server`, `auth`, `dicomweb`; `auth` cấp token cho `fhir-server` qua JWKS; kiểm đầu-cuối cả chuỗi | [ ] | Làm khi #1 xong; liên quan Q-SC-1 và `Principal.Membership` | [apps-auth.md](apps-auth.md) |
+| 12b | Tổ chức microservice theo nghiệp vụ, dùng chung một PostgreSQL (schema và role riêng cho từng service) | [ ] | D-DB-1, D-DB-2 và D-DB-3 đã chốt (D-DB-3: chưa tách `fhir-worker`, chờ đo tải); **P1, P2 và P3a xong (2026-11-22)**; còn D-DB-4 và D-DB-5 | [microservices-shared-db.md](microservices-shared-db.md) |
+| 12c | **Đo tải export song song với API** (quyết định có mở P3b `fhir-worker` hay không): chạy `export` lớn cùng lúc với tải API, ghi p95/p99 của API, CPU và bộ nhớ, so với đường cơ sở không có export | [ ] | Điều kiện mở lại P3b (D-DB-3). Cần chốt: kích thước dữ liệu mẫu, môi trường đo (máy cục bộ hay có máy riêng), ngưỡng "bị ảnh hưởng" (ví dụ p95 API tăng quá X%). Kết quả tính được ngay cho `FHIR_JOB_CONCURRENCY` | [microservices-shared-db.md](microservices-shared-db.md) mục 14 |
+
+## Ưu tiên 2: hardening, làm sau khi module đã chạy thành service
+
+| # | Việc | Trạng thái | Ghi chú | Chi tiết |
+|---|---|---|---|---|
+| 13 | **Khóa tài khoản theo số lần đăng nhập sai** | [ ] | Xem mục dưới | dưới |
+| 14 | Hạn mức dùng chung nhiều replica (Redis) thay cho bộ đếm trong bộ nhớ; tách limiter dùng chung ra `pkg` | [ ] | Hiện N replica thì tổng hạn mức gấp N lần, ở cả `fhir-server` và `auth` | |
+| 15 | Cấm tiền tố `fhir.*` trong scope client khai ở `auth` (client `client_credentials` xin được `fhir.admin`) | [x] | Xong cùng B2 (2026-11-21): `domain.ValidateRequestedScope`, có test đột biến | [auth/p3-oauth2-tokens.md](auth/p3-oauth2-tokens.md) |
+| 16 | Compartment (`patient/` scope, AccessPolicy `%patient`) ở `pkg/fhirauth`, `hiddenFields` và `interaction` | [ ] | Hiện token Patient/RelatedPerson không đọc được dữ liệu lâm sàng (policy dịch sang `deny`); claim chính sách mặc định ~5 KB | [auth/README.md](auth/README.md) mục 5.2 |
+
+Việc #15 thực chất là điều kiện của #1, không phải việc hậu kỳ; ghi ở đây để không bị quên nhưng phải làm cùng P3.
+
+### #13 Khóa tài khoản theo số lần đăng nhập sai
+
+Vì sao: hạn mức theo IP (đã có ở `auth`, 1 rps burst 10) chỉ làm chậm một IP; kẻ tấn công đổi IP vẫn dò được mật khẩu của một tài khoản cụ thể.
+
+Phạm vi đề xuất (chưa chốt, cần duyệt trước khi làm):
+- Đếm lần sai liên tiếp theo user (không theo IP); đạt ngưỡng (đề xuất 10) thì khóa tạm một khoảng (đề xuất 15 phút), thành công thì xóa bộ đếm.
+- Không lộ tài khoản có tồn tại hay không: email lạ vẫn trả lỗi chung như hiện nay, và việc khóa không đổi thông báo lỗi khi sai mật khẩu.
+- Lưu bộ đếm trong kho FHIR của `auth` (trường trên `User`) bằng `Mutate` có retry IfMatch, hoặc Redis nếu chạy nhiều replica; cần quyết định.
+- Phải xử lý hai vấn đề: kẻ tấn công cố ý khóa tài khoản người khác (DoS), và đua nhau khi nhiều yêu cầu song song (kiểm trên PostgreSQL như các test hiện có).
+- Có lệnh CLI mở khóa (`auth user unlock`), ghi nhật ký kiểm toán.
+
+Câu hỏi cần chốt: ngưỡng và thời gian khóa; khóa vĩnh viễn hay tự mở; lưu ở kho FHIR hay Redis; có gửi email thông báo khi bị khóa (cần `pkg/mailer`, việc #4).
+
+Lưu ý: không khẳng định Medplum có tính năng này; chưa đối chiếu với source Medplum 5.2.18, cần grep trước khi thiết kế.

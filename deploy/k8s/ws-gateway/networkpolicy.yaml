@@ -1,0 +1,32 @@
+# TÙY CHỌN, khuyến nghị (gateway hướng Internet, giữ dữ liệu y tế trong bộ nhớ). SỬA selector theo cụm TRƯỚC khi thêm vào kustomization
+# (CNI phải có hỗ trợ NetworkPolicy). Cho phép: vào từ ingress, ra tới DNS và Redis (cộng OTLP nếu bật metric). Chặn mọi thứ còn lại.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ws-gateway
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: ws-gateway
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx # ĐỔI (istio-ingress nếu dùng Istio)
+      ports:
+        - { port: 8000, protocol: TCP }
+  egress:
+    - to: # DNS
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - { port: 53, protocol: UDP }
+        - { port: 53, protocol: TCP }
+    - to: # Redis dùng chung với fhir-server
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: redis # ĐỔI
+      ports:
+        - { port: 6379, protocol: TCP }

@@ -1,0 +1,61 @@
+# Chế độ role migrate riêng (D-DB-4, docs/plans/microservices-shared-db.md): migration chạy bằng identity_migrate / fhir_migrate (có DDL), app chạy
+# bằng identity_app / fhir_app CHỈ có DML nên một lỗ hổng SQL injection không thể DROP hay ALTER bảng. Chồng lên docker-compose.yml:
+#   IDENTITY_DB_PASSWORD=... FHIR_DB_PASSWORD=... IDENTITY_MIGRATE_DB_PASSWORD=... FHIR_MIGRATE_DB_PASSWORD=... FHIR_JOB_SIGNING_KEY=... \
+#   docker compose -f docker-compose.yml -f docker-compose.auth.yml -f docker-compose.db-roles.yml up --build fhir-server auth postgres
+# Ở chế độ này KHÔNG có mật khẩu mặc định (khác dev): thiếu biến nào thì compose và script init đều dừng. Volume Postgres đã có thì chạy lại script init
+# (idempotent, chuyển chủ sở hữu bảng sang role migrate): docker compose exec postgres sh /docker-entrypoint-initdb.d/01-schemas.sh
+# Hai service *-migrate là tác vụ một lần (như Job của K8s): chạy `migrate up` bằng role migrate rồi thoát; app chỉ khởi động sau khi chúng thành công.
+x-auth-db: &auth-db
+  DATABASE_URL: postgres://identity_app:${IDENTITY_DB_PASSWORD:?đặt IDENTITY_DB_PASSWORD}@postgres:5432/${POSTGRES_DB:-trivita}?sslmode=disable
+  DATABASE_MIGRATE_URL: postgres://identity_migrate:${IDENTITY_MIGRATE_DB_PASSWORD:?đặt IDENTITY_MIGRATE_DB_PASSWORD}@postgres:5432/${POSTGRES_DB:-trivita}?sslmode=disable
+  DATABASE_REQUIRE_SCHEMA: "true"
+  DATABASE_AUTO_MIGRATE: "false"
+x-fhir-db: &fhir-db
+  DATABASE_URL: postgres://fhir_app:${FHIR_DB_PASSWORD:?đặt FHIR_DB_PASSWORD}@postgres:5432/${POSTGRES_DB:-trivita}?sslmode=disable
+  DATABASE_MIGRATE_URL: postgres://fhir_migrate:${FHIR_MIGRATE_DB_PASSWORD:?đặt FHIR_MIGRATE_DB_PASSWORD}@postgres:5432/${POSTGRES_DB:-trivita}?sslmode=disable
+  DATABASE_REQUIRE_SCHEMA: "true"
+  DATABASE_AUTO_MIGRATE: "false"
+services:
+  postgres:
+    environment:
+      DB_SEPARATE_MIGRATION_ROLES: "true"
+      IDENTITY_DB_PASSWORD: ${IDENTITY_DB_PASSWORD:?đặt IDENTITY_DB_PASSWORD}
+      FHIR_DB_PASSWORD: ${FHIR_DB_PASSWORD:?đặt FHIR_DB_PASSWORD}
+      IDENTITY_MIGRATE_DB_PASSWORD: ${IDENTITY_MIGRATE_DB_PASSWORD:?đặt IDENTITY_MIGRATE_DB_PASSWORD}
+      FHIR_MIGRATE_DB_PASSWORD: ${FHIR_MIGRATE_DB_PASSWORD:?đặt FHIR_MIGRATE_DB_PASSWORD}
+  auth:
+    environment: *auth-db
+    depends_on:
+      auth-migrate:
+        condition: service_completed_successfully
+  fhir-server:
+    environment: *fhir-db
+    depends_on:
+      fhir-migrate:
+        condition: service_completed_successfully
+  auth-migrate:
+    build:
+      context: .
+      dockerfile: apps/auth/Dockerfile
+      additional_contexts:
+        observability: ../trivita-observability-go
+    image: trivita-auth:local
+    command: ["migrate", "up"]
+    restart: "no"
+    environment: *auth-db
+    depends_on:
+      postgres:
+        condition: service_healthy
+  fhir-migrate:
+    build:
+      context: .
+      dockerfile: apps/fhir-server/Dockerfile
+      additional_contexts:
+        observability: ../trivita-observability-go
+    image: trivita-fhir-server:local
+    command: ["migrate", "up"]
+    restart: "no"
+    environment: *fhir-db
+    depends_on:
+      postgres:
+        condition: service_healthy

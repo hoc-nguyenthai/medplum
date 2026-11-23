@@ -1,0 +1,10 @@
+# Giới hạn số pod bị gỡ cùng lúc khi node drain/nâng cấp cụm: mỗi lần một pod, các socket của nó bind lại dần.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: ws-gateway
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ws-gateway

@@ -1,0 +1,9 @@
+# Ca FHIRPath chưa đạt: tên<TAB>lý do. Test fail nếu ca mới hỏng hoặc ca trong danh sách này nay đã đạt.
+# Cập nhật nhanh: UPDATE_KNOWN=1 go test ./pkg/fhirpath -run Conformance (rồi sửa lại lý do bằng tay).
+testConformsTo/testConformsTo	conformsTo() cần profile (StructureDefinition) lúc chạy, chưa hỗ trợ
+testDollar/testDollarOrderNotAllowed	children() trả về tập không có thứ tự; skip() trên đó phải báo lỗi semantic, chưa theo dõi tính có thứ tự
+testObservations/testPolymorphismAsB	cần kiểm tra kiểu tĩnh (Observation.value as Period không hợp lệ), engine chỉ kiểm tra lúc chạy
+testEquality/testEquality7	kỳ vọng của bộ test không có output (rỗng) cho (1|1) = (1|2|{}) trong khi theo đặc tả kết quả là false; nghi ngờ lỗi trong bộ test
+testNotEquivalent/testNotEquivalent19	name !~ name kỳ vọng true, mâu thuẫn với ~ trên cùng tập; nghi ngờ lỗi trong bộ test
+testRound/testRound2	3.14159.round(3) = 2 kỳ vọng true, sai về toán (phải là 3.142); lỗi trong bộ test
+testConformsTo/testConformsTo#2	conformsTo() cần profile (StructureDefinition) lúc chạy, chưa hỗ trợ

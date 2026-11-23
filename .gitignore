@@ -1,0 +1,30 @@
+# Build / test
+/bin/
+coverage.out
+coverage.html
+*.test
+
+# Cấu hình và dữ liệu local (giữ .env.example)
+.env
+*.db
+*.db-shm
+*.db-wal
+storage/
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+
+
+# medplum: bản tham chiếu để port sang Go, không commit (xem docs/)
+/medplum/
+
+# Node / TS (phòng khi cần chạy lại công cụ)
+node_modules/
+dist/
+.turbo/
+*.tsbuildinfo
+
+# CodeGraph
+.codegraph/

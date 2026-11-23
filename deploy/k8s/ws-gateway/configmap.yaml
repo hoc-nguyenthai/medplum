@@ -1,0 +1,28 @@
+# Cấu hình KHÔNG bí mật. Bí mật (FHIR_WS_SIGNING_KEY, REDIS_URL) nằm trong Secret ws-gateway-secrets (xem secret.example.yaml).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ws-gateway-config
+data:
+  ENVIRONMENT: production # staging/production siết cấu hình: bắt buộc REDIS_URL tường minh, cấm FHIR_WS_ALLOWED_ORIGINS=*
+  LOG_JSON: "true"
+  # Mẫu HOST của Origin được phép (không phải URL), cách nhau bằng dấu phẩy. ĐỔI.
+  FHIR_WS_ALLOWED_ORIGINS: app.example.org
+  # CIDR của pod ingress (ingress-nginx hoặc istio-ingressgateway) được tin khi đọc X-Forwarded-For. ĐỔI.
+  # SAI giá trị này thì mọi client bị coi là một IP và FHIR_WS_MAX_CONNS_PER_IP chặn nhầm tất cả: kiểm tra sau khi triển khai.
+  FHIR_WS_TRUSTED_PROXIES: 10.0.0.0/8
+  FHIR_WS_MAX_CONNS_PER_IP: "50"
+  FHIR_WS_RATE_LIMIT: "10"
+  # Số kết nối tối đa mỗi pod. Đo ở dev: ~55 KB RSS/socket sau khi kết nối, ~70-100 KB khi đã nhận tin (docs/runbook.md).
+  FHIR_WS_MAX_CONNECTIONS: "1000"
+  FHIR_WS_MAX_BINDINGS_PER_USER: "20"
+  FHIR_WS_HEARTBEAT: 30s
+  FHIR_WS_CLOSE_TIMEOUT: 5s
+  FHIR_WS_PRESENCE_TTL: 30s
+  # Tắt êm: SIGTERM -> readiness 503 -> chờ SHUTDOWN_DRAIN_DELAY -> đóng 1001 mọi socket (<= SHUTDOWN_TIMEOUT).
+  # terminationGracePeriodSeconds của Deployment PHẢI lớn hơn SHUTDOWN_DRAIN_DELAY + SHUTDOWN_TIMEOUT + OTEL_SHUTDOWN_TIMEOUT_MS (5s).
+  SHUTDOWN_DRAIN_DELAY: 5s
+  SHUTDOWN_TIMEOUT: 25s
+  # Metric kết nối (ws_gateway.*) đẩy qua OTLP khi bật; mặc định thư viện observability tắt metric.
+  # OTEL_METRICS_ENABLED: "true"
+  # OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: http://otel-collector:4318/v1/metrics

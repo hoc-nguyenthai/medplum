@@ -1,0 +1,32 @@
+# Cần metrics-server (hoặc adapter metric tùy biến). Bộ nhớ tỉ lệ với số socket nên là chỉ báo tốt hơn CPU; CPU chủ yếu tăng lúc fan-out.
+# Scale XUỐNG làm đứt socket của pod bị gỡ (client nhận 1001 và bind lại), nên rất thận trọng: cửa sổ ổn định dài, mỗi lần một pod.
+# Muốn scale theo SỐ KẾT NỐI thật (ws_gateway.connections) thì cần đưa metric đó vào Prometheus/KEDA: thư viện observability chỉ đẩy OTLP.
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: ws-gateway
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: ws-gateway
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: memory
+        target: { type: Utilization, averageUtilization: 70 }
+    - type: Resource
+      resource:
+        name: cpu
+        target: { type: Utilization, averageUtilization: 65 }
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      policies:
+        - { type: Pods, value: 2, periodSeconds: 60 }
+    scaleDown:
+      stabilizationWindowSeconds: 900
+      policies:
+        - { type: Pods, value: 1, periodSeconds: 300 }

@@ -1,0 +1,26 @@
+# Nối fhir-server với auth: fhir-server nhận access token do auth cấp (JWT, kiểm chữ ký bằng JWKS của auth).
+#   docker compose -f docker-compose.yml -f docker-compose.auth.yml --env-file apps/fhir-server/.env up --build fhir-server auth postgres
+# (đã chạy thử bằng Docker 2026-11-21: auth + fhir-server + postgres healthy, token client_credentials gọi được fhir-server; ngoài ra `make test-e2e`.)
+#
+# Lưu ý địa chỉ: AUTH_BASE_URL/issuer là địa chỉ CÔNG KHAI mà client thấy (http://localhost:8006), còn fhir-server tải JWKS qua mạng
+# compose (http://auth:8000). Hai địa chỉ khác nhau là bình thường; issuer phải khớp từng ký tự giữa hai bên.
+# Dev dùng khóa ký tạm trong bộ nhớ của auth (token mất hiệu lực khi auth khởi động lại, chỉ một replica). Production: AUTH_SIGNING_KEY_PATH
+# trỏ tới thư mục khóa do `auth keys generate` sinh, https cho mọi URL.
+services:
+  fhir-server:
+    environment:
+      FHIR_JWT_ISSUER: http://localhost:${AUTH_PORT_PUBLISHED:-8006}
+      FHIR_JWT_AUDIENCE: http://localhost:${AUTH_PORT_PUBLISHED:-8006}
+      FHIR_JWKS_URL: http://auth:8000/.well-known/jwks.json
+      FHIR_JOB_SIGNING_KEY: ${FHIR_JOB_SIGNING_KEY:?đặt FHIR_JOB_SIGNING_KEY (>= 32 ký tự)}
+      # JWT không dùng cùng token tĩnh: xóa mọi token tĩnh có thể đến từ apps/fhir-server/.env
+      FHIR_WRITE_TOKENS: ""
+      FHIR_READ_TOKENS: ""
+      FHIR_ADMIN_TOKENS: ""
+      FHIR_AUTH_DISABLED: "false"
+    depends_on:
+      auth:
+        condition: service_started
+  auth:
+    environment:
+      AUTH_BASE_URL: http://localhost:${AUTH_PORT_PUBLISHED:-8006}

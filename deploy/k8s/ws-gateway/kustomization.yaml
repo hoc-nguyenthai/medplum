@@ -1,0 +1,29 @@
+# ws-gateway: giữ websocket của Subscription. VÍ DỤ triển khai, KHÔNG phải cấu hình chính thức của hệ thống: mọi giá trị đánh dấu
+# `ĐỔI` phải sửa theo môi trường (image, origin, CIDR của ingress, Redis). Xem apps/ws-gateway/README.md và docs/runbook.md.
+#
+#   kubectl create namespace <ns>
+#   kubectl -n <ns> apply -f secret.example.yaml      # sau khi sửa giá trị; KHÔNG commit secret thật
+#   kubectl -n <ns> apply -k deploy/k8s/ws-gateway
+#
+# Overlay riêng (staging/production): `resources: [../../base-path]` rồi ghi đè image theo tên SAU khi base đã đổi, tức
+# `registry.example.org/trivita/ws-gateway`, không phải `trivita-ws-gateway`.
+#
+# Ingress: dùng MỘT trong ingress-nginx.yaml hoặc istio.yaml (không nằm trong kustomization vì phụ thuộc bộ ingress của cụm).
+# networkpolicy.yaml cũng tùy chọn (cần sửa selector theo cụm trước khi thêm vào resources).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+labels:
+  - pairs:
+      app.kubernetes.io/name: ws-gateway
+      app.kubernetes.io/part-of: trivita-fhir
+    includeSelectors: false
+resources:
+  - configmap.yaml
+  - deployment.yaml
+  - service.yaml
+  - hpa.yaml
+  - pdb.yaml
+images:
+  - name: trivita-ws-gateway
+    newName: registry.example.org/trivita/ws-gateway # ĐỔI
+    newTag: latest # ĐỔI: dùng tag cố định (digest) ở production
