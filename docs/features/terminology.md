@@ -10,7 +10,7 @@ Mở rộng ValueSet, tra cứu và xác thực mã, dịch ConceptMap, nhập C
 
 ## API contract
 
-- [fhir-operations.md](../api-contract/fhir-operations.md) (`$expand`, `$lookup`, `$validate-code`, `$subsumes`, `$translate`, `$import`)
+- [fhir-operations.md](../../apps/fhir-server/docs/api-contract/fhir-operations.md) (`$expand`, `$lookup`, `$validate-code`, `$subsumes`, `$translate`, `$import`)
 
 ## Ghi chú kỹ thuật và di chuyển
 

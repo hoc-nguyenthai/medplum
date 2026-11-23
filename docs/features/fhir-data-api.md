@@ -14,7 +14,7 @@ Lưu và truy xuất resource FHIR R4 theo REST chuẩn: tạo, đọc, sửa, v
 
 ## API contract
 
-- [fhir-rest.md](../api-contract/fhir-rest.md)
+- [fhir-rest.md](../../apps/fhir-server/docs/api-contract/fhir-rest.md)
 
 ## Ghi chú kỹ thuật và di chuyển
 

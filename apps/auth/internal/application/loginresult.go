@@ -16,7 +16,7 @@ type MembershipChoice struct {
 	Identifier []fhir.Identifier `json:"identifier,omitempty"`
 }
 
-// LoginResult là phản hồi sau mỗi bước đăng nhập (xem docs/api-contract/auth-dto.md): đúng một dạng trong năm dạng.
+// LoginResult là phản hồi sau mỗi bước đăng nhập (xem apps/auth/docs/api-contract/auth-dto.md): đúng một dạng trong năm dạng.
 type LoginResult struct {
 	Login             string             `json:"login"`
 	Code              string             `json:"code,omitempty"`

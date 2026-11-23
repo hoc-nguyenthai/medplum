@@ -1,6 +1,6 @@
 # Kế hoạch chi tiết P1 và P2: lõi dữ liệu, an toàn và đăng nhập lõi của `apps/auth`
 
-Trạng thái: **bản nháp chờ duyệt**. Chưa có code. Tiếp nối `docs/plans/apps-auth.md` (mục 3 D1 đến D6, mục 5 lộ trình) và `docs/api-contract/auth-dto.md`.
+Trạng thái: **bản nháp chờ duyệt**. Chưa có code. Tiếp nối `apps/auth/docs/plans/apps-auth.md` (mục 3 D1 đến D6, mục 5 lộ trình) và `apps/auth/docs/api-contract/auth-dto.md`.
 
 Quy ước trích dẫn:
 - `file:dòng` không có tiền tố là đường dẫn trong `/Users/hocnt84/Downloads/medplum/packages/server/src` (ví dụ `oauth/utils.ts:155` là `.../server/src/oauth/utils.ts` dòng 155). `core/...` là `/Users/hocnt84/Downloads/medplum/packages/core/src`.
@@ -615,6 +615,6 @@ Cỡ: **L** (khoảng 1 tuần) nếu `me` làm đầy đủ; **M đến L** n�
 | 2.5 | `POST /auth/method` | Bốn ca `method` xanh, gồm URL không có giao thức thì 400 |
 | 2.6 | `Authenticator` + `POST /auth/revoke` + `GET /auth/me` (theo quyết định P2.9 câu 1 và 2); `sessions` | Các ca revoke và me đã chọn xanh với `Authenticator` giả; ghi rõ ca nào chờ P3 |
 | 2.7 | `validateRecaptcha` middleware + fake `Recaptcha` (chưa gắn route) | Các ca recaptcha mức đơn vị xanh; không có lời gọi mạng |
-| 2.8 | E2E (kiểu `apps/fhir-server/internal/bootstrap/e2e_test.go`): seed project, user, membership, client, profile; `login` thì có `code`; nhiều membership thì `profile` thì có `code`; thu hồi; cập nhật `docs/api-contract/auth-dto.md` | E2E xanh trên SQLite; `auth-dto.md` sửa 4 điểm ở mục 0.6; swagger khớp |
+| 2.8 | E2E (kiểu `apps/fhir-server/internal/bootstrap/e2e_test.go`): seed project, user, membership, client, profile; `login` thì có `code`; nhiều membership thì `profile` thì có `code`; thu hồi; cập nhật `apps/auth/docs/api-contract/auth-dto.md` | E2E xanh trên SQLite; `auth-dto.md` sửa 4 điểm ở mục 0.6; swagger khớp |
 
 Thứ tự phụ thuộc trong P2: 2.1 trước hết; 2.2 cần P1.3 và P1.4; 2.3 cần 2.2; 2.4 cần 2.3; 2.5 độc lập; 2.6 cần P3 (hoặc fake) và quyết định P2.9; 2.7 độc lập; 2.8 cuối.

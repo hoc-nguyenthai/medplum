@@ -31,7 +31,7 @@ Với PostgreSQL: đặt `DATABASE_URL=postgres://...`; nhiều replica thì đ�
 
 ## Endpoint
 
-Gốc: `/fhir/R4`. Ví dụ đầy đủ trong [`test_main.http`](test_main.http). Hợp đồng API của service: [`docs/api-contract.md`](docs/api-contract.md) (bảng route sinh từ swagger); ví dụ JSON: [`docs/api-contract/fhir-server-go.md`](../../docs/api-contract/fhir-server-go.md); tham chiếu Medplum gốc: [`docs/api-contract`](../../docs/api-contract/README.md).
+Gốc: `/fhir/R4`. Ví dụ đầy đủ trong [`test_main.http`](test_main.http). Hợp đồng API của service: [`docs/api-contract.md`](docs/api-contract.md) (bảng route sinh từ swagger); chi tiết (REST, operation, ví dụ JSON): [`docs/api-contract/`](docs/api-contract/) (`fhir-rest.md`, `fhir-operations.md`, `fhir-server-go.md`).
 
 | Method và đường dẫn | Việc |
 |---|---|
@@ -282,7 +282,7 @@ curl "$BASE/fhir/R4/ValueSet/\$validate-code?url=http://example.org/vs/animals&c
 
 Vận hành (sao lưu, migrate, xoay khóa, job kẹt, sự cố thường gặp): [docs/runbook.md](../../docs/runbook.md).
 
-**Dùng token do `auth` cấp.** Đặt `FHIR_JWT_ISSUER` = `AUTH_ISSUER` (đúng từng ký tự), `FHIR_JWT_AUDIENCE` = `AUTH_AUDIENCE` (mặc định chính issuer), `FHIR_JWKS_URL` = địa chỉ fhir-server với tới được của `<auth>/.well-known/jwks.json` (https ở staging/production), `FHIR_JOB_SIGNING_KEY` (≥ 32 ký tự), và **để trống** mọi `FHIR_*_TOKENS`. Project của dữ liệu lấy từ claim `fhir_project`, quyền từ `scope` và `fhir_access_policy`. Token đã thu hồi vẫn được nhận cho tới khi hết hạn (`AUTH_ACCESS_TTL`, mặc định 15 phút). Chi tiết: [docs/api-contract/oauth.md](../../docs/api-contract/oauth.md); kiểm bằng `make test-e2e`; compose: `docker-compose.auth.yml`.
+**Dùng token do `auth` cấp.** Đặt `FHIR_JWT_ISSUER` = `AUTH_ISSUER` (đúng từng ký tự), `FHIR_JWT_AUDIENCE` = `AUTH_AUDIENCE` (mặc định chính issuer), `FHIR_JWKS_URL` = địa chỉ fhir-server với tới được của `<auth>/.well-known/jwks.json` (https ở staging/production), `FHIR_JOB_SIGNING_KEY` (≥ 32 ký tự), và **để trống** mọi `FHIR_*_TOKENS`. Project của dữ liệu lấy từ claim `fhir_project`, quyền từ `scope` và `fhir_access_policy`. Token đã thu hồi vẫn được nhận cho tới khi hết hạn (`AUTH_ACCESS_TTL`, mặc định 15 phút). Chi tiết: [oauth.md](../auth/docs/api-contract/oauth.md); kiểm bằng `make test-e2e`; compose: `docker-compose.auth.yml`.
 
 **Header bảo mật.** Mọi phản hồi (kể cả 401/429) mang `Cache-Control: no-store`, CSP `default-src 'none'`, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`, HSTS khi `FHIR_BASE_URL` là https (`pkg/httpsec`). Ngoại lệ: `/swagger/` (UI cần tải script).
 

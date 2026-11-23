@@ -204,5 +204,5 @@ Response `200`: `{ "preAuthorizedCode": string, "expiresAt": string (ISO) }`. D�
 
 ## Việc còn lại
 
-1. `external.ts` và `GET /auth/external`: xem [../plans/auth/p6-p7-external-admin.md](../plans/auth/p6-p7-external-admin.md) (chưa tự đối chiếu). Các điểm còn thiếu của `newuser`, reCAPTCHA và hạn mức IP: làm khi vào P4.
+1. `external.ts` và `GET /auth/external`: xem [../plans/auth/p6-p7-external-admin.md](../plans/p6-p7-external-admin.md) (chưa tự đối chiếu). Các điểm còn thiếu của `newuser`, reCAPTCHA và hạn mức IP: làm khi vào P4.
 2. Bằng chứng chạy thật: gọi thử một server Medplum, hoặc viết test hợp đồng khi route được port sang Go (`apps/auth`).

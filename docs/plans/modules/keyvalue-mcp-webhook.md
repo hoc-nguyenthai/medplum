@@ -1,6 +1,6 @@
 # Kế hoạch port `keyvalue`, `mcp`, `webhook` (Medplum v5.2.18 sang Go)
 
-Trạng thái: **bản nháp chờ duyệt**, chưa có code. Nguồn Medplum (chỉ đọc): `/Users/hocnt84/Downloads/medplum/packages/server/src` (gọi tắt `S/`). Đường dẫn Go tính từ gốc repo `trivita-codebase-v1` (module `trivita-fhir`). Quy ước: chỉ ghi điều đã đọc kèm `file:dòng`; chỗ chưa kiểm ghi "chưa xác nhận". Kế hoạch này nối tiếp `docs/plans/modules-survey.md` (mục 2, 7), `docs/plans/coverage-matrix.md`, `docs/plans/cds-dicom/cds.md`, `docs/plans/auth/`.
+Trạng thái: **bản nháp chờ duyệt**, chưa có code. Nguồn Medplum (chỉ đọc): `/Users/hocnt84/Downloads/medplum/packages/server/src` (gọi tắt `S/`). Đường dẫn Go tính từ gốc repo `trivita-codebase-v1` (module `trivita-fhir`). Quy ước: chỉ ghi điều đã đọc kèm `file:dòng`; chỗ chưa kiểm ghi "chưa xác nhận". Kế hoạch này nối tiếp `docs/plans/modules-survey.md` (mục 2, 7), `docs/plans/coverage-matrix.md`, `docs/plans/cds-dicom/cds.md`, `apps/auth/docs/plans/`.
 
 ## 0. Tóm tắt và thứ tự làm
 

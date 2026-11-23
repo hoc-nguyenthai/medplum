@@ -33,7 +33,7 @@ flowchart TD
   H --> I[access_token, refresh_token, id_token]
 ```
 
-Dạng phản hồi chính xác nằm ở [auth.md](../api-contract/auth.md#luồng-phản-hồi-đăng-nhập).
+Dạng phản hồi chính xác nằm ở [auth.md](../../apps/auth/docs/api-contract/auth.md#luồng-phản-hồi-đăng-nhập).
 
 ## 3. Ứng dụng bên thứ ba đăng nhập bằng OAuth2 (authorization code + PKCE)
 

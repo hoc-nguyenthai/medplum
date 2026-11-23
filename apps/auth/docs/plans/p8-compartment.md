@@ -1,6 +1,6 @@
 # P8 — Compartment Patient (`patient/` scope, `%patient`, `%profile`) qua hai service `auth` và `fhir-server`
 
-Thuộc task-list #16. Nguyên tắc: [../../service-principles.md](../../service-principles.md). Trạng thái: **đã duyệt 2026-11-23** (user: "đồng ý"): M0 làm trước, TTL token Patient giữ 15 phút, đợt này **chỉ đọc**. Tiến độ ở cuối file.
+Thuộc task-list #16. Nguyên tắc: [../../../../docs/service-principles.md](../../../../docs/service-principles.md). Trạng thái: **đã duyệt 2026-11-23** (user: "đồng ý"): M0 làm trước, TTL token Patient giữ 15 phút, đợt này **chỉ đọc**. Tiến độ ở cuối file.
 
 ## 1. Vấn đề
 
@@ -34,7 +34,7 @@ Không thêm service. Không đổi schema.
 | M2 | `fhir-server` (pkg) | OR nhiều criteria cùng loại (`Communication`) | unit, test âm |
 | M3 | `auth` | `PolicyClaim` giải tham số trong danh sách trắng; thiếu giá trị thì cấm loại; kiểm định dạng `Patient/<id>` | unit; chèn `&`, `,`; golden claim |
 | M4 | cả hai | e2e hai tiến trình: Patient A không đọc được B qua `_include`, `_revinclude`, history, `$everything`, batch | `e2e/`; đột biến |
-| M5 | tài liệu | `docs/api-contract/` (claim), runbook (thứ tự deploy), docs fhir-server | |
+| M5 | tài liệu | `apps/auth/docs/api-contract.md` (claim), runbook (thứ tự deploy), docs fhir-server | |
 
 M3 chỉ bật khi M0..M2 đã chạy ở môi trường đích.
 

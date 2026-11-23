@@ -10,7 +10,7 @@ Lưu nội dung nhị phân trên filesystem, S3, Azure Blob hoặc Google Cloud
 
 ## API contract
 
-- [fhir-operations.md](../api-contract/fhir-operations.md) (`Binary/:id/$presigned-url`, `$scan`)
+- [fhir-operations.md](../../apps/fhir-server/docs/api-contract/fhir-operations.md) (`Binary/:id/$presigned-url`, `$scan`)
 
 ## Ghi chú kỹ thuật và di chuyển
 

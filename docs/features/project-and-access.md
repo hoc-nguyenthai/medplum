@@ -11,8 +11,8 @@ Mỗi project là một tenant. Quản lý thành viên, mời user, client appl
 
 ## API contract
 
-- [admin.md](../api-contract/admin.md)
-- [others.md](../api-contract/others.md) (SCIM)
+- [admin.md](../../apps/auth/docs/api-contract/admin.md)
+- [admin.md](../../apps/auth/docs/api-contract/admin.md) (SCIM)
 
 ## Ghi chú kỹ thuật và di chuyển
 

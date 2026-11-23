@@ -1,6 +1,6 @@
 # OAuth2 / OpenID Connect (`apps/auth`)
 
-> **Trạng thái: ĐÃ CÀI trong `apps/auth`** (P3 B1 đến B8, cập nhật 2026-11-21). Đây là hợp đồng của server Go đang chạy, đã đối chiếu với source Medplum 5.2.18 và với test. Swagger của app: `/swagger/index.html` (chỉ ngoài production). Chi tiết quyết định, điểm lệch so với Medplum: [../plans/auth/p3-oauth2-tokens.md](../plans/auth/p3-oauth2-tokens.md). DTO của `/auth/*` (đăng nhập bằng mật khẩu): [auth-dto.md](auth-dto.md).
+> **Trạng thái: ĐÃ CÀI trong `apps/auth`** (P3 B1 đến B8, cập nhật 2026-11-21). Đây là hợp đồng của server Go đang chạy, đã đối chiếu với source Medplum 5.2.18 và với test. Swagger của app: `/swagger/index.html` (chỉ ngoài production). Chi tiết quyết định, điểm lệch so với Medplum: [../plans/auth/p3-oauth2-tokens.md](../plans/p3-oauth2-tokens.md). DTO của `/auth/*` (đăng nhập bằng mật khẩu): [auth-dto.md](auth-dto.md).
 >
 > Khác hợp đồng của Medplum TypeScript: `/oauth2/token` **chỉ** nhận `application/x-www-form-urlencoded` (JSON bị từ chối bằng `400` văn bản `Unsupported content type`, như source Medplum); `token-exchange`, mTLS, `/.well-known/api-catalog`, đường dẫn theo project (`/projects/{id}/...`) **không có**.
 
@@ -51,7 +51,7 @@ Quy tắc theo grant:
 ```
 `patient`, `encounter`, `fhirContext`, `need_patient_banner` chỉ có khi login có SMART launch hoặc profile là `Patient`.
 
-`hub.url` và `hub.topic` (FHIRcast) chỉ có khi **scope đã cấp** có một term bắt đầu bằng `fhircast/` (ví dụ `fhircast/*`) **và** `AUTH_FHIRCAST_HUB_URL` được cấu hình. `hub.url` là địa chỉ Hub trong cấu hình (nguyên văn, bỏ dấu `/` cuối). `hub.topic` là UUID **ổn định theo chủ thể của token** (user hoặc ClientApplication) chừng nào còn xin token ít nhất mỗi giờ (mỗi lần xin gia hạn), nên các ứng dụng của cùng một người dùng nhận cùng topic và tìm thấy nhau. Không lấy được topic (kho lỗi) thì **không cấp token** (`500 server_error`), giống Medplum, để client không nhận token thiếu `hub.topic` mà không biết vì sao không đồng bộ được. Xem [apps/ws-gateway/README.md](../../apps/ws-gateway/README.md) cho phía Hub.
+`hub.url` và `hub.topic` (FHIRcast) chỉ có khi **scope đã cấp** có một term bắt đầu bằng `fhircast/` (ví dụ `fhircast/*`) **và** `AUTH_FHIRCAST_HUB_URL` được cấu hình. `hub.url` là địa chỉ Hub trong cấu hình (nguyên văn, bỏ dấu `/` cuối). `hub.topic` là UUID **ổn định theo chủ thể của token** (user hoặc ClientApplication) chừng nào còn xin token ít nhất mỗi giờ (mỗi lần xin gia hạn), nên các ứng dụng của cùng một người dùng nhận cùng topic và tìm thấy nhau. Không lấy được topic (kho lỗi) thì **không cấp token** (`500 server_error`), giống Medplum, để client không nhận token thiếu `hub.topic` mà không biết vì sao không đồng bộ được. Xem [apps/ws-gateway/README.md](../../../ws-gateway/README.md) cho phía Hub.
 
 **Lỗi** (RFC 6749 §5.2, HTTP `400` kể cả lỗi client, như Medplum): `{"error": "...", "error_description": "..."}`. `error`: `invalid_request`, `invalid_grant`, `invalid_scope`, `access_denied`, `invalid_client` (chỉ pre-authorized_code), `server_error` (`500`, không lộ chi tiết).
 

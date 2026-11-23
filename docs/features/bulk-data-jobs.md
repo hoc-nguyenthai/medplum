@@ -10,8 +10,8 @@ Xuất dữ liệu lớn (`$export` ở mức hệ thống, Group, Patient) và 
 
 ## API contract
 
-- [fhir-operations.md](../api-contract/fhir-operations.md) (`$export`)
-- [fhir-rest.md](../api-contract/fhir-rest.md) (`/bulkdata/export/:id`, `/job/:id/status`)
+- [fhir-operations.md](../../apps/fhir-server/docs/api-contract/fhir-operations.md) (`$export`)
+- [fhir-rest.md](../../apps/fhir-server/docs/api-contract/fhir-rest.md) (`/bulkdata/export/:id`, `/job/:id/status`)
 
 ## Ghi chú kỹ thuật và di chuyển
 

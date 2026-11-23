@@ -11,8 +11,8 @@
 
 ## API contract
 
-- [auth.md](../api-contract/auth.md)
-- [oauth.md](../api-contract/oauth.md)
+- [auth.md](../../apps/auth/docs/api-contract/auth.md)
+- [oauth.md](../../apps/auth/docs/api-contract/oauth.md)
 
 ## Ghi chú kỹ thuật và di chuyển
 

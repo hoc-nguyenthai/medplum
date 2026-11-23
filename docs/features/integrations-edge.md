@@ -16,7 +16,7 @@ Kết nối hệ thống tại chỗ (HL7 v2, DICOM), đồng bộ ngữ cảnh 
 ## API contract
 
 - [others.md](../api-contract/others.md)
-- [fhir-operations.md](../api-contract/fhir-operations.md) (`Agent/$*`)
+- [fhir-operations.md](../../apps/fhir-server/docs/api-contract/fhir-operations.md) (`Agent/$*`)
 
 ## Ghi chú kỹ thuật và di chuyển
 

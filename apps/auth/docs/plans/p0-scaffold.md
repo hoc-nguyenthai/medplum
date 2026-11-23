@@ -1,6 +1,6 @@
 # P0 — Dựng khung `apps/auth`
 
-Thuộc kế hoạch tổng [../apps-auth.md](../apps-auth.md). Pha này **không có nghiệp vụ**: chỉ dựng khung chạy được, có test kiến trúc, swagger rỗng, health và cấu hình, để các pha sau chỉ thêm code vào chỗ đã định.
+Thuộc kế hoạch tổng [apps-auth.md](apps-auth.md). Pha này **không có nghiệp vụ**: chỉ dựng khung chạy được, có test kiến trúc, swagger rỗng, health và cấu hình, để các pha sau chỉ thêm code vào chỗ đã định.
 
 ## 1. Mục tiêu và tiêu chí hoàn thành
 

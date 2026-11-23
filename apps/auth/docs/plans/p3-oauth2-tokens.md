@@ -1,8 +1,8 @@
 # P3 — Token và OAuth2/OIDC cho `apps/auth`
 
-Trạng thái: **D-12 đến D-17 đã duyệt (2026-11-21). Đã cài B0 (phần cần thiết), B1 (khóa, JWKS, well-known, `auth keys`), B2 (`client_credentials`, Bearer, claim tương thích `fhirauth`) và B3 (`authorization_code` + PKCE), B4 (`refresh_token`) và B5 (`userinfo`, `introspect`, `logout`) và B6 (`/oauth2/authorize`) B7 (`private_key_jwt`, `pre-authorized_code`, `register`, `pkg/safehttp`) và B8 (tích hợp `fhir-server`, test hai tiến trình, hợp đồng `oauth.md`). Chưa cài B9.** Chi tiết bản cài và các điểm lệch so với bản nháp ở mục 11. Phạm vi file: kế hoạch chi tiết cho pha P3 của [apps-auth.md](../apps-auth.md).
+Trạng thái: **D-12 đến D-17 đã duyệt (2026-11-21). Đã cài B0 (phần cần thiết), B1 (khóa, JWKS, well-known, `auth keys`), B2 (`client_credentials`, Bearer, claim tương thích `fhirauth`) và B3 (`authorization_code` + PKCE), B4 (`refresh_token`) và B5 (`userinfo`, `introspect`, `logout`) và B6 (`/oauth2/authorize`) B7 (`private_key_jwt`, `pre-authorized_code`, `register`, `pkg/safehttp`) và B8 (tích hợp `fhir-server`, test hai tiến trình, hợp đồng `oauth.md`). Chưa cài B9.** Chi tiết bản cài và các điểm lệch so với bản nháp ở mục 11. Phạm vi file: kế hoạch chi tiết cho pha P3 của [apps-auth.md](apps-auth.md).
 
-Nguồn đã đọc (chỉ đọc, không sửa): `/Users/hocnt84/Downloads/medplum/packages/server/src/` gồm `oauth/{token,authorize,utils,keys,cert,clients,introspect,userinfo,logout,register,middleware,routes}.ts`, `oauth/README.md`, `wellknown.ts`, `fhir/smart.ts` (phần SMART configuration), `api-catalog.ts`, `util/url.ts`, `constants.ts`, `config/utils.ts`, `auth/utils.ts` (cookie), và các test `oauth/*.test.ts`, `wellknown.test.ts`. Phía Go đã đọc: `pkg/fhirauth/{jwt,principal,policy,grants}.go`, `apps/fhir-server/internal/config/config.go`, `pkg/fhirrouter/router.go` (`UpdateOptions.IfMatch`), `docs/api-contract/oauth.md`, `../echo-oauth2-server/README.md`.
+Nguồn đã đọc (chỉ đọc, không sửa): `/Users/hocnt84/Downloads/medplum/packages/server/src/` gồm `oauth/{token,authorize,utils,keys,cert,clients,introspect,userinfo,logout,register,middleware,routes}.ts`, `oauth/README.md`, `wellknown.ts`, `fhir/smart.ts` (phần SMART configuration), `api-catalog.ts`, `util/url.ts`, `constants.ts`, `config/utils.ts`, `auth/utils.ts` (cookie), và các test `oauth/*.test.ts`, `wellknown.test.ts`. Phía Go đã đọc: `pkg/fhirauth/{jwt,principal,policy,grants}.go`, `apps/fhir-server/internal/config/config.go`, `pkg/fhirrouter/router.go` (`UpdateOptions.IfMatch`), `apps/auth/docs/api-contract/oauth.md`, `../echo-oauth2-server/README.md`.
 
 Quy ước trích dẫn: `token.ts:223` là `oauth/token.ts` dòng 223; file khác ghi đủ đường dẫn tính từ `src/`. Chỗ chưa đọc hoặc chưa kiểm chứng ghi **"chưa xác nhận"**.
 
@@ -39,7 +39,7 @@ Nguồn route: `oauth/routes.ts:14-22`, `wellknown.ts:14-89`, mount ở `app.ts:
 | POST | `/oauth2/introspect` | Bearer | `routes.ts:21` |
 | POST | `/oauth2/register` | không | `routes.ts:22` |
 
-Cải chính hợp đồng: `docs/api-contract/oauth.md` ghi `/oauth2/token` nhận "hoặc JSON". Source không như vậy: `token.ts:97-100` trả `400` văn bản thuần `Unsupported content type` nếu không phải form-urlencoded (test `token.test.ts:259-265`). Cập nhật `oauth.md` ở bước B8 (mục 10).
+Cải chính hợp đồng: `apps/auth/docs/api-contract/oauth.md` ghi `/oauth2/token` nhận "hoặc JSON". Source không như vậy: `token.ts:97-100` trả `400` văn bản thuần `Unsupported content type` nếu không phải form-urlencoded (test `token.test.ts:259-265`). Cập nhật `oauth.md` ở bước B8 (mục 10).
 
 ---
 
@@ -336,7 +336,7 @@ Medplum **không** kiểm `exp` bắt buộc, `jti` dùng một lần, hay trầ
 
 - `refresh_token`, `patient`, `encounter`, `fhirContext` bị bỏ khỏi JSON khi `undefined`.
 - `patient`/`encounter` lấy từ `SmartAppLaunch` của Login, ưu tiên `identifier.value` (nếu có) rồi mới tới id tham chiếu (`token.ts:1128-1135`; test `token.test.ts:2159-2214`); nếu profile của membership là `Patient/...` thì `patient` bị ghi đè bằng id đó (`token.ts:1137-1139`; test `token.test.ts:1772-1814`). `need_patient_banner = !!patient`.
-- Khi scope chứa `fhircast/`: thêm `hub.url` và `hub.topic` (`token.ts:1142-1153`). **Ban đầu không port (mục 9); đã làm sau ở WS-9 / FC-6 (2026-11-22)**: xem `application/fhircast_hub.go`, `AUTH_FHIRCAST_HUB_URL`, [docs/api-contract/oauth.md](../../api-contract/oauth.md).
+- Khi scope chứa `fhircast/`: thêm `hub.url` và `hub.topic` (`token.ts:1142-1153`). **Ban đầu không port (mục 9); đã làm sau ở WS-9 / FC-6 (2026-11-22)**: xem `application/fhircast_hub.go`, `AUTH_FHIRCAST_HUB_URL`, [oauth.md](../api-contract/oauth.md).
 - `smart_style_url` trỏ vào `fhir/R4/.well-known/smart-styles.json`. Auth và fhir-server là hai app; Go dùng URL của chính auth (`<baseUrl>.well-known/smart-styles.json`), ghi vào mục lệch.
 
 ---
@@ -1023,7 +1023,7 @@ Cỡ chung của pha: **L** (khớp `apps-auth.md`; ước lượng thô 8 đế
 | B5 | S–M | `userinfo`, `introspect`, `logout` (patch/CAS-retry, thu hồi chuỗi nếu Q11), `ProfileReader` | Ca 7.10 xanh; `introspect` báo `inactive` ngay sau thu hồi dù access token chưa hết hạn |
 | B6 | M | `GET/POST /oauth2/authorize`: 14 bước, cookie phiên, `id_token_hint`, `prompt`, `max_age` hợp lệ, Login mới, `iss` | Ca 7.8 xanh; cần Q1 chốt (trang giả cho e2e) |
 | B7 | S–M | `private_key_jwt` (`safehttp`, JWKS cache, thử nhiều khóa, `exp`, `jti`), `pre-authorized_code`, `register` (client chuẩn từ cấu hình) | Ca 7.5, 7.6 và `register` xanh; test SSRF (`localhost`, IP riêng, HTTP) |
-| B8 | S | Tích hợp `fhir-server` và tài liệu: cấu hình `FHIR_JWT_ISSUER = AUTH_ISSUER`, `FHIR_JWT_AUDIENCE = <aud>`, `FHIR_JWKS_URL = <base>/.well-known/jwks.json`, `FHIR_JOB_SIGNING_KEY` (bắt buộc khi dùng JWKS, `apps/fhir-server/internal/config/config.go:291`), staging/production phải `https://` (`config.go:307`); e2e; sửa `docs/api-contract/oauth.md` (JSON không được chấp nhận ở `/oauth2/token`, thêm claim, trạng thái "đã cài") | E2E: đăng nhập (P2) → `code` → `/oauth2/token` → gọi `GET /fhir/R4/Patient` của `fhir-server` bằng token đó: `200` đúng project, `403` khi thiếu scope, `401` khi sai `iss`/`aud`/hết hạn; `docker-compose` có hai tiến trình chạy được; hợp đồng cập nhật |
+| B8 | S | Tích hợp `fhir-server` và tài liệu: cấu hình `FHIR_JWT_ISSUER = AUTH_ISSUER`, `FHIR_JWT_AUDIENCE = <aud>`, `FHIR_JWKS_URL = <base>/.well-known/jwks.json`, `FHIR_JOB_SIGNING_KEY` (bắt buộc khi dùng JWKS, `apps/fhir-server/internal/config/config.go:291`), staging/production phải `https://` (`config.go:307`); e2e; sửa `apps/auth/docs/api-contract/oauth.md` (JSON không được chấp nhận ở `/oauth2/token`, thêm claim, trạng thái "đã cài") | E2E: đăng nhập (P2) → `code` → `/oauth2/token` → gọi `GET /fhir/R4/Patient` của `fhir-server` bằng token đó: `200` đúng project, `403` khi thiếu scope, `401` khi sai `iss`/`aud`/hết hạn; `docker-compose` có hai tiến trình chạy được; hợp đồng cập nhật |
 | B9 | S | Rà soát bảo mật (mục 8), swagger khớp, chạy bộ OpenID conformance tuỳ chọn (cần Docker, như `oauth/README.md` mô tả, chưa xác nhận khả năng chạy ở môi trường Trivita), SonarQube | Mọi dòng mục 8 có test tương ứng; không còn mục "Sửa" chưa xử lý; coverage theo chuẩn repo |
 
 **E2E bước B8, cách làm:** `apps/` không import `internal` của nhau, nên test tích hợp đặt trong `apps/auth/internal/bootstrap` dùng `pkg/fhirauth.Verifier` (gói công khai) trỏ vào `httptest.Server` của auth để chứng minh tương thích; thêm một smoke test hai tiến trình (compose) cho `fhir-server` thật. Cấu hình `fhir-server` mẫu cho dev: bật `FHIR_JWT_ISSUER`, **không** dùng đồng thời token tĩnh hay `FHIR_AUTH_DISABLED` (`config.go:301`).
@@ -1045,7 +1045,7 @@ Cỡ chung của pha: **L** (khớp `apps-auth.md`; ước lượng thô 8 đế
 | B5 | Xong | `GET\|POST /oauth2/userinfo`, `POST /oauth2/introspect`, `GET\|POST /oauth2/logout` (Bearer). Chi tiết ở dưới |
 | B6 | Xong | `GET\|POST /oauth2/authorize`: 14 bước, cookie phiên, `id_token_hint`, `prompt`, `max_age`, Login mới, `iss`, thu hồi chuỗi `basedOn` ở logout. Chi tiết ở dưới |
 | B7 | Xong | `private_key_jwt` cho cả ba grant, `pre-authorized_code`, `POST /oauth2/register`; tách `pkg/safehttp` từ `pkg/fhirsub/ssrf.go`. Chi tiết ở dưới |
-| B8 | Xong | test `e2e/` chạy hai binary thật (`make test-e2e`); `docs/api-contract/oauth.md` viết lại theo bản cài; `docker-compose.auth.yml` (chưa chạy thử bằng Docker). Chi tiết ở dưới |
+| B8 | Xong | test `e2e/` chạy hai binary thật (`make test-e2e`); `apps/auth/docs/api-contract/oauth.md` viết lại theo bản cài; `docker-compose.auth.yml` (chưa chạy thử bằng Docker). Chi tiết ở dưới |
 | B9 | Xong (2026-11-21) | Rà soát bảo mật mục 8 (21/21 dòng có test), swagger khớp route, test trên PostgreSQL thật, chạy thử compose bằng Docker. Chi tiết ở dưới |
 
 Điểm lệch so với bản nháp (đã quyết khi cài):

@@ -37,7 +37,7 @@ Máy chủ MCP có hai transport: `ALL /mcp/stream` (streamable HTTP, không phi
 SCIM Users cho Okta: `GET/POST /scim/v2/Users`, `GET/PUT/PATCH/DELETE /scim/v2/Users/{id}`; xác thực Bearer và **bắt buộc admin project** (`verifyProjectAdmin`). Chuyển đổi hai chiều giữa SCIM user và `User` + `ProjectMembership` + hồ sơ (`Patient`/`Practitioner`/`RelatedPerson`), và đổi SCIM patch sang JSON Patch (`utils.ts`). Dữ liệu thuộc `auth`, nên làm cùng gói với P7 (quản trị project) hoặc ngay sau đó, trong app `auth`. Cần P3 (Bearer) và quyết định D-10 (nguồn hồ sơ, vì SCIM tạo hồ sơ lâm sàng).
 
 ### oauth (L)
-Là **`auth` P3**; đã có kế hoạch chi tiết ở `docs/plans/auth/p3-oauth2-tokens.md`. Không lặp lại ở đây.
+Là **`auth` P3**; đã có kế hoạch chi tiết ở `apps/auth/docs/plans/p3-oauth2-tokens.md`. Không lặp lại ở đây.
 
 ### webhook (S, bị chặn)
 `POST /webhook/{membershipId}` **không cần đăng nhập**, chạy một Bot với quyền của membership đó: membership phải thuộc một Bot, có access policy, Bot phải có `publicWebhook` và project phải đọc được Bot (`routes.ts`). README nói yêu cầu một trong năm header chữ ký (`X-Signature`, `X-HMAC-Signature`, `X-Cal-Signature-256`, Twilio...) và nói hỗ trợ cả GET, nhưng **handler không kiểm header chữ ký và router chỉ có POST**; có thể Bot tự kiểm, **chưa xác nhận ở nơi khác**. Toàn bộ giá trị nằm ở việc chạy Bot, nên phụ thuộc quyết định H3 (bộ thực thi) của kế hoạch CDS. Endpoint công khai chạy mã nên cần rà bảo mật riêng.
@@ -49,7 +49,7 @@ Một máy chủ WebSocket dispatch theo đường dẫn `/ws/{tên}`: `echo` (8
 Hub FHIRcast hai phiên bản: `/fhircast/STU2/` và `/fhircast/STU3/` (cộng bí danh `/hub/`), gồm route công khai, route bảo vệ chung và route riêng từng phiên bản; đăng ký lưu ở Redis kèm hạn lease 3600 giây, sự kiện đẩy qua WebSocket `/ws/fhircast`. Độc lập với phần còn lại, ưu tiên thấp.
 
 ### fhir (cần kiểm kê trước)
-37352 dòng trong 142 file: không thể "lập kế hoạch port" như một khối. Phần lõi (CRUD, tìm kiếm, lịch sử, patch, batch/transaction, GraphQL, `$export`, terminology cơ bản, job nền, Subscription rest-hook và websocket, nhiều project qua JWT) **đã có trong `fhir-server`**. Phần chưa có gồm khoảng 94 route operation ở `docs/api-contract/fhir-operations.md`, nhưng chúng thuộc nhiều nhóm rất khác nhau về giá trị và độ khó:
+37352 dòng trong 142 file: không thể "lập kế hoạch port" như một khối. Phần lõi (CRUD, tìm kiếm, lịch sử, patch, batch/transaction, GraphQL, `$export`, terminology cơ bản, job nền, Subscription rest-hook và websocket, nhiều project qua JWT) **đã có trong `fhir-server`**. Phần chưa có gồm khoảng 94 route operation ở `apps/fhir-server/docs/api-contract/fhir-operations.md`, nhưng chúng thuộc nhiều nhóm rất khác nhau về giá trị và độ khó:
 
 | Nhóm operation | Ví dụ | Ghi chú |
 |---|---|---|

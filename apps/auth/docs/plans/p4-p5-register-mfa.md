@@ -1,8 +1,8 @@
 # P4 và P5 — Đăng ký, mật khẩu, email và MFA cho `apps/auth`
 
-Thuộc kế hoạch tổng [../apps-auth.md](../apps-auth.md) (quyết định D1 đến D6; D4: cổng `Mailer`). Hợp đồng DTO: [../../api-contract/auth-dto.md](../../api-contract/auth-dto.md). Khung thư mục theo [p0-scaffold.md](p0-scaffold.md).
+Thuộc kế hoạch tổng [apps-auth.md](apps-auth.md) (quyết định D1 đến D6; D4: cổng `Mailer`). Hợp đồng DTO: [auth-dto.md](../api-contract/auth-dto.md). Khung thư mục theo [p0-scaffold.md](p0-scaffold.md).
 
-Trạng thái: **P4 và P5 đã duyệt (2026-11-22) và XONG** (P4: 4.1 đến 4.7; P5: 5.1 đến 5.6, xem mục "Tiến độ P5" cuối tài liệu). Chỉ ghi điều đã đọc trong source Medplum (bản `v5.2.18`, commit `98c2d22d`, xem [../../UPSTREAM.md](../../UPSTREAM.md)). Chỗ chưa đọc được ghi **"chưa xác nhận"**.
+Trạng thái: **P4 và P5 đã duyệt (2026-11-22) và XONG** (P4: 4.1 đến 4.7; P5: 5.1 đến 5.6, xem mục "Tiến độ P5" cuối tài liệu). Chỉ ghi điều đã đọc trong source Medplum (bản `v5.2.18`, commit `98c2d22d`, xem [../../../../docs/UPSTREAM.md](../../../../docs/UPSTREAM.md)). Chỗ chưa đọc được ghi **"chưa xác nhận"**.
 
 Quy ước trích dẫn: `file:dòng` tính từ `/Users/hocnt84/Downloads/medplum/packages/server/src/` (ví dụ `auth/newuser.ts:41`). Test cũng tính từ thư mục đó (`auth/newuser.test.ts:57`). Mã nguồn `@medplum/core` ghi đầy đủ `packages/core/src/...`.
 
@@ -1078,7 +1078,7 @@ Thiếu ca ở Medplum cần **bổ sung** ở Go (không có trong source): (1)
 
 Hệ quả toán học: vì lần sai thứ 5 thu hồi login và `assertMfaLoginActive` chạy trước `reserve`, nhánh "login `>= 5`" của script chỉ chạm tới khi có nhiều yêu cầu đang chạy đồng thời; chính vì vậy việc đặt chỗ phải nguyên tử. Lần sai thứ 20 của user chặn cả các login khác của user đó 10 phút (từ lần tăng đầu tiên). Mã đăng ký offer (`enrollSecret`) cũng đi qua cùng bộ đếm.
 
-### Đề xuất cập nhật `docs/api-contract/auth-dto.md` (thay các mục "chưa đọc")
+### Đề xuất cập nhật `apps/auth/docs/api-contract/auth-dto.md` (thay các mục "chưa đọc")
 
 Thay dòng "Giới hạn thử MFA (`mfalimit.ts`) và cách sinh secret TOTP: **chưa đọc**." bằng:
 

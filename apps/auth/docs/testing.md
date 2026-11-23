@@ -16,7 +16,7 @@ Cập nhật 2026-11-23. Bốn tầng test theo [service-independence.md](../../
 - `domain`: luật thuần (mật khẩu, PKCE, scope SMART, IP rules, vòng đời `UserSecurityRequest`, MFA helper, SCIM).
 - `application`: use case trên cổng giả và kho bộ nhớ (đăng nhập, membership, token, refresh, MFA, đăng ký, SCIM, đăng nhập ngoài, email).
 - `infrastructure`: `store` có bộ test dùng chung ở `store/storetest` (chạy được trên bộ nhớ, SQLite, PostgreSQL).
-- `bootstrap` và `presentation/httpapi`: test HTTP qua Echo (`*_http_test.go`, `oauth_*_test.go`), gồm các test **bảo mật** (`bootstrap/security_controls_test.go`, `application/security_p4_test.go`; README của app gọi bộ cho đăng ký, mật khẩu, thư là S1 đến S17, kế hoạch ở [p4-p5-register-mfa.md](../../../docs/plans/auth/p4-p5-register-mfa.md)) và test khởi động (`container_test.go`).
+- `bootstrap` và `presentation/httpapi`: test HTTP qua Echo (`*_http_test.go`, `oauth_*_test.go`), gồm các test **bảo mật** (`bootstrap/security_controls_test.go`, `application/security_p4_test.go`; README của app gọi bộ cho đăng ký, mật khẩu, thư là S1 đến S17, kế hoạch ở [p4-p5-register-mfa.md](plans/p4-p5-register-mfa.md)) và test khởi động (`container_test.go`).
 
 Cấu hình: `internal/config/config_test.go` (22 hàm) kiểm giá trị mặc định và các ca lỗi của `FromEnv`.
 

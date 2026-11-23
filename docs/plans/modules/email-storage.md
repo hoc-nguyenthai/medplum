@@ -2,7 +2,7 @@
 
 Nguồn: Medplum v5.2.18, `~/Downloads/medplum/packages/server/src` (chỉ đọc). Mọi `file:dòng` bên dưới là **tương đối với thư mục đó** nếu không ghi khác; `apps/...` và `pkg/...` là đường dẫn trong repo này. Đích: monorepo Go `trivita-fhir`.
 
-Quy ước: điều **đọc thấy trong source** ghi kèm `file:dòng`; điều **đề xuất của tôi** ghi rõ "đề xuất"; điều không xác nhận được ghi "chưa xác nhận". Tài liệu này là kế hoạch, không có thay đổi mã nào đi kèm. Tài liệu nền đã đọc: `docs/plans/modules-survey.md` (mục 2, 7), `docs/plans/coverage-matrix.md`, `docs/plans/cds-dicom/README.md` và `dicom.md`, `docs/plans/auth/README.md` (D-4) và `p4-p5-register-mfa.md`, `architecture_test.go`.
+Quy ước: điều **đọc thấy trong source** ghi kèm `file:dòng`; điều **đề xuất của tôi** ghi rõ "đề xuất"; điều không xác nhận được ghi "chưa xác nhận". Tài liệu này là kế hoạch, không có thay đổi mã nào đi kèm. Tài liệu nền đã đọc: `docs/plans/modules-survey.md` (mục 2, 7), `docs/plans/coverage-matrix.md`, `docs/plans/cds-dicom/README.md` và `dicom.md`, `apps/auth/docs/plans/README.md` (D-4) và `p4-p5-register-mfa.md`, `architecture_test.go`.
 
 Phạm vi Medplum đã đọc đủ: `email/{email,routes,utils}.ts` + 3 file test; `storage/{base,filesystem,loader,presign,routes,types,utils}.ts` + `routes.test.ts`, `filesystem.test.ts`; `cloud/aws/{storage,email,config}.ts`, `cloud/azure/storage.ts`, `cloud/gcp/storage.ts` (đọc đủ để quyết định bỏ); `fhir/binary.ts` + `binary.test.ts`; `fhir/operations/binary-presigned-url.ts` + test; `fhir/operations/binary-scan.ts`; `fhir/rewrite.ts` + `rewrite.test.ts`; `config/{types,utils,loader}.ts` (các khóa liên quan); `util/url.ts`, `util/validator.ts`; phần liên quan trong `app.ts`, `fhir/response.ts`, `fhir/repo.ts` (Binary).
 
@@ -65,7 +65,7 @@ Sự thật đã kiểm trong repo:
 |---|---|---|
 | Có `net/smtp`? | `grep -rn 'net/smtp' --include='*.go' apps pkg` | 0 dòng |
 | Có gói mailer, SMTP? | `grep -rniE 'mailer\|smtp\|go-mail\|gomail' --include='*.go' apps pkg` | 1 dòng, chỉ là chú thích: `apps/auth/internal/bootstrap/container.go:2` ("Hạ tầng mới (kho, hasher, mailer...)") |
-| Có thư viện gửi thư trong `go.mod`/`go.sum`? | `grep -n -iE 'go-mail\|gomail\|jordan-wright\|aws-sdk\|minio\|cloud.google\|azure' go.mod go.sum` | 0 dòng. Thư viện `wneessen/go-mail` (ứng viên trong `docs/plans/auth/p4-p5-register-mfa.md:294`) **ngoài source, chưa kiểm** |
+| Có thư viện gửi thư trong `go.mod`/`go.sum`? | `grep -n -iE 'go-mail\|gomail\|jordan-wright\|aws-sdk\|minio\|cloud.google\|azure' go.mod go.sum` | 0 dòng. Thư viện `wneessen/go-mail` (ứng viên trong `apps/auth/docs/plans/p4-p5-register-mfa.md:294`) **ngoài source, chưa kiểm** |
 | Có chống SSRF dùng lại được? | đọc `pkg/fhirsub/ssrf.go` | Có `blocked` (loopback, private, link-local, multicast, unspecified, CGNAT `100.64.0.0/10`), `checkEndpoint`, `newClient` (chặn ở `Dialer.Control` trên IP đã phân giải, không proxy, `CheckRedirect` trả `ErrUseLastResponse`): **đều chưa xuất khẩu**; thiếu `198.18.0.0/15` mà Medplum chặn riêng (`util/url.ts:196-197`), thiếu `0.0.0.0/8`, `240.0.0.0/4`, dải tài liệu |
 | Có route email? | `grep -rn 'email/v1' --include='*.go' apps pkg` (0 dòng; đối chiếu thêm `docs/plans/modules-survey.md:10` ghi "chưa có") | không |
 

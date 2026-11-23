@@ -10,7 +10,7 @@ Các operation gắn với nghiệp vụ lâm sàng và vận hành phòng khám
 
 ## API contract
 
-- [fhir-operations.md](../api-contract/fhir-operations.md)
+- [fhir-operations.md](../../apps/fhir-server/docs/api-contract/fhir-operations.md)
 
 ## Ghi chú kỹ thuật và di chuyển
 

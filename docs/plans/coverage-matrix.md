@@ -6,7 +6,7 @@ Trạng thái: **chưa đủ.** (Cập nhật: nhóm mức B đã có kế hoạ
 
 | Khu vực | Dòng | Mức | Ở đâu / ghi chú |
 |---|---|---|---|
-| `auth` | 3858 | A | [auth/](auth/README.md); **đã cài** P0 đến P6, 7.0 (CLI), P7 HTTP một phần; còn B9 (rà soát bảo mật) |
+| `auth` | 3858 | A | [auth/](../../apps/auth/docs/plans/README.md); **đã cài** P0 đến P6, 7.0 (CLI), P7 HTTP một phần; còn B9 (rà soát bảo mật) |
 | `oauth` | 4267 | A | `auth` P3, **đã cài** (B1 đến B8) |
 | `admin` | 1926 | A (hoãn) | `auth` P7; CLI 7.0 thay phần tối thiểu |
 | `cds` | 82 | A | [cds-dicom/cds.md](cds-dicom/cds.md); chặn bởi quyết định runtime Bot |

@@ -1,6 +1,6 @@
 # fhir-server: hợp đồng API
 
-Cập nhật 2026-11-23. **Chỉ mô tả phần `fhir-server` đang phục vụ.** Tài liệu tham chiếu Medplum gốc (nhiều thứ chưa cài, có nhãn "CHƯA CÀI") nằm ở [docs/api-contract/](../../../docs/api-contract/).
+Cập nhật 2026-11-23. **Chỉ mô tả phần `fhir-server` đang phục vụ.** Tài liệu chi tiết (tham chiếu Medplum gốc: REST, 113 operation, ví dụ JSON; có nhãn "CHƯA CÀI" ở phần chưa port) nằm ở thư mục [api-contract/](api-contract/) cạnh tệp này.
 
 | Nguồn | Vai trò |
 |---|---|
@@ -8,7 +8,7 @@ Cập nhật 2026-11-23. **Chỉ mô tả phần `fhir-server` đang phục vụ
 | Tệp này | Quy ước chung và bảng route; bảng **sinh từ `swagger.json`** |
 | `GET /fhir/R4/metadata` | `CapabilityStatement` do server phát lúc chạy: danh sách loại resource, search param từng loại, interaction đã hỗ trợ. **Nguồn chuẩn của "server hỗ trợ gì" ở mức FHIR** |
 | `/swagger/index.html`, `/swagger/doc.json` | Cùng spec, xem trực tiếp |
-| [docs/api-contract/fhir-server-go.md](../../../docs/api-contract/fhir-server-go.md) | Ví dụ JSON thật của từng route (viết tay) |
+| [fhir-server-go.md](api-contract/fhir-server-go.md) | Ví dụ JSON thật của từng route (viết tay) |
 
 **Giới hạn của việc kiểm tự động.** Router FHIR (`/fhir/R4/...`) là một `http.Handler` gắn bằng wildcard vào Echo (`pkg/fhirrouter`), nên Echo không liệt kê được từng route của nó. Vì vậy:
 
@@ -107,4 +107,4 @@ Mỗi nhóm là một `tag` của swagger. Loại resource là tham số đườ
 ## 5. Ngoài bảng
 
 - `GET /healthz` (liveness), `GET /readyz` (readiness: `{"ready":true,"checks":{...}}`, `503` cùng dạng khi chưa sẵn sàng).
-- Subscription websocket do `ws-gateway` phục vụ khi `FHIR_WS_MODE=issuer`; hợp đồng ở [apps/ws-gateway/docs/api-contract.md](../../ws-gateway/docs/api-contract.md).
+- Subscription websocket do `ws-gateway` phục vụ khi `FHIR_WS_MODE=issuer`; hợp đồng ở [api-contract.md](../../ws-gateway/docs/api-contract.md).

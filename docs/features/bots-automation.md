@@ -12,8 +12,8 @@ Chạy mã tùy biến của khách hàng phản ứng với sự kiện hoặc 
 
 ## API contract
 
-- [fhir-rest.md](../api-contract/fhir-rest.md) (`Bot/$execute`)
-- [fhir-operations.md](../api-contract/fhir-operations.md) (`Bot/$init`, `Bot/:id/$deploy`)
+- [fhir-rest.md](../../apps/fhir-server/docs/api-contract/fhir-rest.md) (`Bot/$execute`)
+- [fhir-operations.md](../../apps/fhir-server/docs/api-contract/fhir-operations.md) (`Bot/$init`, `Bot/:id/$deploy`)
 - [others.md](../api-contract/others.md) (CDS, webhook)
 
 ## Ghi chú kỹ thuật và di chuyển

@@ -13,8 +13,8 @@ Công cụ cho vận hành: migration, reindex, vacuum, kiểm tra index, thốn
 
 ## API contract
 
-- [admin.md](../api-contract/admin.md) (`/admin/super/*`)
-- [fhir-operations.md](../api-contract/fhir-operations.md) (`$db-*`, `$explain`)
+- [admin.md](../../apps/auth/docs/api-contract/admin.md) (`/admin/super/*`)
+- [fhir-operations.md](../../apps/fhir-server/docs/api-contract/fhir-operations.md) (`$db-*`, `$explain`)
 
 ## Ghi chú kỹ thuật và di chuyển
 

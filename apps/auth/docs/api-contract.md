@@ -1,13 +1,13 @@
 # auth: hợp đồng API
 
-Cập nhật 2026-11-23. **Chỉ mô tả phần `auth` đang phục vụ.** Route của Medplum chưa port không có ở đây (tài liệu tham chiếu Medplum gốc, có nhãn "CHƯA CÀI", nằm ở [docs/api-contract/](../../../docs/api-contract/)).
+Cập nhật 2026-11-23. **Chỉ mô tả phần `auth` đang phục vụ.** Route của Medplum chưa port không có ở đây. Tài liệu chi tiết của chính auth (đăng ký, DTO, OAuth2, admin, SCIM, email) nằm ở thư mục [api-contract/](api-contract/) cạnh tệp này.
 
 | Nguồn | Vai trò |
 |---|---|
 | `swagger.json` / `swagger.yaml` (cùng thư mục) | **Nguồn chuẩn** của route, tham số, DTO (`definitions`). Sinh từ annotation: `make swagger APP=auth` |
 | Tệp này | Quy ước chung và bảng route; bảng **sinh từ `swagger.json`** |
 | `/swagger/index.html`, `/swagger/doc.json` | Cùng spec, xem trực tiếp (tắt ở staging/production) |
-| [docs/api-contract/auth-dto.md](../../../docs/api-contract/auth-dto.md), [oauth.md](../../../docs/api-contract/oauth.md), [admin.md](../../../docs/api-contract/admin.md), [others.md](../../../docs/api-contract/others.md) | Diễn giải, ví dụ JSON và luồng (viết tay, đã đối chiếu source Medplum) |
+| [auth-dto.md](api-contract/auth-dto.md), [oauth.md](api-contract/oauth.md), [admin.md](api-contract/admin.md), [email.md](api-contract/email.md) | Diễn giải, ví dụ JSON và luồng (viết tay, đã đối chiếu source Medplum) |
 
 **Ba test giữ hợp đồng không lệch** (đỏ khi lệch):
 
@@ -40,7 +40,7 @@ Cột "Xác thực" trong bảng route chỉ có hai giá trị là `công khai`
 
 | Phạm vi | Định dạng | Ghi chú |
 |---|---|---|
-| `/auth/*`, `/admin/*`, `/email/*` | `OperationOutcome` (FHIR) | cấu trúc: `fhir.OperationOutcome` trong `swagger.json`; ví dụ ở [auth-dto.md](../../../docs/api-contract/auth-dto.md) |
+| `/auth/*`, `/admin/*`, `/email/*` | `OperationOutcome` (FHIR) | cấu trúc: `fhir.OperationOutcome` trong `swagger.json`; ví dụ ở [auth-dto.md](api-contract/auth-dto.md) |
 | `/oauth2/*` | `{"error","error_description"}` (RFC 6749 §5.2) | HTTP `400` kể cả lỗi client, như Medplum; riêng `userinfo`, `introspect`, `logout` trả `401` khi thiếu hoặc sai Bearer |
 | `/scim/v2/*` | `scim.Error` (RFC 7644) | |
 | Hạn mức vượt | `429` + `Retry-After` + `OperationOutcome` (`throttled`) | MFA còn thêm header `rate-limit-reset` |

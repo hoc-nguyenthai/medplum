@@ -1,33 +1,22 @@
-# API Contract (tham chiếu Medplum gốc)
+# API Contract
 
-> **Hợp đồng của từng service Go nằm cạnh service**, chỉ gồm phần ĐÃ CÀI và có test chống lệch: [auth](../../apps/auth/docs/api-contract.md), [fhir-server](../../apps/fhir-server/docs/api-contract.md), [ws-gateway](../../apps/ws-gateway/docs/api-contract.md). Thư mục này là tham chiếu Medplum gốc (nhiều thứ chưa cài) và các diễn giải, ví dụ JSON dài.
+**Hợp đồng API nằm cạnh từng service** và chỉ mô tả phần service đó đang phục vụ. Thư mục này chỉ còn chỗ cho phần **chưa có service nào nhận**.
 
-Hợp đồng API của `medplum-server`. Các bảng route được **sinh tự động từ mã nguồn** (`docs/_generator/gen_docs.py`, chạy lại được khi còn thư mục `medplum/`); không sửa tay.
+| Service | Hợp đồng (bảng route sinh từ swagger, có test chống lệch) | Tài liệu chi tiết (tham chiếu Medplum, DTO, ví dụ) |
+|---|---|---|
+| `auth` | [api-contract.md](../../apps/auth/docs/api-contract.md) | [docs/](../../apps/auth/docs/api-contract/): `auth.md` (đăng ký, đăng nhập, MFA, mật khẩu), `auth-dto.md` (DTO của `/auth`), `oauth.md` (OAuth2/OIDC, token, well-known), `admin.md` (quản trị project và SCIM), `email.md` (`/email/v1/send`) |
+| `fhir-server` | [api-contract.md](../../apps/fhir-server/docs/api-contract.md) | [docs/](../../apps/fhir-server/docs/api-contract/): `fhir-rest.md` (CRUD, search, history, batch, GraphQL), `fhir-operations.md` (113 operation `$...`), `fhir-server-go.md` (DTO và ví dụ JSON của phần đã cài) |
+| `ws-gateway` | [api-contract.md](../../apps/ws-gateway/docs/api-contract.md) (viết tay, không có OpenAPI) | (không có) |
+| Chưa thuộc service nào | [others.md](others.md) | CDS Hooks, DICOMweb, key-value, webhook, MCP, Agent (CHƯA CÀI) |
 
-Bản đầy đủ, luôn khớp code, do chính server phát ra lúc chạy:
+Các tệp chi tiết ở cột phải **mô tả server Medplum TypeScript gốc** là chính, có chỗ đánh dấu phần đã cài; hợp đồng của server Go đang chạy là tệp ở cột giữa.
 
-- `GET /.well-known/api-catalog`: danh mục API.
-- OpenAPI: sinh từ `server/src/openapi.ts` và `OperationDefinition`.
-- `GET /fhir/R4/metadata`: CapabilityStatement.
-
-| Tài liệu | Phạm vi |
-|---|---|
-| [fhir-server-go.md](fhir-server-go.md) | **Đã cài trong Go**: DTO request/response và ví dụ JSON thật (viết tay, không sinh) |
-| [fhir-rest.md](fhir-rest.md) | CRUD, search, history, batch, GraphQL |
-| [fhir-operations.md](fhir-operations.md) | 113 operation `$...` |
-| [auth-dto.md](auth-dto.md) | DTO request/response của `/auth` (viết tay, đã đối chiếu source Medplum) |
-| [auth.md](auth.md) | Đăng ký, đăng nhập, MFA, mật khẩu |
-| [oauth.md](oauth.md) | OAuth2/OIDC, token, well-known của `apps/auth` (ĐÃ CÀI) và cách nối với fhir-server |
-| [admin.md](admin.md) | Quản trị project và super admin |
-| [others.md](others.md) | CDS, email, keyvalue, webhook, MCP, SCIM, FHIRcast, WebSocket, DICOM |
+Bản đầy đủ, luôn khớp code của từng service, do chính service phát ra lúc chạy: `GET /swagger/doc.json` (auth, fhir-server, trừ staging/production), `GET /fhir/R4/metadata` (CapabilityStatement của fhir-server).
 
 ## Quy ước chung
 
-- Gốc có thể kèm tiền tố `/api/` hoặc `/projects/:projectId/` (cùng một router).
-- Xác thực: `Authorization: Bearer <access_token>` (OAuth2). Tài khoản máy dùng `client_credentials`.
+- Xác thực: `Authorization: Bearer <access_token>` (OAuth2, token do `auth` cấp). Tài khoản máy dùng `client_credentials`.
 - Lỗi FHIR: `OperationOutcome`. Lỗi OAuth: `{error, error_description}`. Lỗi auth/admin: `OperationOutcome`.
-- Giới hạn: rate limit theo IP và theo project (`429`), kích thước JSON theo `maxJsonSize`.
+- Giới hạn: rate limit theo IP (`429`), kích thước JSON giới hạn.
 
-> `fhir-server-go.md` viết tay nên không bị `gen_docs.py` ghi đè; các file còn lại có thể bị ghi đè khi chạy lại generator (cần thư mục `medplum/`), khi đó phải gắn lại nhãn "CHƯA CÀI".
-
-> `apps/auth` (port từ Medplum, đang làm): hợp đồng đích là [auth-dto.md](auth-dto.md); swagger của app ở `apps/auth/docs`; OAuth2/OIDC xem [oauth.md](oauth.md).
+> Các tệp chi tiết trước đây do `docs/_generator/gen_docs.py` sinh từ thư mục `medplum/`; sau khi tách ra từng service chúng là tài liệu viết tay, **không còn được sinh tự động** (chạy lại generator sẽ không ghi vào vị trí mới).

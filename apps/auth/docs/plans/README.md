@@ -1,6 +1,6 @@
 # Kế hoạch `apps/auth`: tổng hợp
 
-Trạng thái: **P0, P1, bước 7.0 (CLI vận hành) và P2 (đăng nhập lõi) đã làm xong** (xem `apps/auth/README.md`); các pha còn lại chưa làm. Các đề xuất ở mục 5 đã được duyệt toàn bộ ngày 2026-11-21. Đây là bản tổng hợp của kế hoạch tổng [../apps-auth.md](../apps-auth.md) và năm kế hoạch chi tiết bên dưới. Đọc file này trước, vào file chi tiết khi cần số dòng source, thuật toán hoặc danh sách ca test.
+Trạng thái (cập nhật 2026-11-23): **P0 đến P7 đã làm** (kể cả đăng ký và mật khẩu, MFA, OAuth2/OIDC, đăng nhập ngoài, `/admin/projects/*`, SCIM, email); **P8 (compartment Patient) đang làm**, tiến độ ở cuối [p8-compartment.md](p8-compartment.md). Trạng thái chi tiết từng tính năng: [../../README.md](../../README.md). Bảng pha và ước lượng bên dưới là kế hoạch ban đầu, giữ để tra cứu quyết định và lý do. Các đề xuất ở mục 5 đã được duyệt toàn bộ ngày 2026-11-21. Đây là bản tổng hợp của kế hoạch tổng [apps-auth.md](apps-auth.md) và các kế hoạch chi tiết cùng thư mục. Đọc file này trước, vào file chi tiết khi cần số dòng source, thuật toán hoặc danh sách ca test.
 
 | File | Nội dung | Cỡ (ước lượng của người viết) |
 |---|---|---|
@@ -87,7 +87,7 @@ Cột "Chặn" ghi bước bị chặn nếu chưa chốt. Cột "Đề xuất" 
 | # | Quyết định | Đề xuất | Chặn |
 |---|---|---|---|
 | D-1 | Engine OAuth2: tự port flow Medplum (mượn kỹ thuật bảo mật của echo-oauth2-server) hay bọc thư viện | Tự port | P3 |
-| D-2 | Kho dữ liệu: `pkg/fhirstore`, **database riêng** (đổi 2026-11-22: **schema riêng + role riêng** trong database dùng chung, xem [microservices-shared-db.md](../microservices-shared-db.md), D-DB-1 và D-DB-2) | Có | P1 |
+| D-2 | Kho dữ liệu: `pkg/fhirstore`, **database riêng** (đổi 2026-11-22: **schema riêng + role riêng** trong database dùng chung, xem [microservices-shared-db.md](../../../../docs/plans/microservices-shared-db.md), D-DB-1 và D-DB-2) | Có | P1 |
 | D-3 | Làm `/admin/*` HTTP: hoãn, chỉ CLI 7.0 | Hoãn | P7 |
 | D-4 | Email, `Mailer` adapter đầu tiên | `log` và `fake`; nhà cung cấp thật chốt sau | P4 |
 | D-5 | Cho `internal/domain` import `pkg/fhir`; luật mới trong `architecture_test.go` | Cho phép | P0 |

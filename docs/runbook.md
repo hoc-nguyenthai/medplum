@@ -2,7 +2,7 @@
 
 **Triển khai cả cụm (`auth` + `fhir-server` + `ws-gateway`): thứ tự bước, cấu hình bắt buộc ở production, xoay khóa, nâng cấp: [runbook-deploy.md](runbook-deploy.md).**
 
-Nguyên tắc tách service và hợp đồng triển khai chung của mọi service: [service-principles.md](service-principles.md).
+Nguyên tắc tách service và hợp đồng triển khai chung của mọi service: [service-principles.md](service-principles.md). Vận hành riêng `auth`: [apps/auth/docs/runbook.md](../apps/auth/docs/runbook.md).
 
 Dành cho người trực vận hành. Mọi tên biến, lệnh và giá trị mặc định dưới đây lấy từ code hiện tại
 (`apps/fhir-server/internal/config`, `pkg/fhirstore`, `pkg/fhirrouter`, `pkg/fhirauth`); cấu hình đầy đủ ở
@@ -186,7 +186,7 @@ Chưa kiểm thật: scale tự động của HPA (cụm thử không có metric
 
 ### 11.5 FHIRcast (Hub đồng bộ ngữ cảnh giữa ứng dụng lâm sàng)
 
-Chạy trong `ws-gateway` khi `FHIRCAST_ENABLED=true`; token do `auth` cấp. Chi tiết giao thức và cấu hình: [apps/ws-gateway/README.md](../apps/ws-gateway/README.md), [apps/ws-gateway/docs/config.md](../apps/ws-gateway/docs/config.md), [docs/api-contract/oauth.md](api-contract/oauth.md).
+Chạy trong `ws-gateway` khi `FHIRCAST_ENABLED=true`; token do `auth` cấp. Chi tiết giao thức và cấu hình: [apps/ws-gateway/README.md](../apps/ws-gateway/README.md), [apps/ws-gateway/docs/config.md](../apps/ws-gateway/docs/config.md), [oauth.md](../apps/auth/docs/api-contract/oauth.md).
 
 **Cấu hình hai phía (phải khớp):**
 

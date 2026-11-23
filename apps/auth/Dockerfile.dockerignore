@@ -10,6 +10,8 @@
 **/*_test.go
 apps/auth/tests
 apps/auth/docs/*.md
+apps/auth/docs/plans
+apps/auth/docs/api-contract
 **/.env
 **/.env.*
 **/*.db

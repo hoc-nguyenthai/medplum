@@ -1,6 +1,6 @@
 # Kế hoạch port `apps/auth` từ Medplum
 
-Trạng thái: **bản nháp chờ duyệt**. Chưa có code. Kế hoạch chi tiết từng pha và bản tổng hợp (lộ trình đã chỉnh, sổ quyết định): [auth/README.md](auth/README.md). Khác với bản này: **P5 cần Redis**, và có thêm bước 7.0 (CLI vận hành) ngay sau P1. Nguồn tham chiếu: `/Users/hocnt84/Downloads/medplum/packages/server/src/{auth,oauth}` (auth khoảng 15,7k dòng gồm test; oauth khoảng 12,3k dòng gồm test). Hợp đồng đã đối chiếu: `docs/api-contract/auth-dto.md`.
+Trạng thái: **bản nháp chờ duyệt**. Chưa có code. Kế hoạch chi tiết từng pha và bản tổng hợp (lộ trình đã chỉnh, sổ quyết định): [auth/README.md](README.md). Khác với bản này: **P5 cần Redis**, và có thêm bước 7.0 (CLI vận hành) ngay sau P1. Nguồn tham chiếu: `/Users/hocnt84/Downloads/medplum/packages/server/src/{auth,oauth}` (auth khoảng 15,7k dòng gồm test; oauth khoảng 12,3k dòng gồm test). Hợp đồng đã đối chiếu: `apps/auth/docs/api-contract/auth-dto.md`.
 
 ## 1. Mục tiêu và phạm vi
 

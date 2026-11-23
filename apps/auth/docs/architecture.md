@@ -1,6 +1,6 @@
 # auth: kiến trúc
 
-Cập nhật 2026-11-23. Mô tả `auth` làm gì, không làm gì, vì sao là một service riêng, các thành phần, luồng chính và hành vi khi lỗi. Cấu hình ở [config.md](config.md), cách kiểm ở [testing.md](testing.md), route và lệnh quản trị ở [../README.md](../README.md), hợp đồng API ở [../../../docs/api-contract/](../../../docs/api-contract/).
+Cập nhật 2026-11-23. Mô tả `auth` làm gì, không làm gì, vì sao là một service riêng, các thành phần, luồng chính và hành vi khi lỗi. Cấu hình ở [config.md](config.md), cách kiểm ở [testing.md](testing.md), route và lệnh quản trị ở [../README.md](../README.md), hợp đồng API ở [api-contract.md](api-contract.md) (chi tiết: [api-contract/](api-contract/)).
 
 ## 1. Làm gì, không làm gì
 
@@ -65,7 +65,7 @@ Adapter ở `internal/infrastructure`:
 
 ## 4. Dữ liệu
 
-- **Một schema riêng `identity`** trong database dùng chung (role `identity_app` chỉ DML; role `identity_migrate` sở hữu schema và chạy DDL). Hoặc một database riêng. SQLite chỉ để dev (`./auth.db`). Chi tiết role, init script và xử lý lỗi: [runbook.md mục 12](../../../docs/runbook.md); kế hoạch: [microservices-shared-db.md](../../../docs/plans/microservices-shared-db.md).
+- **Một schema riêng `identity`** trong database dùng chung (role `identity_app` chỉ DML; role `identity_migrate` sở hữu schema và chạy DDL). Hoặc một database riêng. SQLite chỉ để dev (`./auth.db`). Chi tiết role, init script và xử lý lỗi: [runbook.md mục 3](runbook.md); kế hoạch: [microservices-shared-db.md](../../../docs/plans/microservices-shared-db.md).
 - `DATABASE_REQUIRE_SCHEMA=true` làm service từ chối khởi động (và từ chối `migrate`) nếu `search_path` không phải đúng một schema riêng đã tồn tại.
 - Tên schema và role (`identity`, `identity_app`, `identity_migrate`) **không đổi** khi service đổi tên từ `authen` sang `auth`: đó là tên miền nghiệp vụ, đổi sẽ cần di chuyển dữ liệu.
 - Resource lưu qua `pkg/fhirstore`: `User`, `Login`, `UserSecurityRequest`, `Project`, `ProjectMembership`, `ClientApplication`, `AccessPolicy`, `DomainConfiguration`, `UserConfiguration`, `SmartAppLaunch`. Không có FK chéo sang schema `fhir`.
@@ -138,6 +138,4 @@ Mỗi lần dùng refresh token, secret của `Login` được xoay bằng một
 
 ## 9. Chưa làm hoặc chưa kiểm
 
-- Hồ sơ tải và định cỡ (điều kiện A) chưa đo; chưa có mục định cỡ riêng cho `auth` trong runbook.
-- Manifest K8s mẫu cho `auth` chưa có (`ws-gateway` có ở `deploy/k8s/ws-gateway/`).
-- `docs/plans/auth/README.md` còn ghi trạng thái cũ (chỉ P0 đến P2); trạng thái hiện tại xem [../README.md](../README.md).
+- Hồ sơ tải và định cỡ (điều kiện A) chưa đo; mục định cỡ trong [runbook.md](runbook.md) còn trống vì chưa có số đo.

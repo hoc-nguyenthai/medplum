@@ -1,8 +1,8 @@
 # auth
 
-Dịch vụ xác thực và cấp token, port từ Medplum (đăng nhập, MFA, OAuth2/OIDC). Kế hoạch: [docs/plans/auth/README.md](../../docs/plans/auth/README.md). Hợp đồng API của service: [docs/api-contract.md](docs/api-contract.md) (bảng route sinh từ swagger, có test chống lệch); diễn giải và ví dụ: [docs/api-contract/auth-dto.md](../../docs/api-contract/auth-dto.md).
+Dịch vụ xác thực và cấp token, port từ Medplum (đăng nhập, MFA, OAuth2/OIDC). Kế hoạch: [apps/auth/docs/plans/README.md](docs/plans/README.md). Hợp đồng API của service: [api-contract.md](docs/api-contract.md) (bảng route sinh từ swagger, có test chống lệch); diễn giải và ví dụ: [auth-dto.md](docs/api-contract/auth-dto.md).
 
-**Trạng thái (2026-11-23):** đã có đăng nhập lõi, đăng ký và mật khẩu (P4), MFA (P5), OAuth2/OIDC đầy đủ (P3, gồm `private_key_jwt`, `pre-authorized_code`, `register`, tích hợp `fhir-server`), đăng nhập ngoài, Google, `exchange`, `preauthorize` (P6), lệnh quản trị `auth ...`, `/admin/projects/*`, SCIM 2.0 và `POST /email/v1/send` (ba route sau tắt mặc định). Kế hoạch theo pha ở [docs/plans/auth/README.md](../../docs/plans/auth/README.md) (dòng trạng thái ở đó còn cũ). Tài liệu của service: [docs/README.md](docs/README.md) (kiến trúc, cấu hình, kiểm thử).
+**Trạng thái (2026-11-23):** đã có đăng nhập lõi, đăng ký và mật khẩu (P4), MFA (P5), OAuth2/OIDC đầy đủ (P3, gồm `private_key_jwt`, `pre-authorized_code`, `register`, tích hợp `fhir-server`), đăng nhập ngoài, Google, `exchange`, `preauthorize` (P6), lệnh quản trị `auth ...`, `/admin/projects/*`, SCIM 2.0 và `POST /email/v1/send` (ba route sau tắt mặc định). Kế hoạch theo pha ở [apps/auth/docs/plans/README.md](docs/plans/README.md) (dòng trạng thái ở đó còn cũ). Tài liệu của service: [docs/README.md](docs/README.md) (kiến trúc, cấu hình, kiểm thử).
 
 | Route | Ghi chú |
 |---|---|
@@ -22,7 +22,7 @@ Dịch vụ xác thực và cấp token, port từ Medplum (đăng nhập, MFA, 
 
 **P4 (đăng ký, mật khẩu, thư) đã xong** (bộ test bảo mật S1-S17 và e2e ở `e2e/signup_test.go`). Client công khai đăng ký qua `/auth/newuser` phải gửi `codeChallenge` ngay từ đầu để đổi được code sau `/auth/newproject`.
 
-**MFA (P5) đã xong**: TOTP và mã email, đăng ký khi đăng nhập hoặc khi đã đăng nhập, hạn mức thử, tắt MFA, xem hợp đồng ở [docs/api-contract/auth-dto.md](../../docs/api-contract/auth-dto.md) mục MFA. Mọi nhánh cần MFA vẫn **fail đóng**: thiếu phụ thuộc MFA hay kho trạng thái hỏng thì trả 500 chung, không bao giờ trả `code`. Phần lõi (P1) gồm:
+**MFA (P5) đã xong**: TOTP và mã email, đăng ký khi đăng nhập hoặc khi đã đăng nhập, hạn mức thử, tắt MFA, xem hợp đồng ở [auth-dto.md](docs/api-contract/auth-dto.md) mục MFA. Mọi nhánh cần MFA vẫn **fail đóng**: thiếu phụ thuộc MFA hay kho trạng thái hỏng thì trả 500 chung, không bao giờ trả `code`. Phần lõi (P1) gồm:
 
 | Tầng | Có gì |
 |---|---|
@@ -77,7 +77,7 @@ auth purge-logins -before 2026-01-01 -dry-run        # đếm trước; thêm -y
 
 ## Cấu hình
 
-Xem [.env.example](.env.example). Điều bắt buộc nhớ: dữ liệu của auth (`User`, `Login`, `UserSecurityRequest` chứa bí mật) phải nằm ở **schema riêng hoặc database riêng**, không lẫn bảng với dữ liệu lâm sàng của fhir-server. Chung một PostgreSQL với `fhir-server` thì dùng role `identity_app` có `search_path = identity` và bật `DATABASE_REQUIRE_SCHEMA=true` (xem [docs/runbook.md mục 12](../../docs/runbook.md)); staging/production cấm SQLite, cấm `DEBUG`, bắt buộc https.
+Xem [.env.example](.env.example). Điều bắt buộc nhớ: dữ liệu của auth (`User`, `Login`, `UserSecurityRequest` chứa bí mật) phải nằm ở **schema riêng hoặc database riêng**, không lẫn bảng với dữ liệu lâm sàng của fhir-server. Chung một PostgreSQL với `fhir-server` thì dùng role `identity_app` có `search_path = identity` và bật `DATABASE_REQUIRE_SCHEMA=true` (xem [docs/runbook.md mục 3](docs/runbook.md)); staging/production cấm SQLite, cấm `DEBUG`, bắt buộc https.
 
 ## Cấu trúc
 
@@ -113,4 +113,4 @@ Access token mang `fhir_project` (project của membership), `scope` và `fhir_a
 
 **`private_key_jwt`, `pre-authorized_code`, `register`.** Client xác thực bằng `client_assertion` (RFC 7523) ở `client_credentials`, `authorization_code` và `refresh_token`: JWKS tải từ `jwks_uri` của client qua `pkg/safehttp` (https, không dải nội bộ), assertion phải có `exp` (tối đa 5 phút) và `jti` dùng một lần; không gộp với Basic hay `client_secret`. `pre-authorized_code` (`grant_type=urn:ietf:params:oauth:grant-type:pre-authorized_code`) đổi một mã cấp sẵn, lưu băm, dùng một lần; việc tạo mã thuộc P6. `/oauth2/register` chỉ tra client dựng sẵn theo redirect URI và mặc định tắt. Chạy nhiều instance thì đặt `AUTH_REDIS_URL`, nếu không một assertion bị lộ phát lại được giữa các instance trong tối đa 5 phút.
 
-**Tích hợp đã kiểm.** `make test-e2e` chạy `auth` và `fhir-server` thật (hai binary, SQLite tạm) và đi hết chuỗi đăng nhập, đổi code, gọi API FHIR; hợp đồng đầy đủ ở [docs/api-contract/oauth.md](../../docs/api-contract/oauth.md). `docker-compose.auth.yml` nối hai service trong compose (chưa chạy thử bằng Docker).
+**Tích hợp đã kiểm.** `make test-e2e` chạy `auth` và `fhir-server` thật (hai binary, SQLite tạm) và đi hết chuỗi đăng nhập, đổi code, gọi API FHIR; hợp đồng đầy đủ ở [oauth.md](docs/api-contract/oauth.md). `docker-compose.auth.yml` nối hai service trong compose (chưa chạy thử bằng Docker).

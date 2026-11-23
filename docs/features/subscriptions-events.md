@@ -11,7 +11,7 @@ Phát hiện thay đổi resource và kích hoạt thông báo hoặc bot; xử 
 
 ## API contract
 
-- [others.md](../api-contract/others.md) (WebSocket `/ws/subscriptions-r4`)
+- [api-contract.md](../../apps/ws-gateway/docs/api-contract.md) (WebSocket `/ws/subscriptions-r4`)
 
 ## Ghi chú kỹ thuật và di chuyển
 

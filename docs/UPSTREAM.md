@@ -18,4 +18,4 @@ Nâng cấp upstream sau này: clone bản mới vào thư mục tạm, so sánh
 
 ## Bản Medplum dùng để port `apps/auth`
 
-Ngày 2026-11-21, thư mục `/Users/hocnt84/Downloads/medplum` có `package.json` ghi phiên bản **5.2.18**, trùng tag ở trên. Các kế hoạch trong [plans/auth](plans/auth/README.md) đối chiếu với `packages/server/src/{auth,oauth,admin}` của bản này. Chưa so sánh từng file với commit `98c2d22d`; nếu cần chắc chắn là cùng mã nguồn thì kiểm bằng `git` trong thư mục đó.
+Ngày 2026-11-21, thư mục `/Users/hocnt84/Downloads/medplum` có `package.json` ghi phiên bản **5.2.18**, trùng tag ở trên. Các kế hoạch trong [plans/auth](../apps/auth/docs/plans/README.md) đối chiếu với `packages/server/src/{auth,oauth,admin}` của bản này. Chưa so sánh từng file với commit `98c2d22d`; nếu cần chắc chắn là cùng mã nguồn thì kiểm bằng `git` trong thư mục đó.

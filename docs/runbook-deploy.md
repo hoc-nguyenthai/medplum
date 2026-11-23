@@ -1,6 +1,6 @@
 # Runbook triển khai cả cụm (`auth`, `fhir-server`, `ws-gateway`)
 
-Phạm vi: dựng, nâng cấp, xoay khóa, sao lưu và xử lý sự cố của cả cụm bằng Docker và Docker Compose. **Không có Kubernetes** (quyết định của chủ dự án). Chi tiết riêng từng service nằm ở [runbook.md](runbook.md) (`fhir-server`, `ws-gateway`, cơ sở dữ liệu dùng chung) và [apps/auth/README.md](../apps/auth/README.md) (bảng biến môi trường của `auth`). Tài liệu này là thứ tự các bước và các điều bắt buộc ở staging/production.
+Phạm vi: dựng, nâng cấp, xoay khóa, sao lưu và xử lý sự cố của cả cụm bằng Docker và Docker Compose. **Không có Kubernetes** (quyết định của chủ dự án). Chi tiết riêng từng service nằm ở [runbook.md](runbook.md) (`fhir-server`, `ws-gateway`, cơ sở dữ liệu dùng chung) và [apps/auth/docs/runbook.md](../apps/auth/docs/runbook.md) (riêng `auth`; bảng biến: [apps/auth/docs/config.md](../apps/auth/docs/config.md), cũng [apps/auth/README.md](../apps/auth/README.md)) (bảng biến môi trường của `auth`). Tài liệu này là thứ tự các bước và các điều bắt buộc ở staging/production.
 
 Trạng thái kiểm chứng: compose `auth + fhir-server + postgres` đã chạy thử bằng Docker (2026-11-21); toàn bộ luồng nhiều tiến trình kiểm bằng `make test-e2e`; `auth` trên PostgreSQL thật kiểm bằng `make test-auth-pg`. **Chưa** kiểm: chạy cụm đầy đủ ba service trên máy chủ thật, kiểm tải, sao lưu/khôi phục diễn tập, CI.
 
@@ -182,7 +182,7 @@ docker compose ... run --rm -e AUTH_NEW_PASSWORD="$NEW" auth user set-password -
 docker compose ... run --rm auth domain add ...        # đăng nhập qua IdP ngoài; URL phải https, không nội bộ
 ```
 
-`seed project` ghi trong một transaction (lỗi giữa chừng hoàn tác hết). Sau khi có admin, quản trị tiếp có thể qua `/admin/projects/*` nếu bật `AUTH_ADMIN_ENABLED` (hợp đồng ở [api-contract/admin.md](api-contract/admin.md)).
+`seed project` ghi trong một transaction (lỗi giữa chừng hoàn tác hết). Sau khi có admin, quản trị tiếp có thể qua `/admin/projects/*` nếu bật `AUTH_ADMIN_ENABLED` (hợp đồng ở [admin.md](../apps/auth/docs/api-contract/admin.md)).
 
 ## 9. Nâng cấp (rolling update)
 
