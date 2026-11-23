@@ -120,7 +120,7 @@ batch/transaction vì có thể chứa thao tác ghi) và **ADMIN** (ghi và qu�
 **AccessPolicy trong token (giai đoạn 11b).** Claim `fhir_access_policy` là mảng rule, giống `AccessPolicy.resource` của Medplum:
 `[{"resourceType":"Patient","criteria":"_id=123","readonly":true}, "Observation?subject=Patient/123"]`. Token có claim này chỉ truy cập
 các loại được liệt kê; resource phải thỏa `criteria` (query FHIR, không chained/`_has`/`_include`) mới thấy hoặc ghi được; ghi ra ngoài tiêu
-chí bị 403; rule `readonly` chặn ghi. Mỗi loại một rule. Mảng rỗng là từ chối mọi loại; claim sai định dạng làm token bị 403. Chính sách
+chí bị 403; rule `readonly` chặn ghi. Mỗi loại có thể có nhiều rule: resource được thấy khi thỏa bất kỳ rule nào (OR; ví dụ `Communication?sender=Patient/1` và `Communication?recipient=Patient/1`), mỗi rule là AND các điều kiện của nó; không được trộn rule không criteria, `deny` hoặc `readonly` khác nhau trong cùng một loại, tối đa 16 rule mỗi loại (bản `fhir-server` cũ từ chối dạng nhiều rule này). Mảng rỗng là từ chối mọi loại; claim sai định dạng làm token bị 403. Chính sách
 giao với scope SMART. `criteria` còn nhận `_compartment=Patient/<id>` (đúng một Patient): resource thuộc compartment khi một tham số compartment của loại đó (ví dụ Observation: `subject`, `performer`) trỏ tới Patient ấy; Patient thì thêm chính nó. Điều kiện của chính sách được đẩy xuống kho nên `total` và phân trang chỉ tính phần được thấy. `$reindex` và `$expunge` bị chặn với token có chính sách. `$export` chạy đúng quyền của người gọi (xem dưới). Search hệ thống (không chỉ định loại) lọc kết quả
 sau khi truy vấn nên `total` và phân trang có thể lệch.
 

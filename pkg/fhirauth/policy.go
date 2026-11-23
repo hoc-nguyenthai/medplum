@@ -54,12 +54,15 @@ var policyRuleKeys = map[string]bool{"resourceType": true, "criteria": true, "re
 // ParsePolicy dựng Policy từ giá trị claim: mảng phần tử là object {"resourceType","criteria","readonly","deny"} hoặc chuỗi
 // "Observation?subject=Patient/123". resourceType "*" (một lần, không có criteria) áp cho mọi loại không có rule riêng, trừ các loại
 // quản trị (wildcardExcluded); `"deny": true` cấm loại đó kể cả khi có "*". Rule riêng thay thế (không cộng dồn với) rule "*".
+// Nhiều rule cùng một loại là OR của các criteria (xem mergeRules); phiên bản cũ từ chối dạng này ("nhiều hơn một rule"), nên claim như vậy chỉ được
+// phát khi mọi fhir-server đã nâng cấp.
 func ParsePolicy(v any) (*Policy, error) {
 	list, ok := v.([]any)
 	if !ok {
 		return nil, fmt.Errorf("claim chính sách phải là mảng")
 	}
 	p := &Policy{rules: map[string]rule{}, raw: v}
+	byType := map[string][]rule{}
 	for _, e := range list {
 		var rt, criteria string
 		var ro, deny bool
@@ -99,7 +102,7 @@ func ParsePolicy(v any) (*Policy, error) {
 		if !knownTypes[rt] && rt != "*" {
 			return nil, fmt.Errorf("loại resource không biết: %q", rt)
 		}
-		if _, dup := p.rules[rt]; dup || (rt == "*" && p.wild != nil) {
+		if rt == "*" && p.wild != nil {
 			return nil, fmt.Errorf("loại %s có nhiều hơn một rule", rt)
 		}
 		r := rule{readonly: ro, deny: deny}
@@ -124,9 +127,55 @@ func ParsePolicy(v any) (*Policy, error) {
 			p.wild = &r
 			continue
 		}
-		p.rules[rt] = r
+		byType[rt] = append(byType[rt], r)
+	}
+	for rt, rs := range byType {
+		merged, err := mergeRules(rt, rs)
+		if err != nil {
+			return nil, err
+		}
+		p.rules[rt] = merged
 	}
 	return p, nil
+}
+
+// maxRuleAlternatives là số rule tối đa của MỘT loại (mỗi rule là một lựa chọn OR): chặn claim độc hại dựng biểu thức SQL khổng lồ.
+const maxRuleAlternatives = 16
+
+// mergeRules gộp các rule cùng loại thành một: resource được thấy khi thỏa BẤT KỲ rule nào (OR; ví dụ Communication gửi bởi hoặc nhận bởi bệnh nhân).
+// Fail đóng với mọi cấu hình mơ hồ: rule không criteria đã cho cả loại nên không được đi cùng rule khác; `deny` không đi cùng rule khác; mọi rule phải
+// cùng `readonly` (nếu khác nhau, không có cách đúng để quyết định quyền ghi từng resource). Một rule thì giữ nguyên (đường Filters, nhanh nhất);
+// nhiều rule thì thành một biểu thức OR của các AND, đẩy xuống kho qua Request.Exprs như `_compartment`.
+func mergeRules(rt string, rs []rule) (rule, error) {
+	if len(rs) == 1 {
+		return rs[0], nil
+	}
+	if len(rs) > maxRuleAlternatives {
+		return rule{}, fmt.Errorf("loại %s có %d rule, tối đa %d", rt, len(rs), maxRuleAlternatives)
+	}
+	alts := make([]*fhirsearch.Expr, 0, len(rs))
+	for _, r := range rs {
+		switch {
+		case r.deny:
+			return rule{}, fmt.Errorf("loại %s có deny kèm rule khác", rt)
+		case r.req == nil:
+			return rule{}, fmt.Errorf("loại %s có rule không criteria (đã cho cả loại) kèm rule khác", rt)
+		case r.readonly != rs[0].readonly:
+			return rule{}, fmt.Errorf("các rule của loại %s phải cùng readonly", rt)
+		}
+		var kids []*fhirsearch.Expr
+		for i := range r.req.Filters {
+			f := r.req.Filters[i]
+			kids = append(kids, &fhirsearch.Expr{Op: "leaf", Leaf: &f})
+		}
+		kids = append(kids, r.req.Exprs...)
+		if len(kids) == 1 {
+			alts = append(alts, kids[0])
+		} else {
+			alts = append(alts, &fhirsearch.Expr{Op: "and", Kids: kids})
+		}
+	}
+	return rule{readonly: rs[0].readonly, req: &fhirsearch.Request{ResourceType: rt, Exprs: []*fhirsearch.Expr{{Op: "or", Kids: alts}}}}, nil
 }
 
 // Types liệt kê các loại có rule.
