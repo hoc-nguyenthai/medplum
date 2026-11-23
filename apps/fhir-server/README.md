@@ -106,7 +106,7 @@ Replica khác thấy Subscription đã tắt sau tối đa 30 giây (hạn cache
 **Chống SSRF:** mặc định *không* giao tới loopback, mạng riêng, link-local (kể cả `169.254.169.254` của metadata đám mây), CGNAT và multicast.
 Kiểm tra làm ở bước kết nối trên địa chỉ IP thật nên chống được DNS rebinding; không dùng proxy từ môi trường. `FHIR_WEBHOOK_ALLOW_PRIVATE=true` chỉ cho dev/test và bị từ chối ở staging/production.
 
-Chỉ kênh `rest-hook`; `websocket`, `email`, `sms` chưa hỗ trợ. Hàng đợi giao nằm trong bộ nhớ: process chết giữa chừng thì các lần thử lại đang hẹn bị mất.
+Mục này nói về kênh `rest-hook`; kênh `websocket` có ở mục "Subscription websocket" bên dưới; `email` và `sms` chưa hỗ trợ. Hàng đợi giao nằm trong bộ nhớ: process chết giữa chừng thì các lần thử lại đang hẹn bị mất.
 Với nhiều replica đặt `BROKER_DRIVER=redis`: mỗi sự kiện chỉ một replica xử lý; danh sách Subscription được làm mới tức thì ở replica nhận sự kiện của chính Subscription
 và theo chu kỳ 30 giây ở các replica khác.
 
@@ -154,7 +154,7 @@ tắt, scope `fhir.super` bị bỏ qua. Token thường gửi `X-Fhir-Project` 
 `fhir-server assign-project -project <id> [-type Patient,Observation] [-dry-run]`. Lệnh quét database trực tiếp, gán project cho resource chưa
 có project (mỗi resource thêm một phiên bản), không đụng resource đã có project, chạy lại an toàn; lỗi từng resource được đếm và báo cuối cùng.
 
-Đây chưa phải OAuth2/SMART đầy đủ: đăng nhập, phân quyền theo resource và theo project thuộc giai đoạn danh tính của kế hoạch port.
+Đăng nhập và cấp token do service `auth` đảm nhiệm: `fhir-server` nhận access token OAuth2 của `auth` qua JWKS (mục "Xác thực JWT và tách dữ liệu theo project" bên dưới), tách dữ liệu theo project, phân quyền theo loại bằng scope SMART và AccessPolicy trong claim. **Chưa có:** scope `patient/<Loại>.read` và `%patient` (compartment Patient), đang ở kế hoạch P8 [`apps/auth/docs/plans/p8-compartment.md`](../auth/docs/plans/p8-compartment.md).
 
 ## Cấu hình
 
@@ -238,9 +238,7 @@ Gốc: `Type(id:)`, `TypeList(...)` (tham số search, gạch dưới thành g�
 trong resource có `resource` trên Reference và `OtherList(_reference: param)` cho tham chiếu ngược. Chạy qua cùng repository nên tách project,
 quyền theo loại và `AccessPolicy` áp như REST; chỉ cần quyền đọc (không có mutation). Giới hạn: 1000 resource mỗi truy vấn, `_count` tối đa 100,
 độ sâu 12; không có introspection, directive (bị bỏ qua) và tham số của field thường.
-Operation giai đoạn 14a: `CodeSystem/$subsumes`, `ConceptMap/$translate` (có `reverse`, tìm theo `source-system` khi không chỉ định bản đồ) và `Group/{id}/$export` (thành viên Patient đang hoạt động). Search token theo terminology (`Condition?code:below=http://snomed.info/sct|73211009`, `:above`, `:in=<ValueSet>`, `:not-in`) dùng CodeSystem/ValueSet lưu trong server (giai đoạn 13a). Chained search (`subject:Patient.name=x`) và `_has` đã có (giai đoạn 10a); search composite (`Observation?component-code-value-quantity=8480-6$gt130`) đã có (giai đoạn 12a, dữ liệu ghi trước đó cần `$reindex` để search composite thấy). Chưa có: Group/$export, `$subsumes`, `$translate` và phần lớn operation `$...` còn lại, 
-profile/slicing và kiểm tra terminology khi ghi, xác thực OAuth2/SMART,
-phân tách dữ liệu theo project. Chỉ mục search được lập khi ghi; khi định nghĩa search parameter đổi cần job reindex (chưa có).
+Operation giai đoạn 14a: `CodeSystem/$subsumes`, `ConceptMap/$translate` (có `reverse`, tìm theo `source-system` khi không chỉ định bản đồ) và `Group/{id}/$export` (thành viên Patient đang hoạt động). Search token theo terminology (`Condition?code:below=http://snomed.info/sct|73211009`, `:above`, `:in=<ValueSet>`, `:not-in`) dùng CodeSystem/ValueSet lưu trong server (giai đoạn 13a). Chained search (`subject:Patient.name=x`) và `_has` đã có (giai đoạn 10a); search composite (`Observation?component-code-value-quantity=8480-6$gt130`) đã có (giai đoạn 12a, dữ liệu ghi trước đó cần `$reindex` để search composite thấy). Chưa có: phần lớn operation `$...` còn lại (danh sách: [`docs/plans/coverage-matrix.md`](../../docs/plans/coverage-matrix.md) mục 5.2), profile/slicing và kiểm tra terminology khi ghi, compartment Patient (`patient/`). Chỉ mục search được lập khi ghi; khi định nghĩa search parameter đổi thì chạy `$reindex` (job nền, ADMIN; xem bảng endpoint).
 
 
 ## Xác thực JWT và tách dữ liệu theo project
@@ -259,7 +257,7 @@ Thiếu hoặc sai token: `401` (`WWW-Authenticate: Bearer error="invalid_token"
 Mọi resource mang `meta.project` do server gán từ token (giá trị client gửi bị ghi đè). Người gọi chỉ đọc, sửa, xóa, tìm kiếm
 và thấy lịch sử của resource cùng project; resource project khác trả `404`. Subscription chỉ nhận sự kiện của cùng project.
 
-Giới hạn: chưa có scope theo từng loại resource (`patient/Observation.read`) hay AccessPolicy; `$reindex` cả loại chạy trên mọi
+Giới hạn: scope theo từng loại (`system|user/<Loại>.<quyền>`) và AccessPolicy trong claim đã có (xem trên) nhưng **chưa có** scope `patient/<Loại>.read` và `%patient` (compartment Patient, kế hoạch P8); `$reindex` cả loại chạy trên mọi
 project (chỉ tái lập chỉ mục); dữ liệu ghi trước khi bật JWT không có `meta.project` nên không ai thấy cho tới khi được gán;
 đọc id đã xóa của project khác trả `410` thay vì `404`.
 
@@ -303,4 +301,5 @@ Khi bật (xem bảng cấu hình), nội dung Binary nằm ở kho tệp thay v
   - **khi ghi** (qua router, cả batch/transaction): thành `Binary/<id>`, không kiểm quyền, nên CSDL không giữ URL có hạn và client gửi lại resource mang URL ký vẫn lưu đúng;
   - **khi trả về** (mọi interaction thành công, kể cả từng entry của Bundle): thành URL ký GET của đúng phiên bản (hoặc bản hiện tại) **chỉ khi người gọi đọc được Binary** (cả `securityContext`); không đọc được thì giữ nguyên chuỗi (không lộ URL ký của project khác); Binary không còn thì thành `Binary/<id>`.
   - Không viết lại bên trong resource `Binary` và `Bundle.entry.request.url`; chỉ các khóa `url` và `path` (không đụng `fullUrl`, `valueUri`, `reference`). Chỉ chạy khi bật `FHIR_BINARY_STORAGE`. Mỗi phản hồi được mã hóa thêm một lần để dò URL Binary (bỏ qua nhanh nếu không có chuỗi `Binary/` hay gốc storage), nên có chi phí trên đường đọc; chưa đo tải.
-- **Chưa có**: adapter S3, quét dọn nội dung mồ côi (tiến trình chết giữa lúc ghi CSDL và ghi kho), tiền tố `/api/storage` và `/projects/{id}/storage` của Medplum, nhật ký truy cập chưa được kiểm là không ghi query (có `Signature`), viết lại trong phản hồi của `auth` (`/auth/me`...) và của subscription.
+- **Quét nội dung mồ côi** (tiến trình chết giữa lúc ghi CSDL và ghi kho): `fhir-server sweep-binary [-grace 24h] [-max-delete 1000] [-dry-run] [-force]` xóa nội dung trong kho mà không còn phiên bản Binary nào trong CSDL (chỉ xét nội dung cũ hơn `-grace`, tối thiểu 1 giờ; chỉ xóa khi CSDL trả 404 dứt khoát; trần `-max-delete` mỗi lượt; hủy lượt nếu quá nửa số khóa là mồ côi trừ khi `-force`). Chạy định kỳ bằng cron, cần `FHIR_BINARY_STORAGE` và CSDL bền; nên chạy `-dry-run` trước.
+- **Chưa có**: tiền tố `/api/storage` và `/projects/{id}/storage` của Medplum, nhật ký truy cập chưa được kiểm là không ghi query (có `Signature`), viết lại trong phản hồi của `auth` (`/auth/me`...) và của subscription.
