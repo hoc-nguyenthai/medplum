@@ -136,5 +136,5 @@ sequenceDiagram
 ## 9. Chưa làm hoặc chưa kiểm
 
 - Số đo tải (search, bulk export, nhiều replica tranh job, websocket nhiều kết nối) chưa có; diễn tập sao lưu và khôi phục chưa làm ([runbook.md mục 13](runbook.md)).
-- Compartment Patient (`patient/` scope, `%patient`) đã duyệt ở kế hoạch P8 (M0 xong, M1 đến M5 chưa làm), tiến độ ở [../../auth/docs/plans/p8-compartment.md](../../auth/docs/plans/p8-compartment.md); token Patient/RelatedPerson chưa đọc được dữ liệu lâm sàng.
+- Compartment Patient (P8, xong): tìm kiếm nhận `_compartment=Patient/<id>` (OR các tham số compartment, `pkg/fhirsearch/compartment.go`); policy của token cho phép nhiều rule cùng loại là OR (tối đa 16) và đẩy điều kiện xuống store qua `Request.Filters/Exprs` nên `_total`, phân trang, `_include` và `$everything` đều bị giới hạn đúng. Auth chỉ phát loại claim này khi bật `AUTH_PATIENT_COMPARTMENT_ENABLED`; vận hành ở [../../auth/docs/runbook.md §12](../../auth/docs/runbook.md#12-bật-compartment-patient). Bệnh nhân cần có `Patient` cùng id trong `fhir-server`; chi tiết ở [../../auth/docs/plans/p8-compartment.md](../../auth/docs/plans/p8-compartment.md).
 - `fhir-worker` chưa tách (mục 2); route `/fhir/R4/...` trong swagger chưa có test máy so với router thật ([api-contract.md](api-contract.md)).

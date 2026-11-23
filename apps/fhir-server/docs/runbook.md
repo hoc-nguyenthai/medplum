@@ -212,6 +212,7 @@ PostgreSQL là nguồn sự thật duy nhất; server không giữ trạng thái
 
 | Triệu chứng | Nguyên nhân thường gặp | Xử lý |
 |---|---|---|
+| Token Patient nhận `403` "nhiều hơn một rule", hoặc `400` với `_compartment` | `fhir-server` bản cũ chưa hiểu compartment | Nâng cấp mọi instance trước khi bật `AUTH_PATIENT_COMPARTMENT_ENABLED` ([auth runbook §12](../../auth/docs/runbook.md#12-bật-compartment-patient)) |
 | Từ chối khởi động, in tên biến | Ràng buộc staging/production (thiếu `FHIR_JOB_SIGNING_KEY` khi dùng JWKS, `FHIR_JWKS_URL` không https, `FHIR_AUTH_DISABLED`...) | Đặt đúng biến theo thông báo |
 | `schema chưa được migrate` | `DATABASE_AUTO_MIGRATE=false` và chưa chạy migrate | `fhir-server migrate up` |
 | `401 invalid_token` mọi yêu cầu | `FHIR_JWT_ISSUER`/`FHIR_JWT_AUDIENCE` không khớp claim `iss`/`aud` (dù một ký tự: dấu `/` cuối, http/https); `FHIR_JWKS_URL` không với tới được `auth`; `auth` chưa phát `kid` mới | So khớp claim, kiểm `FHIR_JWKS_URL` (`curl` từ trong container); xem log WARN `token bị từ chối` (có lý do) |

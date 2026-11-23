@@ -191,6 +191,7 @@ func capabilities() {}
 //	@Param			_include		query		string	false	"Kèm resource được tham chiếu. Ví dụ: Observation:subject"
 //	@Param			_revinclude		query		string	false	"Kèm resource tham chiếu tới kết quả. Ví dụ: Observation:subject"
 //	@Param			_id				query		string	false	"Lọc theo id (nhiều giá trị cách nhau bằng dấu phẩy)"
+//	@Param			_compartment	query		string	false	"Giới hạn trong compartment của một bệnh nhân. Dạng Patient/<id>, chỉ loại thuộc compartment Patient. Ví dụ: Patient/123"
 //	@Param			_lastUpdated	query		string	false	"Lọc theo thời điểm cập nhật, hỗ trợ tiền tố ge/le/gt/lt. Ví dụ: ge2026-01-01"
 //	@Param			_filter			query		string	false	"Biểu thức _filter của FHIR"
 //	@Success		200				{object}	fhir.Bundle

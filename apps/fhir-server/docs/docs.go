@@ -693,6 +693,12 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
+                        "description": "Giới hạn trong compartment của một bệnh nhân. Dạng Patient/\u003cid\u003e, chỉ loại thuộc compartment Patient. Ví dụ: Patient/123",
+                        "name": "_compartment",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
                         "description": "Lọc theo thời điểm cập nhật, hỗ trợ tiền tố ge/le/gt/lt. Ví dụ: ge2026-01-01",
                         "name": "_lastUpdated",
                         "in": "query"

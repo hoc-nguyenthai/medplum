@@ -6,7 +6,7 @@ Trạng thái (cập nhật 2026-11-23 cho khớp code): về **kế hoạch** v
 
 | Khu vực | Dòng | Mức | Code Go (2026-11-23) | Ở đâu / ghi chú |
 |---|---|---|---|---|
-| `auth` | 3858 | A | **Xong P0 đến P7**: đăng nhập, đăng ký, mật khẩu, MFA, đăng nhập ngoài, `exchange`/`google`/`preauthorize`, `/admin/projects/*`, CLI. P8 (compartment Patient): đã duyệt, **M0 xong**, M1 đến M5 chưa | [auth/](../../apps/auth/docs/plans/README.md); chi tiết route: [auth api-contract](../../apps/auth/docs/api-contract.md) |
+| `auth` | 3858 | A | **Xong P0 đến P7**: đăng nhập, đăng ký, mật khẩu, MFA, đăng nhập ngoài, `exchange`/`google`/`preauthorize`, `/admin/projects/*`, CLI. P8 (compartment Patient) **xong** (M0 đến M5, sau cờ `AUTH_PATIENT_COMPARTMENT_ENABLED`) | [auth/](../../apps/auth/docs/plans/README.md); chi tiết route: [auth api-contract](../../apps/auth/docs/api-contract.md) |
 | `oauth` | 4267 | A | **Xong** (`auth` P3, B1 đến B9): authorize, token (`authorization_code`, `refresh_token`, `client_credentials`, `private_key_jwt`, `pre-authorized_code`), userinfo, introspect, logout, register, well-known | `auth` P3 |
 | `admin` | 1926 | A | **Một phần**: `/admin/projects/*` (project, client, invite, members, settings, sites, setpassword, resetpassword, mfa/reset; tắt mặc định `AUTH_ADMIN_ENABLED`) và CLI; **chưa** `/admin/super/*`, `/:id/bot`, `/:projectId/secrets` | `auth` P7 |
 | `cds` | 82 | A | Chưa | [cds-dicom/cds.md](cds-dicom/cds.md); chặn bởi quyết định runtime Bot |
@@ -112,7 +112,7 @@ Cập nhật 2026-11-23 cho khớp code hiện tại (đối chiếu lại từn
 
 ### 5.5 Tính năng ngang còn thiếu
 
-- Kiểm soát truy cập: resource `AccessPolicy` do `auth` lưu (schema `identity`) và dịch thành claim `fhir_access_policy`; `fhir-server` chỉ đọc claim, không lưu `AccessPolicy` (WP-2b). `ParsePolicy` đã **từ chối khóa lạ** (P8 M0 xong). **Chưa có:** compartment `patient/` và `%patient` (P8 M1 đến M5: đã duyệt 2026-11-23, chưa làm), `hiddenFields` (hiện `auth` dịch thành cấm cả loại, chưa lọc từng trường; WP-2c).
+- Kiểm soát truy cập: resource `AccessPolicy` do `auth` lưu (schema `identity`) và dịch thành claim `fhir_access_policy`; `fhir-server` chỉ đọc claim, không lưu `AccessPolicy` (WP-2b). `ParsePolicy` đã **từ chối khóa lạ** (P8 M0 xong). Compartment Patient và `%patient` **xong** (P8, 2026-11-23). **Chưa có:** `hiddenFields` (hiện `auth` dịch thành cấm cả loại, chưa lọc từng trường; WP-2c).
 - Search: `_contained` (bị bỏ qua), SubscriptionTopic (R5), chained trong `_sort`/`_include`.
 - Validator: profile/slicing, fixed/pattern, binding terminology, kiểm tra đích Reference (WP-5).
 - `AuditEvent`: kiểm toán mới là dòng log (`audit=true` của super-admin, tự tắt Subscription...); Go chưa lưu `AuditEvent` vào kho.

@@ -218,7 +218,22 @@ func TestPatientCompartmentAcrossRealProcesses(t *testing.T) {
 		t.Errorf("batch: %d %v", b.status, statuses)
 	}
 
-	// ghi: không tạo được resource trỏ sang bệnh nhân khác (ngoài compartment của A)
+	// ghi: chính sách mặc định của Patient không đặt readonly (trừ RelatedPerson) nên bệnh nhân ghi được TRONG compartment của mình (như chính sách mặc định
+	// của Medplum): tạo Observation cho chính mình và sửa hồ sơ Patient của mình; nhưng không đụng được hồ sơ của B.
+	own := `{"resourceType":"Observation","status":"final","code":{"text":"x"},"subject":{"reference":"Patient/` + f.pa + `"}}`
+	if r := s.fhirPost(tok, "/Observation", own); r.status != 201 {
+		t.Errorf("tạo Observation cho chính A: %d %s", r.status, r.body)
+	}
+	putPatient := func(id string) int {
+		return do(t, "PUT", s.fhir+"/fhir/R4/Patient/"+id, tok, "application/fhir+json", strings.NewReader(`{"resourceType":"Patient","id":"`+id+`","name":[{"family":"Sua"}]}`)).status
+	}
+	if c := putPatient(f.pa); c != 200 {
+		t.Errorf("sửa hồ sơ Patient của chính A: %d", c)
+	}
+	if c := putPatient(f.pb); c != 403 && c != 404 {
+		t.Errorf("sửa hồ sơ Patient của B phải bị chặn (403 hoặc 404), được %d", c)
+	}
+	// không tạo được resource trỏ sang bệnh nhân khác (ngoài compartment của A)
 	other := `{"resourceType":"Observation","status":"final","code":{"text":"x"},"subject":{"reference":"Patient/` + f.pb + `"}}`
 	if r := s.fhirPost(tok, "/Observation", other); r.status != 403 {
 		t.Errorf("tạo Observation cho B bằng token A phải 403, được %d %s", r.status, r.body)

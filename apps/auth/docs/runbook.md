@@ -219,6 +219,9 @@ Diễn tập từng dòng trên staging trước khi làm trên production.
 | `/oauth2/authorize` trả `404` | Chưa đặt `AUTH_APP_BASE_URL` | Đặt (https ở production) |
 | `/scim/v2` hoặc `/admin/...` trả `404` | Chưa bật `AUTH_SCIM_ENABLED`/`AUTH_ADMIN_ENABLED`, hoặc project chưa bật tính năng `scim` | [api-contract.md mục 5](api-contract.md) |
 | Người dùng báo mật khẩu bị từ chối dù mạnh | Kiểm rò rỉ HIBP: lỗi gọi API cũng tính là từ chối (fail đóng) | Kiểm kết nối ra `api.pwnedpasswords.com` (hoặc `AUTH_PWNED_URL`) và `AUTH_PWNED_TIMEOUT`; **không** tắt `AUTH_PWNED_ENABLED` ở production (bị cấm) |
+| Bệnh nhân nhận `403` ở mọi yêu cầu ngay sau khi bật cờ | `fhir-server` còn bản cũ, báo "nhiều hơn một rule" (compartment) | Nâng cấp mọi `fhir-server` trước (mục 12) hoặc tắt cờ |
+| Bệnh nhân nhận `404` ở mọi yêu cầu (compartment) | Chưa có `Patient` cùng id trong `fhir-server` | `PUT /fhir/R4/Patient/<id>` (mục 12) |
+| Log WARN `access policy cannot be issued as a token claim`; loại tài nguyên bị cấm | Thiếu tham số `patient` ở `ProjectMembership.access`, giá trị `%patient` sai định dạng, hoặc RelatedPerson bị `interaction` thu hẹp | Sửa membership/AccessPolicy; xem [api-contract.md](api-contract.md#claim-fhir_access_policy) |
 | Token đã thu hồi vẫn gọi được FHIR một lúc | `fhir-server` chỉ kiểm chữ ký, không tra Login mỗi yêu cầu | Chờ tới hết `AUTH_ACCESS_TTL` (15 phút); hạ TTL nếu cần cửa sổ ngắn hơn |
 
 ## 10. Cần theo dõi
@@ -232,3 +235,19 @@ Quan sát qua `pkg/observability` (`OTEL_*`, `LOG_LEVEL`, `LOG_JSON`), tên tele
 3. Hạn mức IP theo từng instance; chưa có khóa tài khoản theo số lần đăng nhập sai.
 4. Thu hồi token có độ trễ tới hết `AUTH_ACCESS_TTL` ở `fhir-server`.
 5. Chưa có hàng đợi hoặc thử lại khi gửi thư (gửi lỗi chỉ ghi log và bỏ qua với luồng công khai).
+
+## 12. Bật compartment Patient
+
+Cờ `AUTH_PATIENT_COMPARTMENT_ENABLED` (mặc định `false`) cho phép auth phát claim `fhir_access_policy` giới hạn bệnh nhân vào compartment của chính họ (`_compartment=Patient/<id>`, nhiều rule cùng loại là OR). Tắt thì token hành xử như trước.
+
+**Thứ tự bắt buộc:**
+1. Nâng cấp **mọi** instance `fhir-server` trước. Kiểm: `GET /fhir/R4/Observation?_compartment=Patient/x` trả `200` (bản cũ trả `400`). Token mới gặp bản cũ sẽ bị `403` vì "nhiều hơn một rule".
+2. Với mỗi bệnh nhân, tạo `Patient` **cùng id** trong `fhir-server`: hồ sơ Patient mời ở auth nằm trong schema `identity`, không tự sang schema `fhir`. Dùng `PUT /fhir/R4/Patient/<id>` (cần `FHIR_UPDATE_AS_CREATE=true` ở `fhir-server`). Thiếu thì mọi truy cập của bệnh nhân trả `404`.
+3. Đặt `AUTH_PATIENT_COMPARTMENT_ENABLED=true` rồi khởi động lại auth. Token cũ vẫn dùng được tới hết `AUTH_ACCESS_TTL` (tối đa 15 phút).
+4. Kiểm: đăng nhập bằng một bệnh nhân, đọc `Patient/<id>` của mình (`200`), `Observation?_total=accurate` chỉ đếm bản ghi của mình, đọc `Patient/<id khác>` (`403` hoặc `404`).
+
+**Hành vi ghi:** AccessPolicy Patient mặc định **không** chỉ đọc. Bệnh nhân tạo được bản ghi thuộc compartment của mình (ví dụ `Observation` cho chính mình: `201`), sửa được `Patient` của mình (`200`); ghi sang bệnh nhân khác bị `403` (hoặc `404`). Muốn chỉ đọc, đặt `readonly: true` trong AccessPolicy. Đã có e2e giữ nguyên các hành vi này (`e2e/patient_compartment_test.go`).
+
+**Rollback:** đặt cờ về `false` và khởi động lại auth; token đã phát hết hạn trong tối đa 15 phút. Không cần hạ cấp `fhir-server`.
+
+Sự cố liên quan: xem các dòng "compartment" ở mục 9.

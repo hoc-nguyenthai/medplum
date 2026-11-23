@@ -29,7 +29,7 @@ Trạng thái: `[ ]` chưa làm, `[~]` đang chặn bởi quyết định, `[x]`
 
 | Thứ tự | Việc | Số việc | Ghi chú |
 |---|---|---|---|
-| 1 | Compartment Patient (P8 M1 đến M5) | #16, #20 | Đã duyệt trước đó. **Đang làm** từ 2026-11-23: M0 đến M4 xong (`_compartment` ở `pkg/fhirsearch`, đẩy điều kiện chính sách xuống kho, `$everything` với token giới hạn, OR nhiều rule cùng loại, `auth` giải `%patient`/`%profile` sau cờ `AUTH_PATIENT_COMPARTMENT_ENABLED` mặc định tắt, e2e hai tiến trình); còn M5 (tài liệu, thứ tự deploy, quy trình tạo Patient ở fhir-server cùng id với hồ sơ ở auth) |
+| 1 | Compartment Patient (P8 M1 đến M5) | #16, #20 | Đã duyệt trước đó. **XONG 2026-11-23** (M0 đến M5) (`_compartment` ở `pkg/fhirsearch`, đẩy điều kiện chính sách xuống kho, `$everything` với token giới hạn, OR nhiều rule cùng loại, `auth` giải `%patient`/`%profile` sau cờ `AUTH_PATIENT_COMPARTMENT_ENABLED` mặc định tắt, e2e hai tiến trình); tài liệu, thứ tự deploy và quy trình tạo Patient cùng id ở runbook auth §12. Còn hở: chưa tự đồng bộ Patient sang fhir-server |
 | 2 | Nạp định nghĩa: `$import`, `PackageRelease/$install`, seed | #18 | Điều kiện để có SNOMED/LOINC |
 | 3 | Worker `download` (B1, B2) | #17 | Đóng nốt #17 |
 | 4 | Operation lâm sàng không bị chặn | #19 | `$summary`, `$match`, `$extract`, `$graph`, `$csv`, `$refresh-reference-display`, `$resend`, `$expand-profile` |
@@ -50,7 +50,7 @@ Nguồn: [coverage-matrix.md](coverage-matrix.md) mục 5. Thứ tự thực hi�
 | 17 | Batch/transaction async (`Prefer: respond-async`), worker `download`, tự tắt Subscription lỗi kéo dài (`subscription-failure-tracker`) | [ ] một phần: **xong** A1 đến A3 (batch async có checkpoint, `FHIR_ASYNC_BATCH`, tắt mặc định) và C1, C2 (tự tắt Subscription, `FHIR_SUBSCRIPTION_AUTO_DISABLE`, bộ đếm bộ nhớ và Redis); **chưa** B1, B2 (worker `download`) | B1, B2 chưa làm (không có worker tải trong mã); Q-17.1 đến Q-17.5 theo đề xuất trong kế hoạch | [modules/p17-async-batch-download-autodisable.md](modules/p17-async-batch-download-autodisable.md) |
 | 18 | Nạp định nghĩa: `CodeSystem/$import`, `ConceptMap/$import`, `PackageRelease/$install`, bước seed SearchParameter/StructureDefinition/ValueSet | [ ] | không chặn; điều kiện để có SNOMED/LOINC | mục 5.2, 5.4 |
 | 19 | Operation lâm sàng không bị chặn: `Patient/$summary`, `QuestionnaireResponse/$extract`, `Patient/$match`, `$graph`, `$csv`, `$refresh-reference-display`, `$resend`, `StructureDefinition/$expand-profile` | [ ] | WP-9 | mục 5.2 |
-| 20 | Kiểm soát truy cập trong server: resource `AccessPolicy`, compartment `patient/` và `%patient`, `hiddenFields` | [ ] | WP-2b, WP-2c; trùng #16, gộp khi lập kế hoạch | mục 5.5 |
+| 20 | Kiểm soát truy cập trong server: resource `AccessPolicy`, compartment `patient/` và `%patient`, `hiddenFields` | [~] compartment và `%patient` xong (P8); còn `hiddenFields` | WP-2b, WP-2c; trùng #16, gộp khi lập kế hoạch | mục 5.5 |
 | 21 | Quản trị: `Project/$init`, `$clone`, `$archive`, `$restore`, `$rate-limits`, `User/$rescope`, `$update-email`, `ClientApplication/$rotate-secret`, `$smart-launch`, `/admin/projects/:id/bot`, `/:projectId/secrets`, lệnh CLI thay `/admin/super/*` | [ ] | chốt ranh giới `auth` và `fhir-server`; WP-15 | mục 5.2, 5.3 |
 | 22 | Base URL theo project (`/projects/:projectId/*`, `/api/*`), `/openapi.json`, `/.well-known/api-catalog` | [ ] | Q-F1 (mức tương thích với client Medplum) | mục 5.3 |
 | 23 | SMART Health Cards/Links (`$generate-*`, `$verify-smart-health-card`, `$resolve-smart-health-link`, `/shl/`) | [ ] | không chặn; cần khóa ký | mục 5.2 |
@@ -65,7 +65,7 @@ Nguồn: [coverage-matrix.md](coverage-matrix.md) mục 5. Thứ tự thực hi�
 | 13 | **Khóa tài khoản theo số lần đăng nhập sai** | [ ] | Xem mục dưới | dưới |
 | 14 | Hạn mức dùng chung nhiều replica (Redis) thay cho bộ đếm trong bộ nhớ; tách limiter dùng chung ra `pkg` | [ ] | Hiện N replica thì tổng hạn mức gấp N lần, ở cả `fhir-server` và `auth` | |
 | 15 | Cấm tiền tố `fhir.*` trong scope client khai ở `auth` (client `client_credentials` xin được `fhir.admin`) | [x] | Xong cùng B2 (2026-11-21): `domain.ValidateRequestedScope`, có test đột biến | [auth/p3-oauth2-tokens.md](../../apps/auth/docs/plans/p3-oauth2-tokens.md) |
-| 16 | Compartment (`patient/` scope, AccessPolicy `%patient`) ở `pkg/fhirauth`, `hiddenFields` và `interaction` | [ ] | Hiện token Patient/RelatedPerson không đọc được dữ liệu lâm sàng (policy dịch sang `deny`); claim chính sách mặc định ~5 KB | [auth/README.md](../../apps/auth/docs/plans/README.md) mục 5.2 |
+| 16 | Compartment (`patient/` scope, AccessPolicy `%patient`) ở `pkg/fhirauth`, `hiddenFields` và `interaction` | [~] compartment và `%patient` xong (P8); còn `hiddenFields`, `interaction` | Token Patient đọc được dữ liệu trong compartment khi bật cờ (mặc định tắt: vẫn `deny`); claim chính sách mặc định ~5 KB | [auth/README.md](../../apps/auth/docs/plans/README.md) mục 5.2 |
 
 Việc #15 thực chất là điều kiện của #1, không phải việc hậu kỳ; ghi ở đây để không bị quên nhưng phải làm cùng P3.
 

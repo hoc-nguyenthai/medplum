@@ -60,6 +60,16 @@ Mã lỗi từng route nằm ở cột "Mã lỗi" của bảng dưới.
 - `POST /auth/login` trả đúng **một** dạng của `application.LoginResult`: `code` (đã chọn được profile), `memberships` (cần chọn profile), `mfaRequired` hoặc `mfaEnrollRequired`.
 - Access token mang `fhir_project`, `scope` và `fhir_access_policy`. Scope client khai không bao giờ thành quyền: term `fhir.*` bị `invalid_scope`; `fhir.admin/write/read` do auth tự thêm theo membership.
 
+### Claim `fhir_access_policy`
+
+Mảng rule `[{resourceType, criteria, readonly, deny}]` mà `fhir-server` đọc bằng `pkg/fhirauth.ParsePolicy`:
+
+- `resourceType`: loại tài nguyên, hoặc `*` cho mọi loại không được liệt kê (trừ loại quản trị).
+- `criteria`: **chỉ** chuỗi query (`code=x&status=final`), không có tiền tố `Type?`. Auth tự bỏ tiền tố `Type?` khi khớp loại; lệch loại thì rule thành `deny`. Có thêm `_compartment=Patient/<id>` (OR của mọi tham số thuộc compartment Patient của loại đó). `_filter` bị từ chối.
+- `readonly`: chỉ đọc. `deny`: cấm hẳn loại này (cũng là kết quả khi dịch thất bại: **fail đóng**).
+- **Nhiều rule cùng loại là OR** (tối đa 16, cùng `readonly`, không trộn rule không có `criteria` hoặc `deny` với rule khác). Auth chỉ phát nhiều rule cùng loại khi bật `AUTH_PATIENT_COMPARTMENT_ENABLED`; tắt thì giữ hành vi cũ (một rule mỗi loại).
+- Biến trong `criteria` do auth thay khi cấp token: `%patient`, `%patient.id` lấy từ tham số `patient` của `ProjectMembership.access[i]` (dạng `Patient/<id>`); `%profile`, `%profile.id` lấy từ profile (`Patient|Practitioner|RelatedPerson/<id>`). Giá trị sai định dạng hoặc thiếu thì loại đó bị `deny`. Vận hành: [runbook.md §12](runbook.md#12-bật-compartment-patient).
+
 ## 5. Route có điều kiện
 
 Route sau **không tồn tại (404)** nếu điều kiện không thỏa; bảng route bên dưới liệt kê đủ chúng. (`AUTH_REGISTER_ENABLED=false` và `AUTH_NEW_PROJECT_REGISTRATION_ENABLED=false` không gỡ route `/auth/newuser`, `/auth/newproject`: chúng đổi hành vi, không đổi sự có mặt của route.)

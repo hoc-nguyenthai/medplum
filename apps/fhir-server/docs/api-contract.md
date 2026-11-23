@@ -72,7 +72,7 @@ Mỗi nhóm là một `tag` của swagger. Loại resource là tham số đườ
 | `POST /fhir/R4` | Batch / transaction | Bearer | body `httpapi.BundleBody` | 200 `fhir.Bundle` | 400, 401, 403 |
 | `POST /fhir/R4/$graphql` | GraphQL | Bearer | body `httpapi.GraphQLRequest` | 200 `httpapi.GraphQLResponse` | 401, 403 |
 | `GET /fhir/R4/metadata` | CapabilityStatement | công khai | - | 200 `fhir.CapabilityStatement` | - |
-| `GET /fhir/R4/{resourceType}` | Tìm kiếm theo loại resource | Bearer | query: _count, _offset, _sort, _total, _summary, _elements, _include, _revinclude, _id, _lastUpdated, _filter | 200 `fhir.Bundle` | 400, 401, 403 |
+| `GET /fhir/R4/{resourceType}` | Tìm kiếm theo loại resource | Bearer | query: _count, _offset, _sort, _total, _summary, _elements, _include, _revinclude, _id, _compartment, _lastUpdated, _filter | 200 `fhir.Bundle` | 400, 401, 403 |
 | `POST /fhir/R4/{resourceType}` | Tạo resource | Bearer | body `httpapi.PatientBody` | 200 `httpapi.FHIRResource`, 201 `httpapi.FHIRResource` | 400, 401, 403, 412 |
 | `PUT /fhir/R4/{resourceType}` | Update/patch/delete có điều kiện | Bearer | body `httpapi.PatientBody` | 200 `httpapi.FHIRResource`, 201 `httpapi.FHIRResource` | 400, 401, 403, 412 |
 | `POST /fhir/R4/{resourceType}/_search` | Tìm kiếm dạng form (POST _search) | Bearer | form: _count, _offset, _sort, _total, _summary, _elements, _include, _revinclude, _id, _lastUpdated, _filter | 200 `fhir.Bundle` | 400, 401, 403 |

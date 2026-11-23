@@ -68,7 +68,7 @@ Ký RS256 (mặc định), ES256 hoặc ES384; header có `kid` (thumbprint RFC 
 | `token_use` | `access` (id token: `id`; refresh token: `refresh`, `aud` riêng `<base>/oauth2/token`) |
 | `fhir_project` | id project của membership; fhir-server dùng để cách ly dữ liệu |
 | `scope` | scope của login **cộng** scope vai trò do auth tự thêm: admin project → `fhir.admin`; mọi rule chỉ đọc → `fhir.read`; còn lại `fhir.write`; **không thêm** khi login có scope SMART |
-| `fhir_access_policy` | AccessPolicy dịch sang `[{resourceType, criteria, readonly, deny}]` (`*` áp cho loại không liệt kê, trừ loại quản trị) |
+| `fhir_access_policy` | AccessPolicy dịch sang `[{resourceType, criteria, readonly, deny}]` (`*` áp cho loại không liệt kê, trừ loại quản trị); nhiều rule cùng loại là OR khi bật `AUTH_PATIENT_COMPARTMENT_ENABLED`; chi tiết ở [api-contract.md](../api-contract.md#claim-fhir_access_policy) |
 | `jti`, `iat`, `nbf`, `exp` | `exp` = `AUTH_ACCESS_TTL` (mặc định 15 phút) |
 
 Scope client khai không bao giờ thành quyền: mọi term `fhir.*` bị từ chối. AccessPolicy được dịch theo nguyên tắc **chỉ thu hẹp** (hiddenFields, interaction, compartment, `%...` làm loại đó bị cấm; readonlyFields, writeConstraint thành chỉ đọc); compartment hoặc basedOn ở mức chính sách thì không cấp token.
