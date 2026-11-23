@@ -521,3 +521,18 @@ func TestSubscriptionAutoDisable(t *testing.T) {
 		}
 	}
 }
+
+func TestAsyncBatchSettings(t *testing.T) {
+	d := config.Default()
+	if d.AsyncBatch || d.BatchCheckpointEntries != 10 {
+		t.Fatalf("mặc định: AsyncBatch=%v BatchCheckpointEntries=%d", d.AsyncBatch, d.BatchCheckpointEntries)
+	}
+	s, err := config.FromEnv(env(map[string]string{"FHIR_ASYNC_BATCH": "true", "FHIR_BATCH_CHECKPOINT_ENTRIES": "50"}))
+	if err != nil || !s.AsyncBatch || s.BatchCheckpointEntries != 50 {
+		t.Fatalf("%+v %v", s, err)
+	}
+	if _, err := config.FromEnv(env(map[string]string{"FHIR_BATCH_CHECKPOINT_ENTRIES": "0"})); err == nil ||
+		!strings.Contains(err.Error(), "FHIR_BATCH_CHECKPOINT_ENTRIES") {
+		t.Fatalf("muốn lỗi, được %v", err)
+	}
+}

@@ -90,6 +90,10 @@ type Settings struct {
 	JobLease               time.Duration
 	JobMaintenanceInterval time.Duration
 	ExportRetention        time.Duration
+	// AsyncBatch: POST Bundle batch kèm `Prefer: respond-async` chạy thành job nền (tắt: header bị bỏ qua, chạy đồng bộ).
+	// BatchCheckpointEntries: số entry giữa hai lần lưu checkpoint của batch async (ngoài ra lưu ít nhất mỗi 5 giây).
+	AsyncBatch             bool
+	BatchCheckpointEntries int
 
 	// Subscription (rest-hook). Sự kiện thay đổi đi qua broker: memory (1 process) | redis (nhiều replica).
 	Subscriptions bool
@@ -210,7 +214,7 @@ func Default() Settings {
 		DatabaseMaxOpenConns: 20, DatabaseMaxIdleConns: 5, DatabaseConnLifetime: 30 * time.Minute,
 		BaseURL:        "http://localhost:8005/fhir/R4",
 		JobConcurrency: 2,
-		JobLease:       5 * time.Minute, JobMaintenanceInterval: 30 * time.Second, ExportRetention: 24 * time.Hour,
+		JobLease:       5 * time.Minute, JobMaintenanceInterval: 30 * time.Second, ExportRetention: 24 * time.Hour, BatchCheckpointEntries: 10,
 		JWTProjectClaim: "fhir_project", JWTScopeClaim: "scope", JWTPolicyClaim: "fhir_access_policy",
 		BrokerDriver: "memory", RedisURL: "redis://localhost:6379/0",
 		WebhookWorkers: 4, WebhookMaxAttempts: 5, WebhookTimeout: 10 * time.Second,
@@ -268,6 +272,8 @@ func FromEnv(get func(string) string) (Settings, error) {
 	r.Duration(&s.JobLease, "FHIR_JOB_LEASE")
 	r.Duration(&s.JobMaintenanceInterval, "FHIR_JOB_MAINTENANCE_INTERVAL")
 	r.Duration(&s.ExportRetention, "FHIR_EXPORT_RETENTION")
+	r.Bool(&s.AsyncBatch, "FHIR_ASYNC_BATCH")
+	r.Int(&s.BatchCheckpointEntries, "FHIR_BATCH_CHECKPOINT_ENTRIES")
 	r.Bool(&s.Subscriptions, "FHIR_SUBSCRIPTIONS")
 	r.String(&s.WSMode, "FHIR_WS_MODE")
 	r.Bool(&s.WebSocket, "FHIR_WEBSOCKET")
@@ -497,6 +503,9 @@ func (s Settings) validate() error {
 		errs = append(errs, errors.New("FHIR_SUBSCRIPTION_AUTO_DISABLE: cần bật FHIR_SUBSCRIPTIONS"))
 	}
 	errs = append(errs, s.validateWS()...)
+	if s.BatchCheckpointEntries <= 0 {
+		errs = append(errs, errors.New("FHIR_BATCH_CHECKPOINT_ENTRIES: phải > 0"))
+	}
 	if s.JobLease <= 0 || s.JobMaintenanceInterval < 0 {
 		errs = append(errs, errors.New("FHIR_JOB_LEASE phải > 0 và FHIR_JOB_MAINTENANCE_INTERVAL phải >= 0"))
 	}

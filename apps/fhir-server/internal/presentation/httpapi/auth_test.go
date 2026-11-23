@@ -32,6 +32,7 @@ func TestRequiredRole(t *testing.T) {
 		{"POST", "/Patient/1/$everything", httpapi.RoleRead},
 		{"GET", "/Patient/1/$everything", httpapi.RoleRead},
 		{"GET", "/job/abc/status", httpapi.RoleRead},
+		{"DELETE", "/job/abc/status", httpapi.RoleWrite}, // hủy batch async: cùng quyền với lúc gửi batch
 		// bulk export và terminology chỉ đọc (kể cả POST)
 		{"GET", "/$export", httpapi.RoleRead},
 		{"GET", "/Patient/$export", httpapi.RoleRead},

@@ -70,6 +70,12 @@ func (r *Router) Shutdown(ctx context.Context) error {
 
 // StartJob tạo AsyncJob (status=accepted) và đưa vào orchestrator.
 func (r *Router) StartJob(ctx context.Context, kind string, q url.Values) (*fhir.AsyncJob, error) {
+	return r.startJob(ctx, kind, q, nil)
+}
+
+// startJob như StartJob; prepare (nếu có) chạy sau khi AsyncJob đã được tạo (có meta.project của người gọi) và trước khi
+// đưa vào orchestrator, ví dụ để lưu dữ liệu đầu vào. prepare lỗi thì AsyncJob bị xóa.
+func (r *Router) startJob(ctx context.Context, kind string, q url.Values, prepare func(*fhir.AsyncJob) error) (*fhir.AsyncJob, error) {
 	r.jobs.mu.RLock()
 	_, ok := r.jobs.funcs[kind]
 	r.jobs.mu.RUnlock()
@@ -89,8 +95,18 @@ func (r *Router) StartJob(ctx context.Context, kind string, q url.Values) (*fhir
 		}
 		job.Extension = append(job.Extension, fhir.Extension{URL: JobSealURL, ValueString: sealed})
 	}
-	if _, err := r.repo.CreateResource(ctx, job); err != nil {
+	created, err := r.repo.CreateResource(ctx, job)
+	if err != nil {
 		return nil, err
+	}
+	if prepare != nil {
+		if c, ok := created.(*fhir.AsyncJob); ok {
+			job = c
+		}
+		if err := prepare(job); err != nil {
+			_ = r.opts.JobRepository.DeleteResource(context.WithoutCancel(ctx), "AsyncJob", job.ID)
+			return nil, err
+		}
 	}
 	if err := r.jobs.orch.Submit(ctx, job.ID); err != nil {
 		return nil, Internal("không đưa được job vào hàng đợi: " + err.Error())
@@ -174,7 +190,7 @@ func (r *Router) runJob(ctx context.Context, jobID string) error {
 					runErr = fmt.Errorf("job panic: %v", p)
 				}
 			}()
-			in := &Input{values: map[string][]string{}, resources: map[string]map[string]any{}}
+			in := &Input{values: map[string][]string{}, resources: map[string]map[string]any{}, JobID: jobID}
 			for k, vs := range q {
 				in.values[k] = vs
 			}
@@ -206,6 +222,7 @@ func (r *Router) runJob(ctx context.Context, jobID string) error {
 		return nil
 	}
 	job.TransactionTime = time.Now().UTC().Format(time.RFC3339)
+	job.Extension = withoutExtension(job.Extension, JobStateURL) // trạng thái chỉ cần khi job còn chạy
 	if runErr != nil {
 		slog.ErrorContext(ctx, "job lỗi", "job_id", jobID, "kind", kind, "error", runErr)
 		job.Status = "error"

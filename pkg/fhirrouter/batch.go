@@ -69,6 +69,12 @@ func (r *Router) batch(ctx context.Context, req *Request) (*Response, error) {
 		}
 		entries[i] = er
 	}
+	if r.opts.AsyncBatch && wantsAsync(req) {
+		if typ == "transaction" {
+			return nil, BadRequest("Transaction không chạy async được (Prefer: respond-async chỉ dùng cho batch)")
+		}
+		return r.startAsyncBatch(ctx, body)
+	}
 	out := &fhir.Bundle{Type: typ + "-response", Timestamp: time.Now().UTC().Format(time.RFC3339), Entry: make([]fhir.BundleEntry, len(entries))}
 	if typ == "batch" {
 		for _, e := range entries {

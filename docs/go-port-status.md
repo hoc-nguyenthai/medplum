@@ -78,7 +78,7 @@ FHIRSTORE_TEST_POSTGRES_URL="postgres://user:pass@host:5432/db?sslmode=disable" 
 
 - "Giai đoạn 9" cũng không có trong kế hoạch; mình chọn đóng các giới hạn đã ghi ở 6a và 8a (job mất khi process chết, không hủy được export, file export không bao giờ hết hạn) thay vì thêm tính năng mới. Websocket subscription và các operation còn lại chưa làm vì `pkg/messaging` (Redis streams, consumer group) không phát sự kiện tới mọi replica, cần thiết kế riêng.
 - Lease dùng trường `AsyncJob.transactionTime` (AsyncJob không có extension): job chưa xong có trường này là hạn lease, khi xong là thời điểm hoàn tất. Đồng hồ các replica cần lệch nhau ít hơn `FHIR_JOB_LEASE`.
-- Job phải idempotent vì có thể chạy lại từ đầu (chưa có checkpoint). Một lần chạy dở của `$export` dọn file đã ghi khi bị hủy hoặc lỗi, nhưng nếu process bị kill cứng (SIGKILL) các file đã ghi của lần đó ở lại tới khi hết hạn (không có trong manifest nên `ExpireJobs` không biết chúng).
+- Job phải idempotent vì có thể chạy lại từ đầu. Checkpoint dùng chung (`Router.JobState`, `SaveJobState`) có từ việc #17 (A1) nhưng mới chỉ batch async dùng; `$export` và `$reindex` vẫn chạy lại từ đầu. Một lần chạy dở của `$export` dọn file đã ghi khi bị hủy hoặc lỗi, nhưng nếu process bị kill cứng (SIGKILL) các file đã ghi của lần đó ở lại tới khi hết hạn (không có trong manifest nên `ExpireJobs` không biết chúng).
 - Bản chạy lại sau khi lease hết hạn có thể chạy song song với bản cũ nếu replica cũ chỉ bị treo (không chết) lâu hơn lease; chưa có fencing token.
 - Hủy cross-replica có độ trễ tối đa `FHIR_JOB_LEASE/3` (heartbeat phát hiện trạng thái cancelled).
 - Adapter asynq/Temporal có cơ chế bền vững riêng; lease ở đây là lớp bổ sung, chưa nối với hai adapter đó.
@@ -347,8 +347,12 @@ Chưa kiểm: PATCH/`If-Match` cùng lúc với update thường (đã có `Conc
 
 Chưa đo: kích thước 100k trở lên (đường cong thực của các điểm yếu trên), tải nhiều client qua mạng, cache, bulk export lớn, `pg_stat_statements`/`EXPLAIN` từng truy vấn (cần cấu hình PostgreSQL thật, không phải bản nhúng).
 
-## Việc #17 (một phần): tự tắt Subscription
+## Việc #17 (một phần): tự tắt Subscription, batch async
 
-Kế hoạch: [plans/modules/p17-async-batch-download-autodisable.md](plans/modules/p17-async-batch-download-autodisable.md). Mặc định tắt.
+Kế hoạch: [plans/modules/p17-async-batch-download-autodisable.md](plans/modules/p17-async-batch-download-autodisable.md). Cả hai mặc định tắt.
 
 - C1, C2 `pkg/fhirsub/failure.go`: `FailureTracker` (bộ nhớ và Redis sorted set, cùng thuật toán Medplum), gắn vào `Manager.attempt`; đủ ngưỡng thì Subscription `active` thành `off` kèm `error` (ghi có `If-Match`). Cấu hình `FHIR_SUBSCRIPTION_AUTO_DISABLE`. Giới hạn: không ghi đè theo project, không `AuditEvent`, replica khác thấy Subscription đã tắt sau tối đa 30 giây.
+- A1 `pkg/fhirrouter/jobs_state.go`: `Input.JobID`, `Router.JobState`/`SaveJobState` (extension `job-state` trên `AsyncJob`, bỏ khi job xong); `outputBinaryIDs` đọc `valueReference`; `ExpireJobs` dọn cả job `batch?`.
+- A2, A3 `pkg/fhirrouter/batch_async.go`: `POST /` + `Prefer: respond-async` (`FHIR_ASYNC_BATCH`), job `batch` chạy bằng `Handle` với quyền người gọi, checkpoint (`FHIR_BATCH_CHECKPOINT_ENTRIES`, 5 giây), POST giữ id, `DELETE job/{id}/status`. `exportCancel` dùng chung `cancelJob`.
+- Kiểm thử: Memory (`batch_async_test.go`: kết quả giống batch đồng bộ, từ chối trước khi tạo job, chạy tiếp từ checkpoint không tạo bản trùng, hủy giữa chừng, hết hạn) và SQLite qua HTTP với JWT (`bootstrap/batch_async_e2e_test.go`: scope từng entry, tách project, có và không có kho Binary). Đã thử làm hỏng code để chắc test resume và hủy bắt được lỗi.
+- Giới hạn: chưa chạy trên PostgreSQL (`make test-pg` cần Docker); Binary của job nằm trong CSDL dạng base64; lỗi hạ tầng giữa chừng thì job `error` mà không trả kết quả từng phần (Medplum có trả); PUT/PATCH/DELETE chạy lại sau gián đoạn có thể thêm phiên bản.
