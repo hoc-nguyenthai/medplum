@@ -78,8 +78,8 @@ type oauthHandlers struct {
 
 // TokenErrorBody là lỗi OAuth (RFC 6749 §5.2).
 type TokenErrorBody struct {
-	Error            string `json:"error"`
-	ErrorDescription string `json:"error_description,omitempty"`
+	Error            string `json:"error" binding:"required" example:"invalid_request"`       // mã lỗi OAuth (invalid_request, invalid_client, invalid_grant, unsupported_grant_type...)
+	ErrorDescription string `json:"error_description,omitempty" example:"Missing grant_type"` // mô tả lỗi cho người lập trình; có thể vắng
 }
 
 func writeOAuthError(c echo.Context, e *domain.OAuthError) error {
@@ -95,7 +95,7 @@ func writeOAuthError(c echo.Context, e *domain.OAuthError) error {
 //	@Description	Scope do client khai không được chứa `fhir.*`; access token mang `fhir_project`, `scope` (kèm scope vai trò do auth thêm) và `fhir_access_policy` để fhir-server nhận.
 //	@Tags			oauth
 //	@Accept			x-www-form-urlencoded
-//	@Produce		json
+//	@Produce		application/json
 //	@Param			grant_type		formData	string	true	"client_credentials | authorization_code | refresh_token"
 //	@Param			code			formData	string	false	"authorization_code"
 //	@Param			code_verifier	formData	string	false	"authorization_code (PKCE)"
@@ -249,7 +249,7 @@ func formDecode(s string) string {
 //	@Summary		JWKS (khóa công khai để xác minh token)
 //	@Description	Chỉ khóa công khai; có `ETag` và `Cache-Control: public, max-age=300`.
 //	@Tags			well-known
-//	@Produce		json
+//	@Produce		application/json
 //	@Success		200	{object}	map[string]interface{}
 //	@Router			/.well-known/jwks.json [get]
 func (h *oauthHandlers) jwks(c echo.Context) error {
@@ -324,7 +324,7 @@ func (h *oauthHandlers) advertiseAuthorize(doc map[string]any) {
 //	@Summary		SMART configuration
 //	@Description	SMART on FHIR discovery, khai cùng endpoint với openid-configuration.
 //	@Tags			well-known
-//	@Produce		json
+//	@Produce		application/json
 //	@Success		200	{object}	map[string]interface{}
 //	@Router			/.well-known/smart-configuration [get]
 func (h *oauthHandlers) smartConfiguration(c echo.Context) error {
@@ -350,7 +350,7 @@ func (h *oauthHandlers) smartConfiguration(c echo.Context) error {
 //	@Summary		SMART style (màu, font cho ứng dụng nhúng)
 //	@Description	Giá trị cố định.
 //	@Tags			well-known
-//	@Produce		json
+//	@Produce		application/json
 //	@Success		200	{object}	map[string]interface{}
 //	@Router			/.well-known/smart-styles.json [get]
 func (h *oauthHandlers) smartStyles(c echo.Context) error {

@@ -168,7 +168,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "produces": [
-                    "application/json"
+                    "application/fhir+json"
                 ],
                 "tags": [
                     "admin"
@@ -198,8 +198,20 @@ const docTemplate = `{
                             "$ref": "#/definitions/fhir.OperationOutcome"
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/fhir.OperationOutcome"
+                        }
+                    },
                     "403": {
                         "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/fhir.OperationOutcome"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
                         "schema": {
                             "$ref": "#/definitions/fhir.OperationOutcome"
                         }
@@ -216,7 +228,8 @@ const docTemplate = `{
                 ],
                 "description": "Chỉ admin của project; projectId khác project của người gọi là 403. Giá trị ` + "`" + `secret` + "`" + ` và khóa bí mật trong ` + "`" + `site` + "`" + ` bị che.",
                 "produces": [
-                    "application/json"
+                    "application/json",
+                    "application/fhir+json"
                 ],
                 "tags": [
                     "admin"
@@ -265,7 +278,8 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "produces": [
-                    "application/json"
+                    "application/json",
+                    "application/fhir+json"
                 ],
                 "tags": [
                     "admin"
@@ -302,6 +316,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/fhir.OperationOutcome"
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/fhir.OperationOutcome"
+                        }
+                    },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
@@ -323,7 +343,8 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "produces": [
-                    "application/json"
+                    "application/json",
+                    "application/fhir+json"
                 ],
                 "tags": [
                     "admin"
@@ -360,6 +381,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/fhir.OperationOutcome"
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/fhir.OperationOutcome"
+                        }
+                    },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
@@ -368,6 +395,12 @@ const docTemplate = `{
                     },
                     "409": {
                         "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/fhir.OperationOutcome"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
                         "schema": {
                             "$ref": "#/definitions/fhir.OperationOutcome"
                         }
@@ -384,7 +417,8 @@ const docTemplate = `{
                 ],
                 "description": "Membership không thuộc project hoặc không tồn tại đều là 403.",
                 "produces": [
-                    "application/json"
+                    "application/json",
+                    "application/fhir+json"
                 ],
                 "tags": [
                     "admin"
@@ -413,6 +447,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/fhir.ProjectMembership"
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/fhir.OperationOutcome"
+                        }
+                    },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
@@ -432,7 +472,8 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "produces": [
-                    "application/json"
+                    "application/json",
+                    "application/fhir+json"
                 ],
                 "tags": [
                     "admin"
@@ -476,6 +517,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/fhir.OperationOutcome"
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/fhir.OperationOutcome"
+                        }
+                    },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
@@ -498,7 +545,7 @@ const docTemplate = `{
                 ],
                 "description": "Không xóa chủ project hay admin cuối cùng (400). User thuộc project mà hết membership thì bị xóa cùng; user dùng chung nhiều project thì giữ. Token của membership bị từ chối ngay.",
                 "produces": [
-                    "application/json"
+                    "application/fhir+json"
                 ],
                 "tags": [
                     "admin"
@@ -533,6 +580,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/fhir.OperationOutcome"
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/fhir.OperationOutcome"
+                        }
+                    },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
@@ -554,7 +607,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "produces": [
-                    "application/json"
+                    "application/fhir+json"
                 ],
                 "tags": [
                     "admin"
@@ -576,11 +629,11 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "{method}",
+                        "description": "Phương thức MFA cần gỡ (tùy chọn)",
                         "name": "body",
                         "in": "body",
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/httpapi.MFAResetBody"
                         }
                     }
                 ],
@@ -597,8 +650,20 @@ const docTemplate = `{
                             "$ref": "#/definitions/fhir.OperationOutcome"
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/fhir.OperationOutcome"
+                        }
+                    },
                     "403": {
                         "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/fhir.OperationOutcome"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
                         "schema": {
                             "$ref": "#/definitions/fhir.OperationOutcome"
                         }
@@ -615,7 +680,7 @@ const docTemplate = `{
                 ],
                 "description": "Chỉ user thuộc project (user phạm vi server là 403). Khác /auth/resetpassword công khai, lỗi được báo rõ: thiếu email 400, chưa cấu hình thư 400, gửi thư lỗi 500.",
                 "produces": [
-                    "application/json"
+                    "application/fhir+json"
                 ],
                 "tags": [
                     "admin"
@@ -650,8 +715,20 @@ const docTemplate = `{
                             "$ref": "#/definitions/fhir.OperationOutcome"
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/fhir.OperationOutcome"
+                        }
+                    },
                     "403": {
                         "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/fhir.OperationOutcome"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
                         "schema": {
                             "$ref": "#/definitions/fhir.OperationOutcome"
                         }
@@ -671,7 +748,8 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "produces": [
-                    "application/json"
+                    "application/json",
+                    "application/fhir+json"
                 ],
                 "tags": [
                     "admin"
@@ -711,6 +789,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/fhir.OperationOutcome"
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/fhir.OperationOutcome"
+                        }
+                    },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
@@ -732,7 +816,8 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "produces": [
-                    "application/json"
+                    "application/json",
+                    "application/fhir+json"
                 ],
                 "tags": [
                     "admin"
@@ -768,6 +853,12 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/fhir.OperationOutcome"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
                         "schema": {
                             "$ref": "#/definitions/fhir.OperationOutcome"
                         }
@@ -848,7 +939,8 @@ const docTemplate = `{
             "get": {
                 "description": "Không cần xác thực. redirect_uri (nếu gửi) phải khớp chính xác một URI đã đăng ký của client. Toàn bộ signInForm là công khai.",
                 "produces": [
-                    "application/json"
+                    "application/json",
+                    "application/fhir+json"
                 ],
                 "tags": [
                     "auth"
@@ -898,7 +990,8 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "produces": [
-                    "application/json"
+                    "application/json",
+                    "application/fhir+json"
                 ],
                 "tags": [
                     "auth"
@@ -941,6 +1034,9 @@ const docTemplate = `{
         "/auth/external": {
             "get": {
                 "description": "IdP chuyển trình duyệt về đây với code và state. state phải do /auth/method phát (đã ký) và trình duyệt phải mang cookie auth-external-state tương ứng. Thành công: 302 tới redirectUri của client kèm login và code, hoặc về trang đăng nhập của app kèm login. Lỗi trả OperationOutcome JSON 400 (không chuyển hướng). /auth/external/{clientId} là callback riêng của client có identityProvider.",
+                "produces": [
+                    "application/fhir+json"
+                ],
                 "tags": [
                     "auth"
                 ],
@@ -999,7 +1095,8 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "produces": [
-                    "application/json"
+                    "application/json",
+                    "application/fhir+json"
                 ],
                 "tags": [
                     "auth"
@@ -1047,6 +1144,9 @@ const docTemplate = `{
         "/auth/external/{clientId}": {
             "get": {
                 "description": "IdP chuyển trình duyệt về đây với code và state. state phải do /auth/method phát (đã ký) và trình duyệt phải mang cookie auth-external-state tương ứng. Thành công: 302 tới redirectUri của client kèm login và code, hoặc về trang đăng nhập của app kèm login. Lỗi trả OperationOutcome JSON 400 (không chuyển hướng). /auth/external/{clientId} là callback riêng của client có identityProvider.",
+                "produces": [
+                    "application/fhir+json"
+                ],
                 "tags": [
                     "auth"
                 ],
@@ -1054,9 +1154,10 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Client có identityProvider riêng",
+                        "description": "Client có identityProvider riêng (chỉ ở route /auth/external/{clientId}; route /auth/external không có tham số này)",
                         "name": "clientId",
-                        "in": "path"
+                        "in": "path",
+                        "required": true
                     },
                     {
                         "type": "string",
@@ -1111,7 +1212,8 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "produces": [
-                    "application/json"
+                    "application/json",
+                    "application/fhir+json"
                 ],
                 "tags": [
                     "auth"
@@ -1157,7 +1259,8 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "produces": [
-                    "application/json"
+                    "application/json",
+                    "application/fhir+json"
                 ],
                 "tags": [
                     "auth"
@@ -1192,8 +1295,10 @@ const docTemplate = `{
         },
         "/auth/login/{login}": {
             "get": {
+                "description": "Trả LoginResult hiện tại của login (code, memberships, mfaRequired hoặc mfaEnrollRequired tùy bước đang dở) để app tiếp tục luồng đăng nhập. Id login phải là UUID, sai trả 400, không có login trả 404. Có code và login thuộc một client thì đặt cookie medplum-\u003cclientId\u003e.",
                 "produces": [
-                    "application/json"
+                    "application/json",
+                    "application/fhir+json"
                 ],
                 "tags": [
                     "auth"
@@ -1239,7 +1344,8 @@ const docTemplate = `{
                 ],
                 "description": "profile chỉ có resourceType và id (hồ sơ đầy đủ nằm ở fhir-server); accessPolicy chưa có ở bản này.",
                 "produces": [
-                    "application/json"
+                    "application/json",
+                    "application/fhir+json"
                 ],
                 "tags": [
                     "auth"
@@ -1268,7 +1374,8 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "produces": [
-                    "application/json"
+                    "application/json",
+                    "application/fhir+json"
                 ],
                 "tags": [
                     "auth"
@@ -1434,7 +1541,8 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "produces": [
-                    "application/json"
+                    "application/json",
+                    "application/fhir+json"
                 ],
                 "tags": [
                     "auth"
@@ -1577,7 +1685,8 @@ const docTemplate = `{
                 ],
                 "description": "Danh sách phương thức đã đăng ký và được phép, project có bắt buộc MFA không, và (nếu chưa đăng ký TOTP) enrollUri cùng enrollQrCode. Secret trong enrollUri chỉ thành yếu tố khi chính phiên này xác nhận bằng mã.",
                 "produces": [
-                    "application/json"
+                    "application/json",
+                    "application/fhir+json"
                 ],
                 "tags": [
                     "auth"
@@ -1612,7 +1721,8 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "produces": [
-                    "application/json"
+                    "application/json",
+                    "application/fhir+json"
                 ],
                 "tags": [
                     "auth"
@@ -1664,7 +1774,8 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "produces": [
-                    "application/json"
+                    "application/json",
+                    "application/fhir+json"
                 ],
                 "tags": [
                     "auth"
@@ -1710,7 +1821,8 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "produces": [
-                    "application/json"
+                    "application/json",
+                    "application/fhir+json"
                 ],
                 "tags": [
                     "auth"
@@ -1762,7 +1874,8 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "produces": [
-                    "application/json"
+                    "application/json",
+                    "application/fhir+json"
                 ],
                 "tags": [
                     "auth"
@@ -1819,7 +1932,8 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "produces": [
-                    "application/json"
+                    "application/json",
+                    "application/fhir+json"
                 ],
                 "tags": [
                     "auth"
@@ -1879,11 +1993,13 @@ const docTemplate = `{
         },
         "/auth/profile": {
             "post": {
+                "description": "Gắn một ProjectMembership đã chọn vào login đang dở (login và profile đều bắt buộc có mặt trong body), rồi trả LoginResult như /auth/login (thường có code). Membership không tồn tại trả 400 \"Profile not found\". Có code và login thuộc một client thì đặt cookie medplum-\u003cclientId\u003e.",
                 "consumes": [
                     "application/json"
                 ],
                 "produces": [
-                    "application/json"
+                    "application/json",
+                    "application/fhir+json"
                 ],
                 "tags": [
                     "auth"
@@ -1891,7 +2007,7 @@ const docTemplate = `{
                 "summary": "Chọn profile (ProjectMembership) cho login",
                 "parameters": [
                     {
-                        "description": "login và id membership",
+                        "description": "login (id login đang dở) và profile (id ProjectMembership)",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -1963,6 +2079,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "description": "Cần Bearer token. Thu hồi một login (phiên) thuộc về chính người gọi theo loginId (UUID, bắt buộc); login của người khác hoặc không có trả lỗi 403/404. Thành công trả OperationOutcome \"All OK\".",
                 "consumes": [
                     "application/json"
                 ],
@@ -2020,11 +2137,13 @@ const docTemplate = `{
         },
         "/auth/scope": {
             "post": {
+                "description": "Đổi scope của login đang dở sang scope mới (login và scope đều bắt buộc có mặt trong body), rồi trả LoginResult như /auth/login. Scope mới chỉ được thu hẹp so với scope hiện có. Có code và login thuộc một client thì đặt cookie medplum-\u003cclientId\u003e.",
                 "consumes": [
                     "application/json"
                 ],
                 "produces": [
-                    "application/json"
+                    "application/json",
+                    "application/fhir+json"
                 ],
                 "tags": [
                     "auth"
@@ -2161,7 +2280,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "produces": [
-                    "application/json"
+                    "application/fhir+json"
                 ],
                 "tags": [
                     "email"
@@ -2214,6 +2333,7 @@ const docTemplate = `{
         },
         "/health/live": {
             "get": {
+                "description": "Trả {\"status\":\"ok\"} khi tiến trình còn sống; không kiểm tra phụ thuộc. /healthz và /health/startup trả cùng nội dung.",
                 "produces": [
                     "application/json"
                 ],
@@ -2233,6 +2353,7 @@ const docTemplate = `{
         },
         "/health/ready": {
             "get": {
+                "description": "Kiểm tra từng phụ thuộc đã khai báo (ví dụ DB, Redis); 200 khi tất cả sẵn sàng, 503 kèm cùng body khi có phụ thuộc chưa sẵn sàng.",
                 "produces": [
                     "application/json"
                 ],
@@ -2520,7 +2641,7 @@ const docTemplate = `{
                 ],
                 "description": "Cần Bearer. Thu hồi login và xóa cookie đăng nhập của client. Sau đó chính access token này bị từ chối ở các route của auth (fhir-server chỉ biết khi token hết hạn).",
                 "produces": [
-                    "application/json"
+                    "application/fhir+json"
                 ],
                 "tags": [
                     "oauth"
@@ -2549,7 +2670,7 @@ const docTemplate = `{
                 ],
                 "description": "Cần Bearer. Thu hồi login và xóa cookie đăng nhập của client. Sau đó chính access token này bị từ chối ở các route của auth (fhir-server chỉ biết khi token hết hạn).",
                 "produces": [
-                    "application/json"
+                    "application/fhir+json"
                 ],
                 "tags": [
                     "oauth"
@@ -2765,7 +2886,7 @@ const docTemplate = `{
                 ],
                 "description": "Chỉ admin của project (Bearer, hoặc Basic client:secret khi AUTH_SCIM_ALLOW_BASIC) và project có tính năng ` + "`" + `scim` + "`" + `. filter chỉ hỗ trợ ` + "`" + `userName eq \"x\"` + "`" + ` (không phân biệt hoa thường), dạng khác là 400 invalidFilter. Phân trang thật: startIndex từ 1, count mặc định và trần là AUTH_SCIM_MAX_PAGE. Lỗi dạng SCIM Error.",
                 "produces": [
-                    "application/json"
+                    "application/scim+json"
                 ],
                 "tags": [
                     "scim"
@@ -2829,7 +2950,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "produces": [
-                    "application/json"
+                    "application/scim+json"
                 ],
                 "tags": [
                     "scim"
@@ -2877,7 +2998,7 @@ const docTemplate = `{
                 ],
                 "description": "id là id của ProjectMembership. Membership ngoài project, thuộc Bot/ClientApplication hoặc không tồn tại đều là 404.",
                 "produces": [
-                    "application/json"
+                    "application/scim+json"
                 ],
                 "tags": [
                     "scim"
@@ -2918,7 +3039,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "produces": [
-                    "application/json"
+                    "application/scim+json"
                 ],
                 "tags": [
                     "scim"
@@ -2976,6 +3097,9 @@ const docTemplate = `{
                     }
                 ],
                 "description": "Xóa membership (User thuộc project mà hết membership thì bị xóa theo). Không xóa chủ project, admin cuối cùng hay membership của chính người gọi (400).",
+                "produces": [
+                    "application/scim+json"
+                ],
                 "tags": [
                     "scim"
                 ],
@@ -3018,7 +3142,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "produces": [
-                    "application/json"
+                    "application/scim+json"
                 ],
                 "tags": [
                     "scim"
@@ -3062,26 +3186,37 @@ const docTemplate = `{
     "definitions": {
         "application.AdminProjectView": {
             "type": "object",
+            "required": [
+                "id",
+                "name"
+            ],
             "properties": {
                 "id": {
-                    "type": "string"
+                    "description": "id của Project (UUID)",
+                    "type": "string",
+                    "example": "0192f3a4-7b1c-7d2e-9a10-3c5e8f1b2a44"
                 },
                 "name": {
-                    "type": "string"
+                    "description": "tên Project",
+                    "type": "string",
+                    "example": "Bệnh viện A"
                 },
                 "secret": {
+                    "description": "các secret của Project; giá trị luôn bị che (maskValue), chỉ có khi có secret",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/fhir.ProjectSetting"
                     }
                 },
                 "setting": {
+                    "description": "cấu hình Project; giá trị bí mật bị che, chỉ có khi Project có cấu hình",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/fhir.ProjectSetting"
                     }
                 },
                 "site": {
+                    "description": "các site của Project; googleClientSecret bị che, chỉ có khi Project có site",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/fhir.ProjectSite"
@@ -3091,123 +3226,235 @@ const docTemplate = `{
         },
         "application.LoginResult": {
             "type": "object",
+            "required": [
+                "login"
+            ],
             "properties": {
                 "allowedMfaMethods": {
+                    "description": "phương thức MFA project cho phép đăng ký; chỉ có khi mfaEnrollRequired",
                     "type": "array",
                     "items": {
-                        "type": "string"
-                    }
+                        "type": "string",
+                        "enum": [
+                            "totp",
+                            "email"
+                        ]
+                    },
+                    "example": [
+                        "totp"
+                    ]
                 },
                 "code": {
-                    "type": "string"
+                    "description": "authorization code (hạn mặc định 10 phút); chỉ có ở dạng \"code\" và đi kèm cookie đăng nhập",
+                    "type": "string",
+                    "example": "4f9c2e7a1b3d5f60a8c1e2d3b4a59687"
                 },
                 "email": {
-                    "type": "string"
+                    "description": "email của người dùng; chỉ có khi mfaRequired",
+                    "type": "string",
+                    "example": "user@example.com"
                 },
                 "enrollQrCode": {
+                    "description": "mã QR của enrollUri dạng data URI; chỉ có khi mfaEnrollRequired",
                     "type": "string"
                 },
                 "enrollUri": {
-                    "type": "string"
+                    "description": "otpauth URI để đăng ký TOTP; chỉ có khi mfaEnrollRequired",
+                    "type": "string",
+                    "example": "otpauth://totp/Trivita:user@example.com?secret=JBSWY3DPEHPK3PXP"
                 },
                 "login": {
-                    "type": "string"
+                    "description": "id của Login (UUID); luôn có, dùng cho các bước tiếp theo",
+                    "type": "string",
+                    "example": "0192f3a4-7b1c-7d2e-9a10-3c5e8f1b2a66"
                 },
                 "memberships": {
+                    "description": "các profile để chọn khi người dùng có nhiều membership; chỉ có ở dạng \"memberships\"",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/application.MembershipChoice"
                     }
                 },
                 "mfaEnrollRequired": {
-                    "type": "boolean"
+                    "description": "true ở dạng \"mfaEnrollRequired\": người dùng phải đăng ký MFA trước",
+                    "type": "boolean",
+                    "example": true
                 },
                 "mfaMethods": {
+                    "description": "phương thức MFA người dùng đã đăng ký; chỉ có khi mfaRequired",
                     "type": "array",
                     "items": {
-                        "type": "string"
-                    }
+                        "type": "string",
+                        "enum": [
+                            "totp",
+                            "email"
+                        ]
+                    },
+                    "example": [
+                        "totp"
+                    ]
                 },
                 "mfaRequired": {
-                    "type": "boolean"
+                    "description": "true ở dạng \"mfaRequired\": cần xác thực MFA trước khi có code",
+                    "type": "boolean",
+                    "example": true
                 }
             }
         },
         "application.MFAStatusResult": {
             "type": "object",
+            "required": [
+                "allowedMethods",
+                "enrolled",
+                "enrolledMethods",
+                "mfaRequired"
+            ],
             "properties": {
                 "allowedMethods": {
+                    "description": "các phương thức MFA project cho phép",
                     "type": "array",
                     "items": {
-                        "type": "string"
-                    }
+                        "type": "string",
+                        "enum": [
+                            "totp",
+                            "email"
+                        ]
+                    },
+                    "example": [
+                        "totp"
+                    ]
                 },
                 "email": {
-                    "type": "string"
+                    "description": "email của tài khoản (luôn được điền nếu user có email)",
+                    "type": "string",
+                    "example": "user@example.com"
                 },
                 "enrollQrCode": {
+                    "description": "mã QR của enrollUri dạng data URI; chỉ có khi người dùng chưa đăng ký TOTP",
                     "type": "string"
                 },
                 "enrollUri": {
-                    "type": "string"
+                    "description": "otpauth URI để đăng ký TOTP; chỉ có khi người dùng chưa đăng ký TOTP",
+                    "type": "string",
+                    "example": "otpauth://totp/Trivita:user@example.com?secret=JBSWY3DPEHPK3PXP"
                 },
                 "enrolled": {
-                    "type": "boolean"
+                    "description": "người dùng đã đăng ký ít nhất một phương thức MFA",
+                    "type": "boolean",
+                    "example": false
                 },
                 "enrolledMethods": {
+                    "description": "các phương thức MFA đã đăng ký",
                     "type": "array",
                     "items": {
-                        "type": "string"
-                    }
+                        "type": "string",
+                        "enum": [
+                            "totp",
+                            "email"
+                        ]
+                    },
+                    "example": [
+                        "totp"
+                    ]
                 },
                 "mfaRequired": {
-                    "type": "boolean"
+                    "description": "project có bắt buộc MFA hay không",
+                    "type": "boolean",
+                    "example": false
                 }
             }
         },
         "application.Me": {
             "type": "object",
+            "required": [
+                "config",
+                "membership",
+                "profile",
+                "project"
+            ],
             "properties": {
                 "config": {
-                    "$ref": "#/definitions/fhir.UserConfiguration"
+                    "description": "cấu hình giao diện của người dùng",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/fhir.UserConfiguration"
+                        }
+                    ]
                 },
                 "membership": {
-                    "$ref": "#/definitions/fhir.ProjectMembership"
+                    "description": "ProjectMembership của phiên",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/fhir.ProjectMembership"
+                        }
+                    ]
                 },
                 "profile": {
+                    "description": "profile chỉ gồm resourceType và id (rỗng nếu membership không có profile)",
                     "type": "object",
                     "additionalProperties": {
                         "type": "string"
                     }
                 },
                 "project": {
-                    "$ref": "#/definitions/fhir.Project"
+                    "description": "Project của phiên (id, name, features, ...)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/fhir.Project"
+                        }
+                    ]
                 },
                 "security": {
-                    "$ref": "#/definitions/application.UserSecurity"
+                    "description": "thông tin bảo mật (MFA, phiên, membership); chỉ có khi login không bị giới hạn bởi SMART resource scope",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/application.UserSecurity"
+                        }
+                    ]
                 },
                 "user": {
-                    "$ref": "#/definitions/fhir.User"
+                    "description": "người dùng (id, email, identifier); chỉ có khi membership trỏ tới User",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/fhir.User"
+                        }
+                    ]
                 }
             }
         },
         "application.MembershipChoice": {
             "type": "object",
+            "required": [
+                "id"
+            ],
             "properties": {
                 "id": {
-                    "type": "string"
+                    "description": "id của ProjectMembership (UUID)",
+                    "type": "string",
+                    "example": "0192f3a4-7b1c-7d2e-9a10-3c5e8f1b2a55"
                 },
                 "identifier": {
+                    "description": "định danh của membership, nếu có",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/fhir.Identifier"
                     }
                 },
                 "profile": {
-                    "$ref": "#/definitions/fhir.Reference"
+                    "description": "tham chiếu profile (Practitioner/Patient/RelatedPerson) của membership",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/fhir.Reference"
+                        }
+                    ]
                 },
                 "project": {
-                    "$ref": "#/definitions/fhir.Reference"
+                    "description": "tham chiếu Project (display là tên hiện tại); vắng khi không đọc được project",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/fhir.Reference"
+                        }
+                    ]
                 }
             }
         },
@@ -3215,381 +3462,156 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "authorizeUrl": {
-                    "type": "string"
+                    "description": "URL authorize của identity provider; vắng mặt nghĩa là đăng nhập bằng mật khẩu",
+                    "type": "string",
+                    "example": "https://idp.example.com/oauth2/authorize"
                 },
                 "domain": {
-                    "type": "string"
+                    "description": "tên miền của email, chỉ có khi tên miền cấu hình identity provider ngoài",
+                    "type": "string",
+                    "example": "example.com"
                 }
             }
         },
         "application.PreAuthorizeResult": {
             "type": "object",
+            "required": [
+                "expiresAt",
+                "preAuthorizedCode"
+            ],
             "properties": {
                 "expiresAt": {
-                    "type": "string"
+                    "description": "thời điểm hết hạn của mã, RFC3339 UTC (now + ttl giây)",
+                    "type": "string",
+                    "format": "date-time",
+                    "example": "2026-11-23T10:15:00.000Z"
                 },
                 "preAuthorizedCode": {
-                    "type": "string"
+                    "description": "mã pre-authorized dùng một lần để đổi token; chỉ trả ở lần này (server chỉ lưu băm)",
+                    "type": "string",
+                    "example": "4f9c2e7a1b3d5f60a8c1e2d3b4a59687"
                 }
             }
         },
         "application.RegisteredClient": {
             "type": "object",
+            "required": [
+                "client_id",
+                "client_id_issued_at",
+                "redirect_uris"
+            ],
             "properties": {
                 "client_id": {
-                    "type": "string"
+                    "description": "id của client dựng sẵn khớp redirect_uri",
+                    "type": "string",
+                    "example": "0192f3a4-7b1c-7d2e-9a10-3c5e8f1b2a77"
                 },
                 "client_id_issued_at": {
-                    "type": "integer"
+                    "description": "thời điểm trả về, Unix epoch tính bằng giây",
+                    "type": "integer",
+                    "example": 1795428900
                 },
                 "redirect_uris": {
+                    "description": "redirect URI khớp (đúng một phần tử)",
                     "type": "array",
                     "items": {
                         "type": "string"
-                    }
+                    },
+                    "example": [
+                        "https://app.example.com/callback"
+                    ]
                 }
             }
         },
         "application.Session": {
             "type": "object",
+            "required": [
+                "authMethod",
+                "id",
+                "lastUpdated"
+            ],
             "properties": {
                 "authMethod": {
-                    "type": "string"
+                    "description": "phương thức đăng nhập của phiên",
+                    "type": "string",
+                    "enum": [
+                        "password",
+                        "google",
+                        "external",
+                        "exchange",
+                        "client",
+                        "pre-authorized"
+                    ],
+                    "example": "password"
                 },
                 "browser": {
-                    "type": "string"
+                    "description": "trình duyệt suy ra từ user agent, nếu có",
+                    "type": "string",
+                    "example": "Chrome"
                 },
                 "id": {
-                    "type": "string"
+                    "description": "id của Login (UUID) đại diện cho phiên",
+                    "type": "string",
+                    "example": "0192f3a4-7b1c-7d2e-9a10-3c5e8f1b2a66"
                 },
                 "lastUpdated": {
-                    "type": "string"
+                    "description": "thời điểm cập nhật cuối của Login (meta.lastUpdated), RFC3339",
+                    "type": "string",
+                    "format": "date-time",
+                    "example": "2026-11-23T10:15:00.000Z"
                 },
                 "os": {
-                    "type": "string"
+                    "description": "hệ điều hành suy ra từ user agent, nếu có",
+                    "type": "string",
+                    "example": "macOS"
                 },
                 "project": {
-                    "$ref": "#/definitions/fhir.Reference"
-                },
-                "remoteAddress": {
-                    "type": "string"
-                }
-            }
-        },
-        "application.UserSecurity": {
-            "type": "object",
-            "properties": {
-                "memberships": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.ProjectMembership"
-                    }
-                },
-                "mfaEnrolled": {
-                    "type": "boolean"
-                },
-                "mfaRequired": {
-                    "type": "boolean"
-                },
-                "sessions": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/application.Session"
-                    }
-                }
-            }
-        },
-        "fhir.Address": {
-            "type": "object",
-            "properties": {
-                "_city": {
-                    "description": "Phần mở rộng của city",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_country": {
-                    "description": "Phần mở rộng của country",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_district": {
-                    "description": "Phần mở rộng của district",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_id": {
-                    "description": "Phần mở rộng của id",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_line": {
-                    "description": "Phần mở rộng của line",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Element"
-                    }
-                },
-                "_postalCode": {
-                    "description": "Phần mở rộng của postalCode",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_state": {
-                    "description": "Phần mở rộng của state",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_text": {
-                    "description": "Phần mở rộng của text",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_type": {
-                    "description": "Phần mở rộng của type",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_use": {
-                    "description": "Phần mở rộng của use",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "city": {
-                    "description": "Name of city, town etc.",
-                    "type": "string"
-                },
-                "country": {
-                    "description": "Country (e.g. can be ISO 3166 2 or 3 letter code)",
-                    "type": "string"
-                },
-                "district": {
-                    "description": "District name (aka county)",
-                    "type": "string"
-                },
-                "extension": {
-                    "description": "Additional content defined by implementations",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Extension"
-                    }
-                },
-                "id": {
-                    "description": "Unique id for inter-element referencing",
-                    "type": "string"
-                },
-                "line": {
-                    "description": "Street name, number, direction \u0026 P.O. Box etc.",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "period": {
-                    "description": "Time period when address was/is in use",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Period"
-                        }
-                    ]
-                },
-                "postalCode": {
-                    "description": "Postal code for area",
-                    "type": "string"
-                },
-                "state": {
-                    "description": "Sub-unit of country (abbreviations ok)",
-                    "type": "string"
-                },
-                "text": {
-                    "description": "Text representation of the address",
-                    "type": "string"
-                },
-                "type": {
-                    "description": "postal | physical | both",
-                    "type": "string"
-                },
-                "use": {
-                    "description": "home | work | temp | old | billing - purpose of this address",
-                    "type": "string"
-                }
-            }
-        },
-        "fhir.Age": {
-            "type": "object",
-            "properties": {
-                "_code": {
-                    "description": "Phần mở rộng của code",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_comparator": {
-                    "description": "Phần mở rộng của comparator",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_id": {
-                    "description": "Phần mở rộng của id",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_system": {
-                    "description": "Phần mở rộng của system",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_unit": {
-                    "description": "Phần mở rộng của unit",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_value": {
-                    "description": "Phần mở rộng của value",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "code": {
-                    "description": "Coded form of the unit",
-                    "type": "string"
-                },
-                "comparator": {
-                    "description": "\u003c | \u003c= | \u003e= | \u003e - how to understand the value",
-                    "type": "string"
-                },
-                "extension": {
-                    "description": "Additional content defined by implementations",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Extension"
-                    }
-                },
-                "id": {
-                    "description": "Unique id for inter-element referencing",
-                    "type": "string"
-                },
-                "system": {
-                    "description": "System that defines coded unit form",
-                    "type": "string"
-                },
-                "unit": {
-                    "description": "Unit representation",
-                    "type": "string"
-                },
-                "value": {
-                    "description": "Numerical value (with implicit precision)",
-                    "type": "number"
-                }
-            }
-        },
-        "fhir.Annotation": {
-            "type": "object",
-            "properties": {
-                "_authorString": {
-                    "description": "Phần mở rộng của authorString",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_id": {
-                    "description": "Phần mở rộng của id",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_text": {
-                    "description": "Phần mở rộng của text",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_time": {
-                    "description": "Phần mở rộng của time",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "authorReference": {
-                    "description": "Individual responsible for the annotation",
+                    "description": "tham chiếu Project của phiên, nếu có",
                     "allOf": [
                         {
                             "$ref": "#/definitions/fhir.Reference"
                         }
                     ]
                 },
-                "authorString": {
-                    "description": "Individual responsible for the annotation",
-                    "type": "string"
-                },
-                "extension": {
-                    "description": "Additional content defined by implementations",
+                "remoteAddress": {
+                    "description": "địa chỉ IP lúc đăng nhập, nếu có",
+                    "type": "string",
+                    "example": "203.0.113.10"
+                }
+            }
+        },
+        "application.UserSecurity": {
+            "type": "object",
+            "required": [
+                "memberships",
+                "mfaEnrolled",
+                "mfaRequired",
+                "sessions"
+            ],
+            "properties": {
+                "memberships": {
+                    "description": "các membership của người dùng",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "$ref": "#/definitions/fhir.ProjectMembership"
                     }
                 },
-                "id": {
-                    "description": "Unique id for inter-element referencing",
-                    "type": "string"
+                "mfaEnrolled": {
+                    "description": "người dùng đã đăng ký MFA",
+                    "type": "boolean",
+                    "example": false
                 },
-                "text": {
-                    "description": "The annotation - text content (as markdown) (bắt buộc)",
-                    "type": "string"
+                "mfaRequired": {
+                    "description": "project hiện tại bắt buộc MFA",
+                    "type": "boolean",
+                    "example": false
                 },
-                "time": {
-                    "description": "When the annotation was made",
-                    "type": "string"
+                "sessions": {
+                    "description": "các phiên đăng nhập của người dùng",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/application.Session"
+                    }
                 }
             }
         },
@@ -3690,7 +3712,7 @@ const docTemplate = `{
                     "description": "Additional content defined by implementations",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "hash": {
@@ -3914,7 +3936,7 @@ const docTemplate = `{
                     "description": "Additional content defined by implementations",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "grantType": {
@@ -3971,7 +3993,7 @@ const docTemplate = `{
                     "description": "Extensions that cannot be ignored",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "name": {
@@ -4133,7 +4155,7 @@ const docTemplate = `{
                     "description": "Additional content defined by implementations",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "id": {
@@ -4209,7 +4231,7 @@ const docTemplate = `{
                     "description": "Additional content defined by implementations",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "id": {
@@ -4230,969 +4252,6 @@ const docTemplate = `{
                 }
             }
         },
-        "fhir.ContactDetail": {
-            "type": "object",
-            "properties": {
-                "_id": {
-                    "description": "Phần mở rộng của id",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_name": {
-                    "description": "Phần mở rộng của name",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "extension": {
-                    "description": "Additional content defined by implementations",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Extension"
-                    }
-                },
-                "id": {
-                    "description": "Unique id for inter-element referencing",
-                    "type": "string"
-                },
-                "name": {
-                    "description": "Name of an individual to contact",
-                    "type": "string"
-                },
-                "telecom": {
-                    "description": "Contact details for individual or organization",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.ContactPoint"
-                    }
-                }
-            }
-        },
-        "fhir.ContactPoint": {
-            "type": "object",
-            "properties": {
-                "_id": {
-                    "description": "Phần mở rộng của id",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_rank": {
-                    "description": "Phần mở rộng của rank",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_system": {
-                    "description": "Phần mở rộng của system",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_use": {
-                    "description": "Phần mở rộng của use",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_value": {
-                    "description": "Phần mở rộng của value",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "extension": {
-                    "description": "Additional content defined by implementations",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Extension"
-                    }
-                },
-                "id": {
-                    "description": "Unique id for inter-element referencing",
-                    "type": "string"
-                },
-                "period": {
-                    "description": "Time period when the contact point was/is in use",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Period"
-                        }
-                    ]
-                },
-                "rank": {
-                    "description": "Specify preferred order of use (1 = highest)",
-                    "type": "integer"
-                },
-                "system": {
-                    "description": "phone | fax | email | pager | url | sms | other",
-                    "type": "string"
-                },
-                "use": {
-                    "description": "home | work | temp | old | mobile - purpose of this contact point",
-                    "type": "string"
-                },
-                "value": {
-                    "description": "The actual contact point details",
-                    "type": "string"
-                }
-            }
-        },
-        "fhir.Contributor": {
-            "type": "object",
-            "properties": {
-                "_id": {
-                    "description": "Phần mở rộng của id",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_name": {
-                    "description": "Phần mở rộng của name",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_type": {
-                    "description": "Phần mở rộng của type",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "contact": {
-                    "description": "Contact details of the contributor",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.ContactDetail"
-                    }
-                },
-                "extension": {
-                    "description": "Additional content defined by implementations",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Extension"
-                    }
-                },
-                "id": {
-                    "description": "Unique id for inter-element referencing",
-                    "type": "string"
-                },
-                "name": {
-                    "description": "Who contributed the content (bắt buộc)",
-                    "type": "string"
-                },
-                "type": {
-                    "description": "author | editor | reviewer | endorser (bắt buộc)",
-                    "type": "string"
-                }
-            }
-        },
-        "fhir.Count": {
-            "type": "object",
-            "properties": {
-                "_code": {
-                    "description": "Phần mở rộng của code",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_comparator": {
-                    "description": "Phần mở rộng của comparator",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_id": {
-                    "description": "Phần mở rộng của id",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_system": {
-                    "description": "Phần mở rộng của system",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_unit": {
-                    "description": "Phần mở rộng của unit",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_value": {
-                    "description": "Phần mở rộng của value",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "code": {
-                    "description": "Coded form of the unit",
-                    "type": "string"
-                },
-                "comparator": {
-                    "description": "\u003c | \u003c= | \u003e= | \u003e - how to understand the value",
-                    "type": "string"
-                },
-                "extension": {
-                    "description": "Additional content defined by implementations",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Extension"
-                    }
-                },
-                "id": {
-                    "description": "Unique id for inter-element referencing",
-                    "type": "string"
-                },
-                "system": {
-                    "description": "System that defines coded unit form",
-                    "type": "string"
-                },
-                "unit": {
-                    "description": "Unit representation",
-                    "type": "string"
-                },
-                "value": {
-                    "description": "Numerical value (with implicit precision)",
-                    "type": "number"
-                }
-            }
-        },
-        "fhir.DataRequirement": {
-            "type": "object",
-            "properties": {
-                "_id": {
-                    "description": "Phần mở rộng của id",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_limit": {
-                    "description": "Phần mở rộng của limit",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_mustSupport": {
-                    "description": "Phần mở rộng của mustSupport",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Element"
-                    }
-                },
-                "_profile": {
-                    "description": "Phần mở rộng của profile",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Element"
-                    }
-                },
-                "_type": {
-                    "description": "Phần mở rộng của type",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "codeFilter": {
-                    "description": "What codes are expected",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.DataRequirementCodeFilter"
-                    }
-                },
-                "dateFilter": {
-                    "description": "What dates/date ranges are expected",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.DataRequirementDateFilter"
-                    }
-                },
-                "extension": {
-                    "description": "Additional content defined by implementations",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Extension"
-                    }
-                },
-                "id": {
-                    "description": "Unique id for inter-element referencing",
-                    "type": "string"
-                },
-                "limit": {
-                    "description": "Number of results",
-                    "type": "integer"
-                },
-                "mustSupport": {
-                    "description": "Indicates specific structure elements that are referenced by the knowledge module",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "profile": {
-                    "description": "The profile of the required data",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "sort": {
-                    "description": "Order of the results",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.DataRequirementSort"
-                    }
-                },
-                "subjectCodeableConcept": {
-                    "description": "E.g. Patient, Practitioner, RelatedPerson, Organization, Location, Device",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.CodeableConcept"
-                        }
-                    ]
-                },
-                "subjectReference": {
-                    "description": "E.g. Patient, Practitioner, RelatedPerson, Organization, Location, Device",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Reference"
-                        }
-                    ]
-                },
-                "type": {
-                    "description": "The type of the required data (bắt buộc)",
-                    "type": "string"
-                }
-            }
-        },
-        "fhir.DataRequirementCodeFilter": {
-            "type": "object",
-            "properties": {
-                "_id": {
-                    "description": "Phần mở rộng của id",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_path": {
-                    "description": "Phần mở rộng của path",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_searchParam": {
-                    "description": "Phần mở rộng của searchParam",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_valueSet": {
-                    "description": "Phần mở rộng của valueSet",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "code": {
-                    "description": "What code is expected",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Coding"
-                    }
-                },
-                "extension": {
-                    "description": "Additional content defined by implementations",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Extension"
-                    }
-                },
-                "id": {
-                    "description": "Unique id for inter-element referencing",
-                    "type": "string"
-                },
-                "path": {
-                    "description": "A code-valued attribute to filter on",
-                    "type": "string"
-                },
-                "searchParam": {
-                    "description": "A coded (token) parameter to search on",
-                    "type": "string"
-                },
-                "valueSet": {
-                    "description": "Valueset for the filter",
-                    "type": "string"
-                }
-            }
-        },
-        "fhir.DataRequirementDateFilter": {
-            "type": "object",
-            "properties": {
-                "_id": {
-                    "description": "Phần mở rộng của id",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_path": {
-                    "description": "Phần mở rộng của path",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_searchParam": {
-                    "description": "Phần mở rộng của searchParam",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_valueDateTime": {
-                    "description": "Phần mở rộng của valueDateTime",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "extension": {
-                    "description": "Additional content defined by implementations",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Extension"
-                    }
-                },
-                "id": {
-                    "description": "Unique id for inter-element referencing",
-                    "type": "string"
-                },
-                "path": {
-                    "description": "A date-valued attribute to filter on",
-                    "type": "string"
-                },
-                "searchParam": {
-                    "description": "A date valued parameter to search on",
-                    "type": "string"
-                },
-                "valueDateTime": {
-                    "description": "The value of the filter, as a Period, DateTime, or Duration value",
-                    "type": "string"
-                },
-                "valueDuration": {
-                    "description": "The value of the filter, as a Period, DateTime, or Duration value",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Duration"
-                        }
-                    ]
-                },
-                "valuePeriod": {
-                    "description": "The value of the filter, as a Period, DateTime, or Duration value",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Period"
-                        }
-                    ]
-                }
-            }
-        },
-        "fhir.DataRequirementSort": {
-            "type": "object",
-            "properties": {
-                "_direction": {
-                    "description": "Phần mở rộng của direction",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_id": {
-                    "description": "Phần mở rộng của id",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_path": {
-                    "description": "Phần mở rộng của path",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "direction": {
-                    "description": "ascending | descending (bắt buộc)",
-                    "type": "string"
-                },
-                "extension": {
-                    "description": "Additional content defined by implementations",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Extension"
-                    }
-                },
-                "id": {
-                    "description": "Unique id for inter-element referencing",
-                    "type": "string"
-                },
-                "path": {
-                    "description": "The name of the attribute to perform the sort (bắt buộc)",
-                    "type": "string"
-                }
-            }
-        },
-        "fhir.Distance": {
-            "type": "object",
-            "properties": {
-                "_code": {
-                    "description": "Phần mở rộng của code",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_comparator": {
-                    "description": "Phần mở rộng của comparator",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_id": {
-                    "description": "Phần mở rộng của id",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_system": {
-                    "description": "Phần mở rộng của system",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_unit": {
-                    "description": "Phần mở rộng của unit",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_value": {
-                    "description": "Phần mở rộng của value",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "code": {
-                    "description": "Coded form of the unit",
-                    "type": "string"
-                },
-                "comparator": {
-                    "description": "\u003c | \u003c= | \u003e= | \u003e - how to understand the value",
-                    "type": "string"
-                },
-                "extension": {
-                    "description": "Additional content defined by implementations",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Extension"
-                    }
-                },
-                "id": {
-                    "description": "Unique id for inter-element referencing",
-                    "type": "string"
-                },
-                "system": {
-                    "description": "System that defines coded unit form",
-                    "type": "string"
-                },
-                "unit": {
-                    "description": "Unit representation",
-                    "type": "string"
-                },
-                "value": {
-                    "description": "Numerical value (with implicit precision)",
-                    "type": "number"
-                }
-            }
-        },
-        "fhir.Dosage": {
-            "type": "object",
-            "properties": {
-                "_asNeededBoolean": {
-                    "description": "Phần mở rộng của asNeededBoolean",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_id": {
-                    "description": "Phần mở rộng của id",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_patientInstruction": {
-                    "description": "Phần mở rộng của patientInstruction",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_sequence": {
-                    "description": "Phần mở rộng của sequence",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_text": {
-                    "description": "Phần mở rộng của text",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "additionalInstruction": {
-                    "description": "Supplemental instruction or warnings to the patient - e.g. \"with meals\", \"may cause drowsiness\"",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.CodeableConcept"
-                    }
-                },
-                "asNeededBoolean": {
-                    "description": "Take \"as needed\" (for x)",
-                    "type": "boolean"
-                },
-                "asNeededCodeableConcept": {
-                    "description": "Take \"as needed\" (for x)",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.CodeableConcept"
-                        }
-                    ]
-                },
-                "doseAndRate": {
-                    "description": "Amount of medication administered",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.DosageDoseAndRate"
-                    }
-                },
-                "extension": {
-                    "description": "Additional content defined by implementations",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Extension"
-                    }
-                },
-                "id": {
-                    "description": "Unique id for inter-element referencing",
-                    "type": "string"
-                },
-                "maxDosePerAdministration": {
-                    "description": "Upper limit on medication per administration",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Quantity"
-                        }
-                    ]
-                },
-                "maxDosePerLifetime": {
-                    "description": "Upper limit on medication per lifetime of the patient",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Quantity"
-                        }
-                    ]
-                },
-                "maxDosePerPeriod": {
-                    "description": "Upper limit on medication per unit of time",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Ratio"
-                        }
-                    ]
-                },
-                "method": {
-                    "description": "Technique for administering medication",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.CodeableConcept"
-                        }
-                    ]
-                },
-                "modifierExtension": {
-                    "description": "Extensions that cannot be ignored even if unrecognized",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Extension"
-                    }
-                },
-                "patientInstruction": {
-                    "description": "Patient or consumer oriented instructions",
-                    "type": "string"
-                },
-                "route": {
-                    "description": "How drug should enter body",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.CodeableConcept"
-                        }
-                    ]
-                },
-                "sequence": {
-                    "description": "The order of the dosage instructions",
-                    "type": "integer"
-                },
-                "site": {
-                    "description": "Body site to administer to",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.CodeableConcept"
-                        }
-                    ]
-                },
-                "text": {
-                    "description": "Free text dosage instructions e.g. SIG",
-                    "type": "string"
-                },
-                "timing": {
-                    "description": "When medication should be administered",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Timing"
-                        }
-                    ]
-                }
-            }
-        },
-        "fhir.DosageDoseAndRate": {
-            "type": "object",
-            "properties": {
-                "_id": {
-                    "description": "Phần mở rộng của id",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "doseQuantity": {
-                    "description": "Amount of medication per dose",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Quantity"
-                        }
-                    ]
-                },
-                "doseRange": {
-                    "description": "Amount of medication per dose",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Range"
-                        }
-                    ]
-                },
-                "extension": {
-                    "description": "Additional content defined by implementations",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Extension"
-                    }
-                },
-                "id": {
-                    "description": "Unique id for inter-element referencing",
-                    "type": "string"
-                },
-                "rateQuantity": {
-                    "description": "Amount of medication per unit of time",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Quantity"
-                        }
-                    ]
-                },
-                "rateRange": {
-                    "description": "Amount of medication per unit of time",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Range"
-                        }
-                    ]
-                },
-                "rateRatio": {
-                    "description": "Amount of medication per unit of time",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Ratio"
-                        }
-                    ]
-                },
-                "type": {
-                    "description": "The kind of dose or rate specified",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.CodeableConcept"
-                        }
-                    ]
-                }
-            }
-        },
-        "fhir.Duration": {
-            "type": "object",
-            "properties": {
-                "_code": {
-                    "description": "Phần mở rộng của code",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_comparator": {
-                    "description": "Phần mở rộng của comparator",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_id": {
-                    "description": "Phần mở rộng của id",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_system": {
-                    "description": "Phần mở rộng của system",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_unit": {
-                    "description": "Phần mở rộng của unit",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_value": {
-                    "description": "Phần mở rộng của value",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "code": {
-                    "description": "Coded form of the unit",
-                    "type": "string"
-                },
-                "comparator": {
-                    "description": "\u003c | \u003c= | \u003e= | \u003e - how to understand the value",
-                    "type": "string"
-                },
-                "extension": {
-                    "description": "Additional content defined by implementations",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Extension"
-                    }
-                },
-                "id": {
-                    "description": "Unique id for inter-element referencing",
-                    "type": "string"
-                },
-                "system": {
-                    "description": "System that defines coded unit form",
-                    "type": "string"
-                },
-                "unit": {
-                    "description": "Unit representation",
-                    "type": "string"
-                },
-                "value": {
-                    "description": "Numerical value (with implicit precision)",
-                    "type": "number"
-                }
-            }
-        },
         "fhir.Element": {
             "type": "object",
             "properties": {
@@ -5208,717 +4267,11 @@ const docTemplate = `{
                     "description": "Additional content defined by implementations",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "id": {
                     "description": "Unique id for inter-element referencing",
-                    "type": "string"
-                }
-            }
-        },
-        "fhir.Expression": {
-            "type": "object",
-            "properties": {
-                "_description": {
-                    "description": "Phần mở rộng của description",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_expression": {
-                    "description": "Phần mở rộng của expression",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_id": {
-                    "description": "Phần mở rộng của id",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_language": {
-                    "description": "Phần mở rộng của language",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_name": {
-                    "description": "Phần mở rộng của name",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_reference": {
-                    "description": "Phần mở rộng của reference",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "description": {
-                    "description": "Natural language description of the condition",
-                    "type": "string"
-                },
-                "expression": {
-                    "description": "Expression in specified language",
-                    "type": "string"
-                },
-                "extension": {
-                    "description": "Additional content defined by implementations",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Extension"
-                    }
-                },
-                "id": {
-                    "description": "Unique id for inter-element referencing",
-                    "type": "string"
-                },
-                "language": {
-                    "description": "text/cql | text/fhirpath | application/x-fhir-query | etc. (bắt buộc)",
-                    "type": "string"
-                },
-                "name": {
-                    "description": "Short name assigned to expression for reuse",
-                    "type": "string"
-                },
-                "reference": {
-                    "description": "Where the expression is found",
-                    "type": "string"
-                }
-            }
-        },
-        "fhir.Extension": {
-            "type": "object",
-            "properties": {
-                "_id": {
-                    "description": "Phần mở rộng của id",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_url": {
-                    "description": "Phần mở rộng của url",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_valueBase64Binary": {
-                    "description": "Phần mở rộng của valueBase64Binary",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_valueBoolean": {
-                    "description": "Phần mở rộng của valueBoolean",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_valueCanonical": {
-                    "description": "Phần mở rộng của valueCanonical",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_valueCode": {
-                    "description": "Phần mở rộng của valueCode",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_valueDate": {
-                    "description": "Phần mở rộng của valueDate",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_valueDateTime": {
-                    "description": "Phần mở rộng của valueDateTime",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_valueDecimal": {
-                    "description": "Phần mở rộng của valueDecimal",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_valueId": {
-                    "description": "Phần mở rộng của valueId",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_valueInstant": {
-                    "description": "Phần mở rộng của valueInstant",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_valueInteger": {
-                    "description": "Phần mở rộng của valueInteger",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_valueMarkdown": {
-                    "description": "Phần mở rộng của valueMarkdown",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_valueOid": {
-                    "description": "Phần mở rộng của valueOid",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_valuePositiveInt": {
-                    "description": "Phần mở rộng của valuePositiveInt",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_valueString": {
-                    "description": "Phần mở rộng của valueString",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_valueTime": {
-                    "description": "Phần mở rộng của valueTime",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_valueUnsignedInt": {
-                    "description": "Phần mở rộng của valueUnsignedInt",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_valueUri": {
-                    "description": "Phần mở rộng của valueUri",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_valueUrl": {
-                    "description": "Phần mở rộng của valueUrl",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_valueUuid": {
-                    "description": "Phần mở rộng của valueUuid",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "extension": {
-                    "description": "Additional content defined by implementations",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Extension"
-                    }
-                },
-                "id": {
-                    "description": "Unique id for inter-element referencing",
-                    "type": "string"
-                },
-                "url": {
-                    "description": "identifies the meaning of the extension (bắt buộc)",
-                    "type": "string"
-                },
-                "valueAddress": {
-                    "description": "Value of extension",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Address"
-                        }
-                    ]
-                },
-                "valueAge": {
-                    "description": "Value of extension",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Age"
-                        }
-                    ]
-                },
-                "valueAnnotation": {
-                    "description": "Value of extension",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Annotation"
-                        }
-                    ]
-                },
-                "valueAttachment": {
-                    "description": "Value of extension",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Attachment"
-                        }
-                    ]
-                },
-                "valueBase64Binary": {
-                    "description": "Value of extension",
-                    "type": "string"
-                },
-                "valueBoolean": {
-                    "description": "Value of extension",
-                    "type": "boolean"
-                },
-                "valueCanonical": {
-                    "description": "Value of extension",
-                    "type": "string"
-                },
-                "valueCode": {
-                    "description": "Value of extension",
-                    "type": "string"
-                },
-                "valueCodeableConcept": {
-                    "description": "Value of extension",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.CodeableConcept"
-                        }
-                    ]
-                },
-                "valueCoding": {
-                    "description": "Value of extension",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Coding"
-                        }
-                    ]
-                },
-                "valueContactDetail": {
-                    "description": "Value of extension",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.ContactDetail"
-                        }
-                    ]
-                },
-                "valueContactPoint": {
-                    "description": "Value of extension",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.ContactPoint"
-                        }
-                    ]
-                },
-                "valueContributor": {
-                    "description": "Value of extension",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Contributor"
-                        }
-                    ]
-                },
-                "valueCount": {
-                    "description": "Value of extension",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Count"
-                        }
-                    ]
-                },
-                "valueDataRequirement": {
-                    "description": "Value of extension",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.DataRequirement"
-                        }
-                    ]
-                },
-                "valueDate": {
-                    "description": "Value of extension",
-                    "type": "string"
-                },
-                "valueDateTime": {
-                    "description": "Value of extension",
-                    "type": "string"
-                },
-                "valueDecimal": {
-                    "description": "Value of extension",
-                    "type": "number"
-                },
-                "valueDistance": {
-                    "description": "Value of extension",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Distance"
-                        }
-                    ]
-                },
-                "valueDosage": {
-                    "description": "Value of extension",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Dosage"
-                        }
-                    ]
-                },
-                "valueDuration": {
-                    "description": "Value of extension",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Duration"
-                        }
-                    ]
-                },
-                "valueExpression": {
-                    "description": "Value of extension",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Expression"
-                        }
-                    ]
-                },
-                "valueHumanName": {
-                    "description": "Value of extension",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.HumanName"
-                        }
-                    ]
-                },
-                "valueId": {
-                    "description": "Value of extension",
-                    "type": "string"
-                },
-                "valueIdentifier": {
-                    "description": "Value of extension",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Identifier"
-                        }
-                    ]
-                },
-                "valueInstant": {
-                    "description": "Value of extension",
-                    "type": "string"
-                },
-                "valueInteger": {
-                    "description": "Value of extension",
-                    "type": "integer"
-                },
-                "valueMarkdown": {
-                    "description": "Value of extension",
-                    "type": "string"
-                },
-                "valueMeta": {
-                    "description": "Value of extension",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Meta"
-                        }
-                    ]
-                },
-                "valueMoney": {
-                    "description": "Value of extension",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Money"
-                        }
-                    ]
-                },
-                "valueOid": {
-                    "description": "Value of extension",
-                    "type": "string"
-                },
-                "valueParameterDefinition": {
-                    "description": "Value of extension",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.ParameterDefinition"
-                        }
-                    ]
-                },
-                "valuePeriod": {
-                    "description": "Value of extension",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Period"
-                        }
-                    ]
-                },
-                "valuePositiveInt": {
-                    "description": "Value of extension",
-                    "type": "integer"
-                },
-                "valueQuantity": {
-                    "description": "Value of extension",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Quantity"
-                        }
-                    ]
-                },
-                "valueRange": {
-                    "description": "Value of extension",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Range"
-                        }
-                    ]
-                },
-                "valueRatio": {
-                    "description": "Value of extension",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Ratio"
-                        }
-                    ]
-                },
-                "valueReference": {
-                    "description": "Value of extension",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Reference"
-                        }
-                    ]
-                },
-                "valueRelatedArtifact": {
-                    "description": "Value of extension",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.RelatedArtifact"
-                        }
-                    ]
-                },
-                "valueSampledData": {
-                    "description": "Value of extension",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.SampledData"
-                        }
-                    ]
-                },
-                "valueSignature": {
-                    "description": "Value of extension",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Signature"
-                        }
-                    ]
-                },
-                "valueString": {
-                    "description": "Value of extension",
-                    "type": "string"
-                },
-                "valueTime": {
-                    "description": "Value of extension",
-                    "type": "string"
-                },
-                "valueTiming": {
-                    "description": "Value of extension",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Timing"
-                        }
-                    ]
-                },
-                "valueTriggerDefinition": {
-                    "description": "Value of extension",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.TriggerDefinition"
-                        }
-                    ]
-                },
-                "valueUnsignedInt": {
-                    "description": "Value of extension",
-                    "type": "integer"
-                },
-                "valueUri": {
-                    "description": "Value of extension",
-                    "type": "string"
-                },
-                "valueUrl": {
-                    "description": "Value of extension",
-                    "type": "string"
-                },
-                "valueUsageContext": {
-                    "description": "Value of extension",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.UsageContext"
-                        }
-                    ]
-                },
-                "valueUuid": {
-                    "description": "Value of extension",
-                    "type": "string"
-                }
-            }
-        },
-        "fhir.HumanName": {
-            "type": "object",
-            "properties": {
-                "_family": {
-                    "description": "Phần mở rộng của family",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_given": {
-                    "description": "Phần mở rộng của given",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Element"
-                    }
-                },
-                "_id": {
-                    "description": "Phần mở rộng của id",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_prefix": {
-                    "description": "Phần mở rộng của prefix",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Element"
-                    }
-                },
-                "_suffix": {
-                    "description": "Phần mở rộng của suffix",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Element"
-                    }
-                },
-                "_text": {
-                    "description": "Phần mở rộng của text",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_use": {
-                    "description": "Phần mở rộng của use",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "extension": {
-                    "description": "Additional content defined by implementations",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Extension"
-                    }
-                },
-                "family": {
-                    "description": "Family name (often called 'Surname')",
-                    "type": "string"
-                },
-                "given": {
-                    "description": "Given names (not always 'first'). Includes middle names",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "id": {
-                    "description": "Unique id for inter-element referencing",
-                    "type": "string"
-                },
-                "period": {
-                    "description": "Time period when name was/is in use",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Period"
-                        }
-                    ]
-                },
-                "prefix": {
-                    "description": "Parts that come before the name",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "suffix": {
-                    "description": "Parts that come after the name",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "text": {
-                    "description": "Text representation of the full name",
-                    "type": "string"
-                },
-                "use": {
-                    "description": "usual | official | temp | nickname | anonymous | old | maiden",
                     "type": "string"
                 }
             }
@@ -5970,7 +4323,7 @@ const docTemplate = `{
                     "description": "Additional content defined by implementations",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "id": {
@@ -6288,7 +4641,7 @@ const docTemplate = `{
                     "description": "Additional content defined by implementations",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "id": {
@@ -6342,54 +4695,6 @@ const docTemplate = `{
                 }
             }
         },
-        "fhir.Money": {
-            "type": "object",
-            "properties": {
-                "_currency": {
-                    "description": "Phần mở rộng của currency",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_id": {
-                    "description": "Phần mở rộng của id",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_value": {
-                    "description": "Phần mở rộng của value",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "currency": {
-                    "description": "ISO 4217 Currency Code",
-                    "type": "string"
-                },
-                "extension": {
-                    "description": "Additional content defined by implementations",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Extension"
-                    }
-                },
-                "id": {
-                    "description": "Unique id for inter-element referencing",
-                    "type": "string"
-                },
-                "value": {
-                    "description": "Numerical value (with implicit precision)",
-                    "type": "number"
-                }
-            }
-        },
         "fhir.Narrative": {
             "type": "object",
             "properties": {
@@ -6425,7 +4730,7 @@ const docTemplate = `{
                     "description": "Additional content defined by implementations",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "id": {
@@ -6476,7 +4781,7 @@ const docTemplate = `{
                     "description": "Additional content defined by implementations",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "id": {
@@ -6510,7 +4815,7 @@ const docTemplate = `{
                     "description": "Extensions that cannot be ignored",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "resourceType": {
@@ -6602,7 +4907,7 @@ const docTemplate = `{
                     "description": "Additional content defined by implementations",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "id": {
@@ -6620,119 +4925,11 @@ const docTemplate = `{
                     "description": "Extensions that cannot be ignored even if unrecognized",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "severity": {
                     "description": "fatal | error | warning | information (bắt buộc)",
-                    "type": "string"
-                }
-            }
-        },
-        "fhir.ParameterDefinition": {
-            "type": "object",
-            "properties": {
-                "_documentation": {
-                    "description": "Phần mở rộng của documentation",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_id": {
-                    "description": "Phần mở rộng của id",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_max": {
-                    "description": "Phần mở rộng của max",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_min": {
-                    "description": "Phần mở rộng của min",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_name": {
-                    "description": "Phần mở rộng của name",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_profile": {
-                    "description": "Phần mở rộng của profile",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_type": {
-                    "description": "Phần mở rộng của type",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_use": {
-                    "description": "Phần mở rộng của use",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "documentation": {
-                    "description": "A brief description of the parameter",
-                    "type": "string"
-                },
-                "extension": {
-                    "description": "Additional content defined by implementations",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Extension"
-                    }
-                },
-                "id": {
-                    "description": "Unique id for inter-element referencing",
-                    "type": "string"
-                },
-                "max": {
-                    "description": "Maximum cardinality (a number of *)",
-                    "type": "string"
-                },
-                "min": {
-                    "description": "Minimum cardinality",
-                    "type": "integer"
-                },
-                "name": {
-                    "description": "Name used to access the parameter value",
-                    "type": "string"
-                },
-                "profile": {
-                    "description": "What profile the value is expected to be",
-                    "type": "string"
-                },
-                "type": {
-                    "description": "What type of value (bắt buộc)",
-                    "type": "string"
-                },
-                "use": {
-                    "description": "in | out (bắt buộc)",
                     "type": "string"
                 }
             }
@@ -6772,7 +4969,7 @@ const docTemplate = `{
                     "description": "Additional content defined by implementations",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "id": {
@@ -6926,7 +5123,7 @@ const docTemplate = `{
                     "description": "Additional content defined by implementations",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "features": {
@@ -6974,7 +5171,7 @@ const docTemplate = `{
                     "description": "Extensions that cannot be ignored",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "name": {
@@ -7207,7 +5404,7 @@ const docTemplate = `{
                     "description": "Additional content defined by implementations",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "externalId": {
@@ -7253,7 +5450,7 @@ const docTemplate = `{
                     "description": "Extensions that cannot be ignored",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "profile": {
@@ -7506,170 +5703,6 @@ const docTemplate = `{
                 }
             }
         },
-        "fhir.Quantity": {
-            "type": "object",
-            "properties": {
-                "_code": {
-                    "description": "Phần mở rộng của code",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_comparator": {
-                    "description": "Phần mở rộng của comparator",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_id": {
-                    "description": "Phần mở rộng của id",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_system": {
-                    "description": "Phần mở rộng của system",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_unit": {
-                    "description": "Phần mở rộng của unit",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_value": {
-                    "description": "Phần mở rộng của value",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "code": {
-                    "description": "Coded form of the unit",
-                    "type": "string"
-                },
-                "comparator": {
-                    "description": "\u003c | \u003c= | \u003e= | \u003e - how to understand the value",
-                    "type": "string"
-                },
-                "extension": {
-                    "description": "Additional content defined by implementations",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Extension"
-                    }
-                },
-                "id": {
-                    "description": "Unique id for inter-element referencing",
-                    "type": "string"
-                },
-                "system": {
-                    "description": "System that defines coded unit form",
-                    "type": "string"
-                },
-                "unit": {
-                    "description": "Unit representation",
-                    "type": "string"
-                },
-                "value": {
-                    "description": "Numerical value (with implicit precision)",
-                    "type": "number"
-                }
-            }
-        },
-        "fhir.Range": {
-            "type": "object",
-            "properties": {
-                "_id": {
-                    "description": "Phần mở rộng của id",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "extension": {
-                    "description": "Additional content defined by implementations",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Extension"
-                    }
-                },
-                "high": {
-                    "description": "High limit",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Quantity"
-                        }
-                    ]
-                },
-                "id": {
-                    "description": "Unique id for inter-element referencing",
-                    "type": "string"
-                },
-                "low": {
-                    "description": "Low limit",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Quantity"
-                        }
-                    ]
-                }
-            }
-        },
-        "fhir.Ratio": {
-            "type": "object",
-            "properties": {
-                "_id": {
-                    "description": "Phần mở rộng của id",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "denominator": {
-                    "description": "Denominator value",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Quantity"
-                        }
-                    ]
-                },
-                "extension": {
-                    "description": "Additional content defined by implementations",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Extension"
-                    }
-                },
-                "id": {
-                    "description": "Unique id for inter-element referencing",
-                    "type": "string"
-                },
-                "numerator": {
-                    "description": "Numerator value",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Quantity"
-                        }
-                    ]
-                }
-            }
-        },
         "fhir.Reference": {
             "type": "object",
             "properties": {
@@ -7713,7 +5746,7 @@ const docTemplate = `{
                     "description": "Additional content defined by implementations",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "id": {
@@ -7735,759 +5768,6 @@ const docTemplate = `{
                 "type": {
                     "description": "Type the reference refers to (e.g. \"Patient\")",
                     "type": "string"
-                }
-            }
-        },
-        "fhir.RelatedArtifact": {
-            "type": "object",
-            "properties": {
-                "_citation": {
-                    "description": "Phần mở rộng của citation",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_display": {
-                    "description": "Phần mở rộng của display",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_id": {
-                    "description": "Phần mở rộng của id",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_label": {
-                    "description": "Phần mở rộng của label",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_resource": {
-                    "description": "Phần mở rộng của resource",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_type": {
-                    "description": "Phần mở rộng của type",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_url": {
-                    "description": "Phần mở rộng của url",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "citation": {
-                    "description": "Bibliographic citation for the artifact",
-                    "type": "string"
-                },
-                "display": {
-                    "description": "Brief description of the related artifact",
-                    "type": "string"
-                },
-                "document": {
-                    "description": "What document is being referenced",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Attachment"
-                        }
-                    ]
-                },
-                "extension": {
-                    "description": "Additional content defined by implementations",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Extension"
-                    }
-                },
-                "id": {
-                    "description": "Unique id for inter-element referencing",
-                    "type": "string"
-                },
-                "label": {
-                    "description": "Short label",
-                    "type": "string"
-                },
-                "resource": {
-                    "description": "What resource is being referenced",
-                    "type": "string"
-                },
-                "type": {
-                    "description": "documentation | justification | citation | predecessor | successor | derived-from | depends-on | composed-of (bắt buộc)",
-                    "type": "string"
-                },
-                "url": {
-                    "description": "Where the artifact can be accessed",
-                    "type": "string"
-                }
-            }
-        },
-        "fhir.SampledData": {
-            "type": "object",
-            "properties": {
-                "_data": {
-                    "description": "Phần mở rộng của data",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_dimensions": {
-                    "description": "Phần mở rộng của dimensions",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_factor": {
-                    "description": "Phần mở rộng của factor",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_id": {
-                    "description": "Phần mở rộng của id",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_lowerLimit": {
-                    "description": "Phần mở rộng của lowerLimit",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_period": {
-                    "description": "Phần mở rộng của period",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_upperLimit": {
-                    "description": "Phần mở rộng của upperLimit",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "data": {
-                    "description": "Decimal values with spaces, or \"E\" | \"U\" | \"L\"",
-                    "type": "string"
-                },
-                "dimensions": {
-                    "description": "Number of sample points at each time point (bắt buộc)",
-                    "type": "integer"
-                },
-                "extension": {
-                    "description": "Additional content defined by implementations",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Extension"
-                    }
-                },
-                "factor": {
-                    "description": "Multiply data by this before adding to origin",
-                    "type": "number"
-                },
-                "id": {
-                    "description": "Unique id for inter-element referencing",
-                    "type": "string"
-                },
-                "lowerLimit": {
-                    "description": "Lower limit of detection",
-                    "type": "number"
-                },
-                "origin": {
-                    "description": "Zero value and units (bắt buộc)",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Quantity"
-                        }
-                    ]
-                },
-                "period": {
-                    "description": "Number of milliseconds between samples (bắt buộc)",
-                    "type": "number"
-                },
-                "upperLimit": {
-                    "description": "Upper limit of detection",
-                    "type": "number"
-                }
-            }
-        },
-        "fhir.Signature": {
-            "type": "object",
-            "properties": {
-                "_data": {
-                    "description": "Phần mở rộng của data",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_id": {
-                    "description": "Phần mở rộng của id",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_sigFormat": {
-                    "description": "Phần mở rộng của sigFormat",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_targetFormat": {
-                    "description": "Phần mở rộng của targetFormat",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_when": {
-                    "description": "Phần mở rộng của when",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "data": {
-                    "description": "The actual signature content (XML DigSig. JWS, picture, etc.)",
-                    "type": "string"
-                },
-                "extension": {
-                    "description": "Additional content defined by implementations",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Extension"
-                    }
-                },
-                "id": {
-                    "description": "Unique id for inter-element referencing",
-                    "type": "string"
-                },
-                "onBehalfOf": {
-                    "description": "The party represented",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Reference"
-                        }
-                    ]
-                },
-                "sigFormat": {
-                    "description": "The technical format of the signature",
-                    "type": "string"
-                },
-                "targetFormat": {
-                    "description": "The technical format of the signed resources",
-                    "type": "string"
-                },
-                "type": {
-                    "description": "Indication of the reason the entity signed the object(s) (bắt buộc)",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Coding"
-                    }
-                },
-                "when": {
-                    "description": "When the signature was created (bắt buộc)",
-                    "type": "string"
-                },
-                "who": {
-                    "description": "Who signed (bắt buộc)",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Reference"
-                        }
-                    ]
-                }
-            }
-        },
-        "fhir.Timing": {
-            "type": "object",
-            "properties": {
-                "_event": {
-                    "description": "Phần mở rộng của event",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Element"
-                    }
-                },
-                "_id": {
-                    "description": "Phần mở rộng của id",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "code": {
-                    "description": "BID | TID | QID | AM | PM | QD | QOD | +",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.CodeableConcept"
-                        }
-                    ]
-                },
-                "event": {
-                    "description": "When the event occurs",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "extension": {
-                    "description": "Additional content defined by implementations",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Extension"
-                    }
-                },
-                "id": {
-                    "description": "Unique id for inter-element referencing",
-                    "type": "string"
-                },
-                "modifierExtension": {
-                    "description": "Extensions that cannot be ignored even if unrecognized",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Extension"
-                    }
-                },
-                "repeat": {
-                    "description": "When the event is to occur",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.TimingRepeat"
-                        }
-                    ]
-                }
-            }
-        },
-        "fhir.TimingRepeat": {
-            "type": "object",
-            "properties": {
-                "_count": {
-                    "description": "Phần mở rộng của count",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_countMax": {
-                    "description": "Phần mở rộng của countMax",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_dayOfWeek": {
-                    "description": "Phần mở rộng của dayOfWeek",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Element"
-                    }
-                },
-                "_duration": {
-                    "description": "Phần mở rộng của duration",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_durationMax": {
-                    "description": "Phần mở rộng của durationMax",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_durationUnit": {
-                    "description": "Phần mở rộng của durationUnit",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_frequency": {
-                    "description": "Phần mở rộng của frequency",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_frequencyMax": {
-                    "description": "Phần mở rộng của frequencyMax",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_id": {
-                    "description": "Phần mở rộng của id",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_offset": {
-                    "description": "Phần mở rộng của offset",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_period": {
-                    "description": "Phần mở rộng của period",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_periodMax": {
-                    "description": "Phần mở rộng của periodMax",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_periodUnit": {
-                    "description": "Phần mở rộng của periodUnit",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_timeOfDay": {
-                    "description": "Phần mở rộng của timeOfDay",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Element"
-                    }
-                },
-                "_when": {
-                    "description": "Phần mở rộng của when",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Element"
-                    }
-                },
-                "boundsDuration": {
-                    "description": "Length/Range of lengths, or (Start and/or end) limits",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Duration"
-                        }
-                    ]
-                },
-                "boundsPeriod": {
-                    "description": "Length/Range of lengths, or (Start and/or end) limits",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Period"
-                        }
-                    ]
-                },
-                "boundsRange": {
-                    "description": "Length/Range of lengths, or (Start and/or end) limits",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Range"
-                        }
-                    ]
-                },
-                "count": {
-                    "description": "Number of times to repeat",
-                    "type": "integer"
-                },
-                "countMax": {
-                    "description": "Maximum number of times to repeat",
-                    "type": "integer"
-                },
-                "dayOfWeek": {
-                    "description": "mon | tue | wed | thu | fri | sat | sun",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "duration": {
-                    "description": "How long when it happens",
-                    "type": "number"
-                },
-                "durationMax": {
-                    "description": "How long when it happens (Max)",
-                    "type": "number"
-                },
-                "durationUnit": {
-                    "description": "s | min | h | d | wk | mo | a - unit of time (UCUM)",
-                    "type": "string"
-                },
-                "extension": {
-                    "description": "Additional content defined by implementations",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Extension"
-                    }
-                },
-                "frequency": {
-                    "description": "Event occurs frequency times per period",
-                    "type": "integer"
-                },
-                "frequencyMax": {
-                    "description": "Event occurs up to frequencyMax times per period",
-                    "type": "integer"
-                },
-                "id": {
-                    "description": "Unique id for inter-element referencing",
-                    "type": "string"
-                },
-                "offset": {
-                    "description": "Minutes from event (before or after)",
-                    "type": "integer"
-                },
-                "period": {
-                    "description": "Event occurs frequency times per period",
-                    "type": "number"
-                },
-                "periodMax": {
-                    "description": "Upper limit of period (3-4 hours)",
-                    "type": "number"
-                },
-                "periodUnit": {
-                    "description": "s | min | h | d | wk | mo | a - unit of time (UCUM)",
-                    "type": "string"
-                },
-                "timeOfDay": {
-                    "description": "Time of day for action",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "when": {
-                    "description": "Code for time period of occurrence",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
-        "fhir.TriggerDefinition": {
-            "type": "object",
-            "properties": {
-                "_id": {
-                    "description": "Phần mở rộng của id",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_name": {
-                    "description": "Phần mở rộng của name",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_timingDate": {
-                    "description": "Phần mở rộng của timingDate",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_timingDateTime": {
-                    "description": "Phần mở rộng của timingDateTime",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_type": {
-                    "description": "Phần mở rộng của type",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "condition": {
-                    "description": "Whether the event triggers (boolean expression)",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Expression"
-                        }
-                    ]
-                },
-                "data": {
-                    "description": "Triggering data of the event (multiple = 'and')",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.DataRequirement"
-                    }
-                },
-                "extension": {
-                    "description": "Additional content defined by implementations",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Extension"
-                    }
-                },
-                "id": {
-                    "description": "Unique id for inter-element referencing",
-                    "type": "string"
-                },
-                "name": {
-                    "description": "Name or URI that identifies the event",
-                    "type": "string"
-                },
-                "timingDate": {
-                    "description": "Timing of the event",
-                    "type": "string"
-                },
-                "timingDateTime": {
-                    "description": "Timing of the event",
-                    "type": "string"
-                },
-                "timingReference": {
-                    "description": "Timing of the event",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Reference"
-                        }
-                    ]
-                },
-                "timingTiming": {
-                    "description": "Timing of the event",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Timing"
-                        }
-                    ]
-                },
-                "type": {
-                    "description": "named-event | periodic | data-changed | data-added | data-modified | data-removed | data-accessed | data-access-ended (bắt buộc)",
-                    "type": "string"
-                }
-            }
-        },
-        "fhir.UsageContext": {
-            "type": "object",
-            "properties": {
-                "_id": {
-                    "description": "Phần mở rộng của id",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "code": {
-                    "description": "Type of context being specified (bắt buộc)",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Coding"
-                        }
-                    ]
-                },
-                "extension": {
-                    "description": "Additional content defined by implementations",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Extension"
-                    }
-                },
-                "id": {
-                    "description": "Unique id for inter-element referencing",
-                    "type": "string"
-                },
-                "valueCodeableConcept": {
-                    "description": "Value that defines the context (bắt buộc)",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.CodeableConcept"
-                        }
-                    ]
-                },
-                "valueQuantity": {
-                    "description": "Value that defines the context (bắt buộc)",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Quantity"
-                        }
-                    ]
-                },
-                "valueRange": {
-                    "description": "Value that defines the context (bắt buộc)",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Range"
-                        }
-                    ]
-                },
-                "valueReference": {
-                    "description": "Value that defines the context (bắt buộc)",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Reference"
-                        }
-                    ]
                 }
             }
         },
@@ -8628,7 +5908,7 @@ const docTemplate = `{
                     "description": "Additional content defined by implementations",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "externalId": {
@@ -8693,7 +5973,7 @@ const docTemplate = `{
                     "description": "Extensions that cannot be ignored",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "passwordHash": {
@@ -8767,7 +6047,7 @@ const docTemplate = `{
                     "description": "Additional content defined by implementations",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "id": {
@@ -8801,7 +6081,7 @@ const docTemplate = `{
                     "description": "Extensions that cannot be ignored",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "name": {
@@ -8996,65 +6276,118 @@ const docTemplate = `{
         },
         "httpapi.AdminClientBody": {
             "type": "object",
+            "required": [
+                "name"
+            ],
             "properties": {
                 "accessPolicy": {
-                    "$ref": "#/definitions/fhir.Reference"
+                    "description": "AccessPolicy áp cho client; phải thuộc project",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/fhir.Reference"
+                        }
+                    ]
                 },
                 "description": {
-                    "type": "string"
+                    "description": "mô tả client (tùy chọn)",
+                    "type": "string",
+                    "example": "Ứng dụng di động cho bệnh nhân"
                 },
                 "grantType": {
+                    "description": "các grant client được dùng (ngoài ba giá trị này server còn nhận token-exchange và pre-authorized_code); giá trị khác là 400",
                     "type": "array",
                     "items": {
-                        "type": "string"
-                    }
+                        "type": "string",
+                        "enum": [
+                            "authorization_code",
+                            "client_credentials",
+                            "refresh_token"
+                        ]
+                    },
+                    "example": [
+                        "client_credentials"
+                    ]
                 },
                 "name": {
-                    "type": "string"
+                    "description": "tên client; bắt buộc, rỗng hoặc chỉ khoảng trắng là 400",
+                    "type": "string",
+                    "example": "Ứng dụng bệnh nhân"
                 },
                 "pkceOptional": {
-                    "type": "boolean"
+                    "description": "true: không bắt buộc PKCE cho client này (mặc định false)",
+                    "type": "boolean",
+                    "example": false
                 },
                 "redirectUris": {
+                    "description": "các redirect URI hợp lệ cho luồng authorization_code; mỗi URI phải hợp lệ, không thì 400",
                     "type": "array",
                     "items": {
                         "type": "string"
-                    }
+                    },
+                    "example": [
+                        "https://app.example.org/callback"
+                    ]
                 },
                 "secret": {
+                    "description": "secret do người gọi đặt (32-256 ký tự); bỏ trống thì server sinh 64 ký tự hex; chỉ trả trong phản hồi tạo",
                     "type": "string",
                     "maxLength": 256,
-                    "minLength": 32
+                    "minLength": 32,
+                    "example": "0f3c9a1e7b5d4c2a8e6f1b3d5a7c9e0f2b4d6f8a1c3e5b7d9f0a2c4e6b8d0f1a"
                 }
             }
         },
         "httpapi.AdminProjectResponse": {
             "type": "object",
+            "required": [
+                "project"
+            ],
             "properties": {
                 "project": {
-                    "$ref": "#/definitions/application.AdminProjectView"
+                    "description": "project của người gọi (secret và khóa bí mật của site đã bị che)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/application.AdminProjectView"
+                        }
+                    ]
                 }
             }
         },
         "httpapi.AdminSetPasswordBody": {
             "type": "object",
+            "required": [
+                "email",
+                "password"
+            ],
             "properties": {
                 "email": {
-                    "type": "string"
+                    "description": "email của user cần đặt mật khẩu; bắt buộc, phải là email hợp lệ",
+                    "type": "string",
+                    "example": "an@example.org"
                 },
                 "password": {
-                    "type": "string"
+                    "description": "mật khẩu mới; bắt buộc, phải qua kiểm tra độ mạnh/rò rỉ (domain.ValidatePassword)",
+                    "type": "string",
+                    "example": "Matkhau-Moi-2026!"
                 }
             }
         },
         "httpapi.ChangePasswordBody": {
             "type": "object",
+            "required": [
+                "newPassword",
+                "oldPassword"
+            ],
             "properties": {
                 "newPassword": {
-                    "type": "string"
+                    "description": "Mật khẩu mới; bắt buộc, 8 ký tự trở lên và không quá 72 byte",
+                    "type": "string",
+                    "example": "mat-khau-moi-123"
                 },
                 "oldPassword": {
-                    "type": "string"
+                    "description": "Mật khẩu hiện tại; bắt buộc, không rỗng",
+                    "type": "string",
+                    "example": "mat-khau-cu-123"
                 }
             }
         },
@@ -9062,32 +6395,45 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "cid": {
-                    "type": "string"
+                    "description": "Content-ID để thân HTML tham chiếu (cid:...) khi inline",
+                    "type": "string",
+                    "example": "logo@example.org"
                 },
                 "content": {
-                    "type": "string"
+                    "description": "nội dung nhúng, mã hóa theo encoding; dùng content hoặc path",
+                    "type": "string",
+                    "example": "SGVsbG8="
                 },
                 "contentDisposition": {
+                    "description": "attachment: tệp đính kèm; inline: nhúng trong thân thư (dùng với cid)",
                     "type": "string",
                     "enum": [
                         "attachment",
                         "inline"
-                    ]
+                    ],
+                    "example": "attachment"
                 },
                 "contentType": {
-                    "type": "string"
+                    "description": "kiểu MIME của tệp",
+                    "type": "string",
+                    "example": "application/pdf"
                 },
                 "encoding": {
+                    "description": "cách mã hóa của content",
                     "type": "string",
                     "enum": [
                         "utf8",
                         "base64"
-                    ]
+                    ],
+                    "example": "base64"
                 },
                 "filename": {
-                    "type": "string"
+                    "description": "tên tệp hiển thị; phải là chuỗi nếu có",
+                    "type": "string",
+                    "example": "ketqua.pdf"
                 },
                 "path": {
+                    "description": "URL https hoặc Binary/\u003cid\u003e (đọc từ FHIR bằng token người gọi); đường dẫn khác bị từ chối",
                     "type": "string",
                     "example": "https://example.org/file.pdf"
                 }
@@ -9095,101 +6441,161 @@ const docTemplate = `{
         },
         "httpapi.ExchangeBody": {
             "type": "object",
+            "required": [
+                "clientId",
+                "externalAccessToken"
+            ],
             "properties": {
                 "clientId": {
-                    "type": "string"
+                    "description": "Id ClientApplication cấu hình IdP; bắt buộc, không rỗng",
+                    "type": "string",
+                    "example": "a3b1c2d4-0000-4000-8000-000000000000"
                 },
                 "externalAccessToken": {
-                    "type": "string"
+                    "description": "Access token do IdP ngoài cấp (subject token); bắt buộc, không rỗng",
+                    "type": "string",
+                    "example": "ya29.a0AfH6SMB..."
                 },
                 "membershipId": {
-                    "type": "string"
+                    "description": "Id ProjectMembership đích; bắt buộc với IdP cấu hình ở máy chủ, tùy chọn với trường hợp khác",
+                    "type": "string",
+                    "example": "a3b1c2d4-0000-4000-8000-000000000001"
                 }
             }
         },
         "httpapi.ExternalStartBody": {
             "type": "object",
+            "required": [
+                "clientId"
+            ],
             "properties": {
                 "clientId": {
+                    "description": "Id ClientApplication có identityProvider riêng; bắt buộc, không rỗng",
                     "type": "string",
                     "example": "a3b1c2d4-0000-4000-8000-000000000000"
                 },
                 "codeChallenge": {
-                    "type": "string"
+                    "description": "Mã thách thức PKCE; ghi vào state do auth ký",
+                    "type": "string",
+                    "example": "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM"
                 },
                 "codeChallengeMethod": {
+                    "description": "Phương thức PKCE: plain hoặc S256",
                     "type": "string",
                     "enum": [
                         "plain",
                         "S256"
-                    ]
+                    ],
+                    "example": "S256"
                 },
                 "launch": {
-                    "type": "string"
+                    "description": "Id SMART launch; ghi vào state do auth ký",
+                    "type": "string",
+                    "example": "a3b1c2d4-0000-4000-8000-000000000000"
                 },
                 "nonce": {
-                    "type": "string"
+                    "description": "Nonce OIDC; ghi vào state do auth ký",
+                    "type": "string",
+                    "example": "c1a9f0e2"
                 },
                 "projectId": {
-                    "type": "string"
+                    "description": "Id project; ghi vào state do auth ký",
+                    "type": "string",
+                    "example": "a3b1c2d4-0000-4000-8000-000000000001"
                 },
                 "redirectUri": {
-                    "type": "string"
+                    "description": "URI chuyển hướng của client; ghi vào state do auth ký",
+                    "type": "string",
+                    "example": "https://app.example.org/callback"
                 },
                 "returnTo": {
-                    "type": "string"
+                    "description": "Trang của app để quay về sau đăng nhập ngoài; ghi vào state do auth ký",
+                    "type": "string",
+                    "example": "https://app.example.org/signin"
                 },
                 "scope": {
-                    "type": "string"
+                    "description": "Scope OAuth; ghi vào state do auth ký",
+                    "type": "string",
+                    "example": "openid"
                 }
             }
         },
         "httpapi.GoogleBody": {
             "type": "object",
+            "required": [
+                "googleClientId",
+                "googleCredential"
+            ],
             "properties": {
                 "clientId": {
-                    "type": "string"
+                    "description": "Id ClientApplication OAuth; có thì project lấy từ client",
+                    "type": "string",
+                    "example": "a3b1c2d4-0000-4000-8000-000000000001"
                 },
                 "codeChallenge": {
-                    "type": "string"
+                    "description": "Mã thách thức PKCE",
+                    "type": "string",
+                    "example": "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM"
                 },
                 "codeChallengeMethod": {
+                    "description": "Phương thức PKCE: plain hoặc S256",
                     "type": "string",
                     "enum": [
                         "plain",
                         "S256"
-                    ]
+                    ],
+                    "example": "S256"
                 },
                 "createUser": {
-                    "type": "boolean"
+                    "description": "true cho phép tạo user mới từ credential nếu chưa có; mặc định false",
+                    "type": "boolean",
+                    "example": false
                 },
                 "googleClientId": {
-                    "type": "string"
+                    "description": "Client id Google (aud của credential); bắt buộc có mặt trong body",
+                    "type": "string",
+                    "example": "1234567890-abc.apps.googleusercontent.com"
                 },
                 "googleCredential": {
-                    "type": "string"
+                    "description": "ID token (JWT RS256) của Google Identity Services; bắt buộc có mặt trong body",
+                    "type": "string",
+                    "example": "eyJhbGciOiJSUzI1NiIs..."
                 },
                 "nonce": {
-                    "type": "string"
+                    "description": "Nonce OIDC",
+                    "type": "string",
+                    "example": "c1a9f0e2"
                 },
                 "projectId": {
-                    "type": "string"
+                    "description": "Id project đăng nhập",
+                    "type": "string",
+                    "example": "a3b1c2d4-0000-4000-8000-000000000000"
                 },
                 "redirectUri": {
-                    "type": "string"
+                    "description": "URI chuyển hướng của client; nếu có phải là chuỗi",
+                    "type": "string",
+                    "example": "https://app.example.org/callback"
                 },
                 "resourceType": {
-                    "type": "string"
+                    "description": "Loại hồ sơ profile cần đăng nhập (ví dụ Practitioner, Patient); lưu vào login làm profileType",
+                    "type": "string",
+                    "example": "Practitioner"
                 },
                 "scope": {
-                    "type": "string"
+                    "description": "Scope OAuth yêu cầu, phân tách bằng khoảng trắng",
+                    "type": "string",
+                    "example": "openid"
                 }
             }
         },
         "httpapi.HealthResponse": {
             "type": "object",
+            "required": [
+                "status"
+            ],
             "properties": {
                 "status": {
+                    "description": "luôn là \"ok\" khi tiến trình còn sống",
                     "type": "string",
                     "example": "ok"
                 }
@@ -9197,83 +6603,139 @@ const docTemplate = `{
         },
         "httpapi.IntrospectResponse": {
             "type": "object",
+            "required": [
+                "active"
+            ],
             "properties": {
                 "active": {
-                    "type": "boolean"
+                    "description": "true khi token còn dùng được; false thì không có trường nào khác",
+                    "type": "boolean",
+                    "example": true
                 },
                 "client_id": {
-                    "type": "string"
+                    "description": "id ClientApplication đã xin token; chỉ có khi có",
+                    "type": "string",
+                    "example": "b4d1e2f3-0000-4000-8000-000000000000"
                 },
                 "exp": {
-                    "type": "integer"
+                    "description": "thời điểm hết hạn (Unix giây); chỉ có khi active=true",
+                    "type": "integer",
+                    "example": 1763903600
                 },
                 "iat": {
-                    "type": "integer"
+                    "description": "thời điểm cấp token (Unix giây); chỉ có khi active=true",
+                    "type": "integer",
+                    "example": 1763900000
                 },
                 "iss": {
-                    "type": "string"
+                    "description": "issuer đã cấp token; chỉ có khi active=true",
+                    "type": "string",
+                    "example": "https://auth.example.org"
                 },
                 "patient": {
-                    "type": "string"
+                    "description": "Patient của ngữ cảnh SMART launch; chỉ có khi có",
+                    "type": "string",
+                    "example": "Patient/3f2a8c1e-0000-4000-8000-000000000000"
                 },
                 "scope": {
-                    "type": "string"
+                    "description": "các scope của token, cách nhau bằng khoảng trắng; chỉ có khi có",
+                    "type": "string",
+                    "example": "openid fhirUser"
                 },
                 "sub": {
-                    "type": "string"
+                    "description": "claim sub của token (với refresh token là id của User); chỉ có khi active=true",
+                    "type": "string",
+                    "example": "3f2a8c1e-0000-4000-8000-000000000000"
                 }
             }
         },
         "httpapi.InviteBody": {
             "type": "object",
+            "required": [
+                "firstName",
+                "lastName",
+                "resourceType"
+            ],
             "properties": {
                 "email": {
-                    "type": "string"
+                    "description": "email của user (hạ chữ thường); phải có email hoặc externalId, nếu có thì phải hợp lệ",
+                    "type": "string",
+                    "example": "an@example.org"
                 },
                 "externalId": {
-                    "type": "string"
+                    "description": "id ngoài; phải có email hoặc externalId, nếu có thì không được rỗng/chỉ khoảng trắng",
+                    "type": "string",
+                    "example": "hr-10234"
                 },
                 "firstName": {
-                    "type": "string"
+                    "description": "tên; bắt buộc, không được chỉ khoảng trắng",
+                    "type": "string",
+                    "example": "An"
                 },
                 "forceNewMembership": {
-                    "type": "boolean"
+                    "description": "true: luôn tạo membership mới thay vì dùng lại membership hiện có",
+                    "type": "boolean",
+                    "example": false
                 },
                 "lastName": {
-                    "type": "string"
+                    "description": "họ; bắt buộc, không được chỉ khoảng trắng",
+                    "type": "string",
+                    "example": "Nguyễn"
                 },
                 "membership": {
-                    "$ref": "#/definitions/httpapi.InviteMembershipBody"
+                    "description": "tùy chọn của ProjectMembership được tạo",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/httpapi.InviteMembershipBody"
+                        }
+                    ]
                 },
                 "mfaRequired": {
-                    "type": "boolean"
+                    "description": "đặt User.mfaRequired cho user mới; bỏ trống là không đặt",
+                    "type": "boolean",
+                    "example": false
                 },
                 "password": {
-                    "type": "string"
+                    "description": "mật khẩu ban đầu; bỏ trống thì user tự đặt qua thư mời; nếu có phải qua ValidatePassword",
+                    "type": "string",
+                    "example": "Matkhau-Moi-2026!"
                 },
                 "patient": {
-                    "$ref": "#/definitions/fhir.Reference"
+                    "description": "Patient/\u003cid\u003e mà RelatedPerson liên quan; bắt buộc khi resourceType=RelatedPerson và không có membership.profile",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/fhir.Reference"
+                        }
+                    ]
                 },
                 "resourceType": {
+                    "description": "loại hồ sơ tạo cho user; bắt buộc",
                     "type": "string",
                     "enum": [
                         "Patient",
                         "Practitioner",
                         "RelatedPerson"
-                    ]
+                    ],
+                    "example": "Practitioner"
                 },
                 "scope": {
+                    "description": "phạm vi của User; bỏ trống thì server chọn (thường server, hoặc project khi project yêu cầu)",
                     "type": "string",
                     "enum": [
                         "project",
                         "server"
-                    ]
+                    ],
+                    "example": "project"
                 },
                 "sendEmail": {
-                    "type": "boolean"
+                    "description": "false: không gửi thư mời; bỏ trống là gửi khi có email (cần cấu hình thư, không thì 400)",
+                    "type": "boolean",
+                    "example": true
                 },
                 "upsert": {
-                    "type": "boolean"
+                    "description": "true: user đã là member thì cập nhật thay vì 409",
+                    "type": "boolean",
+                    "example": false
                 }
             }
         },
@@ -9281,73 +6743,113 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "access": {
+                    "description": "các AccessPolicy tham số hóa gắn thêm cho membership",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/fhir.ProjectMembershipAccess"
                     }
                 },
                 "accessPolicy": {
-                    "$ref": "#/definitions/fhir.Reference"
+                    "description": "AccessPolicy áp cho membership; phải thuộc project",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/fhir.Reference"
+                        }
+                    ]
                 },
                 "active": {
-                    "type": "boolean"
+                    "description": "trạng thái hoạt động của membership; bỏ trống là mặc định của server",
+                    "type": "boolean",
+                    "example": true
                 },
                 "admin": {
-                    "type": "boolean"
+                    "description": "true: cấp quyền admin project cho membership",
+                    "type": "boolean",
+                    "example": false
                 },
                 "externalId": {
-                    "type": "string"
+                    "description": "id ngoài của membership (từ hệ thống nhân sự/IdP); nếu có thì không được rỗng/chỉ khoảng trắng; trùng là 409",
+                    "type": "string",
+                    "example": "hr-10234"
                 },
                 "profile": {
-                    "$ref": "#/definitions/fhir.Reference"
+                    "description": "hồ sơ có sẵn để gắn vào membership (dùng thay cho việc tạo hồ sơ mới)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/fhir.Reference"
+                        }
+                    ]
                 }
             }
         },
         "httpapi.LoginBody": {
             "type": "object",
+            "required": [
+                "email",
+                "password"
+            ],
             "properties": {
                 "clientId": {
-                    "type": "string"
+                    "description": "Id ClientApplication OAuth; có thì project được lấy từ client và cookie đăng nhập đặt theo client",
+                    "type": "string",
+                    "example": "a3b1c2d4-0000-4000-8000-000000000001"
                 },
                 "codeChallenge": {
-                    "type": "string"
+                    "description": "Mã thách thức PKCE gắn vào login để kiểm ở bước đổi code",
+                    "type": "string",
+                    "example": "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM"
                 },
                 "codeChallengeMethod": {
+                    "description": "Phương thức PKCE của codeChallenge: plain hoặc S256",
                     "type": "string",
                     "enum": [
                         "plain",
                         "S256"
-                    ]
+                    ],
+                    "example": "S256"
                 },
                 "email": {
+                    "description": "Email đăng nhập; bắt buộc, phải là địa chỉ email hợp lệ",
                     "type": "string",
                     "example": "an@example.org"
                 },
                 "launch": {
-                    "type": "string"
+                    "description": "Id ngữ cảnh SMART launch (nếu có)",
+                    "type": "string",
+                    "example": "a3b1c2d4-0000-4000-8000-000000000000"
                 },
                 "nonce": {
-                    "type": "string"
+                    "description": "Nonce OIDC; bỏ trống thì máy chủ tự sinh",
+                    "type": "string",
+                    "example": "c1a9f0e2"
                 },
                 "password": {
+                    "description": "Mật khẩu; bắt buộc, 8 ký tự trở lên và không quá 72 byte",
                     "type": "string",
                     "example": "mat-khau-dai-123"
                 },
                 "projectId": {
+                    "description": "Project đăng nhập: \"new\" (chưa thuộc project, cho phép không có membership) hoặc UUID project; bỏ trống thì suy ra từ clientId (nếu gửi cả hai phải khớp project của client)",
                     "type": "string",
                     "example": "new"
                 },
                 "redirectUri": {
-                    "type": "string"
+                    "description": "URI chuyển hướng của client sau khi đăng nhập; nếu có phải là chuỗi",
+                    "type": "string",
+                    "example": "https://app.example.org/callback"
                 },
                 "remember": {
-                    "type": "boolean"
+                    "description": "true để kèm refresh token trong kết quả đăng nhập; mặc định false",
+                    "type": "boolean",
+                    "example": false
                 },
                 "resourceType": {
+                    "description": "Loại hồ sơ profile cần đăng nhập (ví dụ Practitioner, Patient); lưu vào login làm profileType",
                     "type": "string",
                     "example": "Practitioner"
                 },
                 "scope": {
+                    "description": "Scope OAuth yêu cầu, phân tách bằng khoảng trắng; mặc định \"openid\"",
                     "type": "string",
                     "example": "openid"
                 }
@@ -9355,68 +6857,116 @@ const docTemplate = `{
         },
         "httpapi.MFADisableBody": {
             "type": "object",
+            "required": [
+                "token"
+            ],
             "properties": {
                 "method": {
+                    "description": "phương thức cần gỡ; bỏ trống là gỡ tất cả (cần là một yếu tố đã đăng ký, không thì 400)",
                     "type": "string",
                     "enum": [
                         "totp",
                         "email"
-                    ]
+                    ],
+                    "example": "totp"
                 },
                 "token": {
-                    "type": "string"
+                    "description": "mã chứng minh một yếu tố MFA đang có (TOTP hoặc mã email); rỗng là 400 \"Missing token\"",
+                    "type": "string",
+                    "example": "123456"
                 }
             }
         },
         "httpapi.MFAEnrollBody": {
             "type": "object",
+            "required": [
+                "token"
+            ],
             "properties": {
                 "method": {
+                    "description": "phương thức cần đăng ký; giá trị khác \"email\" (hoặc bỏ trống) được hiểu là totp",
                     "type": "string",
                     "enum": [
                         "totp",
                         "email"
-                    ]
+                    ],
+                    "example": "totp"
                 },
                 "token": {
-                    "type": "string"
+                    "description": "mã xác nhận: mã email (method=email) hoặc mã TOTP (method=totp); rỗng là 400 \"Missing token\"",
+                    "type": "string",
+                    "example": "123456"
                 }
             }
         },
         "httpapi.MFALoginEnrollBody": {
             "type": "object",
+            "required": [
+                "login"
+            ],
             "properties": {
                 "login": {
-                    "type": "string"
+                    "description": "id login đang chờ đăng ký MFA; bắt buộc, rỗng là 400",
+                    "type": "string",
+                    "example": "a3b1c2d4-0000-4000-8000-000000000000"
                 },
                 "method": {
+                    "description": "phương thức đăng ký; giá trị khác \"email\" (hoặc bỏ trống) được hiểu là totp",
                     "type": "string",
                     "enum": [
                         "totp",
                         "email"
-                    ]
+                    ],
+                    "example": "totp"
                 },
                 "token": {
-                    "type": "string"
+                    "description": "mã TOTP của secret trong enrollUri; chỉ dùng với method=totp (bắt buộc khi đó), bỏ qua với email",
+                    "type": "string",
+                    "example": "123456"
+                }
+            }
+        },
+        "httpapi.MFAResetBody": {
+            "type": "object",
+            "properties": {
+                "method": {
+                    "description": "yếu tố MFA cần gỡ; bỏ trống hoặc null là totp; khác totp/email là 400; user phải đang có yếu tố đó",
+                    "type": "string",
+                    "enum": [
+                        "totp",
+                        "email"
+                    ],
+                    "example": "totp"
                 }
             }
         },
         "httpapi.MFASendEmailBody": {
             "type": "object",
+            "required": [
+                "login"
+            ],
             "properties": {
                 "login": {
-                    "type": "string"
+                    "description": "id login đang chờ MFA cần gửi lại mã email; bắt buộc, rỗng là 400",
+                    "type": "string",
+                    "example": "a3b1c2d4-0000-4000-8000-000000000000"
                 }
             }
         },
         "httpapi.MFAVerifyBody": {
             "type": "object",
+            "required": [
+                "login",
+                "token"
+            ],
             "properties": {
                 "login": {
+                    "description": "id login đang chờ MFA (lấy từ phản hồi /auth/login); bắt buộc, rỗng là 400",
                     "type": "string",
                     "example": "a3b1c2d4-0000-4000-8000-000000000000"
                 },
                 "token": {
+                    "description": "mã TOTP (6 số) hoặc mã email MFA; bắt buộc, rỗng là 400",
                     "type": "string",
                     "example": "123456"
                 }
@@ -9424,52 +6974,80 @@ const docTemplate = `{
         },
         "httpapi.MethodBody": {
             "type": "object",
+            "required": [
+                "email"
+            ],
             "properties": {
                 "clientId": {
-                    "type": "string"
+                    "description": "Id ClientApplication; chỉ ghi vào state ký khi đăng nhập ngoài đã bật",
+                    "type": "string",
+                    "example": "a3b1c2d4-0000-4000-8000-000000000001"
                 },
                 "codeChallenge": {
-                    "type": "string"
+                    "description": "Mã thách thức PKCE; chỉ ghi vào state ký khi đăng nhập ngoài đã bật",
+                    "type": "string",
+                    "example": "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM"
                 },
                 "codeChallengeMethod": {
+                    "description": "Phương thức PKCE: plain hoặc S256; chỉ ghi vào state ký khi đăng nhập ngoài đã bật",
                     "type": "string",
                     "enum": [
                         "plain",
                         "S256"
-                    ]
+                    ],
+                    "example": "S256"
                 },
                 "email": {
+                    "description": "Email cần xác định cách đăng nhập; bắt buộc, phải hợp lệ",
                     "type": "string",
                     "example": "an@example.org"
                 },
                 "launch": {
-                    "type": "string"
+                    "description": "Id SMART launch; chỉ ghi vào state ký khi đăng nhập ngoài đã bật",
+                    "type": "string",
+                    "example": "a3b1c2d4-0000-4000-8000-000000000000"
                 },
                 "nonce": {
-                    "type": "string"
+                    "description": "Nonce OIDC; chỉ ghi vào state ký khi đăng nhập ngoài đã bật",
+                    "type": "string",
+                    "example": "c1a9f0e2"
                 },
                 "projectId": {
-                    "type": "string"
+                    "description": "Id project; chỉ ghi vào state ký khi đăng nhập ngoài đã bật",
+                    "type": "string",
+                    "example": "a3b1c2d4-0000-4000-8000-000000000000"
                 },
                 "redirectUri": {
-                    "type": "string"
+                    "description": "URI chuyển hướng của client; chỉ ghi vào state ký khi đăng nhập ngoài đã bật",
+                    "type": "string",
+                    "example": "https://app.example.org/callback"
                 },
                 "returnTo": {
-                    "type": "string"
+                    "description": "Trang của app để quay về sau đăng nhập ngoài; chỉ ghi vào state ký khi đăng nhập ngoài đã bật",
+                    "type": "string",
+                    "example": "https://app.example.org/signin"
                 },
                 "scope": {
-                    "type": "string"
+                    "description": "Scope OAuth; chỉ ghi vào state ký khi đăng nhập ngoài đã bật",
+                    "type": "string",
+                    "example": "openid"
                 }
             }
         },
         "httpapi.NewPatientBody": {
             "type": "object",
+            "required": [
+                "login",
+                "projectId"
+            ],
             "properties": {
                 "login": {
+                    "description": "Id login từ /auth/newuser; bắt buộc, không rỗng",
                     "type": "string",
                     "example": "a3b1c2d4-0000-4000-8000-000000000000"
                 },
                 "projectId": {
+                    "description": "Id project cho phép bệnh nhân tự đăng ký; bắt buộc, không rỗng",
                     "type": "string",
                     "example": "a3b1c2d4-0000-4000-8000-000000000001"
                 }
@@ -9477,12 +7055,18 @@ const docTemplate = `{
         },
         "httpapi.NewProjectBody": {
             "type": "object",
+            "required": [
+                "login",
+                "projectName"
+            ],
             "properties": {
                 "login": {
+                    "description": "Id login từ /auth/newuser; bắt buộc, phải là UUID",
                     "type": "string",
                     "example": "a3b1c2d4-0000-4000-8000-000000000000"
                 },
                 "projectName": {
+                    "description": "Tên project; bắt buộc, 4 đến 72 ký tự",
                     "type": "string",
                     "example": "Bệnh viện A"
                 }
@@ -9490,56 +7074,84 @@ const docTemplate = `{
         },
         "httpapi.NewUserBody": {
             "type": "object",
+            "required": [
+                "email",
+                "firstName",
+                "lastName",
+                "password"
+            ],
             "properties": {
                 "clientId": {
-                    "type": "string"
+                    "description": "Id ClientApplication; chỉ gửi clientId thì user vẫn không thuộc project nào",
+                    "type": "string",
+                    "example": "a3b1c2d4-0000-4000-8000-000000000001"
                 },
                 "codeChallenge": {
-                    "type": "string"
+                    "description": "Mã thách thức PKCE ghi vào login vừa tạo",
+                    "type": "string",
+                    "example": "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM"
                 },
                 "codeChallengeMethod": {
+                    "description": "Phương thức PKCE: plain hoặc S256",
                     "type": "string",
                     "enum": [
                         "plain",
                         "S256"
-                    ]
+                    ],
+                    "example": "S256"
                 },
                 "email": {
+                    "description": "Email; bắt buộc, hợp lệ, dài 3 đến 72 ký tự",
                     "type": "string",
                     "example": "an@example.org"
                 },
                 "firstName": {
+                    "description": "Tên; bắt buộc, 1 đến 128 ký tự",
                     "type": "string",
                     "example": "An"
                 },
                 "lastName": {
+                    "description": "Họ; bắt buộc, 1 đến 128 ký tự",
                     "type": "string",
                     "example": "Nguyen"
                 },
                 "nonce": {
-                    "type": "string"
+                    "description": "Nonce OIDC ghi vào login vừa tạo",
+                    "type": "string",
+                    "example": "c1a9f0e2"
                 },
                 "password": {
+                    "description": "Mật khẩu; bắt buộc, 8 ký tự trở lên và không quá 72 byte",
                     "type": "string",
                     "example": "mat-khau-dai-123"
                 },
                 "projectId": {
+                    "description": "\"new\" (sẽ tạo project mới), id project cho đăng ký mở, hoặc bỏ trống (user không thuộc project nào)",
                     "type": "string",
                     "example": "new"
                 },
                 "recaptchaSiteKey": {
-                    "type": "string"
+                    "description": "Site key reCAPTCHA tương ứng với token; chỉ cần khi bật reCAPTCHA",
+                    "type": "string",
+                    "example": "6LdExampleSiteKey"
                 },
                 "recaptchaToken": {
-                    "type": "string"
+                    "description": "Token reCAPTCHA; chỉ cần khi máy chủ hoặc project bật reCAPTCHA",
+                    "type": "string",
+                    "example": "03AGdBq25..."
                 },
                 "redirectUri": {
-                    "type": "string"
+                    "description": "URI chuyển hướng của client ghi vào login vừa tạo",
+                    "type": "string",
+                    "example": "https://app.example.org/callback"
                 },
                 "remember": {
-                    "type": "boolean"
+                    "description": "true để kèm refresh token cho login vừa tạo; mặc định false",
+                    "type": "boolean",
+                    "example": false
                 },
                 "scope": {
+                    "description": "Scope OAuth ghi vào login vừa tạo",
                     "type": "string",
                     "example": "openid"
                 }
@@ -9547,11 +7159,18 @@ const docTemplate = `{
         },
         "httpapi.NewUserResponse": {
             "type": "object",
+            "required": [
+                "emailVerificationRequired",
+                "login"
+            ],
             "properties": {
                 "emailVerificationRequired": {
-                    "type": "boolean"
+                    "description": "true khi máy chủ yêu cầu email đã xác minh để tạo project (cấu hình RequireVerifiedEmailForProject) và projectId của yêu cầu là \"new\"; ngược lại false",
+                    "type": "boolean",
+                    "example": false
                 },
                 "login": {
+                    "description": "Id login vừa tạo (chưa có membership), dùng cho /auth/newproject hoặc /auth/newpatient",
                     "type": "string",
                     "example": "a3b1c2d4-0000-4000-8000-000000000000"
                 }
@@ -9559,46 +7178,69 @@ const docTemplate = `{
         },
         "httpapi.PreAuthorizeBody": {
             "type": "object",
+            "required": [
+                "clientId"
+            ],
             "properties": {
                 "clientId": {
+                    "description": "Id ClientApplication sẽ đổi mã; bắt buộc, phải là UUID",
                     "type": "string",
                     "example": "a3b1c2d4-0000-4000-8000-000000000000"
                 },
                 "expiresIn": {
+                    "description": "Thời hạn mã, tính bằng giây (số nguyên 1 đến 604800); bỏ trống thì dùng mặc định của máy chủ",
                     "type": "integer",
                     "maximum": 604800,
-                    "minimum": 1
+                    "minimum": 1,
+                    "example": 3600
                 },
                 "nonce": {
-                    "type": "string"
+                    "description": "Nonce OIDC gắn vào mã; nếu có phải là chuỗi",
+                    "type": "string",
+                    "example": "c1a9f0e2"
                 },
                 "scope": {
-                    "type": "string"
+                    "description": "Scope của mã; mặc định openid cộng các scope SMART của người gọi",
+                    "type": "string",
+                    "example": "openid"
                 }
             }
         },
         "httpapi.ProfileBody": {
             "type": "object",
+            "required": [
+                "login",
+                "profile"
+            ],
             "properties": {
                 "login": {
-                    "type": "string"
+                    "description": "Id login đang dở (từ LoginResult.login); bắt buộc có mặt trong body",
+                    "type": "string",
+                    "example": "a3b1c2d4-0000-4000-8000-000000000000"
                 },
                 "profile": {
+                    "description": "Id ProjectMembership chọn làm profile; bắt buộc có mặt trong body (phải thuộc các membership của login)",
                     "type": "string",
-                    "example": "membership id"
+                    "example": "a3b1c2d4-0000-4000-8000-000000000001"
                 }
             }
         },
         "httpapi.ReadyResponse": {
             "type": "object",
+            "required": [
+                "checks",
+                "ready"
+            ],
             "properties": {
                 "checks": {
+                    "description": "kết quả từng phụ thuộc theo tên (true = sẵn sàng); rỗng khi chưa khai báo phụ thuộc nào",
                     "type": "object",
                     "additionalProperties": {
                         "type": "boolean"
                     }
                 },
                 "ready": {
+                    "description": "true khi mọi phụ thuộc sẵn sàng (HTTP 200); false kèm HTTP 503",
                     "type": "boolean",
                     "example": true
                 }
@@ -9606,44 +7248,68 @@ const docTemplate = `{
         },
         "httpapi.RegisterBody": {
             "type": "object",
+            "required": [
+                "redirect_uris"
+            ],
             "properties": {
                 "redirect_uris": {
+                    "description": "danh sách redirect URI; phần tử đầu phải khớp chính xác một client dựng sẵn (không thì 400 invalid_client_metadata)",
                     "type": "array",
                     "items": {
                         "type": "string"
-                    }
+                    },
+                    "example": [
+                        "https://app.example.org/callback"
+                    ]
                 }
             }
         },
         "httpapi.ResetPasswordBody": {
             "type": "object",
+            "required": [
+                "email"
+            ],
             "properties": {
                 "email": {
+                    "description": "Email cần đặt lại mật khẩu; bắt buộc, phải hợp lệ",
                     "type": "string",
                     "example": "an@example.org"
                 },
                 "projectId": {
-                    "type": "string"
+                    "description": "Id project của user (UUID); bỏ trống nếu user không thuộc project nào",
+                    "type": "string",
+                    "example": "a3b1c2d4-0000-4000-8000-000000000000"
                 },
                 "recaptchaSiteKey": {
-                    "type": "string"
+                    "description": "Site key reCAPTCHA tương ứng; chỉ cần khi bật reCAPTCHA",
+                    "type": "string",
+                    "example": "6LdExampleSiteKey"
                 },
                 "recaptchaToken": {
-                    "description": "RecaptchaToken và RecaptchaSiteKey chỉ cần khi máy chủ hoặc project bật reCAPTCHA.",
-                    "type": "string"
+                    "description": "Token reCAPTCHA; chỉ cần khi máy chủ hoặc project bật reCAPTCHA",
+                    "type": "string",
+                    "example": "03AGdBq25..."
                 },
                 "redirectUri": {
-                    "type": "string"
+                    "description": "URI app đính vào link trong thư đặt lại mật khẩu",
+                    "type": "string",
+                    "example": "https://app.example.org/setpassword"
                 },
                 "sendEmail": {
-                    "type": "boolean"
+                    "description": "false để không gửi thư (chỉ tạo yêu cầu); mặc định true",
+                    "type": "boolean",
+                    "example": true
                 }
             }
         },
         "httpapi.RevokeBody": {
             "type": "object",
+            "required": [
+                "loginId"
+            ],
             "properties": {
                 "loginId": {
+                    "description": "Id login (phiên) của chính người gọi cần thu hồi; bắt buộc, phải là UUID",
                     "type": "string",
                     "example": "a3b1c2d4-0000-4000-8000-000000000000"
                 }
@@ -9651,11 +7317,18 @@ const docTemplate = `{
         },
         "httpapi.ScopeBody": {
             "type": "object",
+            "required": [
+                "login",
+                "scope"
+            ],
             "properties": {
                 "login": {
-                    "type": "string"
+                    "description": "Id login đang dở; bắt buộc có mặt trong body",
+                    "type": "string",
+                    "example": "a3b1c2d4-0000-4000-8000-000000000000"
                 },
                 "scope": {
+                    "description": "Scope mới, phân tách bằng khoảng trắng; bắt buộc có mặt trong body và chỉ được thu hẹp",
                     "type": "string",
                     "example": "openid profile"
                 }
@@ -9663,148 +7336,244 @@ const docTemplate = `{
         },
         "httpapi.SendEmailBody": {
             "type": "object",
+            "required": [
+                "subject",
+                "to"
+            ],
             "properties": {
                 "attachments": {
+                    "description": "các tệp đính kèm (tùy chọn)",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/httpapi.EmailAttachmentBody"
                     }
                 },
                 "bcc": {
-                    "type": "string"
+                    "description": "người nhận ẩn (tùy chọn)",
+                    "type": "string",
+                    "example": "bcc@example.org"
                 },
                 "cc": {
-                    "type": "string"
+                    "description": "người nhận bản sao (tùy chọn)",
+                    "type": "string",
+                    "example": "cc@example.org"
                 },
                 "from": {
-                    "type": "string"
+                    "description": "người gửi, đúng một địa chỉ; chỉ dùng nếu thuộc danh sách được duyệt, không thì dùng địa chỉ mặc định",
+                    "type": "string",
+                    "example": "Trivita \u003cno-reply@example.org\u003e"
                 },
                 "html": {
-                    "type": "string"
+                    "description": "thân thư dạng HTML (tùy chọn)",
+                    "type": "string",
+                    "example": "\u003cp\u003eXin chào\u003c/p\u003e"
                 },
                 "icalEvent": {
-                    "type": "string"
+                    "description": "sự kiện iCal: chuỗi nội dung hoặc đối tượng {content, method, filename}",
+                    "type": "string",
+                    "example": "BEGIN:VCALENDAR..."
                 },
                 "replyTo": {
-                    "type": "string"
+                    "description": "địa chỉ nhận trả lời (tùy chọn)",
+                    "type": "string",
+                    "example": "hotro@example.org"
                 },
                 "subject": {
-                    "type": "string"
+                    "description": "tiêu đề thư; bắt buộc, không rỗng, không chứa xuống dòng",
+                    "type": "string",
+                    "example": "Kết quả xét nghiệm"
                 },
                 "text": {
-                    "type": "string"
+                    "description": "thân thư dạng văn bản thuần (tùy chọn)",
+                    "type": "string",
+                    "example": "Xin chào, kết quả đã sẵn sàng."
                 },
                 "to": {
-                    "type": "string"
+                    "description": "người nhận; bắt buộc, không rỗng",
+                    "type": "string",
+                    "example": "an@example.org"
                 }
             }
         },
         "httpapi.SetPasswordBody": {
             "type": "object",
+            "required": [
+                "id",
+                "password",
+                "secret"
+            ],
             "properties": {
                 "id": {
+                    "description": "Id yêu cầu (PasswordChangeRequest) lấy từ link trong thư; bắt buộc, phải là UUID",
                     "type": "string",
                     "example": "a3b1c2d4-0000-4000-8000-000000000000"
                 },
                 "password": {
-                    "type": "string"
+                    "description": "Mật khẩu mới; bắt buộc, 8 ký tự trở lên và không quá 72 byte",
+                    "type": "string",
+                    "example": "mat-khau-moi-123"
                 },
                 "secret": {
-                    "type": "string"
+                    "description": "Secret trong link thư; bắt buộc, không rỗng, dùng một lần",
+                    "type": "string",
+                    "example": "s3cr3t-from-email-link"
                 }
             }
         },
         "httpapi.TokenErrorBody": {
             "type": "object",
+            "required": [
+                "error"
+            ],
             "properties": {
                 "error": {
-                    "type": "string"
+                    "description": "mã lỗi OAuth (invalid_request, invalid_client, invalid_grant, unsupported_grant_type...)",
+                    "type": "string",
+                    "example": "invalid_request"
                 },
                 "error_description": {
-                    "type": "string"
+                    "description": "mô tả lỗi cho người lập trình; có thể vắng",
+                    "type": "string",
+                    "example": "Missing grant_type"
                 }
             }
         },
         "httpapi.VerifyEmailBody": {
             "type": "object",
+            "required": [
+                "id",
+                "secret"
+            ],
             "properties": {
                 "id": {
+                    "description": "Id yêu cầu xác minh lấy từ link trong thư; bắt buộc, phải là UUID",
                     "type": "string",
                     "example": "a3b1c2d4-0000-4000-8000-000000000000"
                 },
                 "secret": {
-                    "type": "string"
+                    "description": "Secret trong link thư; bắt buộc, không rỗng",
+                    "type": "string",
+                    "example": "s3cr3t-from-email-link"
                 }
             }
         },
         "scim.Email": {
             "type": "object",
+            "required": [
+                "value"
+            ],
             "properties": {
                 "value": {
-                    "type": "string"
+                    "description": "địa chỉ email; khi tạo/PATCH, phần tử đầu phải có value không rỗng",
+                    "type": "string",
+                    "example": "an@example.org"
                 }
             }
         },
         "scim.Error": {
             "type": "object",
+            "required": [
+                "schemas",
+                "status"
+            ],
             "properties": {
                 "detail": {
-                    "type": "string"
+                    "description": "mô tả lỗi cho người đọc; có thể vắng",
+                    "type": "string",
+                    "example": "userName is required"
                 },
                 "schemas": {
+                    "description": "luôn chứa urn:ietf:params:scim:api:messages:2.0:Error",
                     "type": "array",
                     "items": {
                         "type": "string"
-                    }
+                    },
+                    "example": [
+                        "urn:ietf:params:scim:api:messages:2.0:Error"
+                    ]
                 },
                 "scimType": {
-                    "type": "string"
+                    "description": "loại lỗi SCIM (invalidFilter, invalidSyntax, invalidPath, invalidValue, mutability, noTarget, tooMany, uniqueness...); có thể vắng",
+                    "type": "string",
+                    "example": "invalidValue"
                 },
                 "status": {
-                    "type": "string"
+                    "description": "mã HTTP dạng chuỗi",
+                    "type": "string",
+                    "example": "400"
                 }
             }
         },
         "scim.ListResponse": {
             "type": "object",
+            "required": [
+                "Resources",
+                "itemsPerPage",
+                "schemas",
+                "startIndex",
+                "totalResults"
+            ],
             "properties": {
                 "Resources": {
+                    "description": "các User của trang này (mảng rỗng khi không có)",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/scim.User"
                     }
                 },
                 "itemsPerPage": {
-                    "type": "integer"
+                    "description": "số bản ghi trong trang này",
+                    "type": "integer",
+                    "example": 20
                 },
                 "schemas": {
+                    "description": "luôn chứa urn:ietf:params:scim:api:messages:2.0:ListResponse",
                     "type": "array",
                     "items": {
                         "type": "string"
-                    }
+                    },
+                    "example": [
+                        "urn:ietf:params:scim:api:messages:2.0:ListResponse"
+                    ]
                 },
                 "startIndex": {
-                    "type": "integer"
+                    "description": "chỉ số bắt đầu của trang (tính từ 1)",
+                    "type": "integer",
+                    "example": 1
                 },
                 "totalResults": {
-                    "type": "integer"
+                    "description": "tổng số bản ghi khớp filter (không phụ thuộc phân trang)",
+                    "type": "integer",
+                    "example": 42
                 }
             }
         },
         "scim.Meta": {
             "type": "object",
+            "required": [
+                "resourceType"
+            ],
             "properties": {
                 "lastModified": {
-                    "type": "string"
+                    "description": "thời điểm sửa gần nhất (RFC 3339); chỉ đọc",
+                    "type": "string",
+                    "format": "date-time",
+                    "example": "2026-11-23T08:30:00Z"
                 },
                 "location": {
-                    "type": "string"
+                    "description": "URL của tài nguyên; chỉ đọc",
+                    "type": "string",
+                    "example": "https://auth.example.org/scim/v2/Users/3f2a8c1e-0000-4000-8000-000000000000"
                 },
                 "resourceType": {
-                    "type": "string"
+                    "description": "loại tài nguyên SCIM, luôn là \"User\"",
+                    "type": "string",
+                    "example": "User"
                 },
                 "version": {
-                    "type": "string"
+                    "description": "phiên bản của tài nguyên: hiện bằng thời điểm cập nhật của membership (cùng giá trị lastModified), không phải ETag; chỉ đọc",
+                    "type": "string",
+                    "example": "2026-11-23T08:30:00Z"
                 }
             }
         },
@@ -9812,79 +7581,140 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "familyName": {
-                    "type": "string"
+                    "description": "họ (ghi vào lastName của User)",
+                    "type": "string",
+                    "example": "Nguyễn"
                 },
                 "givenName": {
-                    "type": "string"
+                    "description": "tên (ghi vào firstName của User)",
+                    "type": "string",
+                    "example": "An"
                 }
             }
         },
         "scim.PatchOp": {
             "type": "object",
+            "required": [
+                "Operations",
+                "schemas"
+            ],
             "properties": {
                 "Operations": {
+                    "description": "danh sách thao tác, áp theo thứ tự; vượt giới hạn số thao tác là 400 tooMany",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/scim.PatchOperation"
                     }
                 },
                 "schemas": {
+                    "description": "phần tử đầu phải là urn:ietf:params:scim:api:messages:2.0:PatchOp, không thì 400",
                     "type": "array",
                     "items": {
                         "type": "string"
-                    }
+                    },
+                    "example": [
+                        "urn:ietf:params:scim:api:messages:2.0:PatchOp"
+                    ]
                 }
             }
         },
         "scim.PatchOperation": {
             "type": "object",
+            "required": [
+                "op"
+            ],
             "properties": {
                 "op": {
-                    "type": "string"
+                    "description": "loại thao tác (không phân biệt hoa thường)",
+                    "type": "string",
+                    "enum": [
+                        "add",
+                        "remove",
+                        "replace"
+                    ],
+                    "example": "replace"
                 },
                 "path": {
-                    "type": "string"
+                    "description": "thuộc tính đích: active, externalId, name, name.givenName, name.familyName, emails; bỏ trống thì value là đối tượng nhiều thuộc tính (không dùng với remove)",
+                    "type": "string",
+                    "example": "active"
                 },
                 "value": {
+                    "description": "giá trị mới (kiểu theo thuộc tính: boolean, chuỗi, đối tượng hoặc mảng); không cần với remove",
                     "type": "object"
                 }
             }
         },
         "scim.User": {
             "type": "object",
+            "required": [
+                "emails",
+                "schemas",
+                "userName"
+            ],
             "properties": {
                 "active": {
-                    "type": "boolean"
+                    "description": "trạng thái hoạt động của membership; ghi được",
+                    "type": "boolean",
+                    "example": true
                 },
                 "emails": {
+                    "description": "danh sách email; bắt buộc khi tạo, chỉ phần tử đầu được dùng",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/scim.Email"
                     }
                 },
                 "externalId": {
-                    "type": "string"
+                    "description": "id do IdP quản lý; ghi được (POST/PUT/PATCH); chuỗi rỗng là xóa",
+                    "type": "string",
+                    "example": "hr-10234"
                 },
                 "id": {
-                    "type": "string"
+                    "description": "id ProjectMembership do server cấp; chỉ đọc (bị bỏ qua khi tạo/PUT)",
+                    "type": "string",
+                    "example": "3f2a8c1e-0000-4000-8000-000000000000"
                 },
                 "meta": {
-                    "$ref": "#/definitions/scim.Meta"
+                    "description": "siêu dữ liệu do server sinh; chỉ đọc",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/scim.Meta"
+                        }
+                    ]
                 },
                 "name": {
-                    "$ref": "#/definitions/scim.Name"
+                    "description": "họ tên (chỉ givenName, familyName được dùng)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/scim.Name"
+                        }
+                    ]
                 },
                 "schemas": {
+                    "description": "danh sách schema URN; chứa urn:ietf:params:scim:schemas:core:2.0:User",
                     "type": "array",
                     "items": {
                         "type": "string"
-                    }
+                    },
+                    "example": [
+                        "urn:ietf:params:scim:schemas:core:2.0:User"
+                    ]
                 },
                 "userName": {
-                    "type": "string"
+                    "description": "tên đăng nhập SCIM; bắt buộc khi tạo, không đổi được sau khi tạo (PUT/PATCH bỏ qua)",
+                    "type": "string",
+                    "example": "an.nguyen@example.org"
                 },
                 "userType": {
-                    "type": "string"
+                    "description": "loại hồ sơ; chỉ có tác dụng khi tạo, thiếu hoặc giá trị khác là Practitioner; không đổi được sau đó",
+                    "type": "string",
+                    "enum": [
+                        "Patient",
+                        "Practitioner",
+                        "RelatedPerson"
+                    ],
+                    "example": "Practitioner"
                 }
             }
         }
@@ -9896,7 +7726,37 @@ const docTemplate = `{
             "name": "Authorization",
             "in": "header"
         }
-    }
+    },
+    "tags": [
+        {
+            "description": "Đăng ký, đăng nhập nhiều bước (login, profile, scope), MFA, mật khẩu, xác minh email, đăng nhập ngoài (IdP, Google), exchange và preauthorize. Công khai trừ khi route ghi Bearer.",
+            "name": "auth"
+        },
+        {
+            "description": "OAuth2/OIDC: authorize, token, userinfo, introspect (RFC 7662), logout, register (tra client dựng sẵn theo redirect URI). Lỗi /oauth2/token theo RFC 6749 §5.2.",
+            "name": "oauth"
+        },
+        {
+            "description": "Discovery và khóa công khai: JWKS, openid-configuration, oauth-authorization-server, SMART configuration, protected resource metadata (RFC 9728).",
+            "name": "well-known"
+        },
+        {
+            "description": "Quản trị project qua HTTP (tắt mặc định, AUTH_ADMIN_ENABLED): project, client, thành viên, mời user, setting, site. Chỉ Bearer của admin project.",
+            "name": "admin"
+        },
+        {
+            "description": "SCIM 2.0 /scim/v2/Users cho IdP (tắt mặc định, AUTH_SCIM_ENABLED và tính năng scim của project). Lỗi theo RFC 7644.",
+            "name": "scim"
+        },
+        {
+            "description": "Gửi thư POST /email/v1/send (tắt mặc định, AUTH_EMAIL_ENABLED). Chỉ admin project có tính năng email.",
+            "name": "email"
+        },
+        {
+            "description": "Probe liveness và readiness cho orchestrator.",
+            "name": "health"
+        }
+    ]
 }`
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it

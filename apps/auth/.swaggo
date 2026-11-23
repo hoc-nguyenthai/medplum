@@ -1,0 +1,3 @@
+replace json.Number float64
+replace json.RawMessage object
+replace trivita-fhir/pkg/fhir.Extension object

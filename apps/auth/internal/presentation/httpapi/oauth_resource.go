@@ -18,7 +18,7 @@ import (
 //	@Description	Cần Bearer access token. Trả `sub`; thêm theo scope của login (khớp từng từ): `profile` (profile, locale, updated_at, name, given_name, family_name), `email` (email, email_verified).
 //	@Description	Không có phone, address, birthdate, gender, picture: hồ sơ Patient/Practitioner nằm ở fhir-server, auth không đọc được (quyết định D-10).
 //	@Tags			oauth
-//	@Produce		json
+//	@Produce		application/json
 //	@Security		BearerAuth
 //	@Success		200	{object}	map[string]interface{}
 //	@Failure		401	{object}	map[string]interface{}
@@ -34,14 +34,14 @@ func (h *oauthHandlers) userinfo(c echo.Context) error {
 
 // IntrospectResponse là kết quả RFC 7662: chỉ {"active": false} khi token không dùng được, vì bất cứ lý do nào.
 type IntrospectResponse struct {
-	Active   bool   `json:"active"`
-	Iat      int64  `json:"iat,omitempty"`
-	Exp      int64  `json:"exp,omitempty"`
-	Iss      string `json:"iss,omitempty"`
-	Sub      string `json:"sub,omitempty"`
-	ClientID string `json:"client_id,omitempty"`
-	Scope    string `json:"scope,omitempty"`
-	Patient  string `json:"patient,omitempty"`
+	Active   bool   `json:"active" binding:"required" example:"true"`                                 // true khi token còn dùng được; false thì không có trường nào khác
+	Iat      int64  `json:"iat,omitempty" example:"1763900000"`                                       // thời điểm cấp token (Unix giây); chỉ có khi active=true
+	Exp      int64  `json:"exp,omitempty" example:"1763903600"`                                       // thời điểm hết hạn (Unix giây); chỉ có khi active=true
+	Iss      string `json:"iss,omitempty" example:"https://auth.example.org"`                         // issuer đã cấp token; chỉ có khi active=true
+	Sub      string `json:"sub,omitempty" example:"3f2a8c1e-0000-4000-8000-000000000000"`             // claim sub của token (với refresh token là id của User); chỉ có khi active=true
+	ClientID string `json:"client_id,omitempty" example:"b4d1e2f3-0000-4000-8000-000000000000"`       // id ClientApplication đã xin token; chỉ có khi có
+	Scope    string `json:"scope,omitempty" example:"openid fhirUser"`                                // các scope của token, cách nhau bằng khoảng trắng; chỉ có khi có
+	Patient  string `json:"patient,omitempty" example:"Patient/3f2a8c1e-0000-4000-8000-000000000000"` // Patient của ngữ cảnh SMART launch; chỉ có khi có
 }
 
 // introspect godoc
@@ -50,7 +50,7 @@ type IntrospectResponse struct {
 //	@Description	Cần Bearer. Chỉ hỏi được token của cùng project và cùng client với người gọi; refresh token đã xoay là không hoạt động. Mọi lý do không dùng được đều ra `{"active": false}`.
 //	@Tags			oauth
 //	@Accept			x-www-form-urlencoded,json
-//	@Produce		json
+//	@Produce		application/json
 //	@Security		BearerAuth
 //	@Param			token	formData	string	true	"token cần kiểm tra"
 //	@Success		200		{object}	IntrospectResponse
@@ -80,7 +80,7 @@ func (h *oauthHandlers) introspect(c echo.Context) error {
 //	@Summary		Đăng xuất (thu hồi login của access token)
 //	@Description	Cần Bearer. Thu hồi login và xóa cookie đăng nhập của client. Sau đó chính access token này bị từ chối ở các route của auth (fhir-server chỉ biết khi token hết hạn).
 //	@Tags			oauth
-//	@Produce		json
+//	@Produce		application/fhir+json
 //	@Security		BearerAuth
 //	@Success		200	{object}	fhir.OperationOutcome
 //	@Failure		401	{object}	fhir.OperationOutcome
@@ -193,7 +193,7 @@ func withQuery(raw string, params url.Values) string {
 
 // RegisterBody là body của POST /oauth2/register.
 type RegisterBody struct {
-	RedirectURIs []string `json:"redirect_uris"`
+	RedirectURIs []string `json:"redirect_uris" binding:"required" example:"https://app.example.org/callback"` // danh sách redirect URI; phần tử đầu phải khớp chính xác một client dựng sẵn (không thì 400 invalid_client_metadata)
 }
 
 // register godoc
@@ -202,7 +202,7 @@ type RegisterBody struct {
 //	@Description	Không phải đăng ký động theo RFC 7591: không tạo client mới và không trả client_secret. Chỉ có khi bật AUTH_OAUTH_REGISTER_ENABLED. redirect_uris[0] phải bằng chính xác redirect URI của một client dựng sẵn.
 //	@Tags			oauth
 //	@Accept			json
-//	@Produce		json
+//	@Produce		application/json
 //	@Param			body	body		RegisterBody	true	"redirect_uris"
 //	@Success		201		{object}	application.RegisteredClient
 //	@Failure		400		{object}	TokenErrorBody

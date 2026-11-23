@@ -8,13 +8,13 @@ import (
 
 // HealthResponse là body của các probe còn sống.
 type HealthResponse struct {
-	Status string `json:"status" example:"ok"`
+	Status string `json:"status" binding:"required" example:"ok"` // luôn là "ok" khi tiến trình còn sống
 }
 
 // ReadyResponse là body của /health/ready; Checks là kết quả từng phụ thuộc (true = sẵn sàng).
 type ReadyResponse struct {
-	Ready  bool            `json:"ready" example:"true"`
-	Checks map[string]bool `json:"checks"`
+	Ready  bool            `json:"ready" binding:"required" example:"true"` // true khi mọi phụ thuộc sẵn sàng (HTTP 200); false kèm HTTP 503
+	Checks map[string]bool `json:"checks" binding:"required"`               // kết quả từng phụ thuộc theo tên (true = sẵn sàng); rỗng khi chưa khai báo phụ thuộc nào
 }
 
 func registerHealth(e *echo.Echo, dep Deps) {
@@ -36,18 +36,20 @@ func registerHealth(e *echo.Echo, dep Deps) {
 
 // live godoc
 //
-//	@Summary	Liveness probe
+//	@Summary		Liveness probe
+//	@Description	Trả {"status":"ok"} khi tiến trình còn sống; không kiểm tra phụ thuộc. /healthz và /health/startup trả cùng nội dung.
 //	@Tags		health
-//	@Produce	json
+//	@Produce		application/json
 //	@Success	200	{object}	HealthResponse
 //	@Router		/health/live [get]
 func live(c echo.Context) error { return ok(c) }
 
 // ready godoc
 //
-//	@Summary	Readiness probe (kiểm tra phụ thuộc)
+//	@Summary		Readiness probe (kiểm tra phụ thuộc)
+//	@Description	Kiểm tra từng phụ thuộc đã khai báo (ví dụ DB, Redis); 200 khi tất cả sẵn sàng, 503 kèm cùng body khi có phụ thuộc chưa sẵn sàng.
 //	@Tags		health
-//	@Produce	json
+//	@Produce		application/json
 //	@Success	200	{object}	ReadyResponse
 //	@Failure	503	{object}	ReadyResponse
 //	@Router		/health/ready [get]

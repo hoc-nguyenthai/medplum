@@ -98,9 +98,9 @@ func (s *Service) PreAuthorizedCode(ctx context.Context, req PreAuthorizedCodeRe
 
 // RegisteredClient là kết quả của /oauth2/register (không có client_secret).
 type RegisteredClient struct {
-	ClientID       string   `json:"client_id"`
-	ClientIDIssued int64    `json:"client_id_issued_at"`
-	RedirectURIs   []string `json:"redirect_uris"`
+	ClientID       string   `json:"client_id" binding:"required" example:"0192f3a4-7b1c-7d2e-9a10-3c5e8f1b2a77"` // id của client dựng sẵn khớp redirect_uri
+	ClientIDIssued int64    `json:"client_id_issued_at" binding:"required" example:"1795428900"`                 // thời điểm trả về, Unix epoch tính bằng giây
+	RedirectURIs   []string `json:"redirect_uris" binding:"required" example:"https://app.example.com/callback"` // redirect URI khớp (đúng một phần tử)
 }
 
 // RegisterClient tra client dựng sẵn theo redirect_uri (register.ts:16): không phải đăng ký động theo RFC 7591, không tạo gì mới và không

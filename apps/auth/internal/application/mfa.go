@@ -456,13 +456,13 @@ func (s *Service) accountUser(ctx context.Context, a *AuthState) (*fhir.User, er
 
 // MFAStatusResult là phản hồi GET /auth/mfa/status.
 type MFAStatusResult struct {
-	Enrolled        bool     `json:"enrolled"`
-	EnrolledMethods []string `json:"enrolledMethods"`
-	AllowedMethods  []string `json:"allowedMethods"`
-	MfaRequired     bool     `json:"mfaRequired"`
-	Email           string   `json:"email,omitempty"`
-	EnrollURI       string   `json:"enrollUri,omitempty"`
-	EnrollQRCode    string   `json:"enrollQrCode,omitempty"`
+	Enrolled        bool     `json:"enrolled" binding:"required" example:"false"`                                                   // người dùng đã đăng ký ít nhất một phương thức MFA
+	EnrolledMethods []string `json:"enrolledMethods" binding:"required" enums:"totp,email" example:"totp"`                          // các phương thức MFA đã đăng ký
+	AllowedMethods  []string `json:"allowedMethods" binding:"required" enums:"totp,email" example:"totp"`                           // các phương thức MFA project cho phép
+	MfaRequired     bool     `json:"mfaRequired" binding:"required" example:"false"`                                                // project có bắt buộc MFA hay không
+	Email           string   `json:"email,omitempty" example:"user@example.com"`                                                    // email của tài khoản (luôn được điền nếu user có email)
+	EnrollURI       string   `json:"enrollUri,omitempty" example:"otpauth://totp/Trivita:user@example.com?secret=JBSWY3DPEHPK3PXP"` // otpauth URI để đăng ký TOTP; chỉ có khi người dùng chưa đăng ký TOTP
+	EnrollQRCode    string   `json:"enrollQrCode,omitempty"`                                                                        // mã QR của enrollUri dạng data URI; chỉ có khi người dùng chưa đăng ký TOTP
 }
 
 // MFAStatus xử lý GET /auth/mfa/status (mfa.ts:80).

@@ -51,7 +51,8 @@ Cấu hình: `internal/config/config_test.go` (22 hàm) kiểm giá trị mặc 
 ## 5. Test bảo vệ
 
 - **Kiến trúc** (`architecture_test.go`, gốc repo): `go test .` kiểm hướng phụ thuộc giữa các tầng của `auth`, và `pkg/` không được biết app.
-- **Hợp đồng API** (`bootstrap` `TestRoutesMatchSwaggerContract`, `docs` `TestAPIContractIsUpToDate`): route phục vụ thật khớp `swagger.json`, và bảng route trong `api-contract.md` khớp `swagger.json` (`UPDATE_DOCS=1 go test ./apps/auth/docs -run TestAPIContractIsUpToDate`).
+- **Hợp đồng API** (`bootstrap` `TestRoutesMatchSwaggerContract`, `docs` `TestAPIContractIsUpToDate`, `docs` `TestSwaggerDTOsAreComplete`): route phục vụ thật khớp `swagger.json`; bảng route trong `api-contract.md` khớp `swagger.json` (`UPDATE_DOCS=1 go test ./apps/auth/docs -run TestAPIContractIsUpToDate`); mọi DTO của auth có mô tả trường, `required`, ví dụ (body yêu cầu) và mọi route có mô tả đủ.
+- **`.env.example`** (`internal/config` `TestConfigDocIsUpToDate`): mọi biến của `config.go` phải có dòng `VAR=` hoặc `# VAR=` trong `apps/auth/.env.example`.
 - **Tài liệu cấu hình** (`internal/config/docs_test.go`): `config.md` được sinh từ `config.go`; thêm hoặc đổi biến mà không cập nhật thì test đỏ. Cập nhật:
 
 ```bash

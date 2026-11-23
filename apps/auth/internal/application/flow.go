@@ -74,8 +74,8 @@ func (s *Service) LoginStatus(ctx context.Context, loginID string) (*LoginResult
 
 // MethodResult là phản hồi của POST /auth/method: rỗng nếu đăng nhập bằng mật khẩu, có đủ hai trường nếu qua IdP ngoài.
 type MethodResult struct {
-	Domain       string `json:"domain,omitempty"`
-	AuthorizeURL string `json:"authorizeUrl,omitempty"`
+	Domain       string `json:"domain,omitempty" example:"example.com"`                                    // tên miền của email, chỉ có khi tên miền cấu hình identity provider ngoài
+	AuthorizeURL string `json:"authorizeUrl,omitempty" example:"https://idp.example.com/oauth2/authorize"` // URL authorize của identity provider; vắng mặt nghĩa là đăng nhập bằng mật khẩu
 }
 
 // LoginMethod cho biết email đăng nhập bằng mật khẩu hay qua identity provider của tên miền (auth/method.ts).

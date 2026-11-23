@@ -37,11 +37,11 @@ func adminProject(a *AuthState, projectID string) (*fhir.Project, error) {
 
 // AdminProjectView là phần project mà admin đọc được; giá trị bí mật bị che.
 type AdminProjectView struct {
-	ID      string                `json:"id"`
-	Name    string                `json:"name"`
-	Setting []fhir.ProjectSetting `json:"setting,omitempty"`
-	Secret  []fhir.ProjectSetting `json:"secret,omitempty"`
-	Site    []fhir.ProjectSite    `json:"site,omitempty"`
+	ID      string                `json:"id" binding:"required" example:"0192f3a4-7b1c-7d2e-9a10-3c5e8f1b2a44"` // id của Project (UUID)
+	Name    string                `json:"name" binding:"required" example:"Bệnh viện A"`                        // tên Project
+	Setting []fhir.ProjectSetting `json:"setting,omitempty"`                                                    // cấu hình Project; giá trị bí mật bị che, chỉ có khi Project có cấu hình
+	Secret  []fhir.ProjectSetting `json:"secret,omitempty"`                                                     // các secret của Project; giá trị luôn bị che (maskValue), chỉ có khi có secret
+	Site    []fhir.ProjectSite    `json:"site,omitempty"`                                                       // các site của Project; googleClientSecret bị che, chỉ có khi Project có site
 }
 
 func maskSettings(in []fhir.ProjectSetting) []fhir.ProjectSetting {

@@ -24,28 +24,28 @@ func registerEmail(e *echo.Echo, dep Deps) {
 
 // EmailAttachmentBody là một tệp đính kèm của SendEmailBody.
 type EmailAttachmentBody struct {
-	Filename           any    `json:"filename,omitempty" swaggertype:"string"`
-	Content            string `json:"content,omitempty"`
-	Path               string `json:"path,omitempty" example:"https://example.org/file.pdf"`
-	ContentType        string `json:"contentType,omitempty"`
-	ContentDisposition string `json:"contentDisposition,omitempty" enums:"attachment,inline"`
-	CID                string `json:"cid,omitempty"`
-	Encoding           string `json:"encoding,omitempty" enums:"utf8,base64"`
+	Filename           any    `json:"filename,omitempty" swaggertype:"string" example:"ketqua.pdf"`                // tên tệp hiển thị; phải là chuỗi nếu có
+	Content            string `json:"content,omitempty" example:"SGVsbG8="`                                        // nội dung nhúng, mã hóa theo encoding; dùng content hoặc path
+	Path               string `json:"path,omitempty" example:"https://example.org/file.pdf"`                       // URL https hoặc Binary/<id> (đọc từ FHIR bằng token người gọi); đường dẫn khác bị từ chối
+	ContentType        string `json:"contentType,omitempty" example:"application/pdf"`                             // kiểu MIME của tệp
+	ContentDisposition string `json:"contentDisposition,omitempty" enums:"attachment,inline" example:"attachment"` // attachment: tệp đính kèm; inline: nhúng trong thân thư (dùng với cid)
+	CID                string `json:"cid,omitempty" example:"logo@example.org"`                                    // Content-ID để thân HTML tham chiếu (cid:...) khi inline
+	Encoding           string `json:"encoding,omitempty" enums:"utf8,base64" example:"base64"`                     // cách mã hóa của content
 }
 
 // SendEmailBody là body của POST /email/v1/send. Mỗi địa chỉ (from, to, cc, bcc, replyTo) là chuỗi ("a@b" hoặc "Tên <a@b>", cho phép danh sách phân cách dấu phẩy),
 // đối tượng {name, address} hoặc mảng của chúng. Trường ngoài danh sách (envelope, raw, headers, dkim, auth, sender...) bị bỏ qua.
 type SendEmailBody struct {
-	From        any                   `json:"from,omitempty" swaggertype:"string"`
-	To          any                   `json:"to" swaggertype:"string"`
-	Cc          any                   `json:"cc,omitempty" swaggertype:"string"`
-	Bcc         any                   `json:"bcc,omitempty" swaggertype:"string"`
-	ReplyTo     any                   `json:"replyTo,omitempty" swaggertype:"string"`
-	Subject     string                `json:"subject"`
-	Text        string                `json:"text,omitempty"`
-	HTML        string                `json:"html,omitempty"`
-	Attachments []EmailAttachmentBody `json:"attachments,omitempty"`
-	ICalEvent   any                   `json:"icalEvent,omitempty" swaggertype:"string"`
+	From        any                   `json:"from,omitempty" swaggertype:"string" example:"Trivita <no-reply@example.org>"` // người gửi, đúng một địa chỉ; chỉ dùng nếu thuộc danh sách được duyệt, không thì dùng địa chỉ mặc định
+	To          any                   `json:"to" binding:"required" swaggertype:"string" example:"an@example.org"`          // người nhận; bắt buộc, không rỗng
+	Cc          any                   `json:"cc,omitempty" swaggertype:"string" example:"cc@example.org"`                   // người nhận bản sao (tùy chọn)
+	Bcc         any                   `json:"bcc,omitempty" swaggertype:"string" example:"bcc@example.org"`                 // người nhận ẩn (tùy chọn)
+	ReplyTo     any                   `json:"replyTo,omitempty" swaggertype:"string" example:"hotro@example.org"`           // địa chỉ nhận trả lời (tùy chọn)
+	Subject     string                `json:"subject" binding:"required" example:"Kết quả xét nghiệm"`                      // tiêu đề thư; bắt buộc, không rỗng, không chứa xuống dòng
+	Text        string                `json:"text,omitempty" example:"Xin chào, kết quả đã sẵn sàng."`                      // thân thư dạng văn bản thuần (tùy chọn)
+	HTML        string                `json:"html,omitempty" example:"<p>Xin chào</p>"`                                     // thân thư dạng HTML (tùy chọn)
+	Attachments []EmailAttachmentBody `json:"attachments,omitempty"`                                                        // các tệp đính kèm (tùy chọn)
+	ICalEvent   any                   `json:"icalEvent,omitempty" swaggertype:"string" example:"BEGIN:VCALENDAR..."`        // sự kiện iCal: chuỗi nội dung hoặc đối tượng {content, method, filename}
 }
 
 // sendEmail godoc
@@ -55,7 +55,7 @@ type SendEmailBody struct {
 //	@Tags			email
 //	@Security		BearerAuth
 //	@Accept			json
-//	@Produce		json
+//	@Produce		application/fhir+json
 //	@Param			body	body		SendEmailBody	true	"Thư"
 //	@Success		200		{object}	fhir.OperationOutcome
 //	@Failure		400		{object}	fhir.OperationOutcome

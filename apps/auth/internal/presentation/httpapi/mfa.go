@@ -22,8 +22,8 @@ func registerMFA(g *echo.Group, h *authHandlers, bearer echo.MiddlewareFunc, slo
 
 // MFAVerifyBody là body của POST /auth/mfa/verify.
 type MFAVerifyBody struct {
-	Login string `json:"login" example:"a3b1c2d4-0000-4000-8000-000000000000"`
-	Token string `json:"token" example:"123456"`
+	Login string `json:"login" binding:"required" example:"a3b1c2d4-0000-4000-8000-000000000000"` // id login đang chờ MFA (lấy từ phản hồi /auth/login); bắt buộc, rỗng là 400
+	Token string `json:"token" binding:"required" example:"123456"`                               // mã TOTP (6 số) hoặc mã email MFA; bắt buộc, rỗng là 400
 }
 
 // mfaVerify godoc
@@ -32,7 +32,7 @@ type MFAVerifyBody struct {
 //	@Description	Mã TOTP hoặc mã email. Đúng thì login được đánh dấu đã xác minh và phản hồi như /auth/login (code, memberships...). Người dùng bắt buộc MFA chưa đăng ký mà nhập mã cho secret được mời của chính login này thì được đăng ký TOTP luôn. Mỗi lượt thử bị giới hạn: 5 mỗi login và 20 mỗi user trong 10 phút; lần sai thứ 5 thu hồi login; vượt hạn mức trả 429 kèm rate-limit-reset. Mã TOTP chỉ dùng một lần.
 //	@Tags			auth
 //	@Accept			json
-//	@Produce		json
+//	@Produce		application/json,application/fhir+json
 //	@Param			body	body		MFAVerifyBody	true	"login và mã"
 //	@Success		200		{object}	application.LoginResult
 //	@Failure		400		{object}	fhir.OperationOutcome
@@ -64,9 +64,9 @@ func (h *authHandlers) mfaVerify(c echo.Context) error {
 
 // MFALoginEnrollBody là body của POST /auth/mfa/login-enroll.
 type MFALoginEnrollBody struct {
-	Login  string `json:"login"`
-	Method string `json:"method,omitempty" enums:"totp,email"`
-	Token  string `json:"token,omitempty"`
+	Login  string `json:"login" binding:"required" example:"a3b1c2d4-0000-4000-8000-000000000000"` // id login đang chờ đăng ký MFA; bắt buộc, rỗng là 400
+	Method string `json:"method,omitempty" enums:"totp,email" example:"totp"`                      // phương thức đăng ký; giá trị khác "email" (hoặc bỏ trống) được hiểu là totp
+	Token  string `json:"token,omitempty" example:"123456"`                                        // mã TOTP của secret trong enrollUri; chỉ dùng với method=totp (bắt buộc khi đó), bỏ qua với email
 }
 
 // mfaLoginEnroll godoc
@@ -75,7 +75,7 @@ type MFALoginEnrollBody struct {
 //	@Description	Dùng khi MFA bắt buộc mà user chưa đăng ký (phản hồi login có mfaEnrollRequired). method=email: đăng ký và gửi mã tới email (nhập mã qua /auth/mfa/verify). method=totp (mặc định): gửi token của secret trong enrollUri. Cùng hạn mức thử với /auth/mfa/verify.
 //	@Tags			auth
 //	@Accept			json
-//	@Produce		json
+//	@Produce		application/json,application/fhir+json
 //	@Param			body	body		MFALoginEnrollBody	true	"login, phương thức và token"
 //	@Success		200		{object}	application.LoginResult
 //	@Failure		400		{object}	fhir.OperationOutcome
@@ -101,7 +101,7 @@ func (h *authHandlers) mfaLoginEnroll(c echo.Context) error {
 
 // MFASendEmailBody là body của POST /auth/mfa/send-email.
 type MFASendEmailBody struct {
-	Login string `json:"login"`
+	Login string `json:"login" binding:"required" example:"a3b1c2d4-0000-4000-8000-000000000000"` // id login đang chờ MFA cần gửi lại mã email; bắt buộc, rỗng là 400
 }
 
 // mfaSendEmail godoc
@@ -138,7 +138,7 @@ func (h *authHandlers) mfaSendEmail(c echo.Context) error {
 //	@Description	Danh sách phương thức đã đăng ký và được phép, project có bắt buộc MFA không, và (nếu chưa đăng ký TOTP) enrollUri cùng enrollQrCode. Secret trong enrollUri chỉ thành yếu tố khi chính phiên này xác nhận bằng mã.
 //	@Tags			auth
 //	@Security		BearerAuth
-//	@Produce		json
+//	@Produce		application/json,application/fhir+json
 //	@Success		200	{object}	application.MFAStatusResult
 //	@Failure		401	{object}	fhir.OperationOutcome
 //	@Failure		403	{object}	fhir.OperationOutcome
@@ -153,8 +153,8 @@ func (h *authHandlers) mfaStatus(c echo.Context) error {
 
 // MFAEnrollBody là body của POST /auth/mfa/enroll.
 type MFAEnrollBody struct {
-	Method string `json:"method,omitempty" enums:"totp,email"`
-	Token  string `json:"token"`
+	Method string `json:"method,omitempty" enums:"totp,email" example:"totp"` // phương thức cần đăng ký; giá trị khác "email" (hoặc bỏ trống) được hiểu là totp
+	Token  string `json:"token" binding:"required" example:"123456"`          // mã xác nhận: mã email (method=email) hoặc mã TOTP (method=totp); rỗng là 400 "Missing token"
 }
 
 // mfaEnroll godoc
@@ -205,8 +205,8 @@ func (h *authHandlers) mfaSendEmailChallenge(c echo.Context) error {
 
 // MFADisableBody là body của POST /auth/mfa/disable.
 type MFADisableBody struct {
-	Method string `json:"method,omitempty" enums:"totp,email"`
-	Token  string `json:"token"`
+	Method string `json:"method,omitempty" enums:"totp,email" example:"totp"` // phương thức cần gỡ; bỏ trống là gỡ tất cả (cần là một yếu tố đã đăng ký, không thì 400)
+	Token  string `json:"token" binding:"required" example:"123456"`          // mã chứng minh một yếu tố MFA đang có (TOTP hoặc mã email); rỗng là 400 "Missing token"
 }
 
 // mfaDisable godoc

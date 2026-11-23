@@ -9,15 +9,18 @@ Cập nhật 2026-11-23. **Chỉ mô tả phần `auth` đang phục vụ.** Rou
 | `/swagger/index.html`, `/swagger/doc.json` | Cùng spec, xem trực tiếp (tắt ở staging/production) |
 | [auth-dto.md](api-contract/auth-dto.md), [oauth.md](api-contract/oauth.md), [admin.md](api-contract/admin.md), [email.md](api-contract/email.md) | Diễn giải, ví dụ JSON và luồng (viết tay, đã đối chiếu source Medplum) |
 
-**Ba test giữ hợp đồng không lệch** (đỏ khi lệch):
+**Bốn test giữ hợp đồng không lệch** (đỏ khi lệch):
 
 | Test | Bắt lỗi gì |
 |---|---|
 | `internal/bootstrap` `TestRoutesMatchSwaggerContract` | Route phục vụ thật (khi bật mọi tính năng tùy chọn) khác với `swagger.json`, theo cả hai chiều |
 | `docs` `TestAPIContractIsUpToDate` | Bảng route dưới đây khác với `swagger.json` (`UPDATE_DOCS=1 go test ./apps/auth/docs -run TestAPIContractIsUpToDate`) |
+| `docs` `TestSwaggerDTOsAreComplete` | DTO của auth thiếu mô tả trường, thiếu danh sách `required`, thiếu `example` ở body yêu cầu; route thiếu tóm tắt/mô tả/schema phản hồi/mô tả tham số; tag thiếu mô tả |
 | `architecture_test.go` | Phụ thuộc giữa các tầng (xem [architecture.md](architecture.md)) |
 
-Các test này **không** kiểm nội dung từng trường của DTO so với hành vi; phần đó do test HTTP ở `internal/bootstrap` và `e2e/` kiểm.
+Các test này kiểm **độ đầy đủ và khớp route** của hợp đồng, **không** kiểm giá trị từng trường so với hành vi (mô tả, `required` do người viết struct đặt theo validator); hành vi do test HTTP ở `internal/bootstrap` và `e2e/` kiểm. Cách khai báo DTO: bình luận cuối dòng của trường là mô tả; `binding:"required"` đánh dấu trường bắt buộc (tag này chỉ để sinh swagger, validator thật là hàm `validateXxx`); `example:"..."` và `enums:"a,b"` cho giá trị mẫu và tập giá trị.
+
+> **`extension` của các resource FHIR (`ProjectMembership`, `ClientApplication`, ...) được khai báo là mảng object tự do** trong `swagger.json`/`swagger.yaml`, không phải kiểu `fhir.Extension` đầy đủ (override ở `apps/auth/.swaggo`, dùng khi `make swagger APP=auth`). Lý do: kiểu đầy đủ kéo theo khoảng 30 kiểu dữ liệu FHIR (`Address`, `Dosage`, `TimingRepeat`...) làm spec phình gần gấp đôi và làm IDE đứng khi mở `swagger.yaml`. Cấu trúc thật của extension theo chuẩn FHIR R4 (`url` bắt buộc, kèm đúng một `value[x]`).
 
 ## 1. Địa chỉ và phiên bản
 
@@ -83,17 +86,17 @@ Mỗi nhóm là một `tag` của swagger. Cột "Yêu cầu" cho tên schema c�
 
 | Route | Mô tả | Xác thực | Yêu cầu | Phản hồi thành công | Mã lỗi |
 |---|---|---|---|---|---|
-| `POST /admin/projects/setpassword` | Đặt mật khẩu cho user của project | Bearer | body `httpapi.AdminSetPasswordBody` | 200 `fhir.OperationOutcome` | 400, 403 |
+| `POST /admin/projects/setpassword` | Đặt mật khẩu cho user của project | Bearer | body `httpapi.AdminSetPasswordBody` | 200 `fhir.OperationOutcome` | 400, 401, 403, 429 |
 | `GET /admin/projects/{projectId}` | Đọc project của chính mình (admin) | Bearer | - | 200 `httpapi.AdminProjectResponse` | 401, 403 |
-| `POST /admin/projects/{projectId}/client` | Tạo ClientApplication trong project | Bearer | body `httpapi.AdminClientBody` | 201 `fhir.ClientApplication` | 400, 403 |
-| `POST /admin/projects/{projectId}/invite` | Mời user vào project | Bearer | body `httpapi.InviteBody` | 200 `fhir.ProjectMembership` | 400, 403, 409 |
-| `GET /admin/projects/{projectId}/members/{membershipId}` | Đọc một membership của project | Bearer | - | 200 `fhir.ProjectMembership` | 403 |
-| `POST /admin/projects/{projectId}/members/{membershipId}` | Sửa membership | Bearer | body `fhir.ProjectMembership` | 200 `fhir.ProjectMembership` | 400, 403, 409 |
-| `DELETE /admin/projects/{projectId}/members/{membershipId}` | Xóa membership | Bearer | - | 200 `fhir.OperationOutcome` | 400, 403 |
-| `POST /admin/projects/{projectId}/members/{membershipId}/mfa/reset` | Gỡ một yếu tố MFA của member | Bearer | body `object` | 200 `fhir.OperationOutcome` | 400, 403 |
-| `POST /admin/projects/{projectId}/members/{membershipId}/resetpassword` | Gửi thư đặt lại mật khẩu cho một member | Bearer | - | 200 `fhir.OperationOutcome` | 400, 403 |
-| `POST /admin/projects/{projectId}/settings` | Đặt các setting của project (allowlist) | Bearer | body `[]fhir.ProjectSetting` | 200 `httpapi.AdminProjectResponse` | 400, 403 |
-| `POST /admin/projects/{projectId}/sites` | Đặt các site của project (Google, reCAPTCHA) | Bearer | body `[]fhir.ProjectSite` | 200 `httpapi.AdminProjectResponse` | 400, 403, 409 |
+| `POST /admin/projects/{projectId}/client` | Tạo ClientApplication trong project | Bearer | body `httpapi.AdminClientBody` | 201 `fhir.ClientApplication` | 400, 401, 403 |
+| `POST /admin/projects/{projectId}/invite` | Mời user vào project | Bearer | body `httpapi.InviteBody` | 200 `fhir.ProjectMembership` | 400, 401, 403, 409, 429 |
+| `GET /admin/projects/{projectId}/members/{membershipId}` | Đọc một membership của project | Bearer | - | 200 `fhir.ProjectMembership` | 401, 403 |
+| `POST /admin/projects/{projectId}/members/{membershipId}` | Sửa membership | Bearer | body `fhir.ProjectMembership` | 200 `fhir.ProjectMembership` | 400, 401, 403, 409 |
+| `DELETE /admin/projects/{projectId}/members/{membershipId}` | Xóa membership | Bearer | - | 200 `fhir.OperationOutcome` | 400, 401, 403 |
+| `POST /admin/projects/{projectId}/members/{membershipId}/mfa/reset` | Gỡ một yếu tố MFA của member | Bearer | body `httpapi.MFAResetBody` | 200 `fhir.OperationOutcome` | 400, 401, 403, 429 |
+| `POST /admin/projects/{projectId}/members/{membershipId}/resetpassword` | Gửi thư đặt lại mật khẩu cho một member | Bearer | - | 200 `fhir.OperationOutcome` | 400, 401, 403, 429 |
+| `POST /admin/projects/{projectId}/settings` | Đặt các setting của project (allowlist) | Bearer | body `[]fhir.ProjectSetting` | 200 `httpapi.AdminProjectResponse` | 400, 401, 403 |
+| `POST /admin/projects/{projectId}/sites` | Đặt các site của project (Google, reCAPTCHA) | Bearer | body `[]fhir.ProjectSite` | 200 `httpapi.AdminProjectResponse` | 400, 401, 403, 409 |
 
 ### Nhóm `auth` (28 route)
 

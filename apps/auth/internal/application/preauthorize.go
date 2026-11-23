@@ -28,8 +28,8 @@ type PreAuthorizeRequest struct {
 
 // PreAuthorizeResult chỉ được trả MỘT lần: kho chỉ giữ SHA-256 của mã.
 type PreAuthorizeResult struct {
-	PreAuthorizedCode string `json:"preAuthorizedCode"`
-	ExpiresAt         string `json:"expiresAt"`
+	PreAuthorizedCode string `json:"preAuthorizedCode" binding:"required" example:"4f9c2e7a1b3d5f60a8c1e2d3b4a59687"`    // mã pre-authorized dùng một lần để đổi token; chỉ trả ở lần này (server chỉ lưu băm)
+	ExpiresAt         string `json:"expiresAt" binding:"required" format:"date-time" example:"2026-11-23T10:15:00.000Z"` // thời điểm hết hạn của mã, RFC3339 UTC (now + ttl giây)
 }
 
 // resolveOnBehalfOf tìm membership đích của header X-Medplum-On-Behalf-Of (utils.ts:1369): `ProjectMembership/<id>` hoặc tham chiếu profile; cùng project của người gọi,

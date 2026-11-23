@@ -91,18 +91,18 @@ func (b body) falsy(key string) bool {
 
 // LoginBody là body của POST /auth/login.
 type LoginBody struct {
-	Email               string `json:"email" example:"an@example.org"`
-	Password            string `json:"password" example:"mat-khau-dai-123"`
-	ProjectID           string `json:"projectId,omitempty" example:"new"`
-	ClientID            string `json:"clientId,omitempty"`
-	Scope               string `json:"scope,omitempty" example:"openid"`
-	Nonce               string `json:"nonce,omitempty"`
-	CodeChallenge       string `json:"codeChallenge,omitempty"`
-	CodeChallengeMethod string `json:"codeChallengeMethod,omitempty" enums:"plain,S256"`
-	Launch              string `json:"launch,omitempty"`
-	ResourceType        string `json:"resourceType,omitempty" example:"Practitioner"`
-	RedirectURI         string `json:"redirectUri,omitempty"`
-	Remember            bool   `json:"remember,omitempty"`
+	Email               string `json:"email" binding:"required" example:"an@example.org"`                             // Email đăng nhập; bắt buộc, phải là địa chỉ email hợp lệ
+	Password            string `json:"password" binding:"required" example:"mat-khau-dai-123"`                        // Mật khẩu; bắt buộc, 8 ký tự trở lên và không quá 72 byte
+	ProjectID           string `json:"projectId,omitempty" example:"new"`                                             // Project đăng nhập: "new" (chưa thuộc project, cho phép không có membership) hoặc UUID project; bỏ trống thì suy ra từ clientId (nếu gửi cả hai phải khớp project của client)
+	ClientID            string `json:"clientId,omitempty" example:"a3b1c2d4-0000-4000-8000-000000000001"`             // Id ClientApplication OAuth; có thì project được lấy từ client và cookie đăng nhập đặt theo client
+	Scope               string `json:"scope,omitempty" example:"openid"`                                              // Scope OAuth yêu cầu, phân tách bằng khoảng trắng; mặc định "openid"
+	Nonce               string `json:"nonce,omitempty" example:"c1a9f0e2"`                                            // Nonce OIDC; bỏ trống thì máy chủ tự sinh
+	CodeChallenge       string `json:"codeChallenge,omitempty" example:"E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM"` // Mã thách thức PKCE gắn vào login để kiểm ở bước đổi code
+	CodeChallengeMethod string `json:"codeChallengeMethod,omitempty" enums:"plain,S256" example:"S256"`               // Phương thức PKCE của codeChallenge: plain hoặc S256
+	Launch              string `json:"launch,omitempty" example:"a3b1c2d4-0000-4000-8000-000000000000"`               // Id ngữ cảnh SMART launch (nếu có)
+	ResourceType        string `json:"resourceType,omitempty" example:"Practitioner"`                                 // Loại hồ sơ profile cần đăng nhập (ví dụ Practitioner, Patient); lưu vào login làm profileType
+	RedirectURI         string `json:"redirectUri,omitempty" example:"https://app.example.org/callback"`              // URI chuyển hướng của client sau khi đăng nhập; nếu có phải là chuỗi
+	Remember            bool   `json:"remember,omitempty" example:"false"`                                            // true để kèm refresh token trong kết quả đăng nhập; mặc định false
 }
 
 func validateLogin(b body) error {
@@ -132,7 +132,7 @@ func validateLogin(b body) error {
 //	@Description	Trả đúng một trong các dạng LoginResult: code (đã chọn được profile), memberships (chọn profile), mfaRequired hoặc mfaEnrollRequired. Khi có code và login thuộc một client, đặt cookie medplum-<clientId>.
 //	@Tags			auth
 //	@Accept			json
-//	@Produce		json
+//	@Produce		application/json,application/fhir+json
 //	@Param			body	body		LoginBody	true	"Thông tin đăng nhập"
 //	@Success		200		{object}	application.LoginResult
 //	@Failure		400		{object}	fhir.OperationOutcome
@@ -194,17 +194,18 @@ func (h *authHandlers) sendResult(c echo.Context, res *application.LoginResult, 
 
 // ProfileBody là body của POST /auth/profile.
 type ProfileBody struct {
-	Login   string `json:"login"`
-	Profile string `json:"profile" example:"membership id"`
+	Login   string `json:"login" binding:"required" example:"a3b1c2d4-0000-4000-8000-000000000000"`   // Id login đang dở (từ LoginResult.login); bắt buộc có mặt trong body
+	Profile string `json:"profile" binding:"required" example:"a3b1c2d4-0000-4000-8000-000000000001"` // Id ProjectMembership chọn làm profile; bắt buộc có mặt trong body (phải thuộc các membership của login)
 }
 
 // profile godoc
 //
-//	@Summary	Chọn profile (ProjectMembership) cho login
+//	@Summary		Chọn profile (ProjectMembership) cho login
+//	@Description	Gắn một ProjectMembership đã chọn vào login đang dở (login và profile đều bắt buộc có mặt trong body), rồi trả LoginResult như /auth/login (thường có code). Membership không tồn tại trả 400 "Profile not found". Có code và login thuộc một client thì đặt cookie medplum-<clientId>.
 //	@Tags		auth
 //	@Accept		json
-//	@Produce	json
-//	@Param		body	body		ProfileBody	true	"login và id membership"
+//	@Produce		application/json,application/fhir+json
+//	@Param		body	body		ProfileBody	true	"login (id login đang dở) và profile (id ProjectMembership)"
 //	@Success	200		{object}	application.LoginResult
 //	@Failure	400		{object}	fhir.OperationOutcome
 //	@Router		/auth/profile [post]
@@ -233,16 +234,17 @@ func (h *authHandlers) profile(c echo.Context) error {
 
 // ScopeBody là body của POST /auth/scope.
 type ScopeBody struct {
-	Login string `json:"login"`
-	Scope string `json:"scope" example:"openid profile"`
+	Login string `json:"login" binding:"required" example:"a3b1c2d4-0000-4000-8000-000000000000"` // Id login đang dở; bắt buộc có mặt trong body
+	Scope string `json:"scope" binding:"required" example:"openid profile"`                       // Scope mới, phân tách bằng khoảng trắng; bắt buộc có mặt trong body và chỉ được thu hẹp
 }
 
 // scope godoc
 //
-//	@Summary	Thu hẹp scope của login
+//	@Summary		Thu hẹp scope của login
+//	@Description	Đổi scope của login đang dở sang scope mới (login và scope đều bắt buộc có mặt trong body), rồi trả LoginResult như /auth/login. Scope mới chỉ được thu hẹp so với scope hiện có. Có code và login thuộc một client thì đặt cookie medplum-<clientId>.
 //	@Tags		auth
 //	@Accept		json
-//	@Produce	json
+//	@Produce		application/json,application/fhir+json
 //	@Param		body	body		ScopeBody	true	"login và scope mới"
 //	@Success	200		{object}	application.LoginResult
 //	@Failure	400		{object}	fhir.OperationOutcome
@@ -274,9 +276,10 @@ func (h *authHandlers) scope(c echo.Context) error {
 
 // status godoc
 //
-//	@Summary	Trạng thái một login đang dở
+//	@Summary		Trạng thái một login đang dở
+//	@Description	Trả LoginResult hiện tại của login (code, memberships, mfaRequired hoặc mfaEnrollRequired tùy bước đang dở) để app tiếp tục luồng đăng nhập. Id login phải là UUID, sai trả 400, không có login trả 404. Có code và login thuộc một client thì đặt cookie medplum-<clientId>.
 //	@Tags		auth
-//	@Produce	json
+//	@Produce		application/json,application/fhir+json
 //	@Param		login	path		string	true	"Login id (UUID)"
 //	@Success	200		{object}	application.LoginResult
 //	@Failure	400		{object}	fhir.OperationOutcome
@@ -299,16 +302,16 @@ func (h *authHandlers) status(c echo.Context) error {
 
 // MethodBody là body của POST /auth/method. Các trường sau email chỉ dùng khi đăng nhập ngoài đã bật: chúng được ghi vào `state` do auth KÝ (Q1).
 type MethodBody struct {
-	Email               string `json:"email" example:"an@example.org"`
-	ClientID            string `json:"clientId,omitempty"`
-	ProjectID           string `json:"projectId,omitempty"`
-	Scope               string `json:"scope,omitempty"`
-	Nonce               string `json:"nonce,omitempty"`
-	Launch              string `json:"launch,omitempty"`
-	CodeChallenge       string `json:"codeChallenge,omitempty"`
-	CodeChallengeMethod string `json:"codeChallengeMethod,omitempty" enums:"plain,S256"`
-	RedirectURI         string `json:"redirectUri,omitempty"`
-	ReturnTo            string `json:"returnTo,omitempty"`
+	Email               string `json:"email" binding:"required" example:"an@example.org"`                             // Email cần xác định cách đăng nhập; bắt buộc, phải hợp lệ
+	ClientID            string `json:"clientId,omitempty" example:"a3b1c2d4-0000-4000-8000-000000000001"`             // Id ClientApplication; chỉ ghi vào state ký khi đăng nhập ngoài đã bật
+	ProjectID           string `json:"projectId,omitempty" example:"a3b1c2d4-0000-4000-8000-000000000000"`            // Id project; chỉ ghi vào state ký khi đăng nhập ngoài đã bật
+	Scope               string `json:"scope,omitempty" example:"openid"`                                              // Scope OAuth; chỉ ghi vào state ký khi đăng nhập ngoài đã bật
+	Nonce               string `json:"nonce,omitempty" example:"c1a9f0e2"`                                            // Nonce OIDC; chỉ ghi vào state ký khi đăng nhập ngoài đã bật
+	Launch              string `json:"launch,omitempty" example:"a3b1c2d4-0000-4000-8000-000000000000"`               // Id SMART launch; chỉ ghi vào state ký khi đăng nhập ngoài đã bật
+	CodeChallenge       string `json:"codeChallenge,omitempty" example:"E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM"` // Mã thách thức PKCE; chỉ ghi vào state ký khi đăng nhập ngoài đã bật
+	CodeChallengeMethod string `json:"codeChallengeMethod,omitempty" enums:"plain,S256" example:"S256"`               // Phương thức PKCE: plain hoặc S256; chỉ ghi vào state ký khi đăng nhập ngoài đã bật
+	RedirectURI         string `json:"redirectUri,omitempty" example:"https://app.example.org/callback"`              // URI chuyển hướng của client; chỉ ghi vào state ký khi đăng nhập ngoài đã bật
+	ReturnTo            string `json:"returnTo,omitempty" example:"https://app.example.org/signin"`                   // Trang của app để quay về sau đăng nhập ngoài; chỉ ghi vào state ký khi đăng nhập ngoài đã bật
 }
 
 // method godoc
@@ -317,7 +320,7 @@ type MethodBody struct {
 //	@Description	Trả {} nếu đăng nhập bằng mật khẩu; trả {domain, authorizeUrl} nếu tên miền email cấu hình identity provider ngoài. Khi đăng nhập ngoài đã bật, authorizeUrl đã kèm `state` do auth ký (chứa các tham số đăng nhập trong body) và phản hồi đặt cookie liên kết trình duyệt `auth-external-state`: app KHÔNG tự thêm state, chỉ chuyển người dùng tới authorizeUrl. Tên miền trả về là chữ thường.
 //	@Tags			auth
 //	@Accept			json
-//	@Produce		json
+//	@Produce		application/json,application/fhir+json
 //	@Param			body	body		MethodBody	true	"Email"
 //	@Success		200		{object}	application.MethodResult
 //	@Failure		400		{object}	fhir.OperationOutcome
@@ -393,7 +396,7 @@ func authState(c echo.Context) *application.AuthState {
 //	@Description	profile chỉ có resourceType và id (hồ sơ đầy đủ nằm ở fhir-server); accessPolicy chưa có ở bản này.
 //	@Tags			auth
 //	@Security		BearerAuth
-//	@Produce		json
+//	@Produce		application/json,application/fhir+json
 //	@Success		200	{object}	application.Me
 //	@Failure		401	{object}	fhir.OperationOutcome
 //	@Router			/auth/me [get]
@@ -407,16 +410,17 @@ func (h *authHandlers) me(c echo.Context) error {
 
 // RevokeBody là body của POST /auth/revoke.
 type RevokeBody struct {
-	LoginID string `json:"loginId" example:"a3b1c2d4-0000-4000-8000-000000000000"`
+	LoginID string `json:"loginId" binding:"required" example:"a3b1c2d4-0000-4000-8000-000000000000"` // Id login (phiên) của chính người gọi cần thu hồi; bắt buộc, phải là UUID
 }
 
 // revoke godoc
 //
-//	@Summary	Thu hồi một phiên đăng nhập của chính mình
+//	@Summary		Thu hồi một phiên đăng nhập của chính mình
+//	@Description	Cần Bearer token. Thu hồi một login (phiên) thuộc về chính người gọi theo loginId (UUID, bắt buộc); login của người khác hoặc không có trả lỗi 403/404. Thành công trả OperationOutcome "All OK".
 //	@Tags		auth
 //	@Security	BearerAuth
 //	@Accept		json
-//	@Produce	application/fhir+json
+//	@Produce		application/fhir+json
 //	@Param		body	body		RevokeBody	true	"loginId cần thu hồi"
 //	@Success	200		{object}	fhir.OperationOutcome
 //	@Failure	400		{object}	fhir.OperationOutcome

@@ -19,51 +19,51 @@ const (
 
 // Name là name của SCIM User (chỉ hai trường được dùng).
 type Name struct {
-	GivenName  string `json:"givenName,omitempty"`
-	FamilyName string `json:"familyName,omitempty"`
+	GivenName  string `json:"givenName,omitempty" example:"An"`      // tên (ghi vào firstName của User)
+	FamilyName string `json:"familyName,omitempty" example:"Nguyễn"` // họ (ghi vào lastName của User)
 }
 
 // Email là một phần tử của emails (chỉ phần tử đầu được dùng).
 type Email struct {
-	Value string `json:"value"`
+	Value string `json:"value" binding:"required" example:"an@example.org"` // địa chỉ email; khi tạo/PATCH, phần tử đầu phải có value không rỗng
 }
 
 // Meta là meta của User.
 type Meta struct {
-	ResourceType string `json:"resourceType"`
-	Version      string `json:"version,omitempty"`
-	LastModified string `json:"lastModified,omitempty"`
-	Location     string `json:"location,omitempty"`
+	ResourceType string `json:"resourceType" binding:"required" example:"User"`                                                           // loại tài nguyên SCIM, luôn là "User"
+	Version      string `json:"version,omitempty" example:"2026-11-23T08:30:00Z"`                                                         // phiên bản của tài nguyên: hiện bằng thời điểm cập nhật của membership (cùng giá trị lastModified), không phải ETag; chỉ đọc
+	LastModified string `json:"lastModified,omitempty" format:"date-time" example:"2026-11-23T08:30:00Z"`                                 // thời điểm sửa gần nhất (RFC 3339); chỉ đọc
+	Location     string `json:"location,omitempty" example:"https://auth.example.org/scim/v2/Users/3f2a8c1e-0000-4000-8000-000000000000"` // URL của tài nguyên; chỉ đọc
 }
 
 // User là biểu diễn SCIM trả ra và nhận vào. Struct khai báo tường minh: không bao giờ serialize resource FHIR, nên không thể lộ passwordHash, mfaSecret...
 type User struct {
-	Schemas    []string `json:"schemas"`
-	ID         string   `json:"id,omitempty"`
-	ExternalID *string  `json:"externalId,omitempty"`
-	UserName   string   `json:"userName,omitempty"`
-	UserType   string   `json:"userType,omitempty"`
-	Name       *Name    `json:"name,omitempty"`
-	Emails     []Email  `json:"emails,omitempty"`
-	Active     *bool    `json:"active,omitempty"`
-	Meta       *Meta    `json:"meta,omitempty"`
+	Schemas    []string `json:"schemas" binding:"required" example:"urn:ietf:params:scim:schemas:core:2.0:User"`      // danh sách schema URN; chứa urn:ietf:params:scim:schemas:core:2.0:User
+	ID         string   `json:"id,omitempty" example:"3f2a8c1e-0000-4000-8000-000000000000"`                          // id ProjectMembership do server cấp; chỉ đọc (bị bỏ qua khi tạo/PUT)
+	ExternalID *string  `json:"externalId,omitempty" example:"hr-10234"`                                              // id do IdP quản lý; ghi được (POST/PUT/PATCH); chuỗi rỗng là xóa
+	UserName   string   `json:"userName,omitempty" binding:"required" example:"an.nguyen@example.org"`                // tên đăng nhập SCIM; bắt buộc khi tạo, không đổi được sau khi tạo (PUT/PATCH bỏ qua)
+	UserType   string   `json:"userType,omitempty" enums:"Patient,Practitioner,RelatedPerson" example:"Practitioner"` // loại hồ sơ; chỉ có tác dụng khi tạo, thiếu hoặc giá trị khác là Practitioner; không đổi được sau đó
+	Name       *Name    `json:"name,omitempty"`                                                                       // họ tên (chỉ givenName, familyName được dùng)
+	Emails     []Email  `json:"emails,omitempty" binding:"required"`                                                  // danh sách email; bắt buộc khi tạo, chỉ phần tử đầu được dùng
+	Active     *bool    `json:"active,omitempty" example:"true"`                                                      // trạng thái hoạt động của membership; ghi được
+	Meta       *Meta    `json:"meta,omitempty"`                                                                       // siêu dữ liệu do server sinh; chỉ đọc
 }
 
 // ListResponse là kết quả GET /Users.
 type ListResponse struct {
-	Schemas      []string `json:"schemas"`
-	TotalResults int      `json:"totalResults"`
-	ItemsPerPage int      `json:"itemsPerPage"`
-	StartIndex   int      `json:"startIndex"`
-	Resources    []User   `json:"Resources"`
+	Schemas      []string `json:"schemas" binding:"required" example:"urn:ietf:params:scim:api:messages:2.0:ListResponse"` // luôn chứa urn:ietf:params:scim:api:messages:2.0:ListResponse
+	TotalResults int      `json:"totalResults" binding:"required" example:"42"`                                            // tổng số bản ghi khớp filter (không phụ thuộc phân trang)
+	ItemsPerPage int      `json:"itemsPerPage" binding:"required" example:"20"`                                            // số bản ghi trong trang này
+	StartIndex   int      `json:"startIndex" binding:"required" example:"1"`                                               // chỉ số bắt đầu của trang (tính từ 1)
+	Resources    []User   `json:"Resources" binding:"required"`                                                            // các User của trang này (mảng rỗng khi không có)
 }
 
 // Error là lỗi SCIM (RFC 7644 mục 3.12); Status là chuỗi.
 type Error struct {
-	Schemas  []string `json:"schemas"`
-	Status   string   `json:"status"`
-	ScimType string   `json:"scimType,omitempty"`
-	Detail   string   `json:"detail,omitempty"`
+	Schemas  []string `json:"schemas" binding:"required" example:"urn:ietf:params:scim:api:messages:2.0:Error"` // luôn chứa urn:ietf:params:scim:api:messages:2.0:Error
+	Status   string   `json:"status" binding:"required" example:"400"`                                          // mã HTTP dạng chuỗi
+	ScimType string   `json:"scimType,omitempty" example:"invalidValue"`                                        // loại lỗi SCIM (invalidFilter, invalidSyntax, invalidPath, invalidValue, mutability, noTarget, tooMany, uniqueness...); có thể vắng
+	Detail   string   `json:"detail,omitempty" example:"userName is required"`                                  // mô tả lỗi cho người đọc; có thể vắng
 }
 
 // ProblemError là lỗi nghiệp vụ mang mã HTTP và scimType; application trả nó để presentation dựng Error.
@@ -147,15 +147,15 @@ func ParseFilter(f string) (value string, has bool, err error) {
 
 // PatchOp là body của PATCH.
 type PatchOp struct {
-	Schemas    []string         `json:"schemas"`
-	Operations []PatchOperation `json:"Operations"`
+	Schemas    []string         `json:"schemas" binding:"required" example:"urn:ietf:params:scim:api:messages:2.0:PatchOp"` // phần tử đầu phải là urn:ietf:params:scim:api:messages:2.0:PatchOp, không thì 400
+	Operations []PatchOperation `json:"Operations" binding:"required"`                                                      // danh sách thao tác, áp theo thứ tự; vượt giới hạn số thao tác là 400 tooMany
 }
 
 // PatchOperation là một thao tác.
 type PatchOperation struct {
-	Op    string          `json:"op"`
-	Path  string          `json:"path,omitempty"`
-	Value json.RawMessage `json:"value,omitempty"`
+	Op    string          `json:"op" binding:"required" enums:"add,remove,replace" example:"replace"` // loại thao tác (không phân biệt hoa thường)
+	Path  string          `json:"path,omitempty" example:"active"`                                    // thuộc tính đích: active, externalId, name, name.givenName, name.familyName, emails; bỏ trống thì value là đối tượng nhiều thuộc tính (không dùng với remove)
+	Value json.RawMessage `json:"value,omitempty" swaggertype:"object"`                               // giá trị mới (kiểu theo thuộc tính: boolean, chuỗi, đối tượng hoặc mảng); không cần với remove
 }
 
 // ignorable là các thuộc tính chuẩn của SCIM mà ta không lưu: nhận và bỏ qua để IdP (Okta, Azure) đẩy hồ sơ đầy đủ không bị lỗi.

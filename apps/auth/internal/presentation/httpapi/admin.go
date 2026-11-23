@@ -37,7 +37,7 @@ func registerAdmin(e *echo.Echo, dep Deps) {
 
 // AdminProjectResponse là body của GET /admin/projects/{projectId}.
 type AdminProjectResponse struct {
-	Project *application.AdminProjectView `json:"project"`
+	Project *application.AdminProjectView `json:"project" binding:"required"` // project của người gọi (secret và khóa bí mật của site đã bị che)
 }
 
 // adminGetProject godoc
@@ -46,7 +46,7 @@ type AdminProjectResponse struct {
 //	@Description	Chỉ admin của project; projectId khác project của người gọi là 403. Giá trị `secret` và khóa bí mật trong `site` bị che.
 //	@Tags			admin
 //	@Security		BearerAuth
-//	@Produce		json
+//	@Produce		application/json,application/fhir+json
 //	@Param			projectId	path		string	true	"id project"
 //	@Success		200			{object}	AdminProjectResponse
 //	@Failure		401			{object}	fhir.OperationOutcome
@@ -67,11 +67,12 @@ func (h *authHandlers) adminGetProject(c echo.Context) error {
 //	@Tags			admin
 //	@Security		BearerAuth
 //	@Accept			json
-//	@Produce		json
+//	@Produce		application/json,application/fhir+json
 //	@Param			projectId	path		string					true	"id project"
 //	@Param			body		body		[]fhir.ProjectSetting	true	"Danh sách setting"
 //	@Success		200			{object}	AdminProjectResponse
 //	@Failure		400			{object}	fhir.OperationOutcome
+//	@Failure		401			{object}	fhir.OperationOutcome
 //	@Failure		403			{object}	fhir.OperationOutcome
 //	@Router			/admin/projects/{projectId}/settings [post]
 func (h *authHandlers) adminSettings(c echo.Context) error {
@@ -88,13 +89,13 @@ func (h *authHandlers) adminSettings(c echo.Context) error {
 
 // AdminClientBody là body của POST /admin/projects/{projectId}/client.
 type AdminClientBody struct {
-	Name         string          `json:"name"`
-	Description  string          `json:"description,omitempty"`
-	RedirectURIs []string        `json:"redirectUris,omitempty"`
-	PkceOptional bool            `json:"pkceOptional,omitempty"`
-	GrantType    []string        `json:"grantType,omitempty"`
-	Secret       string          `json:"secret,omitempty" minLength:"32" maxLength:"256"`
-	AccessPolicy *fhir.Reference `json:"accessPolicy,omitempty"`
+	Name         string          `json:"name" binding:"required" example:"Ứng dụng bệnh nhân"`                                                                       // tên client; bắt buộc, rỗng hoặc chỉ khoảng trắng là 400
+	Description  string          `json:"description,omitempty" example:"Ứng dụng di động cho bệnh nhân"`                                                             // mô tả client (tùy chọn)
+	RedirectURIs []string        `json:"redirectUris,omitempty" example:"https://app.example.org/callback"`                                                          // các redirect URI hợp lệ cho luồng authorization_code; mỗi URI phải hợp lệ, không thì 400
+	PkceOptional bool            `json:"pkceOptional,omitempty" example:"false"`                                                                                     // true: không bắt buộc PKCE cho client này (mặc định false)
+	GrantType    []string        `json:"grantType,omitempty" enums:"authorization_code,client_credentials,refresh_token" example:"client_credentials"`               // các grant client được dùng (ngoài ba giá trị này server còn nhận token-exchange và pre-authorized_code); giá trị khác là 400
+	Secret       string          `json:"secret,omitempty" minLength:"32" maxLength:"256" example:"0f3c9a1e7b5d4c2a8e6f1b3d5a7c9e0f2b4d6f8a1c3e5b7d9f0a2c4e6b8d0f1a"` // secret do người gọi đặt (32-256 ký tự); bỏ trống thì server sinh 64 ký tự hex; chỉ trả trong phản hồi tạo
+	AccessPolicy *fhir.Reference `json:"accessPolicy,omitempty"`                                                                                                     // AccessPolicy áp cho client; phải thuộc project
 }
 
 var adminClientFields = map[string]bool{"name": true, "description": true, "redirectUris": true, "pkceOptional": true, "grantType": true, "secret": true, "accessPolicy": true}
@@ -106,11 +107,12 @@ var adminClientFields = map[string]bool{"name": true, "description": true, "redi
 //	@Tags			admin
 //	@Security		BearerAuth
 //	@Accept			json
-//	@Produce		json
+//	@Produce		application/json,application/fhir+json
 //	@Param			projectId	path		string			true	"id project"
 //	@Param			body		body		AdminClientBody	true	"Client"
 //	@Success		201			{object}	fhir.ClientApplication
 //	@Failure		400			{object}	fhir.OperationOutcome
+//	@Failure		401			{object}	fhir.OperationOutcome
 //	@Failure		403			{object}	fhir.OperationOutcome
 //	@Router			/admin/projects/{projectId}/client [post]
 func (h *authHandlers) adminClient(c echo.Context) error {
@@ -149,10 +151,11 @@ func (h *authHandlers) adminClient(c echo.Context) error {
 //	@Description	Membership không thuộc project hoặc không tồn tại đều là 403.
 //	@Tags			admin
 //	@Security		BearerAuth
-//	@Produce		json
+//	@Produce		application/json,application/fhir+json
 //	@Param			projectId		path		string	true	"id project"
 //	@Param			membershipId	path		string	true	"id membership"
 //	@Success		200				{object}	fhir.ProjectMembership
+//	@Failure		401				{object}	fhir.OperationOutcome
 //	@Failure		403				{object}	fhir.OperationOutcome
 //	@Router			/admin/projects/{projectId}/members/{membershipId} [get]
 func (h *authHandlers) adminGetMember(c echo.Context) error {
@@ -170,12 +173,13 @@ func (h *authHandlers) adminGetMember(c echo.Context) error {
 //	@Tags			admin
 //	@Security		BearerAuth
 //	@Accept			json
-//	@Produce		json
+//	@Produce		application/json,application/fhir+json
 //	@Param			projectId		path		string					true	"id project"
 //	@Param			membershipId	path		string					true	"id membership"
 //	@Param			body			body		fhir.ProjectMembership	true	"Membership"
 //	@Success		200				{object}	fhir.ProjectMembership
 //	@Failure		400				{object}	fhir.OperationOutcome
+//	@Failure		401				{object}	fhir.OperationOutcome
 //	@Failure		403				{object}	fhir.OperationOutcome
 //	@Failure		409				{object}	fhir.OperationOutcome
 //	@Router			/admin/projects/{projectId}/members/{membershipId} [post]
@@ -197,11 +201,12 @@ func (h *authHandlers) adminUpdateMember(c echo.Context) error {
 //	@Description	Không xóa chủ project hay admin cuối cùng (400). User thuộc project mà hết membership thì bị xóa cùng; user dùng chung nhiều project thì giữ. Token của membership bị từ chối ngay.
 //	@Tags			admin
 //	@Security		BearerAuth
-//	@Produce		json
+//	@Produce		application/fhir+json
 //	@Param			projectId		path		string	true	"id project"
 //	@Param			membershipId	path		string	true	"id membership"
 //	@Success		200				{object}	fhir.OperationOutcome
 //	@Failure		400				{object}	fhir.OperationOutcome
+//	@Failure		401				{object}	fhir.OperationOutcome
 //	@Failure		403				{object}	fhir.OperationOutcome
 //	@Router			/admin/projects/{projectId}/members/{membershipId} [delete]
 func (h *authHandlers) adminDeleteMember(c echo.Context) error {
@@ -213,8 +218,8 @@ func (h *authHandlers) adminDeleteMember(c echo.Context) error {
 
 // AdminSetPasswordBody là body của POST /admin/projects/setpassword.
 type AdminSetPasswordBody struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Email    string `json:"email" binding:"required" example:"an@example.org"`       // email của user cần đặt mật khẩu; bắt buộc, phải là email hợp lệ
+	Password string `json:"password" binding:"required" example:"Matkhau-Moi-2026!"` // mật khẩu mới; bắt buộc, phải qua kiểm tra độ mạnh/rò rỉ (domain.ValidatePassword)
 }
 
 // adminSetPassword godoc
@@ -224,11 +229,13 @@ type AdminSetPasswordBody struct {
 //	@Tags			admin
 //	@Security		BearerAuth
 //	@Accept			json
-//	@Produce		json
+//	@Produce		application/fhir+json
 //	@Param			body	body		AdminSetPasswordBody	true	"email và mật khẩu mới"
 //	@Success		200		{object}	fhir.OperationOutcome
 //	@Failure		400		{object}	fhir.OperationOutcome
+//	@Failure		401		{object}	fhir.OperationOutcome
 //	@Failure		403		{object}	fhir.OperationOutcome
+//	@Failure		429		{object}	fhir.OperationOutcome
 //	@Router			/admin/projects/setpassword [post]
 func (h *authHandlers) adminSetPassword(c echo.Context) error {
 	b, err := readBody(c)
@@ -257,18 +264,25 @@ func (h *authHandlers) adminSetPassword(c echo.Context) error {
 //	@Description	Chỉ user thuộc project (user phạm vi server là 403). Khác /auth/resetpassword công khai, lỗi được báo rõ: thiếu email 400, chưa cấu hình thư 400, gửi thư lỗi 500.
 //	@Tags			admin
 //	@Security		BearerAuth
-//	@Produce		json
+//	@Produce		application/fhir+json
 //	@Param			projectId		path		string	true	"id project"
 //	@Param			membershipId	path		string	true	"id membership"
 //	@Success		200				{object}	fhir.OperationOutcome
 //	@Failure		400				{object}	fhir.OperationOutcome
+//	@Failure		401				{object}	fhir.OperationOutcome
 //	@Failure		403				{object}	fhir.OperationOutcome
+//	@Failure		429		{object}	fhir.OperationOutcome
 //	@Router			/admin/projects/{projectId}/members/{membershipId}/resetpassword [post]
 func (h *authHandlers) adminResetPassword(c echo.Context) error {
 	if err := h.svc.AdminResetMemberPassword(c.Request().Context(), authState(c), c.Param("projectId"), c.Param("membershipId")); err != nil {
 		return writeError(c, err)
 	}
 	return writeOutcome(c, http.StatusOK, outcome("information", "informational", "All OK"))
+}
+
+// MFAResetBody là body tùy chọn của POST /admin/projects/{projectId}/members/{membershipId}/mfa/reset (có thể không gửi body). Hiện chỉ để mô tả schema: handler tự đọc body.
+type MFAResetBody struct {
+	Method string `json:"method,omitempty" enums:"totp,email" example:"totp"` // yếu tố MFA cần gỡ; bỏ trống hoặc null là totp; khác totp/email là 400; user phải đang có yếu tố đó
 }
 
 // adminResetMFA godoc
@@ -278,13 +292,15 @@ func (h *authHandlers) adminResetPassword(c echo.Context) error {
 //	@Tags			admin
 //	@Security		BearerAuth
 //	@Accept			json
-//	@Produce		json
+//	@Produce		application/fhir+json
 //	@Param			projectId		path		string	true	"id project"
 //	@Param			membershipId	path		string	true	"id membership"
-//	@Param			body			body		object	false	"{method}"
+//	@Param			body			body		MFAResetBody	false	"Phương thức MFA cần gỡ (tùy chọn)"
 //	@Success		200				{object}	fhir.OperationOutcome
 //	@Failure		400				{object}	fhir.OperationOutcome
+//	@Failure		401				{object}	fhir.OperationOutcome
 //	@Failure		403				{object}	fhir.OperationOutcome
+//	@Failure		429		{object}	fhir.OperationOutcome
 //	@Router			/admin/projects/{projectId}/members/{membershipId}/mfa/reset [post]
 func (h *authHandlers) adminResetMFA(c echo.Context) error {
 	var method any
@@ -305,29 +321,29 @@ func (h *authHandlers) adminResetMFA(c echo.Context) error {
 
 // InviteMembershipBody là phần membership của lời mời.
 type InviteMembershipBody struct {
-	Profile      *fhir.Reference                `json:"profile,omitempty"`
-	Admin        *bool                          `json:"admin,omitempty"`
-	Active       *bool                          `json:"active,omitempty"`
-	ExternalID   string                         `json:"externalId,omitempty"`
-	AccessPolicy *fhir.Reference                `json:"accessPolicy,omitempty"`
-	Access       []fhir.ProjectMembershipAccess `json:"access,omitempty"`
+	Profile      *fhir.Reference                `json:"profile,omitempty"`                       // hồ sơ có sẵn để gắn vào membership (dùng thay cho việc tạo hồ sơ mới)
+	Admin        *bool                          `json:"admin,omitempty" example:"false"`         // true: cấp quyền admin project cho membership
+	Active       *bool                          `json:"active,omitempty" example:"true"`         // trạng thái hoạt động của membership; bỏ trống là mặc định của server
+	ExternalID   string                         `json:"externalId,omitempty" example:"hr-10234"` // id ngoài của membership (từ hệ thống nhân sự/IdP); nếu có thì không được rỗng/chỉ khoảng trắng; trùng là 409
+	AccessPolicy *fhir.Reference                `json:"accessPolicy,omitempty"`                  // AccessPolicy áp cho membership; phải thuộc project
+	Access       []fhir.ProjectMembershipAccess `json:"access,omitempty"`                        // các AccessPolicy tham số hóa gắn thêm cho membership
 }
 
 // InviteBody là body của POST /admin/projects/{projectId}/invite. Trường ngoài danh sách (kể cả accessPolicy, access, admin ở mức gốc đã deprecated ở Medplum) là 400.
 type InviteBody struct {
-	ResourceType       string               `json:"resourceType" enums:"Patient,Practitioner,RelatedPerson"`
-	FirstName          string               `json:"firstName"`
-	LastName           string               `json:"lastName"`
-	Email              string               `json:"email,omitempty"`
-	ExternalID         string               `json:"externalId,omitempty"`
-	Patient            *fhir.Reference      `json:"patient,omitempty"`
-	Password           string               `json:"password,omitempty"`
-	Scope              string               `json:"scope,omitempty" enums:"project,server"`
-	SendEmail          *bool                `json:"sendEmail,omitempty"`
-	Membership         InviteMembershipBody `json:"membership,omitempty"`
-	Upsert             bool                 `json:"upsert,omitempty"`
-	ForceNewMembership bool                 `json:"forceNewMembership,omitempty"`
-	MFARequired        *bool                `json:"mfaRequired,omitempty"`
+	ResourceType       string               `json:"resourceType" binding:"required" enums:"Patient,Practitioner,RelatedPerson" example:"Practitioner"` // loại hồ sơ tạo cho user; bắt buộc
+	FirstName          string               `json:"firstName" binding:"required" example:"An"`                                                         // tên; bắt buộc, không được chỉ khoảng trắng
+	LastName           string               `json:"lastName" binding:"required" example:"Nguyễn"`                                                      // họ; bắt buộc, không được chỉ khoảng trắng
+	Email              string               `json:"email,omitempty" example:"an@example.org"`                                                          // email của user (hạ chữ thường); phải có email hoặc externalId, nếu có thì phải hợp lệ
+	ExternalID         string               `json:"externalId,omitempty" example:"hr-10234"`                                                           // id ngoài; phải có email hoặc externalId, nếu có thì không được rỗng/chỉ khoảng trắng
+	Patient            *fhir.Reference      `json:"patient,omitempty"`                                                                                 // Patient/<id> mà RelatedPerson liên quan; bắt buộc khi resourceType=RelatedPerson và không có membership.profile
+	Password           string               `json:"password,omitempty" example:"Matkhau-Moi-2026!"`                                                    // mật khẩu ban đầu; bỏ trống thì user tự đặt qua thư mời; nếu có phải qua ValidatePassword
+	Scope              string               `json:"scope,omitempty" enums:"project,server" example:"project"`                                          // phạm vi của User; bỏ trống thì server chọn (thường server, hoặc project khi project yêu cầu)
+	SendEmail          *bool                `json:"sendEmail,omitempty" example:"true"`                                                                // false: không gửi thư mời; bỏ trống là gửi khi có email (cần cấu hình thư, không thì 400)
+	Membership         InviteMembershipBody `json:"membership,omitempty"`                                                                              // tùy chọn của ProjectMembership được tạo
+	Upsert             bool                 `json:"upsert,omitempty" example:"false"`                                                                  // true: user đã là member thì cập nhật thay vì 409
+	ForceNewMembership bool                 `json:"forceNewMembership,omitempty" example:"false"`                                                      // true: luôn tạo membership mới thay vì dùng lại membership hiện có
+	MFARequired        *bool                `json:"mfaRequired,omitempty" example:"false"`                                                             // đặt User.mfaRequired cho user mới; bỏ trống là không đặt
 }
 
 // adminInvite godoc
@@ -337,13 +353,15 @@ type InviteBody struct {
 //	@Tags			admin
 //	@Security		BearerAuth
 //	@Accept			json
-//	@Produce		json
+//	@Produce		application/json,application/fhir+json
 //	@Param			projectId	path		string		true	"id project"
 //	@Param			body		body		InviteBody	true	"Lời mời"
 //	@Success		200			{object}	fhir.ProjectMembership
 //	@Failure		400			{object}	fhir.OperationOutcome
+//	@Failure		401			{object}	fhir.OperationOutcome
 //	@Failure		403			{object}	fhir.OperationOutcome
 //	@Failure		409			{object}	fhir.OperationOutcome
+//	@Failure		429		{object}	fhir.OperationOutcome
 //	@Router			/admin/projects/{projectId}/invite [post]
 func (h *authHandlers) adminInvite(c echo.Context) error {
 	var in InviteBody
@@ -377,11 +395,12 @@ func (h *authHandlers) adminInvite(c echo.Context) error {
 //	@Tags			admin
 //	@Security		BearerAuth
 //	@Accept			json
-//	@Produce		json
+//	@Produce		application/json,application/fhir+json
 //	@Param			projectId	path		string				true	"id project"
 //	@Param			body		body		[]fhir.ProjectSite	true	"Danh sách site"
 //	@Success		200			{object}	AdminProjectResponse
 //	@Failure		400			{object}	fhir.OperationOutcome
+//	@Failure		401			{object}	fhir.OperationOutcome
 //	@Failure		403			{object}	fhir.OperationOutcome
 //	@Failure		409			{object}	fhir.OperationOutcome
 //	@Router			/admin/projects/{projectId}/sites [post]

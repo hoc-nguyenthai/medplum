@@ -50,32 +50,32 @@ func (s *Service) RevokeSession(ctx context.Context, a *AuthState, loginID strin
 
 // Session là một phiên đăng nhập còn hiệu lực của user (auth/me security.sessions).
 type Session struct {
-	ID            string          `json:"id"`
-	LastUpdated   string          `json:"lastUpdated"`
-	AuthMethod    string          `json:"authMethod"`
-	RemoteAddress string          `json:"remoteAddress,omitempty"`
-	Browser       string          `json:"browser,omitempty"`
-	OS            string          `json:"os,omitempty"`
-	Project       *fhir.Reference `json:"project,omitempty"`
+	ID            string          `json:"id" binding:"required" example:"0192f3a4-7b1c-7d2e-9a10-3c5e8f1b2a66"`                                             // id của Login (UUID) đại diện cho phiên
+	LastUpdated   string          `json:"lastUpdated" binding:"required" format:"date-time" example:"2026-11-23T10:15:00.000Z"`                             // thời điểm cập nhật cuối của Login (meta.lastUpdated), RFC3339
+	AuthMethod    string          `json:"authMethod" binding:"required" enums:"password,google,external,exchange,client,pre-authorized" example:"password"` // phương thức đăng nhập của phiên
+	RemoteAddress string          `json:"remoteAddress,omitempty" example:"203.0.113.10"`                                                                   // địa chỉ IP lúc đăng nhập, nếu có
+	Browser       string          `json:"browser,omitempty" example:"Chrome"`                                                                               // trình duyệt suy ra từ user agent, nếu có
+	OS            string          `json:"os,omitempty" example:"macOS"`                                                                                     // hệ điều hành suy ra từ user agent, nếu có
+	Project       *fhir.Reference `json:"project,omitempty"`                                                                                                // tham chiếu Project của phiên, nếu có
 }
 
 // UserSecurity là phần `security` của /auth/me.
 type UserSecurity struct {
-	MfaEnrolled bool                     `json:"mfaEnrolled"`
-	MfaRequired bool                     `json:"mfaRequired"`
-	Sessions    []Session                `json:"sessions"`
-	Memberships []fhir.ProjectMembership `json:"memberships"`
+	MfaEnrolled bool                     `json:"mfaEnrolled" binding:"required" example:"false"` // người dùng đã đăng ký MFA
+	MfaRequired bool                     `json:"mfaRequired" binding:"required" example:"false"` // project hiện tại bắt buộc MFA
+	Sessions    []Session                `json:"sessions" binding:"required"`                    // các phiên đăng nhập của người dùng
+	Memberships []fhir.ProjectMembership `json:"memberships" binding:"required"`                 // các membership của người dùng
 }
 
 // Me là phản hồi của GET /auth/me. Profile chỉ có resourceType và id (quyết định D-10: kho auth tách khỏi kho lâm sàng nên
 // không đọc được hồ sơ Practitioner/Patient; client lấy hồ sơ đầy đủ từ fhir-server). accessPolicy chưa dựng ở P2.
 type Me struct {
-	User       *fhir.User              `json:"user,omitempty"`
-	Project    *fhir.Project           `json:"project"`
-	Membership *fhir.ProjectMembership `json:"membership"`
-	Profile    map[string]string       `json:"profile"`
-	Config     *fhir.UserConfiguration `json:"config"`
-	Security   *UserSecurity           `json:"security,omitempty"`
+	User       *fhir.User              `json:"user,omitempty"`                // người dùng (id, email, identifier); chỉ có khi membership trỏ tới User
+	Project    *fhir.Project           `json:"project" binding:"required"`    // Project của phiên (id, name, features, ...)
+	Membership *fhir.ProjectMembership `json:"membership" binding:"required"` // ProjectMembership của phiên
+	Profile    map[string]string       `json:"profile" binding:"required"`    // profile chỉ gồm resourceType và id (rỗng nếu membership không có profile)
+	Config     *fhir.UserConfiguration `json:"config" binding:"required"`     // cấu hình giao diện của người dùng
+	Security   *UserSecurity           `json:"security,omitempty"`            // thông tin bảo mật (MFA, phiên, membership); chỉ có khi login không bị giới hạn bởi SMART resource scope
 }
 
 // GetMe dựng phản hồi /auth/me (auth/me.ts:41).

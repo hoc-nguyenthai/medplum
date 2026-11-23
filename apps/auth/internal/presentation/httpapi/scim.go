@@ -173,7 +173,7 @@ func (h *scimHandlers) decode(c echo.Context, v any) error {
 //	@Description	Chỉ admin của project (Bearer, hoặc Basic client:secret khi AUTH_SCIM_ALLOW_BASIC) và project có tính năng `scim`. filter chỉ hỗ trợ `userName eq "x"` (không phân biệt hoa thường), dạng khác là 400 invalidFilter. Phân trang thật: startIndex từ 1, count mặc định và trần là AUTH_SCIM_MAX_PAGE. Lỗi dạng SCIM Error.
 //	@Tags			scim
 //	@Security		BearerAuth
-//	@Produce		json
+//	@Produce		application/scim+json
 //	@Param			filter		query		string	false	"userName eq \"x\""
 //	@Param			startIndex	query		int		false	"bắt đầu từ 1"
 //	@Param			count		query		int		false	"số kết quả"
@@ -209,7 +209,7 @@ func (h *scimHandlers) list(c echo.Context) error {
 //	@Description	id là id của ProjectMembership. Membership ngoài project, thuộc Bot/ClientApplication hoặc không tồn tại đều là 404.
 //	@Tags			scim
 //	@Security		BearerAuth
-//	@Produce		json
+//	@Produce		application/scim+json
 //	@Param			id	path		string	true	"id membership"
 //	@Success		200	{object}	scim.User
 //	@Failure		404	{object}	scim.Error
@@ -229,7 +229,7 @@ func (h *scimHandlers) get(c echo.Context) error {
 //	@Tags			scim
 //	@Security		BearerAuth
 //	@Accept			json
-//	@Produce		json
+//	@Produce		application/scim+json
 //	@Param			body	body		scim.User	true	"User"
 //	@Success		201		{object}	scim.User
 //	@Failure		400		{object}	scim.Error
@@ -257,7 +257,7 @@ func (h *scimHandlers) create(c echo.Context) error {
 //	@Tags			scim
 //	@Security		BearerAuth
 //	@Accept			json
-//	@Produce		json
+//	@Produce		application/scim+json
 //	@Param			id		path		string		true	"id membership"
 //	@Param			body	body		scim.User	true	"User"
 //	@Success		200		{object}	scim.User
@@ -284,7 +284,7 @@ func (h *scimHandlers) replace(c echo.Context) error {
 //	@Tags			scim
 //	@Security		BearerAuth
 //	@Accept			json
-//	@Produce		json
+//	@Produce		application/scim+json
 //	@Param			id		path		string			true	"id membership"
 //	@Param			body	body		scim.PatchOp	true	"PatchOp"
 //	@Success		200		{object}	scim.User
@@ -307,6 +307,7 @@ func (h *scimHandlers) patch(c echo.Context) error {
 //	@Summary		SCIM: xóa user
 //	@Description	Xóa membership (User thuộc project mà hết membership thì bị xóa theo). Không xóa chủ project, admin cuối cùng hay membership của chính người gọi (400).
 //	@Tags			scim
+//	@Produce		application/scim+json
 //	@Security		BearerAuth
 //	@Param			id	path	string	true	"id membership"
 //	@Success		204

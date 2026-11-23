@@ -19,13 +19,12 @@ func registerCredentials(g *echo.Group, h *authHandlers, bearer echo.MiddlewareF
 
 // ResetPasswordBody là body của POST /auth/resetpassword.
 type ResetPasswordBody struct {
-	Email       string `json:"email" example:"an@example.org"`
-	ProjectID   string `json:"projectId,omitempty"`
-	RedirectURI string `json:"redirectUri,omitempty"`
-	SendEmail   *bool  `json:"sendEmail,omitempty"`
-	// RecaptchaToken và RecaptchaSiteKey chỉ cần khi máy chủ hoặc project bật reCAPTCHA.
-	RecaptchaToken   string `json:"recaptchaToken,omitempty"`
-	RecaptchaSiteKey string `json:"recaptchaSiteKey,omitempty"`
+	Email            string `json:"email" binding:"required" example:"an@example.org"`                   // Email cần đặt lại mật khẩu; bắt buộc, phải hợp lệ
+	ProjectID        string `json:"projectId,omitempty" example:"a3b1c2d4-0000-4000-8000-000000000000"`  // Id project của user (UUID); bỏ trống nếu user không thuộc project nào
+	RedirectURI      string `json:"redirectUri,omitempty" example:"https://app.example.org/setpassword"` // URI app đính vào link trong thư đặt lại mật khẩu
+	SendEmail        *bool  `json:"sendEmail,omitempty" example:"true"`                                  // false để không gửi thư (chỉ tạo yêu cầu); mặc định true
+	RecaptchaToken   string `json:"recaptchaToken,omitempty" example:"03AGdBq25..."`                     // Token reCAPTCHA; chỉ cần khi máy chủ hoặc project bật reCAPTCHA
+	RecaptchaSiteKey string `json:"recaptchaSiteKey,omitempty" example:"6LdExampleSiteKey"`              // Site key reCAPTCHA tương ứng; chỉ cần khi bật reCAPTCHA
 }
 
 func validateEmailField(b body, v *validationError) {
@@ -75,9 +74,9 @@ func (h *authHandlers) resetPassword(c echo.Context) error {
 
 // SetPasswordBody là body của POST /auth/setpassword.
 type SetPasswordBody struct {
-	ID       string `json:"id" example:"a3b1c2d4-0000-4000-8000-000000000000"`
-	Secret   string `json:"secret"`
-	Password string `json:"password"`
+	ID       string `json:"id" binding:"required" example:"a3b1c2d4-0000-4000-8000-000000000000"` // Id yêu cầu (PasswordChangeRequest) lấy từ link trong thư; bắt buộc, phải là UUID
+	Secret   string `json:"secret" binding:"required" example:"s3cr3t-from-email-link"`           // Secret trong link thư; bắt buộc, không rỗng, dùng một lần
+	Password string `json:"password" binding:"required" example:"mat-khau-moi-123"`               // Mật khẩu mới; bắt buộc, 8 ký tự trở lên và không quá 72 byte
 }
 
 func validateRequestRef(b body, v *validationError) {
@@ -122,8 +121,8 @@ func (h *authHandlers) setPassword(c echo.Context) error {
 
 // VerifyEmailBody là body của POST /auth/verifyemail.
 type VerifyEmailBody struct {
-	ID     string `json:"id" example:"a3b1c2d4-0000-4000-8000-000000000000"`
-	Secret string `json:"secret"`
+	ID     string `json:"id" binding:"required" example:"a3b1c2d4-0000-4000-8000-000000000000"` // Id yêu cầu xác minh lấy từ link trong thư; bắt buộc, phải là UUID
+	Secret string `json:"secret" binding:"required" example:"s3cr3t-from-email-link"`           // Secret trong link thư; bắt buộc, không rỗng
 }
 
 // verifyEmail godoc
@@ -160,8 +159,8 @@ func (h *authHandlers) verifyEmail(c echo.Context) error {
 
 // ChangePasswordBody là body của POST /auth/changepassword.
 type ChangePasswordBody struct {
-	OldPassword string `json:"oldPassword"`
-	NewPassword string `json:"newPassword"`
+	OldPassword string `json:"oldPassword" binding:"required" example:"mat-khau-cu-123"`  // Mật khẩu hiện tại; bắt buộc, không rỗng
+	NewPassword string `json:"newPassword" binding:"required" example:"mat-khau-moi-123"` // Mật khẩu mới; bắt buộc, 8 ký tự trở lên và không quá 72 byte
 }
 
 // changePassword godoc

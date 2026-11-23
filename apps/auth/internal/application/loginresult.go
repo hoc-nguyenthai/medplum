@@ -10,24 +10,24 @@ import (
 
 // MembershipChoice là một lựa chọn profile trong phản hồi đăng nhập khi người dùng có nhiều profile.
 type MembershipChoice struct {
-	ID         string            `json:"id"`
-	Project    *fhir.Reference   `json:"project,omitempty"`
-	Profile    *fhir.Reference   `json:"profile,omitempty"`
-	Identifier []fhir.Identifier `json:"identifier,omitempty"`
+	ID         string            `json:"id" binding:"required" example:"0192f3a4-7b1c-7d2e-9a10-3c5e8f1b2a55"` // id của ProjectMembership (UUID)
+	Project    *fhir.Reference   `json:"project,omitempty"`                                                    // tham chiếu Project (display là tên hiện tại); vắng khi không đọc được project
+	Profile    *fhir.Reference   `json:"profile,omitempty"`                                                    // tham chiếu profile (Practitioner/Patient/RelatedPerson) của membership
+	Identifier []fhir.Identifier `json:"identifier,omitempty"`                                                 // định danh của membership, nếu có
 }
 
 // LoginResult là phản hồi sau mỗi bước đăng nhập (xem apps/auth/docs/api-contract/auth-dto.md): đúng một dạng trong năm dạng.
 type LoginResult struct {
-	Login             string             `json:"login"`
-	Code              string             `json:"code,omitempty"`
-	MfaRequired       bool               `json:"mfaRequired,omitempty"`
-	MfaMethods        []string           `json:"mfaMethods,omitempty"`
-	Email             string             `json:"email,omitempty"`
-	MfaEnrollRequired bool               `json:"mfaEnrollRequired,omitempty"`
-	EnrollURI         string             `json:"enrollUri,omitempty"`
-	EnrollQRCode      string             `json:"enrollQrCode,omitempty"`
-	AllowedMfaMethods []string           `json:"allowedMfaMethods,omitempty"`
-	Memberships       []MembershipChoice `json:"memberships,omitempty"`
+	Login             string             `json:"login" binding:"required" example:"0192f3a4-7b1c-7d2e-9a10-3c5e8f1b2a66"`                       // id của Login (UUID); luôn có, dùng cho các bước tiếp theo
+	Code              string             `json:"code,omitempty" example:"4f9c2e7a1b3d5f60a8c1e2d3b4a59687"`                                     // authorization code (hạn mặc định 10 phút); chỉ có ở dạng "code" và đi kèm cookie đăng nhập
+	MfaRequired       bool               `json:"mfaRequired,omitempty" example:"true"`                                                          // true ở dạng "mfaRequired": cần xác thực MFA trước khi có code
+	MfaMethods        []string           `json:"mfaMethods,omitempty" enums:"totp,email" example:"totp"`                                        // phương thức MFA người dùng đã đăng ký; chỉ có khi mfaRequired
+	Email             string             `json:"email,omitempty" example:"user@example.com"`                                                    // email của người dùng; chỉ có khi mfaRequired
+	MfaEnrollRequired bool               `json:"mfaEnrollRequired,omitempty" example:"true"`                                                    // true ở dạng "mfaEnrollRequired": người dùng phải đăng ký MFA trước
+	EnrollURI         string             `json:"enrollUri,omitempty" example:"otpauth://totp/Trivita:user@example.com?secret=JBSWY3DPEHPK3PXP"` // otpauth URI để đăng ký TOTP; chỉ có khi mfaEnrollRequired
+	EnrollQRCode      string             `json:"enrollQrCode,omitempty"`                                                                        // mã QR của enrollUri dạng data URI; chỉ có khi mfaEnrollRequired
+	AllowedMfaMethods []string           `json:"allowedMfaMethods,omitempty" enums:"totp,email" example:"totp"`                                 // phương thức MFA project cho phép đăng ký; chỉ có khi mfaEnrollRequired
+	Memberships       []MembershipChoice `json:"memberships,omitempty"`                                                                         // các profile để chọn khi người dùng có nhiều membership; chỉ có ở dạng "memberships"
 	// Cookie là giá trị cookie đăng nhập (chỉ có cùng lúc với Code); không bao giờ vào JSON, lớp presentation đặt vào Set-Cookie.
 	Cookie string `json:"-"`
 }
