@@ -9,6 +9,8 @@
 # trong phần được giữ lại
 **/*_test.go
 apps/fhir-server/tests
+apps/fhir-server/docs/*.md
+apps/fhir-server/docs/api-contract
 **/.env
 **/.env.*
 **/*.db

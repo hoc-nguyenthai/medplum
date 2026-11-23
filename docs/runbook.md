@@ -2,7 +2,7 @@
 
 **Triển khai cả cụm (`auth` + `fhir-server` + `ws-gateway`): thứ tự bước, cấu hình bắt buộc ở production, xoay khóa, nâng cấp: [runbook-deploy.md](runbook-deploy.md).**
 
-Nguyên tắc tách service và hợp đồng triển khai chung của mọi service: [service-principles.md](service-principles.md). Vận hành riêng `auth`: [apps/auth/docs/runbook.md](../apps/auth/docs/runbook.md).
+Nguyên tắc tách service và hợp đồng triển khai chung của mọi service: [service-principles.md](service-principles.md). Vận hành riêng `auth`: [apps/auth/docs/runbook.md](../apps/auth/docs/runbook.md); riêng `fhir-server`: [apps/fhir-server/docs/runbook.md](../apps/fhir-server/docs/runbook.md) (bản tự chứa, gồm cả cơ sở dữ liệu và triển khai).
 
 Dành cho người trực vận hành. Mọi tên biến, lệnh và giá trị mặc định dưới đây lấy từ code hiện tại
 (`apps/fhir-server/internal/config`, `pkg/fhirstore`, `pkg/fhirrouter`, `pkg/fhirauth`); cấu hình đầy đủ ở

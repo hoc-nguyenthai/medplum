@@ -96,7 +96,7 @@ Chi tiết và lý do: [plans/microservices-shared-db.md](plans/microservices-sh
 
 - **Chỉ từ biến môi trường** (và `.env` cho dev, không ghi đè biến thật), đọc bằng `pkg/envconfig`; gom mọi lỗi và **từ chối khởi động** nếu sai, nói rõ biến nào.
 - Mặc định **an toàn cho local**, không an toàn-hóa nhầm cho production: ở `staging`/`production` cấm khóa tạm, HMAC, `http://`, `*` ở origin, SQLite; bắt buộc nơi lưu dùng chung (Redis cho nhiều instance) khi tính năng đòi hỏi.
-- `.env.example` đầy đủ và có chú thích; tốt nhất tài liệu cấu hình **sinh từ mã** và có test chống lỗi thời (đã có cho `ws-gateway`: `docs/config.md`). [quy ước]; [ép] chỉ ở `ws-gateway`.
+- `.env.example` đầy đủ và có chú thích; tốt nhất tài liệu cấu hình **sinh từ mã** và có test chống lỗi thời (đã có cho `ws-gateway`, `auth` và `fhir-server`: `docs/config.md`; `auth` và `fhir-server` còn có test bắt mọi biến phải có trong `.env.example`). [quy ước]; [ép] ở `ws-gateway`, `auth` và `fhir-server`.
 - Tính năng tùy chọn mặc định **tắt** (`FHIRCAST_ENABLED`, `FHIR_SUBSCRIPTIONS`...); đặt biến của tính năng mà chưa bật là lỗi cấu hình.
 
 ### 6.3 Probe (bộ chuẩn)

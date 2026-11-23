@@ -17,6 +17,8 @@ Toàn bộ nghiệp vụ FHIR nằm trong các thư viện dùng chung; app này
 
 Vì vậy app không có `domain/` và `application/` riêng: `internal/` chỉ gồm `config`, `presentation/httpapi` và `bootstrap`.
 
+Tài liệu của service (kiến trúc, cấu hình sinh từ mã, kiểm thử, vận hành, hợp đồng API): [docs/README.md](docs/README.md).
+
 ## Chạy
 
 ```bash
