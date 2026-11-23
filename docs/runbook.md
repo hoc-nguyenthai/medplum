@@ -2,7 +2,7 @@
 
 **Triển khai cả cụm (`auth` + `fhir-server` + `ws-gateway`): thứ tự bước, cấu hình bắt buộc ở production, xoay khóa, nâng cấp: [runbook-deploy.md](runbook-deploy.md).**
 
-Nguyên tắc tách service và hợp đồng triển khai chung của mọi service: [service-principles.md](service-principles.md). Vận hành riêng `auth`: [apps/auth/docs/runbook.md](../apps/auth/docs/runbook.md); riêng `fhir-server`: [apps/fhir-server/docs/runbook.md](../apps/fhir-server/docs/runbook.md) (bản tự chứa, gồm cả cơ sở dữ liệu và triển khai).
+Nguyên tắc tách service và hợp đồng triển khai chung của mọi service: [service-principles.md](service-principles.md). Vận hành riêng `auth`: [apps/auth/docs/runbook.md](../apps/auth/docs/runbook.md); riêng `fhir-server`: [apps/fhir-server/docs/runbook.md](../apps/fhir-server/docs/runbook.md) (bản tự chứa, gồm cả cơ sở dữ liệu và triển khai); riêng `ws-gateway`: [apps/ws-gateway/docs/runbook.md](../apps/ws-gateway/docs/runbook.md) (bản tự chứa, thay cho mục 11 dưới đây).
 
 Dành cho người trực vận hành. Mọi tên biến, lệnh và giá trị mặc định dưới đây lấy từ code hiện tại
 (`apps/fhir-server/internal/config`, `pkg/fhirstore`, `pkg/fhirrouter`, `pkg/fhirauth`); cấu hình đầy đủ ở
@@ -145,6 +145,8 @@ Các việc còn mở (chi tiết ở [go-port-checklist.md](go-port-checklist.m
 5. Kiểm toán bền: hiện chỉ có log `audit=true`, chưa ghi `AuditEvent` vào kho.
 
 ## 11. Vận hành `ws-gateway` (websocket của Subscription)
+
+> **Bản tự chứa và mới nhất của mục này nằm ở [apps/ws-gateway/docs/runbook.md](../apps/ws-gateway/docs/runbook.md).** Mục 11 dưới đây giữ lại như bản gốc (có thêm chi tiết K8s); khi hai bản khác nhau, tin bản ở `apps/ws-gateway`.
 
 Chi tiết cấu hình và giao thức: [apps/ws-gateway/README.md](../apps/ws-gateway/README.md). Manifest ví dụ: [deploy/k8s/ws-gateway](../deploy/k8s/ws-gateway) (kustomize; **ví dụ**, mọi giá trị đánh dấu `ĐỔI` phải sửa theo môi trường).
 

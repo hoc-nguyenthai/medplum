@@ -86,13 +86,13 @@ Biến môi trường (hoặc `apps/ws-gateway/.env`). Mẫu: [.env.example](.en
 - **Tắt êm**: SIGTERM -> readiness 503 -> chờ `SHUTDOWN_DRAIN_DELAY` -> đóng 1001 mọi socket (chờ tối đa `FHIR_WS_CLOSE_TIMEOUT`) ->
   gỡ sổ hiện diện (bên phát thôi gửi ngay) -> đóng Redis. Client im lặng có thể giữ thêm tối đa khoảng 5 giây ở nền (giới hạn của thư viện).
 - **Xoay khóa**: đặt khóa mới ở gateway (khóa cũ vào `FHIR_WS_SIGNING_KEY_PREVIOUS`) **trước**, rồi mới đổi bên cấp token, sau >= 5 phút
-  bỏ `_PREVIOUS` (xem `docs/runbook.md`).
+  bỏ `_PREVIOUS` (xem [docs/runbook.md](docs/runbook.md) mục 6).
 - **Ingress**: cần hỗ trợ `Upgrade`/`Connection`, timeout đọc/ghi dài hơn `FHIR_WS_HEARTBEAT`, và truyền `X-Forwarded-For` nếu dùng giới hạn theo IP.
 
 ## Metric và triển khai K8s
 
-- Metric OTLP `ws_gateway.*` (kết nối, bind, Subscription đang nghe, tin gửi, kết nối chậm, tin bị từ chối, sự kiện nhận, Redis lên/xuống): xem [docs/runbook.md mục 11.3](../../docs/runbook.md). Bật bằng `OTEL_METRICS_ENABLED=true`.
-- Manifest K8s ví dụ (Deployment, Service, HPA, PDB, ConfigMap, ingress-nginx, Istio, NetworkPolicy): [deploy/k8s/ws-gateway](../../deploy/k8s/ws-gateway). Định cỡ và hành vi khi sự cố: [docs/runbook.md mục 11](../../docs/runbook.md). Đo tải: `WS_LOAD_CONNS=4000 make bench-ws`.
+- Metric OTLP `ws_gateway.*` (kết nối, bind, Subscription đang nghe, tin gửi, kết nối chậm, tin bị từ chối, sự kiện nhận, Redis lên/xuống): xem [docs/runbook.md mục 5](docs/runbook.md). Bật bằng `OTEL_METRICS_ENABLED=true`.
+- Manifest K8s ví dụ (Deployment, Service, HPA, PDB, ConfigMap, ingress-nginx, Istio, NetworkPolicy): [deploy/k8s/ws-gateway](../../deploy/k8s/ws-gateway). Định cỡ và hành vi khi sự cố: [docs/runbook.md](docs/runbook.md) mục 4 và 7. Đo tải: `WS_LOAD_CONNS=4000 make bench-ws`.
 
 ## FHIRcast (tùy chọn, `FHIRCAST_ENABLED=true`)
 

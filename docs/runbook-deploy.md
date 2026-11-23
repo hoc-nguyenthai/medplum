@@ -1,6 +1,6 @@
 # Runbook triển khai cả cụm (`auth`, `fhir-server`, `ws-gateway`)
 
-Phạm vi: dựng, nâng cấp, xoay khóa, sao lưu và xử lý sự cố của cả cụm bằng Docker và Docker Compose. **Không có Kubernetes** (quyết định của chủ dự án). Chi tiết riêng từng service nằm ở [runbook.md](runbook.md) (`fhir-server`, `ws-gateway`, cơ sở dữ liệu dùng chung) và [apps/auth/docs/runbook.md](../apps/auth/docs/runbook.md), [apps/fhir-server/docs/runbook.md](../apps/fhir-server/docs/runbook.md) (riêng từng service; bảng biến: [apps/auth/docs/config.md](../apps/auth/docs/config.md), cũng [apps/auth/README.md](../apps/auth/README.md)) (bảng biến môi trường của `auth`). Tài liệu này là thứ tự các bước và các điều bắt buộc ở staging/production.
+Phạm vi: dựng, nâng cấp, xoay khóa, sao lưu và xử lý sự cố của cả cụm bằng Docker và Docker Compose. **Không có Kubernetes** (quyết định của chủ dự án). Chi tiết riêng từng service nằm ở [runbook.md](runbook.md) (`fhir-server`, `ws-gateway`, cơ sở dữ liệu dùng chung) và [apps/auth/docs/runbook.md](../apps/auth/docs/runbook.md), [apps/fhir-server/docs/runbook.md](../apps/fhir-server/docs/runbook.md), [apps/ws-gateway/docs/runbook.md](../apps/ws-gateway/docs/runbook.md) (riêng từng service; bảng biến: [apps/auth/docs/config.md](../apps/auth/docs/config.md), cũng [apps/auth/README.md](../apps/auth/README.md)) (bảng biến môi trường của `auth`). Tài liệu này là thứ tự các bước và các điều bắt buộc ở staging/production.
 
 Trạng thái kiểm chứng: compose `auth + fhir-server + postgres` đã chạy thử bằng Docker (2026-11-21); toàn bộ luồng nhiều tiến trình kiểm bằng `make test-e2e`; `auth` trên PostgreSQL thật kiểm bằng `make test-auth-pg`. **Chưa** kiểm: chạy cụm đầy đủ ba service trên máy chủ thật, kiểm tải, sao lưu/khôi phục diễn tập, CI.
 
@@ -31,7 +31,7 @@ Trình duyệt / ứng dụng
 | PostgreSQL 15+ (compose có sẵn; production nên dùng bản quản lý riêng nếu có) | Với bản riêng: tự chạy `deploy/postgres-init/01-schemas.sh` (mục 4) |
 | Redis | Bắt buộc ở staging/production cho `auth` (hạn mức MFA, `jti`, topic FHIRcast) và `ws-gateway` |
 | TLS và tên miền công khai | Dừng TLS ở reverse proxy; mọi `AUTH_BASE_URL`, `AUTH_APP_BASE_URL`, origin phải là `https://` |
-| Reverse proxy đặt `X-Forwarded-For` | Phải khai `AUTH_TRUSTED_PROXIES`, `FHIR_TRUSTED_PROXIES`, `WS_TRUSTED_PROXIES`, nếu không mọi người dùng chung một hạn mức theo IP |
+| Reverse proxy đặt `X-Forwarded-For` | Phải khai `AUTH_TRUSTED_PROXIES`, `FHIR_TRUSTED_PROXIES`, `FHIR_WS_TRUSTED_PROXIES`, nếu không mọi người dùng chung một hạn mức theo IP |
 
 Mật khẩu, khóa và secret: sinh bằng `openssl rand`, lưu trong kho bí mật của bạn. **Không** đặt vào argv, không commit, không để trong log.
 
@@ -111,7 +111,7 @@ Kiểm sau khởi tạo (mỗi schema đủ bảng, role không thấy schema ki
 |---|---|
 | `FHIR_WS_SIGNING_KEY` | **giống hệt** khóa của `fhir-server` (≥ 32 ký tự, không có giá trị mặc định) |
 | `REDIS_URL` | cùng Redis với `fhir-server`, đặt tường minh |
-| `WS_ALLOWED_ORIGINS`, `WS_TRUSTED_PROXIES`, `WS_MAX_CONNECTIONS`, `WS_RATE_LIMIT` | định cỡ theo [runbook.md mục 11.1](runbook.md) |
+| `FHIR_WS_ALLOWED_ORIGINS`, `FHIR_WS_TRUSTED_PROXIES`, `FHIR_WS_MAX_CONNECTIONS`, `FHIR_WS_RATE_LIMIT` | định cỡ theo [apps/ws-gateway/docs/runbook.md mục 4](../apps/ws-gateway/docs/runbook.md) |
 | `FHIRCAST_*` | chỉ khi bật FHIRcast: `FHIRCAST_PUBLIC_URL`, `FHIRCAST_JWT_ISSUER`, `FHIRCAST_JWT_AUDIENCE` đều bắt buộc, khớp `auth` |
 
 `FHIR_WS_URL` (ở `fhir-server`) là địa chỉ **websocket công khai** của gateway (`wss://ws.example.org/ws/subscriptions-r4`), khác địa chỉ nội bộ giữa các container.

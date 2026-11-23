@@ -8,5 +8,5 @@
 | [config.md](config.md) | Mọi biến môi trường, mặc định và ý nghĩa (**sinh từ mã**, có test chống lỗi thời) |
 | [testing.md](testing.md) | Bốn tầng test, cách chạy, yêu cầu Docker |
 | [../README.md](../README.md) | Giao thức websocket, FHIRcast, vận hành, metric, K8s |
-| [../../../docs/runbook.md](../../../docs/runbook.md) | Mục 11: vận hành, định cỡ, xử lý sự cố |
+| [runbook.md](runbook.md) | **Vận hành** (tự chứa): sức khỏe, tắt êm, cấu hình production, triển khai, smoke test, định cỡ (số đo thật), metric, xoay khóa, sự cố, FHIRcast, reverse proxy |
 | [../../../deploy/k8s/ws-gateway/](../../../deploy/k8s/ws-gateway) | Manifest K8s mẫu |

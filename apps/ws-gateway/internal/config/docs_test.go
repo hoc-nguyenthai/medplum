@@ -7,6 +7,7 @@ import (
 	"go/token"
 	"os"
 	"reflect"
+	"regexp"
 	"sort"
 	"strings"
 	"testing"
@@ -75,6 +76,16 @@ func TestConfigDocIsUpToDate(t *testing.T) {
 	})
 	sort.Slice(rows, func(i, j int) bool { return rows[i].env < rows[j].env })
 
+	// .env.example phải nhắc MỌI biến (dạng `VAR=` hoặc `# VAR=`): quy ước "mẫu cấu hình đầy đủ" của docs/service-principles.md.
+	if envExample, err := os.ReadFile("../../.env.example"); err != nil {
+		t.Errorf("thiếu .env.example: %v", err)
+	} else {
+		for _, r := range rows {
+			if !regexp.MustCompile(`(?m)^\s*#?\s*` + regexp.QuoteMeta(r.env) + `=`).Match(envExample) {
+				t.Errorf(".env.example thiếu biến %s (thêm dòng `# %s=<mặc định>` kèm một dòng mô tả)", r.env, r.env)
+			}
+		}
+	}
 	def := reflect.ValueOf(config.Default())
 	var b strings.Builder
 	b.WriteString("# ws-gateway: cấu hình\n\n")
