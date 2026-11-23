@@ -117,7 +117,10 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "202": {
-                        "description": "Job đã nhận; header Content-Location tới bulkdata/{id}/status"
+                        "description": "Job đã nhận; header Content-Location tới bulkdata/{id}/status",
+                        "schema": {
+                            "$ref": "#/definitions/fhir.OperationOutcome"
+                        }
                     },
                     "400": {
                         "description": "Thiếu Prefer: respond-async hoặc tham số sai",
@@ -152,7 +155,8 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "produces": [
-                    "application/json"
+                    "application/json",
+                    "application/fhir+json"
                 ],
                 "tags": [
                     "fhir"
@@ -293,8 +297,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "integer",
-                        "example": 10,
-                        "description": "Số resource mỗi trang",
+                        "description": "Số resource mỗi trang. Ví dụ: 10",
                         "name": "_count",
                         "in": "query"
                     },
@@ -430,6 +433,7 @@ const docTemplate = `{
                 ],
                 "description": "Poll sau khi $export. 202 là đang chạy (header X-Progress, Retry-After); 200 là đã xong kèm manifest các tệp NDJSON; mỗi url trong output tải qua GET (cần token).",
                 "produces": [
+                    "application/json",
                     "application/fhir+json"
                 ],
                 "tags": [
@@ -500,7 +504,10 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "202": {
-                        "description": "Đã nhận yêu cầu hủy"
+                        "description": "Đã nhận yêu cầu hủy",
+                        "schema": {
+                            "$ref": "#/definitions/fhir.OperationOutcome"
+                        }
                     },
                     "401": {
                         "description": "Thiếu hoặc sai Bearer token",
@@ -620,8 +627,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "integer",
-                        "example": 10,
-                        "description": "Số kết quả mỗi trang",
+                        "description": "Số kết quả mỗi trang. Ví dụ: 10",
                         "name": "_count",
                         "in": "query"
                     },
@@ -633,7 +639,6 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "example": "-_lastUpdated",
                         "description": "Sắp xếp, phân cách bằng dấu phẩy; tiền tố - để giảm dần. Ví dụ: -_lastUpdated,family",
                         "name": "_sort",
                         "in": "query"
@@ -670,14 +675,12 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "example": "Observation:subject",
                         "description": "Kèm resource được tham chiếu. Ví dụ: Observation:subject",
                         "name": "_include",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "example": "Observation:subject",
                         "description": "Kèm resource tham chiếu tới kết quả. Ví dụ: Observation:subject",
                         "name": "_revinclude",
                         "in": "query"
@@ -690,7 +693,6 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "example": "ge2026-01-01",
                         "description": "Lọc theo thời điểm cập nhật, hỗ trợ tiền tố ge/le/gt/lt. Ví dụ: ge2026-01-01",
                         "name": "_lastUpdated",
                         "in": "query"
@@ -740,6 +742,7 @@ const docTemplate = `{
                     "application/fhir+json"
                 ],
                 "produces": [
+                    "application/json",
                     "application/fhir+json"
                 ],
                 "tags": [
@@ -813,6 +816,7 @@ const docTemplate = `{
                     "application/fhir+json"
                 ],
                 "produces": [
+                    "application/json",
                     "application/fhir+json"
                 ],
                 "tags": [
@@ -1021,8 +1025,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "integer",
-                        "example": 10,
-                        "description": "Số kết quả mỗi trang",
+                        "description": "Số kết quả mỗi trang. Ví dụ: 10",
                         "name": "_count",
                         "in": "formData"
                     },
@@ -1034,7 +1037,6 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "example": "-_lastUpdated",
                         "description": "Sắp xếp, phân cách bằng dấu phẩy; tiền tố - để giảm dần. Ví dụ: -_lastUpdated,family",
                         "name": "_sort",
                         "in": "formData"
@@ -1071,14 +1073,12 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "example": "Observation:subject",
                         "description": "Kèm resource được tham chiếu. Ví dụ: Observation:subject",
                         "name": "_include",
                         "in": "formData"
                     },
                     {
                         "type": "string",
-                        "example": "Observation:subject",
                         "description": "Kèm resource tham chiếu tới kết quả. Ví dụ: Observation:subject",
                         "name": "_revinclude",
                         "in": "formData"
@@ -1091,7 +1091,6 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "example": "ge2026-01-01",
                         "description": "Lọc theo thời điểm cập nhật, hỗ trợ tiền tố ge/le/gt/lt. Ví dụ: ge2026-01-01",
                         "name": "_lastUpdated",
                         "in": "formData"
@@ -1140,6 +1139,7 @@ const docTemplate = `{
                 ],
                 "description": "Hỗ trợ If-None-Match (ETag) và If-Modified-Since: trả 304 nếu không đổi.",
                 "produces": [
+                    "application/json",
                     "application/fhir+json"
                 ],
                 "tags": [
@@ -1209,6 +1209,7 @@ const docTemplate = `{
                     "application/fhir+json"
                 ],
                 "produces": [
+                    "application/json",
                     "application/fhir+json"
                 ],
                 "tags": [
@@ -1356,6 +1357,7 @@ const docTemplate = `{
                     "application/json-patch+json"
                 ],
                 "produces": [
+                    "application/json",
                     "application/fhir+json"
                 ],
                 "tags": [
@@ -1592,8 +1594,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "integer",
-                        "example": 10,
-                        "description": "Số phiên bản mỗi trang",
+                        "description": "Số phiên bản mỗi trang. Ví dụ: 10",
                         "name": "_count",
                         "in": "query"
                     },
@@ -1641,6 +1642,7 @@ const docTemplate = `{
                 ],
                 "description": "Đọc đúng phiên bản vid của resource.",
                 "produces": [
+                    "application/json",
                     "application/fhir+json"
                 ],
                 "tags": [
@@ -1706,6 +1708,7 @@ const docTemplate = `{
         },
         "/healthz": {
             "get": {
+                "description": "Tiến trình còn sống; luôn 200 khi server chạy. Không kiểm phụ thuộc nên orchestrator không khởi động lại tiến trình vì lỗi DB hay Redis.",
                 "produces": [
                     "application/json"
                 ],
@@ -1725,6 +1728,7 @@ const docTemplate = `{
         },
         "/readyz": {
             "get": {
+                "description": "200 khi nhận được lưu lượng; 503 khi đang tắt (drain) hoặc một phụ thuộc hỏng (database trong READINESS_TIMEOUT, broker khi bật Subscription). Body cho biết từng phụ thuộc.",
                 "produces": [
                     "application/json"
                 ],
@@ -1750,424 +1754,10 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "fhir.Address": {
-            "type": "object",
-            "properties": {
-                "_city": {
-                    "description": "Phần mở rộng của city",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_country": {
-                    "description": "Phần mở rộng của country",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_district": {
-                    "description": "Phần mở rộng của district",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_id": {
-                    "description": "Phần mở rộng của id",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_line": {
-                    "description": "Phần mở rộng của line",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Element"
-                    }
-                },
-                "_postalCode": {
-                    "description": "Phần mở rộng của postalCode",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_state": {
-                    "description": "Phần mở rộng của state",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_text": {
-                    "description": "Phần mở rộng của text",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_type": {
-                    "description": "Phần mở rộng của type",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_use": {
-                    "description": "Phần mở rộng của use",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "city": {
-                    "description": "Name of city, town etc.",
-                    "type": "string"
-                },
-                "country": {
-                    "description": "Country (e.g. can be ISO 3166 2 or 3 letter code)",
-                    "type": "string"
-                },
-                "district": {
-                    "description": "District name (aka county)",
-                    "type": "string"
-                },
-                "extension": {
-                    "description": "Additional content defined by implementations",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Extension"
-                    }
-                },
-                "id": {
-                    "description": "Unique id for inter-element referencing",
-                    "type": "string"
-                },
-                "line": {
-                    "description": "Street name, number, direction \u0026 P.O. Box etc.",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "period": {
-                    "description": "Time period when address was/is in use",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Period"
-                        }
-                    ]
-                },
-                "postalCode": {
-                    "description": "Postal code for area",
-                    "type": "string"
-                },
-                "state": {
-                    "description": "Sub-unit of country (abbreviations ok)",
-                    "type": "string"
-                },
-                "text": {
-                    "description": "Text representation of the address",
-                    "type": "string"
-                },
-                "type": {
-                    "description": "postal | physical | both",
-                    "type": "string"
-                },
-                "use": {
-                    "description": "home | work | temp | old | billing - purpose of this address",
-                    "type": "string"
-                }
-            }
-        },
-        "fhir.Age": {
-            "type": "object",
-            "properties": {
-                "_code": {
-                    "description": "Phần mở rộng của code",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_comparator": {
-                    "description": "Phần mở rộng của comparator",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_id": {
-                    "description": "Phần mở rộng của id",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_system": {
-                    "description": "Phần mở rộng của system",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_unit": {
-                    "description": "Phần mở rộng của unit",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_value": {
-                    "description": "Phần mở rộng của value",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "code": {
-                    "description": "Coded form of the unit",
-                    "type": "string"
-                },
-                "comparator": {
-                    "description": "\u003c | \u003c= | \u003e= | \u003e - how to understand the value",
-                    "type": "string"
-                },
-                "extension": {
-                    "description": "Additional content defined by implementations",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Extension"
-                    }
-                },
-                "id": {
-                    "description": "Unique id for inter-element referencing",
-                    "type": "string"
-                },
-                "system": {
-                    "description": "System that defines coded unit form",
-                    "type": "string"
-                },
-                "unit": {
-                    "description": "Unit representation",
-                    "type": "string"
-                },
-                "value": {
-                    "description": "Numerical value (with implicit precision)",
-                    "type": "number"
-                }
-            }
-        },
-        "fhir.Annotation": {
-            "type": "object",
-            "properties": {
-                "_authorString": {
-                    "description": "Phần mở rộng của authorString",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_id": {
-                    "description": "Phần mở rộng của id",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_text": {
-                    "description": "Phần mở rộng của text",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_time": {
-                    "description": "Phần mở rộng của time",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "authorReference": {
-                    "description": "Individual responsible for the annotation",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Reference"
-                        }
-                    ]
-                },
-                "authorString": {
-                    "description": "Individual responsible for the annotation",
-                    "type": "string"
-                },
-                "extension": {
-                    "description": "Additional content defined by implementations",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Extension"
-                    }
-                },
-                "id": {
-                    "description": "Unique id for inter-element referencing",
-                    "type": "string"
-                },
-                "text": {
-                    "description": "The annotation - text content (as markdown) (bắt buộc)",
-                    "type": "string"
-                },
-                "time": {
-                    "description": "When the annotation was made",
-                    "type": "string"
-                }
-            }
-        },
         "fhir.AnyResource": {
             "type": "object",
             "properties": {
                 "value": {}
-            }
-        },
-        "fhir.Attachment": {
-            "type": "object",
-            "properties": {
-                "_contentType": {
-                    "description": "Phần mở rộng của contentType",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_creation": {
-                    "description": "Phần mở rộng của creation",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_data": {
-                    "description": "Phần mở rộng của data",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_hash": {
-                    "description": "Phần mở rộng của hash",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_id": {
-                    "description": "Phần mở rộng của id",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_language": {
-                    "description": "Phần mở rộng của language",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_size": {
-                    "description": "Phần mở rộng của size",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_title": {
-                    "description": "Phần mở rộng của title",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_url": {
-                    "description": "Phần mở rộng của url",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "contentType": {
-                    "description": "Mime type of the content, with charset etc.",
-                    "type": "string"
-                },
-                "creation": {
-                    "description": "Date attachment was first created",
-                    "type": "string"
-                },
-                "data": {
-                    "description": "Data inline, base64ed",
-                    "type": "string"
-                },
-                "extension": {
-                    "description": "Additional content defined by implementations",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Extension"
-                    }
-                },
-                "hash": {
-                    "description": "Hash of the data (sha-1, base64ed)",
-                    "type": "string"
-                },
-                "id": {
-                    "description": "Unique id for inter-element referencing",
-                    "type": "string"
-                },
-                "language": {
-                    "description": "Human language of the content (BCP-47)",
-                    "type": "string"
-                },
-                "size": {
-                    "description": "Number of bytes of content (if url provided)",
-                    "type": "integer"
-                },
-                "title": {
-                    "description": "Label to display in place of the data",
-                    "type": "string"
-                },
-                "url": {
-                    "description": "Uri where the data can be found",
-                    "type": "string"
-                }
             }
         },
         "fhir.Bundle": {
@@ -2311,7 +1901,7 @@ const docTemplate = `{
                     "description": "Additional content defined by implementations",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "fullUrl": {
@@ -2333,7 +1923,7 @@ const docTemplate = `{
                     "description": "Extensions that cannot be ignored even if unrecognized",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "request": {
@@ -2433,7 +2023,7 @@ const docTemplate = `{
                     "description": "Additional content defined by implementations",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "id": {
@@ -2464,7 +2054,7 @@ const docTemplate = `{
                     "description": "Extensions that cannot be ignored even if unrecognized",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "url": {
@@ -2524,7 +2114,7 @@ const docTemplate = `{
                     "description": "Additional content defined by implementations",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "id": {
@@ -2543,7 +2133,7 @@ const docTemplate = `{
                     "description": "Extensions that cannot be ignored even if unrecognized",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "outcome": {
@@ -2591,7 +2181,7 @@ const docTemplate = `{
                     "description": "Additional content defined by implementations",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "id": {
@@ -2606,7 +2196,7 @@ const docTemplate = `{
                     "description": "Extensions that cannot be ignored even if unrecognized",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "score": {
@@ -2646,7 +2236,7 @@ const docTemplate = `{
                     "description": "Additional content defined by implementations",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "id": {
@@ -2657,7 +2247,7 @@ const docTemplate = `{
                     "description": "Extensions that cannot be ignored even if unrecognized",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "relation": {
@@ -2877,7 +2467,7 @@ const docTemplate = `{
                     "description": "Additional content defined by implementations",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "fhirVersion": {
@@ -2962,7 +2552,7 @@ const docTemplate = `{
                     "description": "Extensions that cannot be ignored",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "name": {
@@ -3078,7 +2668,7 @@ const docTemplate = `{
                     "description": "Additional content defined by implementations",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "id": {
@@ -3093,7 +2683,7 @@ const docTemplate = `{
                     "description": "Extensions that cannot be ignored even if unrecognized",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "profile": {
@@ -3145,7 +2735,7 @@ const docTemplate = `{
                     "description": "Additional content defined by implementations",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "id": {
@@ -3156,7 +2746,7 @@ const docTemplate = `{
                     "description": "Extensions that cannot be ignored even if unrecognized",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "url": {
@@ -3207,7 +2797,7 @@ const docTemplate = `{
                     "description": "Additional content defined by implementations",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "id": {
@@ -3218,7 +2808,7 @@ const docTemplate = `{
                     "description": "Extensions that cannot be ignored even if unrecognized",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "reliableCache": {
@@ -3261,7 +2851,7 @@ const docTemplate = `{
                     "description": "Additional content defined by implementations",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "id": {
@@ -3272,7 +2862,7 @@ const docTemplate = `{
                     "description": "Extensions that cannot be ignored even if unrecognized",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "protocol": {
@@ -3320,7 +2910,7 @@ const docTemplate = `{
                     "description": "Additional content defined by implementations",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "id": {
@@ -3335,7 +2925,7 @@ const docTemplate = `{
                     "description": "Extensions that cannot be ignored even if unrecognized",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 }
             }
@@ -3389,7 +2979,7 @@ const docTemplate = `{
                     "description": "Additional content defined by implementations",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "id": {
@@ -3411,7 +3001,7 @@ const docTemplate = `{
                     "description": "Extensions that cannot be ignored even if unrecognized",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "operation": {
@@ -3484,7 +3074,7 @@ const docTemplate = `{
                     "description": "Additional content defined by implementations",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "id": {
@@ -3495,7 +3085,7 @@ const docTemplate = `{
                     "description": "Extensions that cannot be ignored even if unrecognized",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 }
             }
@@ -3643,7 +3233,7 @@ const docTemplate = `{
                     "description": "Additional content defined by implementations",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "id": {
@@ -3661,7 +3251,7 @@ const docTemplate = `{
                     "description": "Extensions that cannot be ignored even if unrecognized",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "operation": {
@@ -3767,7 +3357,7 @@ const docTemplate = `{
                     "description": "Additional content defined by implementations",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "id": {
@@ -3778,7 +3368,7 @@ const docTemplate = `{
                     "description": "Extensions that cannot be ignored even if unrecognized",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 }
             }
@@ -3830,7 +3420,7 @@ const docTemplate = `{
                     "description": "Additional content defined by implementations",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "id": {
@@ -3841,7 +3431,7 @@ const docTemplate = `{
                     "description": "Extensions that cannot be ignored even if unrecognized",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "name": {
@@ -3905,7 +3495,7 @@ const docTemplate = `{
                     "description": "Additional content defined by implementations",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "id": {
@@ -3916,7 +3506,7 @@ const docTemplate = `{
                     "description": "Extensions that cannot be ignored even if unrecognized",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "name": {
@@ -3968,7 +3558,7 @@ const docTemplate = `{
                     "description": "Additional content defined by implementations",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "id": {
@@ -3979,7 +3569,7 @@ const docTemplate = `{
                     "description": "Extensions that cannot be ignored even if unrecognized",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "service": {
@@ -4030,7 +3620,7 @@ const docTemplate = `{
                     "description": "Additional content defined by implementations",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "id": {
@@ -4041,7 +3631,7 @@ const docTemplate = `{
                     "description": "Extensions that cannot be ignored even if unrecognized",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "name": {
@@ -4088,7 +3678,7 @@ const docTemplate = `{
                     "description": "Additional content defined by implementations",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "id": {
@@ -4164,7 +3754,7 @@ const docTemplate = `{
                     "description": "Additional content defined by implementations",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "id": {
@@ -4208,7 +3798,7 @@ const docTemplate = `{
                     "description": "Additional content defined by implementations",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "id": {
@@ -4275,7 +3865,7 @@ const docTemplate = `{
                     "description": "Additional content defined by implementations",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "id": {
@@ -4308,846 +3898,6 @@ const docTemplate = `{
                 }
             }
         },
-        "fhir.Contributor": {
-            "type": "object",
-            "properties": {
-                "_id": {
-                    "description": "Phần mở rộng của id",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_name": {
-                    "description": "Phần mở rộng của name",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_type": {
-                    "description": "Phần mở rộng của type",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "contact": {
-                    "description": "Contact details of the contributor",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.ContactDetail"
-                    }
-                },
-                "extension": {
-                    "description": "Additional content defined by implementations",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Extension"
-                    }
-                },
-                "id": {
-                    "description": "Unique id for inter-element referencing",
-                    "type": "string"
-                },
-                "name": {
-                    "description": "Who contributed the content (bắt buộc)",
-                    "type": "string"
-                },
-                "type": {
-                    "description": "author | editor | reviewer | endorser (bắt buộc)",
-                    "type": "string"
-                }
-            }
-        },
-        "fhir.Count": {
-            "type": "object",
-            "properties": {
-                "_code": {
-                    "description": "Phần mở rộng của code",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_comparator": {
-                    "description": "Phần mở rộng của comparator",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_id": {
-                    "description": "Phần mở rộng của id",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_system": {
-                    "description": "Phần mở rộng của system",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_unit": {
-                    "description": "Phần mở rộng của unit",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_value": {
-                    "description": "Phần mở rộng của value",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "code": {
-                    "description": "Coded form of the unit",
-                    "type": "string"
-                },
-                "comparator": {
-                    "description": "\u003c | \u003c= | \u003e= | \u003e - how to understand the value",
-                    "type": "string"
-                },
-                "extension": {
-                    "description": "Additional content defined by implementations",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Extension"
-                    }
-                },
-                "id": {
-                    "description": "Unique id for inter-element referencing",
-                    "type": "string"
-                },
-                "system": {
-                    "description": "System that defines coded unit form",
-                    "type": "string"
-                },
-                "unit": {
-                    "description": "Unit representation",
-                    "type": "string"
-                },
-                "value": {
-                    "description": "Numerical value (with implicit precision)",
-                    "type": "number"
-                }
-            }
-        },
-        "fhir.DataRequirement": {
-            "type": "object",
-            "properties": {
-                "_id": {
-                    "description": "Phần mở rộng của id",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_limit": {
-                    "description": "Phần mở rộng của limit",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_mustSupport": {
-                    "description": "Phần mở rộng của mustSupport",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Element"
-                    }
-                },
-                "_profile": {
-                    "description": "Phần mở rộng của profile",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Element"
-                    }
-                },
-                "_type": {
-                    "description": "Phần mở rộng của type",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "codeFilter": {
-                    "description": "What codes are expected",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.DataRequirementCodeFilter"
-                    }
-                },
-                "dateFilter": {
-                    "description": "What dates/date ranges are expected",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.DataRequirementDateFilter"
-                    }
-                },
-                "extension": {
-                    "description": "Additional content defined by implementations",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Extension"
-                    }
-                },
-                "id": {
-                    "description": "Unique id for inter-element referencing",
-                    "type": "string"
-                },
-                "limit": {
-                    "description": "Number of results",
-                    "type": "integer"
-                },
-                "mustSupport": {
-                    "description": "Indicates specific structure elements that are referenced by the knowledge module",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "profile": {
-                    "description": "The profile of the required data",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "sort": {
-                    "description": "Order of the results",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.DataRequirementSort"
-                    }
-                },
-                "subjectCodeableConcept": {
-                    "description": "E.g. Patient, Practitioner, RelatedPerson, Organization, Location, Device",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.CodeableConcept"
-                        }
-                    ]
-                },
-                "subjectReference": {
-                    "description": "E.g. Patient, Practitioner, RelatedPerson, Organization, Location, Device",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Reference"
-                        }
-                    ]
-                },
-                "type": {
-                    "description": "The type of the required data (bắt buộc)",
-                    "type": "string"
-                }
-            }
-        },
-        "fhir.DataRequirementCodeFilter": {
-            "type": "object",
-            "properties": {
-                "_id": {
-                    "description": "Phần mở rộng của id",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_path": {
-                    "description": "Phần mở rộng của path",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_searchParam": {
-                    "description": "Phần mở rộng của searchParam",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_valueSet": {
-                    "description": "Phần mở rộng của valueSet",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "code": {
-                    "description": "What code is expected",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Coding"
-                    }
-                },
-                "extension": {
-                    "description": "Additional content defined by implementations",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Extension"
-                    }
-                },
-                "id": {
-                    "description": "Unique id for inter-element referencing",
-                    "type": "string"
-                },
-                "path": {
-                    "description": "A code-valued attribute to filter on",
-                    "type": "string"
-                },
-                "searchParam": {
-                    "description": "A coded (token) parameter to search on",
-                    "type": "string"
-                },
-                "valueSet": {
-                    "description": "Valueset for the filter",
-                    "type": "string"
-                }
-            }
-        },
-        "fhir.DataRequirementDateFilter": {
-            "type": "object",
-            "properties": {
-                "_id": {
-                    "description": "Phần mở rộng của id",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_path": {
-                    "description": "Phần mở rộng của path",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_searchParam": {
-                    "description": "Phần mở rộng của searchParam",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_valueDateTime": {
-                    "description": "Phần mở rộng của valueDateTime",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "extension": {
-                    "description": "Additional content defined by implementations",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Extension"
-                    }
-                },
-                "id": {
-                    "description": "Unique id for inter-element referencing",
-                    "type": "string"
-                },
-                "path": {
-                    "description": "A date-valued attribute to filter on",
-                    "type": "string"
-                },
-                "searchParam": {
-                    "description": "A date valued parameter to search on",
-                    "type": "string"
-                },
-                "valueDateTime": {
-                    "description": "The value of the filter, as a Period, DateTime, or Duration value",
-                    "type": "string"
-                },
-                "valueDuration": {
-                    "description": "The value of the filter, as a Period, DateTime, or Duration value",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Duration"
-                        }
-                    ]
-                },
-                "valuePeriod": {
-                    "description": "The value of the filter, as a Period, DateTime, or Duration value",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Period"
-                        }
-                    ]
-                }
-            }
-        },
-        "fhir.DataRequirementSort": {
-            "type": "object",
-            "properties": {
-                "_direction": {
-                    "description": "Phần mở rộng của direction",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_id": {
-                    "description": "Phần mở rộng của id",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_path": {
-                    "description": "Phần mở rộng của path",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "direction": {
-                    "description": "ascending | descending (bắt buộc)",
-                    "type": "string"
-                },
-                "extension": {
-                    "description": "Additional content defined by implementations",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Extension"
-                    }
-                },
-                "id": {
-                    "description": "Unique id for inter-element referencing",
-                    "type": "string"
-                },
-                "path": {
-                    "description": "The name of the attribute to perform the sort (bắt buộc)",
-                    "type": "string"
-                }
-            }
-        },
-        "fhir.Distance": {
-            "type": "object",
-            "properties": {
-                "_code": {
-                    "description": "Phần mở rộng của code",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_comparator": {
-                    "description": "Phần mở rộng của comparator",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_id": {
-                    "description": "Phần mở rộng của id",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_system": {
-                    "description": "Phần mở rộng của system",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_unit": {
-                    "description": "Phần mở rộng của unit",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_value": {
-                    "description": "Phần mở rộng của value",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "code": {
-                    "description": "Coded form of the unit",
-                    "type": "string"
-                },
-                "comparator": {
-                    "description": "\u003c | \u003c= | \u003e= | \u003e - how to understand the value",
-                    "type": "string"
-                },
-                "extension": {
-                    "description": "Additional content defined by implementations",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Extension"
-                    }
-                },
-                "id": {
-                    "description": "Unique id for inter-element referencing",
-                    "type": "string"
-                },
-                "system": {
-                    "description": "System that defines coded unit form",
-                    "type": "string"
-                },
-                "unit": {
-                    "description": "Unit representation",
-                    "type": "string"
-                },
-                "value": {
-                    "description": "Numerical value (with implicit precision)",
-                    "type": "number"
-                }
-            }
-        },
-        "fhir.Dosage": {
-            "type": "object",
-            "properties": {
-                "_asNeededBoolean": {
-                    "description": "Phần mở rộng của asNeededBoolean",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_id": {
-                    "description": "Phần mở rộng của id",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_patientInstruction": {
-                    "description": "Phần mở rộng của patientInstruction",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_sequence": {
-                    "description": "Phần mở rộng của sequence",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_text": {
-                    "description": "Phần mở rộng của text",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "additionalInstruction": {
-                    "description": "Supplemental instruction or warnings to the patient - e.g. \"with meals\", \"may cause drowsiness\"",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.CodeableConcept"
-                    }
-                },
-                "asNeededBoolean": {
-                    "description": "Take \"as needed\" (for x)",
-                    "type": "boolean"
-                },
-                "asNeededCodeableConcept": {
-                    "description": "Take \"as needed\" (for x)",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.CodeableConcept"
-                        }
-                    ]
-                },
-                "doseAndRate": {
-                    "description": "Amount of medication administered",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.DosageDoseAndRate"
-                    }
-                },
-                "extension": {
-                    "description": "Additional content defined by implementations",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Extension"
-                    }
-                },
-                "id": {
-                    "description": "Unique id for inter-element referencing",
-                    "type": "string"
-                },
-                "maxDosePerAdministration": {
-                    "description": "Upper limit on medication per administration",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Quantity"
-                        }
-                    ]
-                },
-                "maxDosePerLifetime": {
-                    "description": "Upper limit on medication per lifetime of the patient",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Quantity"
-                        }
-                    ]
-                },
-                "maxDosePerPeriod": {
-                    "description": "Upper limit on medication per unit of time",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Ratio"
-                        }
-                    ]
-                },
-                "method": {
-                    "description": "Technique for administering medication",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.CodeableConcept"
-                        }
-                    ]
-                },
-                "modifierExtension": {
-                    "description": "Extensions that cannot be ignored even if unrecognized",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Extension"
-                    }
-                },
-                "patientInstruction": {
-                    "description": "Patient or consumer oriented instructions",
-                    "type": "string"
-                },
-                "route": {
-                    "description": "How drug should enter body",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.CodeableConcept"
-                        }
-                    ]
-                },
-                "sequence": {
-                    "description": "The order of the dosage instructions",
-                    "type": "integer"
-                },
-                "site": {
-                    "description": "Body site to administer to",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.CodeableConcept"
-                        }
-                    ]
-                },
-                "text": {
-                    "description": "Free text dosage instructions e.g. SIG",
-                    "type": "string"
-                },
-                "timing": {
-                    "description": "When medication should be administered",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Timing"
-                        }
-                    ]
-                }
-            }
-        },
-        "fhir.DosageDoseAndRate": {
-            "type": "object",
-            "properties": {
-                "_id": {
-                    "description": "Phần mở rộng của id",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "doseQuantity": {
-                    "description": "Amount of medication per dose",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Quantity"
-                        }
-                    ]
-                },
-                "doseRange": {
-                    "description": "Amount of medication per dose",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Range"
-                        }
-                    ]
-                },
-                "extension": {
-                    "description": "Additional content defined by implementations",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Extension"
-                    }
-                },
-                "id": {
-                    "description": "Unique id for inter-element referencing",
-                    "type": "string"
-                },
-                "rateQuantity": {
-                    "description": "Amount of medication per unit of time",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Quantity"
-                        }
-                    ]
-                },
-                "rateRange": {
-                    "description": "Amount of medication per unit of time",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Range"
-                        }
-                    ]
-                },
-                "rateRatio": {
-                    "description": "Amount of medication per unit of time",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Ratio"
-                        }
-                    ]
-                },
-                "type": {
-                    "description": "The kind of dose or rate specified",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.CodeableConcept"
-                        }
-                    ]
-                }
-            }
-        },
-        "fhir.Duration": {
-            "type": "object",
-            "properties": {
-                "_code": {
-                    "description": "Phần mở rộng của code",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_comparator": {
-                    "description": "Phần mở rộng của comparator",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_id": {
-                    "description": "Phần mở rộng của id",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_system": {
-                    "description": "Phần mở rộng của system",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_unit": {
-                    "description": "Phần mở rộng của unit",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_value": {
-                    "description": "Phần mở rộng của value",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "code": {
-                    "description": "Coded form of the unit",
-                    "type": "string"
-                },
-                "comparator": {
-                    "description": "\u003c | \u003c= | \u003e= | \u003e - how to understand the value",
-                    "type": "string"
-                },
-                "extension": {
-                    "description": "Additional content defined by implementations",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Extension"
-                    }
-                },
-                "id": {
-                    "description": "Unique id for inter-element referencing",
-                    "type": "string"
-                },
-                "system": {
-                    "description": "System that defines coded unit form",
-                    "type": "string"
-                },
-                "unit": {
-                    "description": "Unit representation",
-                    "type": "string"
-                },
-                "value": {
-                    "description": "Numerical value (with implicit precision)",
-                    "type": "number"
-                }
-            }
-        },
         "fhir.Element": {
             "type": "object",
             "properties": {
@@ -5163,717 +3913,11 @@ const docTemplate = `{
                     "description": "Additional content defined by implementations",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "id": {
                     "description": "Unique id for inter-element referencing",
-                    "type": "string"
-                }
-            }
-        },
-        "fhir.Expression": {
-            "type": "object",
-            "properties": {
-                "_description": {
-                    "description": "Phần mở rộng của description",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_expression": {
-                    "description": "Phần mở rộng của expression",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_id": {
-                    "description": "Phần mở rộng của id",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_language": {
-                    "description": "Phần mở rộng của language",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_name": {
-                    "description": "Phần mở rộng của name",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_reference": {
-                    "description": "Phần mở rộng của reference",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "description": {
-                    "description": "Natural language description of the condition",
-                    "type": "string"
-                },
-                "expression": {
-                    "description": "Expression in specified language",
-                    "type": "string"
-                },
-                "extension": {
-                    "description": "Additional content defined by implementations",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Extension"
-                    }
-                },
-                "id": {
-                    "description": "Unique id for inter-element referencing",
-                    "type": "string"
-                },
-                "language": {
-                    "description": "text/cql | text/fhirpath | application/x-fhir-query | etc. (bắt buộc)",
-                    "type": "string"
-                },
-                "name": {
-                    "description": "Short name assigned to expression for reuse",
-                    "type": "string"
-                },
-                "reference": {
-                    "description": "Where the expression is found",
-                    "type": "string"
-                }
-            }
-        },
-        "fhir.Extension": {
-            "type": "object",
-            "properties": {
-                "_id": {
-                    "description": "Phần mở rộng của id",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_url": {
-                    "description": "Phần mở rộng của url",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_valueBase64Binary": {
-                    "description": "Phần mở rộng của valueBase64Binary",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_valueBoolean": {
-                    "description": "Phần mở rộng của valueBoolean",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_valueCanonical": {
-                    "description": "Phần mở rộng của valueCanonical",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_valueCode": {
-                    "description": "Phần mở rộng của valueCode",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_valueDate": {
-                    "description": "Phần mở rộng của valueDate",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_valueDateTime": {
-                    "description": "Phần mở rộng của valueDateTime",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_valueDecimal": {
-                    "description": "Phần mở rộng của valueDecimal",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_valueId": {
-                    "description": "Phần mở rộng của valueId",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_valueInstant": {
-                    "description": "Phần mở rộng của valueInstant",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_valueInteger": {
-                    "description": "Phần mở rộng của valueInteger",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_valueMarkdown": {
-                    "description": "Phần mở rộng của valueMarkdown",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_valueOid": {
-                    "description": "Phần mở rộng của valueOid",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_valuePositiveInt": {
-                    "description": "Phần mở rộng của valuePositiveInt",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_valueString": {
-                    "description": "Phần mở rộng của valueString",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_valueTime": {
-                    "description": "Phần mở rộng của valueTime",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_valueUnsignedInt": {
-                    "description": "Phần mở rộng của valueUnsignedInt",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_valueUri": {
-                    "description": "Phần mở rộng của valueUri",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_valueUrl": {
-                    "description": "Phần mở rộng của valueUrl",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_valueUuid": {
-                    "description": "Phần mở rộng của valueUuid",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "extension": {
-                    "description": "Additional content defined by implementations",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Extension"
-                    }
-                },
-                "id": {
-                    "description": "Unique id for inter-element referencing",
-                    "type": "string"
-                },
-                "url": {
-                    "description": "identifies the meaning of the extension (bắt buộc)",
-                    "type": "string"
-                },
-                "valueAddress": {
-                    "description": "Value of extension",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Address"
-                        }
-                    ]
-                },
-                "valueAge": {
-                    "description": "Value of extension",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Age"
-                        }
-                    ]
-                },
-                "valueAnnotation": {
-                    "description": "Value of extension",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Annotation"
-                        }
-                    ]
-                },
-                "valueAttachment": {
-                    "description": "Value of extension",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Attachment"
-                        }
-                    ]
-                },
-                "valueBase64Binary": {
-                    "description": "Value of extension",
-                    "type": "string"
-                },
-                "valueBoolean": {
-                    "description": "Value of extension",
-                    "type": "boolean"
-                },
-                "valueCanonical": {
-                    "description": "Value of extension",
-                    "type": "string"
-                },
-                "valueCode": {
-                    "description": "Value of extension",
-                    "type": "string"
-                },
-                "valueCodeableConcept": {
-                    "description": "Value of extension",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.CodeableConcept"
-                        }
-                    ]
-                },
-                "valueCoding": {
-                    "description": "Value of extension",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Coding"
-                        }
-                    ]
-                },
-                "valueContactDetail": {
-                    "description": "Value of extension",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.ContactDetail"
-                        }
-                    ]
-                },
-                "valueContactPoint": {
-                    "description": "Value of extension",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.ContactPoint"
-                        }
-                    ]
-                },
-                "valueContributor": {
-                    "description": "Value of extension",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Contributor"
-                        }
-                    ]
-                },
-                "valueCount": {
-                    "description": "Value of extension",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Count"
-                        }
-                    ]
-                },
-                "valueDataRequirement": {
-                    "description": "Value of extension",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.DataRequirement"
-                        }
-                    ]
-                },
-                "valueDate": {
-                    "description": "Value of extension",
-                    "type": "string"
-                },
-                "valueDateTime": {
-                    "description": "Value of extension",
-                    "type": "string"
-                },
-                "valueDecimal": {
-                    "description": "Value of extension",
-                    "type": "number"
-                },
-                "valueDistance": {
-                    "description": "Value of extension",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Distance"
-                        }
-                    ]
-                },
-                "valueDosage": {
-                    "description": "Value of extension",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Dosage"
-                        }
-                    ]
-                },
-                "valueDuration": {
-                    "description": "Value of extension",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Duration"
-                        }
-                    ]
-                },
-                "valueExpression": {
-                    "description": "Value of extension",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Expression"
-                        }
-                    ]
-                },
-                "valueHumanName": {
-                    "description": "Value of extension",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.HumanName"
-                        }
-                    ]
-                },
-                "valueId": {
-                    "description": "Value of extension",
-                    "type": "string"
-                },
-                "valueIdentifier": {
-                    "description": "Value of extension",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Identifier"
-                        }
-                    ]
-                },
-                "valueInstant": {
-                    "description": "Value of extension",
-                    "type": "string"
-                },
-                "valueInteger": {
-                    "description": "Value of extension",
-                    "type": "integer"
-                },
-                "valueMarkdown": {
-                    "description": "Value of extension",
-                    "type": "string"
-                },
-                "valueMeta": {
-                    "description": "Value of extension",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Meta"
-                        }
-                    ]
-                },
-                "valueMoney": {
-                    "description": "Value of extension",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Money"
-                        }
-                    ]
-                },
-                "valueOid": {
-                    "description": "Value of extension",
-                    "type": "string"
-                },
-                "valueParameterDefinition": {
-                    "description": "Value of extension",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.ParameterDefinition"
-                        }
-                    ]
-                },
-                "valuePeriod": {
-                    "description": "Value of extension",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Period"
-                        }
-                    ]
-                },
-                "valuePositiveInt": {
-                    "description": "Value of extension",
-                    "type": "integer"
-                },
-                "valueQuantity": {
-                    "description": "Value of extension",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Quantity"
-                        }
-                    ]
-                },
-                "valueRange": {
-                    "description": "Value of extension",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Range"
-                        }
-                    ]
-                },
-                "valueRatio": {
-                    "description": "Value of extension",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Ratio"
-                        }
-                    ]
-                },
-                "valueReference": {
-                    "description": "Value of extension",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Reference"
-                        }
-                    ]
-                },
-                "valueRelatedArtifact": {
-                    "description": "Value of extension",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.RelatedArtifact"
-                        }
-                    ]
-                },
-                "valueSampledData": {
-                    "description": "Value of extension",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.SampledData"
-                        }
-                    ]
-                },
-                "valueSignature": {
-                    "description": "Value of extension",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Signature"
-                        }
-                    ]
-                },
-                "valueString": {
-                    "description": "Value of extension",
-                    "type": "string"
-                },
-                "valueTime": {
-                    "description": "Value of extension",
-                    "type": "string"
-                },
-                "valueTiming": {
-                    "description": "Value of extension",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Timing"
-                        }
-                    ]
-                },
-                "valueTriggerDefinition": {
-                    "description": "Value of extension",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.TriggerDefinition"
-                        }
-                    ]
-                },
-                "valueUnsignedInt": {
-                    "description": "Value of extension",
-                    "type": "integer"
-                },
-                "valueUri": {
-                    "description": "Value of extension",
-                    "type": "string"
-                },
-                "valueUrl": {
-                    "description": "Value of extension",
-                    "type": "string"
-                },
-                "valueUsageContext": {
-                    "description": "Value of extension",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.UsageContext"
-                        }
-                    ]
-                },
-                "valueUuid": {
-                    "description": "Value of extension",
-                    "type": "string"
-                }
-            }
-        },
-        "fhir.HumanName": {
-            "type": "object",
-            "properties": {
-                "_family": {
-                    "description": "Phần mở rộng của family",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_given": {
-                    "description": "Phần mở rộng của given",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Element"
-                    }
-                },
-                "_id": {
-                    "description": "Phần mở rộng của id",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_prefix": {
-                    "description": "Phần mở rộng của prefix",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Element"
-                    }
-                },
-                "_suffix": {
-                    "description": "Phần mở rộng của suffix",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Element"
-                    }
-                },
-                "_text": {
-                    "description": "Phần mở rộng của text",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_use": {
-                    "description": "Phần mở rộng của use",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "extension": {
-                    "description": "Additional content defined by implementations",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Extension"
-                    }
-                },
-                "family": {
-                    "description": "Family name (often called 'Surname')",
-                    "type": "string"
-                },
-                "given": {
-                    "description": "Given names (not always 'first'). Includes middle names",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "id": {
-                    "description": "Unique id for inter-element referencing",
-                    "type": "string"
-                },
-                "period": {
-                    "description": "Time period when name was/is in use",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Period"
-                        }
-                    ]
-                },
-                "prefix": {
-                    "description": "Parts that come before the name",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "suffix": {
-                    "description": "Parts that come after the name",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "text": {
-                    "description": "Text representation of the full name",
-                    "type": "string"
-                },
-                "use": {
-                    "description": "usual | official | temp | nickname | anonymous | old | maiden",
                     "type": "string"
                 }
             }
@@ -5925,7 +3969,7 @@ const docTemplate = `{
                     "description": "Additional content defined by implementations",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "id": {
@@ -6058,7 +4102,7 @@ const docTemplate = `{
                     "description": "Additional content defined by implementations",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "id": {
@@ -6112,54 +4156,6 @@ const docTemplate = `{
                 }
             }
         },
-        "fhir.Money": {
-            "type": "object",
-            "properties": {
-                "_currency": {
-                    "description": "Phần mở rộng của currency",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_id": {
-                    "description": "Phần mở rộng của id",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_value": {
-                    "description": "Phần mở rộng của value",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "currency": {
-                    "description": "ISO 4217 Currency Code",
-                    "type": "string"
-                },
-                "extension": {
-                    "description": "Additional content defined by implementations",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Extension"
-                    }
-                },
-                "id": {
-                    "description": "Unique id for inter-element referencing",
-                    "type": "string"
-                },
-                "value": {
-                    "description": "Numerical value (with implicit precision)",
-                    "type": "number"
-                }
-            }
-        },
         "fhir.Narrative": {
             "type": "object",
             "properties": {
@@ -6195,7 +4191,7 @@ const docTemplate = `{
                     "description": "Additional content defined by implementations",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "id": {
@@ -6246,7 +4242,7 @@ const docTemplate = `{
                     "description": "Additional content defined by implementations",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "id": {
@@ -6280,7 +4276,7 @@ const docTemplate = `{
                     "description": "Extensions that cannot be ignored",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "resourceType": {
@@ -6372,7 +4368,7 @@ const docTemplate = `{
                     "description": "Additional content defined by implementations",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "id": {
@@ -6390,119 +4386,11 @@ const docTemplate = `{
                     "description": "Extensions that cannot be ignored even if unrecognized",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "severity": {
                     "description": "fatal | error | warning | information (bắt buộc)",
-                    "type": "string"
-                }
-            }
-        },
-        "fhir.ParameterDefinition": {
-            "type": "object",
-            "properties": {
-                "_documentation": {
-                    "description": "Phần mở rộng của documentation",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_id": {
-                    "description": "Phần mở rộng của id",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_max": {
-                    "description": "Phần mở rộng của max",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_min": {
-                    "description": "Phần mở rộng của min",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_name": {
-                    "description": "Phần mở rộng của name",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_profile": {
-                    "description": "Phần mở rộng của profile",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_type": {
-                    "description": "Phần mở rộng của type",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_use": {
-                    "description": "Phần mở rộng của use",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "documentation": {
-                    "description": "A brief description of the parameter",
-                    "type": "string"
-                },
-                "extension": {
-                    "description": "Additional content defined by implementations",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Extension"
-                    }
-                },
-                "id": {
-                    "description": "Unique id for inter-element referencing",
-                    "type": "string"
-                },
-                "max": {
-                    "description": "Maximum cardinality (a number of *)",
-                    "type": "string"
-                },
-                "min": {
-                    "description": "Minimum cardinality",
-                    "type": "integer"
-                },
-                "name": {
-                    "description": "Name used to access the parameter value",
-                    "type": "string"
-                },
-                "profile": {
-                    "description": "What profile the value is expected to be",
-                    "type": "string"
-                },
-                "type": {
-                    "description": "What type of value (bắt buộc)",
-                    "type": "string"
-                },
-                "use": {
-                    "description": "in | out (bắt buộc)",
                     "type": "string"
                 }
             }
@@ -6558,544 +4446,10 @@ const docTemplate = `{
                     "description": "Operation Parameter",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.ParametersParameter"
+                        "type": "object"
                     }
                 },
                 "resourceType": {
-                    "type": "string"
-                }
-            }
-        },
-        "fhir.ParametersParameter": {
-            "type": "object",
-            "properties": {
-                "_id": {
-                    "description": "Phần mở rộng của id",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_name": {
-                    "description": "Phần mở rộng của name",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_valueBase64Binary": {
-                    "description": "Phần mở rộng của valueBase64Binary",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_valueBoolean": {
-                    "description": "Phần mở rộng của valueBoolean",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_valueCanonical": {
-                    "description": "Phần mở rộng của valueCanonical",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_valueCode": {
-                    "description": "Phần mở rộng của valueCode",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_valueDate": {
-                    "description": "Phần mở rộng của valueDate",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_valueDateTime": {
-                    "description": "Phần mở rộng của valueDateTime",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_valueDecimal": {
-                    "description": "Phần mở rộng của valueDecimal",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_valueId": {
-                    "description": "Phần mở rộng của valueId",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_valueInstant": {
-                    "description": "Phần mở rộng của valueInstant",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_valueInteger": {
-                    "description": "Phần mở rộng của valueInteger",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_valueMarkdown": {
-                    "description": "Phần mở rộng của valueMarkdown",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_valueOid": {
-                    "description": "Phần mở rộng của valueOid",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_valuePositiveInt": {
-                    "description": "Phần mở rộng của valuePositiveInt",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_valueString": {
-                    "description": "Phần mở rộng của valueString",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_valueTime": {
-                    "description": "Phần mở rộng của valueTime",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_valueUnsignedInt": {
-                    "description": "Phần mở rộng của valueUnsignedInt",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_valueUri": {
-                    "description": "Phần mở rộng của valueUri",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_valueUrl": {
-                    "description": "Phần mở rộng của valueUrl",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_valueUuid": {
-                    "description": "Phần mở rộng của valueUuid",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "extension": {
-                    "description": "Additional content defined by implementations",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Extension"
-                    }
-                },
-                "id": {
-                    "description": "Unique id for inter-element referencing",
-                    "type": "string"
-                },
-                "modifierExtension": {
-                    "description": "Extensions that cannot be ignored even if unrecognized",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Extension"
-                    }
-                },
-                "name": {
-                    "description": "Name from the definition (bắt buộc)",
-                    "type": "string"
-                },
-                "part": {
-                    "description": "Named part of a multi-part parameter",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.ParametersParameter"
-                    }
-                },
-                "resource": {
-                    "description": "If parameter is a whole resource",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.AnyResource"
-                        }
-                    ]
-                },
-                "valueAddress": {
-                    "description": "If parameter is a data type",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Address"
-                        }
-                    ]
-                },
-                "valueAge": {
-                    "description": "If parameter is a data type",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Age"
-                        }
-                    ]
-                },
-                "valueAnnotation": {
-                    "description": "If parameter is a data type",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Annotation"
-                        }
-                    ]
-                },
-                "valueAttachment": {
-                    "description": "If parameter is a data type",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Attachment"
-                        }
-                    ]
-                },
-                "valueBase64Binary": {
-                    "description": "If parameter is a data type",
-                    "type": "string"
-                },
-                "valueBoolean": {
-                    "description": "If parameter is a data type",
-                    "type": "boolean"
-                },
-                "valueCanonical": {
-                    "description": "If parameter is a data type",
-                    "type": "string"
-                },
-                "valueCode": {
-                    "description": "If parameter is a data type",
-                    "type": "string"
-                },
-                "valueCodeableConcept": {
-                    "description": "If parameter is a data type",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.CodeableConcept"
-                        }
-                    ]
-                },
-                "valueCoding": {
-                    "description": "If parameter is a data type",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Coding"
-                        }
-                    ]
-                },
-                "valueContactDetail": {
-                    "description": "If parameter is a data type",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.ContactDetail"
-                        }
-                    ]
-                },
-                "valueContactPoint": {
-                    "description": "If parameter is a data type",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.ContactPoint"
-                        }
-                    ]
-                },
-                "valueContributor": {
-                    "description": "If parameter is a data type",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Contributor"
-                        }
-                    ]
-                },
-                "valueCount": {
-                    "description": "If parameter is a data type",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Count"
-                        }
-                    ]
-                },
-                "valueDataRequirement": {
-                    "description": "If parameter is a data type",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.DataRequirement"
-                        }
-                    ]
-                },
-                "valueDate": {
-                    "description": "If parameter is a data type",
-                    "type": "string"
-                },
-                "valueDateTime": {
-                    "description": "If parameter is a data type",
-                    "type": "string"
-                },
-                "valueDecimal": {
-                    "description": "If parameter is a data type",
-                    "type": "number"
-                },
-                "valueDistance": {
-                    "description": "If parameter is a data type",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Distance"
-                        }
-                    ]
-                },
-                "valueDosage": {
-                    "description": "If parameter is a data type",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Dosage"
-                        }
-                    ]
-                },
-                "valueDuration": {
-                    "description": "If parameter is a data type",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Duration"
-                        }
-                    ]
-                },
-                "valueExpression": {
-                    "description": "If parameter is a data type",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Expression"
-                        }
-                    ]
-                },
-                "valueHumanName": {
-                    "description": "If parameter is a data type",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.HumanName"
-                        }
-                    ]
-                },
-                "valueId": {
-                    "description": "If parameter is a data type",
-                    "type": "string"
-                },
-                "valueIdentifier": {
-                    "description": "If parameter is a data type",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Identifier"
-                        }
-                    ]
-                },
-                "valueInstant": {
-                    "description": "If parameter is a data type",
-                    "type": "string"
-                },
-                "valueInteger": {
-                    "description": "If parameter is a data type",
-                    "type": "integer"
-                },
-                "valueMarkdown": {
-                    "description": "If parameter is a data type",
-                    "type": "string"
-                },
-                "valueMeta": {
-                    "description": "If parameter is a data type",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Meta"
-                        }
-                    ]
-                },
-                "valueMoney": {
-                    "description": "If parameter is a data type",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Money"
-                        }
-                    ]
-                },
-                "valueOid": {
-                    "description": "If parameter is a data type",
-                    "type": "string"
-                },
-                "valueParameterDefinition": {
-                    "description": "If parameter is a data type",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.ParameterDefinition"
-                        }
-                    ]
-                },
-                "valuePeriod": {
-                    "description": "If parameter is a data type",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Period"
-                        }
-                    ]
-                },
-                "valuePositiveInt": {
-                    "description": "If parameter is a data type",
-                    "type": "integer"
-                },
-                "valueQuantity": {
-                    "description": "If parameter is a data type",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Quantity"
-                        }
-                    ]
-                },
-                "valueRange": {
-                    "description": "If parameter is a data type",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Range"
-                        }
-                    ]
-                },
-                "valueRatio": {
-                    "description": "If parameter is a data type",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Ratio"
-                        }
-                    ]
-                },
-                "valueReference": {
-                    "description": "If parameter is a data type",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Reference"
-                        }
-                    ]
-                },
-                "valueRelatedArtifact": {
-                    "description": "If parameter is a data type",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.RelatedArtifact"
-                        }
-                    ]
-                },
-                "valueSampledData": {
-                    "description": "If parameter is a data type",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.SampledData"
-                        }
-                    ]
-                },
-                "valueSignature": {
-                    "description": "If parameter is a data type",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Signature"
-                        }
-                    ]
-                },
-                "valueString": {
-                    "description": "If parameter is a data type",
-                    "type": "string"
-                },
-                "valueTime": {
-                    "description": "If parameter is a data type",
-                    "type": "string"
-                },
-                "valueTiming": {
-                    "description": "If parameter is a data type",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Timing"
-                        }
-                    ]
-                },
-                "valueTriggerDefinition": {
-                    "description": "If parameter is a data type",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.TriggerDefinition"
-                        }
-                    ]
-                },
-                "valueUnsignedInt": {
-                    "description": "If parameter is a data type",
-                    "type": "integer"
-                },
-                "valueUri": {
-                    "description": "If parameter is a data type",
-                    "type": "string"
-                },
-                "valueUrl": {
-                    "description": "If parameter is a data type",
-                    "type": "string"
-                },
-                "valueUsageContext": {
-                    "description": "If parameter is a data type",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.UsageContext"
-                        }
-                    ]
-                },
-                "valueUuid": {
-                    "description": "If parameter is a data type",
                     "type": "string"
                 }
             }
@@ -7135,7 +4489,7 @@ const docTemplate = `{
                     "description": "Additional content defined by implementations",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "id": {
@@ -7211,7 +4565,7 @@ const docTemplate = `{
                     "description": "Additional content defined by implementations",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "id": {
@@ -7247,7 +4601,7 @@ const docTemplate = `{
                     "description": "Additional content defined by implementations",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "high": {
@@ -7264,46 +4618,6 @@ const docTemplate = `{
                 },
                 "low": {
                     "description": "Low limit",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Quantity"
-                        }
-                    ]
-                }
-            }
-        },
-        "fhir.Ratio": {
-            "type": "object",
-            "properties": {
-                "_id": {
-                    "description": "Phần mở rộng của id",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "denominator": {
-                    "description": "Denominator value",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Quantity"
-                        }
-                    ]
-                },
-                "extension": {
-                    "description": "Additional content defined by implementations",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Extension"
-                    }
-                },
-                "id": {
-                    "description": "Unique id for inter-element referencing",
-                    "type": "string"
-                },
-                "numerator": {
-                    "description": "Numerator value",
                     "allOf": [
                         {
                             "$ref": "#/definitions/fhir.Quantity"
@@ -7355,7 +4669,7 @@ const docTemplate = `{
                     "description": "Additional content defined by implementations",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "id": {
@@ -7377,214 +4691,6 @@ const docTemplate = `{
                 "type": {
                     "description": "Type the reference refers to (e.g. \"Patient\")",
                     "type": "string"
-                }
-            }
-        },
-        "fhir.RelatedArtifact": {
-            "type": "object",
-            "properties": {
-                "_citation": {
-                    "description": "Phần mở rộng của citation",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_display": {
-                    "description": "Phần mở rộng của display",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_id": {
-                    "description": "Phần mở rộng của id",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_label": {
-                    "description": "Phần mở rộng của label",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_resource": {
-                    "description": "Phần mở rộng của resource",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_type": {
-                    "description": "Phần mở rộng của type",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_url": {
-                    "description": "Phần mở rộng của url",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "citation": {
-                    "description": "Bibliographic citation for the artifact",
-                    "type": "string"
-                },
-                "display": {
-                    "description": "Brief description of the related artifact",
-                    "type": "string"
-                },
-                "document": {
-                    "description": "What document is being referenced",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Attachment"
-                        }
-                    ]
-                },
-                "extension": {
-                    "description": "Additional content defined by implementations",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Extension"
-                    }
-                },
-                "id": {
-                    "description": "Unique id for inter-element referencing",
-                    "type": "string"
-                },
-                "label": {
-                    "description": "Short label",
-                    "type": "string"
-                },
-                "resource": {
-                    "description": "What resource is being referenced",
-                    "type": "string"
-                },
-                "type": {
-                    "description": "documentation | justification | citation | predecessor | successor | derived-from | depends-on | composed-of (bắt buộc)",
-                    "type": "string"
-                },
-                "url": {
-                    "description": "Where the artifact can be accessed",
-                    "type": "string"
-                }
-            }
-        },
-        "fhir.SampledData": {
-            "type": "object",
-            "properties": {
-                "_data": {
-                    "description": "Phần mở rộng của data",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_dimensions": {
-                    "description": "Phần mở rộng của dimensions",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_factor": {
-                    "description": "Phần mở rộng của factor",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_id": {
-                    "description": "Phần mở rộng của id",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_lowerLimit": {
-                    "description": "Phần mở rộng của lowerLimit",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_period": {
-                    "description": "Phần mở rộng của period",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_upperLimit": {
-                    "description": "Phần mở rộng của upperLimit",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "data": {
-                    "description": "Decimal values with spaces, or \"E\" | \"U\" | \"L\"",
-                    "type": "string"
-                },
-                "dimensions": {
-                    "description": "Number of sample points at each time point (bắt buộc)",
-                    "type": "integer"
-                },
-                "extension": {
-                    "description": "Additional content defined by implementations",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Extension"
-                    }
-                },
-                "factor": {
-                    "description": "Multiply data by this before adding to origin",
-                    "type": "number"
-                },
-                "id": {
-                    "description": "Unique id for inter-element referencing",
-                    "type": "string"
-                },
-                "lowerLimit": {
-                    "description": "Lower limit of detection",
-                    "type": "number"
-                },
-                "origin": {
-                    "description": "Zero value and units (bắt buộc)",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Quantity"
-                        }
-                    ]
-                },
-                "period": {
-                    "description": "Number of milliseconds between samples (bắt buộc)",
-                    "type": "number"
-                },
-                "upperLimit": {
-                    "description": "Upper limit of detection",
-                    "type": "number"
                 }
             }
         },
@@ -7639,7 +4745,7 @@ const docTemplate = `{
                     "description": "Additional content defined by implementations",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "id": {
@@ -7683,392 +4789,6 @@ const docTemplate = `{
                 }
             }
         },
-        "fhir.Timing": {
-            "type": "object",
-            "properties": {
-                "_event": {
-                    "description": "Phần mở rộng của event",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Element"
-                    }
-                },
-                "_id": {
-                    "description": "Phần mở rộng của id",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "code": {
-                    "description": "BID | TID | QID | AM | PM | QD | QOD | +",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.CodeableConcept"
-                        }
-                    ]
-                },
-                "event": {
-                    "description": "When the event occurs",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "extension": {
-                    "description": "Additional content defined by implementations",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Extension"
-                    }
-                },
-                "id": {
-                    "description": "Unique id for inter-element referencing",
-                    "type": "string"
-                },
-                "modifierExtension": {
-                    "description": "Extensions that cannot be ignored even if unrecognized",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Extension"
-                    }
-                },
-                "repeat": {
-                    "description": "When the event is to occur",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.TimingRepeat"
-                        }
-                    ]
-                }
-            }
-        },
-        "fhir.TimingRepeat": {
-            "type": "object",
-            "properties": {
-                "_count": {
-                    "description": "Phần mở rộng của count",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_countMax": {
-                    "description": "Phần mở rộng của countMax",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_dayOfWeek": {
-                    "description": "Phần mở rộng của dayOfWeek",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Element"
-                    }
-                },
-                "_duration": {
-                    "description": "Phần mở rộng của duration",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_durationMax": {
-                    "description": "Phần mở rộng của durationMax",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_durationUnit": {
-                    "description": "Phần mở rộng của durationUnit",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_frequency": {
-                    "description": "Phần mở rộng của frequency",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_frequencyMax": {
-                    "description": "Phần mở rộng của frequencyMax",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_id": {
-                    "description": "Phần mở rộng của id",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_offset": {
-                    "description": "Phần mở rộng của offset",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_period": {
-                    "description": "Phần mở rộng của period",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_periodMax": {
-                    "description": "Phần mở rộng của periodMax",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_periodUnit": {
-                    "description": "Phần mở rộng của periodUnit",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_timeOfDay": {
-                    "description": "Phần mở rộng của timeOfDay",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Element"
-                    }
-                },
-                "_when": {
-                    "description": "Phần mở rộng của when",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Element"
-                    }
-                },
-                "boundsDuration": {
-                    "description": "Length/Range of lengths, or (Start and/or end) limits",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Duration"
-                        }
-                    ]
-                },
-                "boundsPeriod": {
-                    "description": "Length/Range of lengths, or (Start and/or end) limits",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Period"
-                        }
-                    ]
-                },
-                "boundsRange": {
-                    "description": "Length/Range of lengths, or (Start and/or end) limits",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Range"
-                        }
-                    ]
-                },
-                "count": {
-                    "description": "Number of times to repeat",
-                    "type": "integer"
-                },
-                "countMax": {
-                    "description": "Maximum number of times to repeat",
-                    "type": "integer"
-                },
-                "dayOfWeek": {
-                    "description": "mon | tue | wed | thu | fri | sat | sun",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "duration": {
-                    "description": "How long when it happens",
-                    "type": "number"
-                },
-                "durationMax": {
-                    "description": "How long when it happens (Max)",
-                    "type": "number"
-                },
-                "durationUnit": {
-                    "description": "s | min | h | d | wk | mo | a - unit of time (UCUM)",
-                    "type": "string"
-                },
-                "extension": {
-                    "description": "Additional content defined by implementations",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Extension"
-                    }
-                },
-                "frequency": {
-                    "description": "Event occurs frequency times per period",
-                    "type": "integer"
-                },
-                "frequencyMax": {
-                    "description": "Event occurs up to frequencyMax times per period",
-                    "type": "integer"
-                },
-                "id": {
-                    "description": "Unique id for inter-element referencing",
-                    "type": "string"
-                },
-                "offset": {
-                    "description": "Minutes from event (before or after)",
-                    "type": "integer"
-                },
-                "period": {
-                    "description": "Event occurs frequency times per period",
-                    "type": "number"
-                },
-                "periodMax": {
-                    "description": "Upper limit of period (3-4 hours)",
-                    "type": "number"
-                },
-                "periodUnit": {
-                    "description": "s | min | h | d | wk | mo | a - unit of time (UCUM)",
-                    "type": "string"
-                },
-                "timeOfDay": {
-                    "description": "Time of day for action",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "when": {
-                    "description": "Code for time period of occurrence",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
-        "fhir.TriggerDefinition": {
-            "type": "object",
-            "properties": {
-                "_id": {
-                    "description": "Phần mở rộng của id",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_name": {
-                    "description": "Phần mở rộng của name",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_timingDate": {
-                    "description": "Phần mở rộng của timingDate",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_timingDateTime": {
-                    "description": "Phần mở rộng của timingDateTime",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "_type": {
-                    "description": "Phần mở rộng của type",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Element"
-                        }
-                    ]
-                },
-                "condition": {
-                    "description": "Whether the event triggers (boolean expression)",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Expression"
-                        }
-                    ]
-                },
-                "data": {
-                    "description": "Triggering data of the event (multiple = 'and')",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.DataRequirement"
-                    }
-                },
-                "extension": {
-                    "description": "Additional content defined by implementations",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/fhir.Extension"
-                    }
-                },
-                "id": {
-                    "description": "Unique id for inter-element referencing",
-                    "type": "string"
-                },
-                "name": {
-                    "description": "Name or URI that identifies the event",
-                    "type": "string"
-                },
-                "timingDate": {
-                    "description": "Timing of the event",
-                    "type": "string"
-                },
-                "timingDateTime": {
-                    "description": "Timing of the event",
-                    "type": "string"
-                },
-                "timingReference": {
-                    "description": "Timing of the event",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Reference"
-                        }
-                    ]
-                },
-                "timingTiming": {
-                    "description": "Timing of the event",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/fhir.Timing"
-                        }
-                    ]
-                },
-                "type": {
-                    "description": "named-event | periodic | data-changed | data-added | data-modified | data-removed | data-accessed | data-access-ended (bắt buộc)",
-                    "type": "string"
-                }
-            }
-        },
         "fhir.UsageContext": {
             "type": "object",
             "properties": {
@@ -8092,7 +4812,7 @@ const docTemplate = `{
                     "description": "Additional content defined by implementations",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "id": {
@@ -8306,7 +5026,7 @@ const docTemplate = `{
                     "description": "Additional content defined by implementations",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "id": {
@@ -8351,7 +5071,7 @@ const docTemplate = `{
                     "description": "Extensions that cannot be ignored",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "name": {
@@ -8440,7 +5160,7 @@ const docTemplate = `{
                     "description": "Additional content defined by implementations",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "id": {
@@ -8466,7 +5186,7 @@ const docTemplate = `{
                     "description": "Extensions that cannot be ignored even if unrecognized",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 }
             }
@@ -8516,7 +5236,7 @@ const docTemplate = `{
                     "description": "Additional content defined by implementations",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "filter": {
@@ -8534,7 +5254,7 @@ const docTemplate = `{
                     "description": "Extensions that cannot be ignored even if unrecognized",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "system": {
@@ -8600,7 +5320,7 @@ const docTemplate = `{
                     "description": "Additional content defined by implementations",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "id": {
@@ -8611,7 +5331,7 @@ const docTemplate = `{
                     "description": "Extensions that cannot be ignored even if unrecognized",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 }
             }
@@ -8647,7 +5367,7 @@ const docTemplate = `{
                     "description": "Additional content defined by implementations",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "id": {
@@ -8662,7 +5382,7 @@ const docTemplate = `{
                     "description": "Extensions that cannot be ignored even if unrecognized",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "use": {
@@ -8718,7 +5438,7 @@ const docTemplate = `{
                     "description": "Additional content defined by implementations",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "id": {
@@ -8729,7 +5449,7 @@ const docTemplate = `{
                     "description": "Extensions that cannot be ignored even if unrecognized",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "op": {
@@ -8800,7 +5520,7 @@ const docTemplate = `{
                     "description": "Additional content defined by implementations",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "id": {
@@ -8815,7 +5535,7 @@ const docTemplate = `{
                     "description": "Extensions that cannot be ignored even if unrecognized",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "offset": {
@@ -8928,7 +5648,7 @@ const docTemplate = `{
                     "description": "Additional content defined by implementations",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "id": {
@@ -8943,7 +5663,7 @@ const docTemplate = `{
                     "description": "Extensions that cannot be ignored even if unrecognized",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "system": {
@@ -9035,7 +5755,7 @@ const docTemplate = `{
                     "description": "Additional content defined by implementations",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "id": {
@@ -9046,7 +5766,7 @@ const docTemplate = `{
                     "description": "Extensions that cannot be ignored even if unrecognized",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/fhir.Extension"
+                        "type": "object"
                     }
                 },
                 "name": {
@@ -9085,18 +5805,26 @@ const docTemplate = `{
         },
         "httpapi.BundleBody": {
             "type": "object",
+            "required": [
+                "entry",
+                "resourceType",
+                "type"
+            ],
             "properties": {
                 "entry": {
+                    "description": "danh sách entry, xử lý theo thứ tự quy tắc FHIR",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/httpapi.BundleEntryBody"
                     }
                 },
                 "resourceType": {
+                    "description": "luôn \"Bundle\"",
                     "type": "string",
                     "example": "Bundle"
                 },
                 "type": {
+                    "description": "batch: từng entry độc lập; transaction: tất cả hoặc không entry nào",
                     "type": "string",
                     "enum": [
                         "batch",
@@ -9108,23 +5836,43 @@ const docTemplate = `{
         },
         "httpapi.BundleEntryBody": {
             "type": "object",
+            "required": [
+                "request",
+                "resource"
+            ],
             "properties": {
                 "fullUrl": {
+                    "description": "định danh tạm của entry, để entry khác tham chiếu trong transaction",
                     "type": "string",
                     "example": "urn:uuid:11111111-1111-1111-1111-111111111111"
                 },
                 "request": {
-                    "$ref": "#/definitions/httpapi.BundleRequestBody"
+                    "description": "phương thức và URL của entry",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/httpapi.BundleRequestBody"
+                        }
+                    ]
                 },
                 "resource": {
-                    "$ref": "#/definitions/httpapi.PatientBody"
+                    "description": "resource của entry (bỏ qua với GET và DELETE); ví dụ này dùng Patient",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/httpapi.PatientBody"
+                        }
+                    ]
                 }
             }
         },
         "httpapi.BundleRequestBody": {
             "type": "object",
+            "required": [
+                "method",
+                "url"
+            ],
             "properties": {
                 "method": {
+                    "description": "phương thức HTTP của entry",
                     "type": "string",
                     "enum": [
                         "GET",
@@ -9136,6 +5884,7 @@ const docTemplate = `{
                     "example": "POST"
                 },
                 "url": {
+                    "description": "đường dẫn tương đối tới gốc FHIR, ví dụ Patient hoặc Patient/123",
                     "type": "string",
                     "example": "Patient"
                 }
@@ -9145,6 +5894,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "system": {
+                    "description": "kênh liên lạc",
                     "type": "string",
                     "enum": [
                         "phone",
@@ -9158,10 +5908,19 @@ const docTemplate = `{
                     "example": "phone"
                 },
                 "use": {
+                    "description": "mục đích dùng",
                     "type": "string",
+                    "enum": [
+                        "home",
+                        "work",
+                        "temp",
+                        "old",
+                        "mobile"
+                    ],
                     "example": "mobile"
                 },
                 "value": {
+                    "description": "số điện thoại, địa chỉ email...",
                     "type": "string",
                     "example": "0900000000"
                 }
@@ -9169,43 +5928,63 @@ const docTemplate = `{
         },
         "httpapi.ExportManifest": {
             "type": "object",
+            "required": [
+                "error",
+                "output",
+                "request",
+                "requiresAccessToken",
+                "transactionTime"
+            ],
             "properties": {
                 "error": {
+                    "description": "các lỗi từng phần (OperationOutcome); rỗng khi không có",
                     "type": "array",
                     "items": {}
                 },
                 "output": {
+                    "description": "các tệp kết quả",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/httpapi.ExportOutputFile"
                     }
                 },
                 "request": {
+                    "description": "URL yêu cầu export ban đầu",
                     "type": "string",
                     "example": "http://localhost:8005/fhir/R4/$export?_type=Patient"
                 },
                 "requiresAccessToken": {
+                    "description": "true khi tải tệp cần Bearer token",
                     "type": "boolean",
                     "example": true
                 },
                 "transactionTime": {
+                    "description": "thời điểm chụp dữ liệu của export",
                     "type": "string",
+                    "format": "date-time",
                     "example": "2026-11-21T10:00:00Z"
                 }
             }
         },
         "httpapi.ExportOutputFile": {
             "type": "object",
+            "required": [
+                "type",
+                "url"
+            ],
             "properties": {
                 "count": {
+                    "description": "số resource trong tệp",
                     "type": "integer",
                     "example": 120
                 },
                 "type": {
+                    "description": "loại resource trong tệp NDJSON",
                     "type": "string",
                     "example": "Patient"
                 },
                 "url": {
+                    "description": "địa chỉ tải tệp (Binary)",
                     "type": "string",
                     "example": "http://localhost:8005/fhir/R4/Binary/abc123"
                 }
@@ -9217,23 +5996,35 @@ const docTemplate = `{
         },
         "httpapi.GraphQLError": {
             "type": "object",
+            "required": [
+                "message"
+            ],
             "properties": {
                 "message": {
-                    "type": "string"
+                    "description": "thông điệp lỗi",
+                    "type": "string",
+                    "example": "Cannot query field \"foo\" on type \"Patient\""
                 }
             }
         },
         "httpapi.GraphQLRequest": {
             "type": "object",
+            "required": [
+                "query"
+            ],
             "properties": {
                 "operationName": {
-                    "type": "string"
+                    "description": "tên operation cần chạy khi query có nhiều operation",
+                    "type": "string",
+                    "example": "GetPatient"
                 },
                 "query": {
+                    "description": "truy vấn GraphQL",
                     "type": "string",
                     "example": "{ Patient(id: \"123\") { id name { family } } }"
                 },
                 "variables": {
+                    "description": "giá trị biến của truy vấn",
                     "type": "object",
                     "additionalProperties": {}
                 }
@@ -9243,10 +6034,12 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "data": {
+                    "description": "kết quả truy vấn; vắng khi lỗi cú pháp",
                     "type": "object",
                     "additionalProperties": {}
                 },
                 "errors": {
+                    "description": "lỗi GraphQL; vắng khi thành công hoàn toàn",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/httpapi.GraphQLError"
@@ -9256,8 +6049,12 @@ const docTemplate = `{
         },
         "httpapi.HealthResponse": {
             "type": "object",
+            "required": [
+                "status"
+            ],
             "properties": {
                 "status": {
+                    "description": "luôn \"ok\" khi tiến trình còn sống",
                     "type": "string",
                     "example": "ok"
                 }
@@ -9267,10 +6064,12 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "family": {
+                    "description": "họ",
                     "type": "string",
                     "example": "Nguyen"
                 },
                 "given": {
+                    "description": "tên đệm và tên, mỗi phần tử một từ hoặc cụm",
                     "type": "array",
                     "items": {
                         "type": "string"
@@ -9280,7 +6079,17 @@ const docTemplate = `{
                     ]
                 },
                 "use": {
+                    "description": "mục đích dùng tên",
                     "type": "string",
+                    "enum": [
+                        "usual",
+                        "official",
+                        "temp",
+                        "nickname",
+                        "anonymous",
+                        "old",
+                        "maiden"
+                    ],
                     "example": "official"
                 }
             }
@@ -9289,10 +6098,12 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "system": {
+                    "description": "không gian tên của giá trị (URI)",
                     "type": "string",
                     "example": "http://hospital.example.org/mrn"
                 },
                 "value": {
+                    "description": "giá trị định danh trong system",
                     "type": "string",
                     "example": "MRN-0001"
                 }
@@ -9300,11 +6111,18 @@ const docTemplate = `{
         },
         "httpapi.JSONPatchOp": {
             "type": "object",
+            "required": [
+                "op",
+                "path"
+            ],
             "properties": {
                 "from": {
-                    "type": "string"
+                    "description": "nguồn, bắt buộc với move và copy",
+                    "type": "string",
+                    "example": "/telecom/0"
                 },
                 "op": {
+                    "description": "thao tác RFC 6902",
                     "type": "string",
                     "enum": [
                         "add",
@@ -9317,24 +6135,33 @@ const docTemplate = `{
                     "example": "replace"
                 },
                 "path": {
+                    "description": "JSON Pointer tới vị trí cần sửa",
                     "type": "string",
                     "example": "/gender"
                 },
-                "value": {}
+                "value": {
+                    "description": "giá trị mới, bắt buộc với add, replace và test"
+                }
             }
         },
         "httpapi.PatientBody": {
             "type": "object",
+            "required": [
+                "resourceType"
+            ],
             "properties": {
                 "active": {
+                    "description": "hồ sơ còn dùng",
                     "type": "boolean",
                     "example": true
                 },
                 "birthDate": {
+                    "description": "ngày sinh, định dạng YYYY[-MM[-DD]]",
                     "type": "string",
                     "example": "1990-05-20"
                 },
                 "gender": {
+                    "description": "giới tính hành chính",
                     "type": "string",
                     "enum": [
                         "male",
@@ -9345,26 +6172,31 @@ const docTemplate = `{
                     "example": "male"
                 },
                 "id": {
+                    "description": "id logic; khi tạo mới server cấp id (bỏ qua giá trị gửi lên, trừ update-as-create)",
                     "type": "string",
                     "example": "123"
                 },
                 "identifier": {
+                    "description": "định danh nghiệp vụ (mã bệnh nhân...)",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/httpapi.IdentifierBody"
                     }
                 },
                 "name": {
+                    "description": "họ tên",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/httpapi.HumanNameBody"
                     }
                 },
                 "resourceType": {
+                    "description": "luôn \"Patient\" với body này",
                     "type": "string",
                     "example": "Patient"
                 },
                 "telecom": {
+                    "description": "phương thức liên lạc",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/httpapi.ContactPointBody"
@@ -9374,14 +6206,20 @@ const docTemplate = `{
         },
         "httpapi.ReadyResponse": {
             "type": "object",
+            "required": [
+                "checks",
+                "ready"
+            ],
             "properties": {
                 "checks": {
+                    "description": "kết quả từng phụ thuộc: accepting_traffic, database, broker (chỉ khi bật Subscription)",
                     "type": "object",
                     "additionalProperties": {
                         "type": "boolean"
                     }
                 },
                 "ready": {
+                    "description": "true khi nhận được lưu lượng (không đang tắt, mọi phụ thuộc sẵn sàng)",
                     "type": "boolean",
                     "example": true
                 }
@@ -9395,7 +6233,29 @@ const docTemplate = `{
             "name": "Authorization",
             "in": "header"
         }
-    }
+    },
+    "tags": [
+        {
+            "description": "FHIR R4 REST: CRUD, search, history, batch/transaction, GraphQL, metadata (CapabilityStatement). Lỗi trả OperationOutcome (application/fhir+json).",
+            "name": "fhir"
+        },
+        {
+            "description": "Operation FHIR ($validate, $everything, $reindex, $expunge) và trạng thái job nền. $reindex và $expunge cần quyền admin.",
+            "name": "operation"
+        },
+        {
+            "description": "Terminology cơ bản: ValueSet/$expand và CodeSystem/$lookup.",
+            "name": "terminology"
+        },
+        {
+            "description": "Bulk Data Access: $export bất đồng bộ, theo dõi trạng thái và hủy; tệp kết quả là NDJSON tải qua Binary.",
+            "name": "bulk"
+        },
+        {
+            "description": "Probe liveness và readiness cho orchestrator (ngoài /fhir/R4, lỗi dạng JSON thường).",
+            "name": "health"
+        }
+    ]
 }`
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it

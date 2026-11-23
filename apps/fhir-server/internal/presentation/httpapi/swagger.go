@@ -12,6 +12,16 @@ var _ = fhir.Bundle{} // để swag phân giải kiểu pkg/fhir
 // @version					1.0
 // @description				FHIR R4 REST (CRUD, search, history, batch/transaction), operation, bulk export, terminology và GraphQL. Lỗi trả về dạng OperationOutcome (application/fhir+json).
 // @BasePath					/
+// @tag.name					fhir
+// @tag.description			FHIR R4 REST: CRUD, search, history, batch/transaction, GraphQL, metadata (CapabilityStatement). Lỗi trả OperationOutcome (application/fhir+json).
+// @tag.name					operation
+// @tag.description			Operation FHIR ($validate, $everything, $reindex, $expunge) và trạng thái job nền. $reindex và $expunge cần quyền admin.
+// @tag.name					terminology
+// @tag.description			Terminology cơ bản: ValueSet/$expand và CodeSystem/$lookup.
+// @tag.name					bulk
+// @tag.description			Bulk Data Access: $export bất đồng bộ, theo dõi trạng thái và hủy; tệp kết quả là NDJSON tải qua Binary.
+// @tag.name					health
+// @tag.description			Probe liveness và readiness cho orchestrator (ngoài /fhir/R4, lỗi dạng JSON thường).
 // @securityDefinitions.apikey	BearerAuth
 // @in							header
 // @name						Authorization
@@ -25,103 +35,104 @@ type FHIRResource map[string]any
 
 // HumanNameBody là HumanName mẫu.
 type HumanNameBody struct {
-	Use    string   `json:"use,omitempty" example:"official"`
-	Family string   `json:"family,omitempty" example:"Nguyen"`
-	Given  []string `json:"given,omitempty" example:"Van A"`
+	Use    string   `json:"use,omitempty" example:"official" enums:"usual,official,temp,nickname,anonymous,old,maiden"` // mục đích dùng tên
+	Family string   `json:"family,omitempty" example:"Nguyen"`                                                          // họ
+	Given  []string `json:"given,omitempty" example:"Van A"`                                                            // tên đệm và tên, mỗi phần tử một từ hoặc cụm
 }
 
 // IdentifierBody là Identifier mẫu.
 type IdentifierBody struct {
-	System string `json:"system,omitempty" example:"http://hospital.example.org/mrn"`
-	Value  string `json:"value,omitempty" example:"MRN-0001"`
+	System string `json:"system,omitempty" example:"http://hospital.example.org/mrn"` // không gian tên của giá trị (URI)
+	Value  string `json:"value,omitempty" example:"MRN-0001"`                         // giá trị định danh trong system
 }
 
 // ContactPointBody là ContactPoint mẫu.
 type ContactPointBody struct {
-	System string `json:"system,omitempty" example:"phone" enums:"phone,fax,email,pager,url,sms,other"`
-	Value  string `json:"value,omitempty" example:"0900000000"`
-	Use    string `json:"use,omitempty" example:"mobile"`
+	System string `json:"system,omitempty" example:"phone" enums:"phone,fax,email,pager,url,sms,other"` // kênh liên lạc
+	Value  string `json:"value,omitempty" example:"0900000000"`                                         // số điện thoại, địa chỉ email...
+	Use    string `json:"use,omitempty" example:"mobile" enums:"home,work,temp,old,mobile"`             // mục đích dùng
 }
 
 // PatientBody là body mẫu của create/update/validate (ví dụ Patient).
 type PatientBody struct {
-	ResourceType string             `json:"resourceType" example:"Patient"`
-	ID           string             `json:"id,omitempty" example:"123"`
-	Identifier   []IdentifierBody   `json:"identifier,omitempty"`
-	Active       bool               `json:"active,omitempty" example:"true"`
-	Name         []HumanNameBody    `json:"name,omitempty"`
-	Telecom      []ContactPointBody `json:"telecom,omitempty"`
-	Gender       string             `json:"gender,omitempty" example:"male" enums:"male,female,other,unknown"`
-	BirthDate    string             `json:"birthDate,omitempty" example:"1990-05-20"`
+	ResourceType string             `json:"resourceType" binding:"required" example:"Patient"`                 // luôn "Patient" với body này
+	ID           string             `json:"id,omitempty" example:"123"`                                        // id logic; khi tạo mới server cấp id (bỏ qua giá trị gửi lên, trừ update-as-create)
+	Identifier   []IdentifierBody   `json:"identifier,omitempty"`                                              // định danh nghiệp vụ (mã bệnh nhân...)
+	Active       bool               `json:"active,omitempty" example:"true"`                                   // hồ sơ còn dùng
+	Name         []HumanNameBody    `json:"name,omitempty"`                                                    // họ tên
+	Telecom      []ContactPointBody `json:"telecom,omitempty"`                                                 // phương thức liên lạc
+	Gender       string             `json:"gender,omitempty" example:"male" enums:"male,female,other,unknown"` // giới tính hành chính
+	BirthDate    string             `json:"birthDate,omitempty" example:"1990-05-20"`                          // ngày sinh, định dạng YYYY[-MM[-DD]]
 }
 
 // BundleRequestBody là entry.request của batch/transaction.
 type BundleRequestBody struct {
-	Method string `json:"method" example:"POST" enums:"GET,POST,PUT,PATCH,DELETE"`
-	URL    string `json:"url" example:"Patient"`
+	Method string `json:"method" binding:"required" example:"POST" enums:"GET,POST,PUT,PATCH,DELETE"` // phương thức HTTP của entry
+	URL    string `json:"url" binding:"required" example:"Patient"`                                   // đường dẫn tương đối tới gốc FHIR, ví dụ Patient hoặc Patient/123
 }
 
 // BundleEntryBody là một entry mẫu của Bundle.
 type BundleEntryBody struct {
-	FullURL  string            `json:"fullUrl,omitempty" example:"urn:uuid:11111111-1111-1111-1111-111111111111"`
-	Resource PatientBody       `json:"resource"`
-	Request  BundleRequestBody `json:"request"`
+	FullURL  string            `json:"fullUrl,omitempty" example:"urn:uuid:11111111-1111-1111-1111-111111111111"` // định danh tạm của entry, để entry khác tham chiếu trong transaction
+	Resource PatientBody       `json:"resource" binding:"required"`                                               // resource của entry (bỏ qua với GET và DELETE); ví dụ này dùng Patient
+	Request  BundleRequestBody `json:"request" binding:"required"`                                                // phương thức và URL của entry
 }
 
 // BundleBody là body mẫu của batch/transaction.
 type BundleBody struct {
-	ResourceType string            `json:"resourceType" example:"Bundle"`
-	Type         string            `json:"type" example:"transaction" enums:"batch,transaction"`
-	Entry        []BundleEntryBody `json:"entry"`
+	ResourceType string            `json:"resourceType" binding:"required" example:"Bundle"`                        // luôn "Bundle"
+	Type         string            `json:"type" binding:"required" example:"transaction" enums:"batch,transaction"` // batch: từng entry độc lập; transaction: tất cả hoặc không entry nào
+	Entry        []BundleEntryBody `json:"entry" binding:"required"`                                                // danh sách entry, xử lý theo thứ tự quy tắc FHIR
 }
 
 // HealthResponse là body của /healthz.
 type HealthResponse struct {
-	Status string `json:"status" example:"ok"`
+	Status string `json:"status" binding:"required" example:"ok"` // luôn "ok" khi tiến trình còn sống
 }
 
 // ReadyResponse là body của /readyz; Checks là kết quả từng phụ thuộc (true = sẵn sàng).
 type ReadyResponse struct {
-	Ready  bool            `json:"ready" example:"true"`
-	Checks map[string]bool `json:"checks"`
+	Ready  bool            `json:"ready" binding:"required" example:"true"` // true khi nhận được lưu lượng (không đang tắt, mọi phụ thuộc sẵn sàng)
+	Checks map[string]bool `json:"checks" binding:"required"`               // kết quả từng phụ thuộc: accepting_traffic, database, broker (chỉ khi bật Subscription)
 }
 
 // JSONPatchOp là một thao tác RFC 6902 trong PATCH.
 type JSONPatchOp struct {
-	Op    string `json:"op" enums:"add,remove,replace,move,copy,test" example:"replace"`
-	Path  string `json:"path" example:"/gender"`
-	From  string `json:"from,omitempty"`
-	Value any    `json:"value,omitempty"`
+	Op    string `json:"op" binding:"required" enums:"add,remove,replace,move,copy,test" example:"replace"` // thao tác RFC 6902
+	Path  string `json:"path" binding:"required" example:"/gender"`                                         // JSON Pointer tới vị trí cần sửa
+	From  string `json:"from,omitempty" example:"/telecom/0"`                                               // nguồn, bắt buộc với move và copy
+	Value any    `json:"value,omitempty"`                                                                   // giá trị mới, bắt buộc với add, replace và test
 }
 
 // GraphQLRequest là body của $graphql.
 type GraphQLRequest struct {
-	Query         string         `json:"query" example:"{ Patient(id: \"123\") { id name { family } } }"`
-	Variables     map[string]any `json:"variables,omitempty"`
-	OperationName string         `json:"operationName,omitempty"`
+	Query         string         `json:"query" binding:"required" example:"{ Patient(id: \"123\") { id name { family } } }"` // truy vấn GraphQL
+	Variables     map[string]any `json:"variables,omitempty"`                                                                // giá trị biến của truy vấn
+	OperationName string         `json:"operationName,omitempty" example:"GetPatient"`                                       // tên operation cần chạy khi query có nhiều operation
 }
 
 // GraphQLResponse là kết quả của $graphql.
 type GraphQLResponse struct {
-	Data   map[string]any `json:"data,omitempty"`
-	Errors []GraphQLError `json:"errors,omitempty"`
+	Data   map[string]any `json:"data,omitempty"`   // kết quả truy vấn; vắng khi lỗi cú pháp
+	Errors []GraphQLError `json:"errors,omitempty"` // lỗi GraphQL; vắng khi thành công hoàn toàn
 }
 
 // GraphQLError là một lỗi GraphQL.
 type GraphQLError struct {
-	Message string `json:"message"`
+	Message string `json:"message" binding:"required" example:"Cannot query field \"foo\" on type \"Patient\""` // thông điệp lỗi
 }
 
 // ErrorBody là lỗi JSON thường (ngoài /fhir/R4).
 type ErrorBody struct {
-	Error string `json:"error" example:"Not Found"`
+	Error string `json:"error" binding:"required" example:"Not Found"` // thông điệp lỗi
 }
 
 // healthz godoc
 //
 //	@Summary	Liveness probe
+//	@Description	Tiến trình còn sống; luôn 200 khi server chạy. Không kiểm phụ thuộc nên orchestrator không khởi động lại tiến trình vì lỗi DB hay Redis.
 //	@Tags		health
-//	@Produce	json
+//	@Produce		application/json
 //	@Success	200	{object}	HealthResponse
 //	@Router		/healthz [get]
 func healthz() {}
@@ -129,8 +140,9 @@ func healthz() {}
 // readyz godoc
 //
 //	@Summary	Readiness probe (kiểm tra phụ thuộc)
+//	@Description	200 khi nhận được lưu lượng; 503 khi đang tắt (drain) hoặc một phụ thuộc hỏng (database trong READINESS_TIMEOUT, broker khi bật Subscription). Body cho biết từng phụ thuộc.
 //	@Tags		health
-//	@Produce	json
+//	@Produce		application/json
 //	@Success	200	{object}	ReadyResponse
 //	@Failure	503	{object}	ReadyResponse
 //	@Router		/readyz [get]
@@ -138,18 +150,18 @@ func readyz() {}
 
 // ExportOutputFile là một tệp NDJSON trong manifest của bulk export.
 type ExportOutputFile struct {
-	Type  string `json:"type" example:"Patient"`
-	URL   string `json:"url" example:"http://localhost:8005/fhir/R4/Binary/abc123"`
-	Count int    `json:"count,omitempty" example:"120"`
+	Type  string `json:"type" binding:"required" example:"Patient"`                                    // loại resource trong tệp NDJSON
+	URL   string `json:"url" binding:"required" example:"http://localhost:8005/fhir/R4/Binary/abc123"` // địa chỉ tải tệp (Binary)
+	Count int    `json:"count,omitempty" example:"120"`                                                // số resource trong tệp
 }
 
 // ExportManifest là body 200 của bulkdata/{id}/status khi export đã xong (theo FHIR Bulk Data Access).
 type ExportManifest struct {
-	TransactionTime     string             `json:"transactionTime" example:"2026-11-21T10:00:00Z"`
-	Request             string             `json:"request" example:"http://localhost:8005/fhir/R4/$export?_type=Patient"`
-	RequiresAccessToken bool               `json:"requiresAccessToken" example:"true"`
-	Output              []ExportOutputFile `json:"output"`
-	Error               []any              `json:"error"`
+	TransactionTime     string             `json:"transactionTime" binding:"required" example:"2026-11-21T10:00:00Z" format:"date-time"`     // thời điểm chụp dữ liệu của export
+	Request             string             `json:"request" binding:"required" example:"http://localhost:8005/fhir/R4/$export?_type=Patient"` // URL yêu cầu export ban đầu
+	RequiresAccessToken bool               `json:"requiresAccessToken" binding:"required" example:"true"`                                    // true khi tải tệp cần Bearer token
+	Output              []ExportOutputFile `json:"output" binding:"required"`                                                                // các tệp kết quả
+	Error               []any              `json:"error" binding:"required"`                                                                 // các lỗi từng phần (OperationOutcome); rỗng khi không có
 }
 
 // capabilities godoc
@@ -170,16 +182,16 @@ func capabilities() {}
 //	@Security		BearerAuth
 //	@Produce		application/fhir+json
 //	@Param			resourceType	path		string	true	"Loại resource, ví dụ Patient"
-//	@Param			_count			query		int		false	"Số kết quả mỗi trang"	example(10)
+//	@Param			_count			query		int		false	"Số kết quả mỗi trang. Ví dụ: 10"
 //	@Param			_offset			query		int		false	"Vị trí bắt đầu (phân trang)"
-//	@Param			_sort			query		string	false	"Sắp xếp, phân cách bằng dấu phẩy; tiền tố - để giảm dần. Ví dụ: -_lastUpdated,family"	example(-_lastUpdated)
+//	@Param			_sort			query		string	false	"Sắp xếp, phân cách bằng dấu phẩy; tiền tố - để giảm dần. Ví dụ: -_lastUpdated,family"
 //	@Param			_total			query		string	false	"Cách tính tổng"	Enums(none, estimate, accurate)
 //	@Param			_summary		query		string	false	"Rút gọn kết quả"	Enums(true, text, data, count, false)
 //	@Param			_elements		query		string	false	"Chỉ trả các phần tử này, phân cách bằng dấu phẩy"
-//	@Param			_include		query		string	false	"Kèm resource được tham chiếu. Ví dụ: Observation:subject"	example(Observation:subject)
-//	@Param			_revinclude		query		string	false	"Kèm resource tham chiếu tới kết quả. Ví dụ: Observation:subject"	example(Observation:subject)
+//	@Param			_include		query		string	false	"Kèm resource được tham chiếu. Ví dụ: Observation:subject"
+//	@Param			_revinclude		query		string	false	"Kèm resource tham chiếu tới kết quả. Ví dụ: Observation:subject"
 //	@Param			_id				query		string	false	"Lọc theo id (nhiều giá trị cách nhau bằng dấu phẩy)"
-//	@Param			_lastUpdated	query		string	false	"Lọc theo thời điểm cập nhật, hỗ trợ tiền tố ge/le/gt/lt. Ví dụ: ge2026-01-01"	example(ge2026-01-01)
+//	@Param			_lastUpdated	query		string	false	"Lọc theo thời điểm cập nhật, hỗ trợ tiền tố ge/le/gt/lt. Ví dụ: ge2026-01-01"
 //	@Param			_filter			query		string	false	"Biểu thức _filter của FHIR"
 //	@Success		200				{object}	fhir.Bundle
 //	@Failure		400				{object}	fhir.OperationOutcome	"Search param không hợp lệ hoặc không hỗ trợ"
@@ -197,16 +209,16 @@ func searchType() {}
 //	@Accept			application/x-www-form-urlencoded
 //	@Produce		application/fhir+json
 //	@Param			resourceType	path		string	true	"Loại resource"
-//	@Param			_count			formData	int		false	"Số kết quả mỗi trang"	example(10)
+//	@Param			_count			formData	int		false	"Số kết quả mỗi trang. Ví dụ: 10"
 //	@Param			_offset			formData	int		false	"Vị trí bắt đầu (phân trang)"
-//	@Param			_sort			formData	string	false	"Sắp xếp, phân cách bằng dấu phẩy; tiền tố - để giảm dần. Ví dụ: -_lastUpdated,family"	example(-_lastUpdated)
+//	@Param			_sort			formData	string	false	"Sắp xếp, phân cách bằng dấu phẩy; tiền tố - để giảm dần. Ví dụ: -_lastUpdated,family"
 //	@Param			_total			formData	string	false	"Cách tính tổng"	Enums(none, estimate, accurate)
 //	@Param			_summary		formData	string	false	"Rút gọn kết quả"	Enums(true, text, data, count, false)
 //	@Param			_elements		formData	string	false	"Chỉ trả các phần tử này, phân cách bằng dấu phẩy"
-//	@Param			_include		formData	string	false	"Kèm resource được tham chiếu. Ví dụ: Observation:subject"	example(Observation:subject)
-//	@Param			_revinclude		formData	string	false	"Kèm resource tham chiếu tới kết quả. Ví dụ: Observation:subject"	example(Observation:subject)
+//	@Param			_include		formData	string	false	"Kèm resource được tham chiếu. Ví dụ: Observation:subject"
+//	@Param			_revinclude		formData	string	false	"Kèm resource tham chiếu tới kết quả. Ví dụ: Observation:subject"
 //	@Param			_id				formData	string	false	"Lọc theo id (nhiều giá trị cách nhau bằng dấu phẩy)"
-//	@Param			_lastUpdated	formData	string	false	"Lọc theo thời điểm cập nhật, hỗ trợ tiền tố ge/le/gt/lt. Ví dụ: ge2026-01-01"	example(ge2026-01-01)
+//	@Param			_lastUpdated	formData	string	false	"Lọc theo thời điểm cập nhật, hỗ trợ tiền tố ge/le/gt/lt. Ví dụ: ge2026-01-01"
 //	@Param			_filter			formData	string	false	"Biểu thức _filter của FHIR"
 //	@Success		200				{object}	fhir.Bundle
 //	@Failure		400				{object}	fhir.OperationOutcome	"Search param không hợp lệ"
@@ -222,7 +234,7 @@ func searchPost() {}
 //	@Tags			fhir
 //	@Security		BearerAuth
 //	@Accept			application/fhir+json
-//	@Produce		application/fhir+json
+//	@Produce		application/json,application/fhir+json
 //	@Param			resourceType	path		string			true	"Loại resource"
 //	@Param			body			body		PatientBody	true	"Resource (mẫu là Patient)"
 //	@Param			If-None-Exist	header		string			false	"Điều kiện search; nếu đã có resource khớp thì không tạo mới. Ví dụ: identifier=123"
@@ -241,7 +253,7 @@ func create() {}
 //	@Description	Hỗ trợ If-None-Match (ETag) và If-Modified-Since: trả 304 nếu không đổi.
 //	@Tags			fhir
 //	@Security		BearerAuth
-//	@Produce		application/fhir+json
+//	@Produce		application/json,application/fhir+json
 //	@Param			resourceType	path		string	true	"Loại resource"
 //	@Param			id				path		string	true	"Id"
 //	@Success		200				{object}	FHIRResource	"Header ETag = W/\"versionId\""
@@ -260,7 +272,7 @@ func read() {}
 //	@Tags			fhir
 //	@Security		BearerAuth
 //	@Accept			application/fhir+json
-//	@Produce		application/fhir+json
+//	@Produce		application/json,application/fhir+json
 //	@Param			resourceType	path		string			true	"Loại resource"
 //	@Param			id				path		string			true	"Id"
 //	@Param			body			body		PatientBody	true	"Resource (mẫu là Patient)"
@@ -282,7 +294,7 @@ func update() {}
 //	@Tags			fhir
 //	@Security		BearerAuth
 //	@Accept			application/json-patch+json
-//	@Produce		application/fhir+json
+//	@Produce		application/json,application/fhir+json
 //	@Param			resourceType	path		string			true	"Loại resource"
 //	@Param			id				path		string			true	"Id"
 //	@Param			body			body		[]JSONPatchOp	true	"Các thao tác JSON Patch"
@@ -320,7 +332,7 @@ func deleteResource() {}
 //	@Tags			fhir
 //	@Security		BearerAuth
 //	@Accept			application/fhir+json
-//	@Produce		application/fhir+json
+//	@Produce		application/json,application/fhir+json
 //	@Param			resourceType	path		string			true	"Loại resource"
 //	@Param			body			body		PatientBody	false	"Resource (PUT, mẫu là Patient) hoặc JSON Patch (PATCH)"
 //	@Success		200				{object}	FHIRResource	"Đã cập nhật"
@@ -341,7 +353,7 @@ func conditional() {}
 //	@Produce		application/fhir+json
 //	@Param			resourceType	path		string	true	"Loại resource"
 //	@Param			id				path		string	true	"Id"
-//	@Param			_count			query		int		false	"Số phiên bản mỗi trang"	example(10)
+//	@Param			_count			query		int		false	"Số phiên bản mỗi trang. Ví dụ: 10"
 //	@Param			_offset			query		int		false	"Vị trí bắt đầu"
 //	@Success		200				{object}	fhir.Bundle
 //	@Failure		401				{object}	fhir.OperationOutcome	"Thiếu hoặc sai Bearer token"
@@ -356,7 +368,7 @@ func history() {}
 //	@Description	Đọc đúng phiên bản vid của resource.
 //	@Tags			fhir
 //	@Security		BearerAuth
-//	@Produce		application/fhir+json
+//	@Produce		application/json,application/fhir+json
 //	@Param			resourceType	path		string	true	"Loại resource"
 //	@Param			id				path		string	true	"Id"
 //	@Param			vid				path		string	true	"versionId"
@@ -409,7 +421,7 @@ func validate() {}
 //	@Security		BearerAuth
 //	@Produce		application/fhir+json
 //	@Param			id		path		string	true	"Patient id"
-//	@Param			_count	query		int		false	"Số resource mỗi trang"	example(10)
+//	@Param			_count	query		int		false	"Số resource mỗi trang. Ví dụ: 10"
 //	@Param			_since	query		string	false	"Chỉ lấy resource cập nhật từ thời điểm này"
 //	@Param			_type	query		string	false	"Chỉ lấy các loại resource này, phân cách bằng dấu phẩy"
 //	@Success		200		{object}	fhir.Bundle
@@ -491,7 +503,7 @@ func jobStatus() {}
 //	@Param			_type			query	string	false	"Chỉ export các loại resource này, phân cách bằng dấu phẩy"
 //	@Param			_since			query	string	false	"Chỉ export resource cập nhật từ thời điểm này"
 //	@Param			_outputFormat	query	string	false	"Định dạng tệp; chỉ hỗ trợ application/fhir+ndjson"
-//	@Success		202				"Job đã nhận; header Content-Location tới bulkdata/{id}/status"
+//	@Success		202				{object}	fhir.OperationOutcome	"Job đã nhận; header Content-Location tới bulkdata/{id}/status"
 //	@Failure		400				{object}	fhir.OperationOutcome	"Thiếu Prefer: respond-async hoặc tham số sai"
 //	@Failure		401				{object}	fhir.OperationOutcome	"Thiếu hoặc sai Bearer token"
 //	@Failure		403				{object}	fhir.OperationOutcome	"Token không đủ quyền (cần quyền read)"
@@ -504,7 +516,7 @@ func exportSystem() {}
 //	@Description	Poll sau khi $export. 202 là đang chạy (header X-Progress, Retry-After); 200 là đã xong kèm manifest các tệp NDJSON; mỗi url trong output tải qua GET (cần token).
 //	@Tags			bulk
 //	@Security		BearerAuth
-//	@Produce		application/fhir+json
+//	@Produce		application/json,application/fhir+json
 //	@Param			id	path		string	true	"Export id"
 //	@Success		200	{object}	ExportManifest	"Đã xong"
 //	@Success		202	"Đang chạy; header X-Progress: in-progress và Retry-After (giây)"
@@ -522,7 +534,7 @@ func exportStatus() {}
 //	@Security		BearerAuth
 //	@Produce		application/fhir+json
 //	@Param			id	path		string	true	"Export id"
-//	@Success		202	"Đã nhận yêu cầu hủy"
+//	@Success		202	{object}	fhir.OperationOutcome	"Đã nhận yêu cầu hủy"
 //	@Failure		401		{object}	fhir.OperationOutcome	"Thiếu hoặc sai Bearer token"
 //	@Failure		403		{object}	fhir.OperationOutcome	"Token không đủ quyền (cần quyền read)"
 //	@Failure		404	{object}	fhir.OperationOutcome	"Export không tồn tại"
@@ -536,7 +548,7 @@ func exportCancel() {}
 //	@Tags			fhir
 //	@Security		BearerAuth
 //	@Accept			json
-//	@Produce		json
+//	@Produce		application/json,application/fhir+json
 //	@Param			body	body		GraphQLRequest	true	"{query, variables, operationName}"
 //	@Success		200		{object}	GraphQLResponse
 //	@Failure		401		{object}	fhir.OperationOutcome	"Thiếu hoặc sai Bearer token"

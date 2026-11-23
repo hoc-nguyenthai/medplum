@@ -21,8 +21,10 @@ help: ## Liệt kê các lệnh
 SWAG_DIRS_fhir-server := pkg/fhir
 SWAG_DIRS_auth := apps/auth/internal/application,apps/auth/internal/domain/scim,pkg/fhir
 # Kiểu thay thế khi sinh OpenAPI (mặc định swag đọc .swaggo ở gốc). auth thay fhir.Extension bằng object tự do: kiểu này (value[x]) kéo theo ~30 kiểu dữ liệu
-# FHIR (Address, Dosage, TimingRepeat...) làm spec phình gần gấp đôi và làm IDE đứng khi mở swagger.yaml.
+# FHIR (Address, Dosage, TimingRepeat...) làm spec phình gần gấp đôi và làm IDE đứng khi mở swagger.yaml. fhir-server còn thay fhir.ParametersParameter
+# (value[x] của Parameters, cũng kéo cả bộ kiểu dữ liệu FHIR) bằng object tự do.
 SWAG_OVERRIDES_auth := apps/auth/.swaggo
+SWAG_OVERRIDES_fhir-server := apps/fhir-server/.swaggo
 
 swagger: ## Sinh lại OpenAPI của một app: make swagger APP=fhir-server|auth; cần `go install github.com/swaggo/swag/cmd/swag@latest`
 	swag init -g swagger.go -d $(APP_DIR)/internal/presentation/httpapi$(if $(SWAG_DIRS_$(APP)),$(comma)$(SWAG_DIRS_$(APP))) -o $(APP_DIR)/docs --parseInternal$(if $(SWAG_OVERRIDES_$(APP)), --overridesFile $(SWAG_OVERRIDES_$(APP)))

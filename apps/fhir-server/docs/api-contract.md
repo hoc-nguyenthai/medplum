@@ -16,9 +16,15 @@ Cập nhật 2026-11-23. **Chỉ mô tả phần `fhir-server` đang phục vụ
 |---|---|
 | `internal/bootstrap` `TestRoutesMatchSwaggerContract` | Mọi route Echo **ngoài** `/fhir/R4` (health...) khớp `swagger.json`, và router FHIR có được gắn |
 | `docs` `TestAPIContractIsUpToDate` | Bảng route dưới đây khớp `swagger.json` (`UPDATE_DOCS=1 go test ./apps/fhir-server/docs -run TestAPIContractIsUpToDate`) |
+| `docs` `TestSwaggerDTOsAreComplete` | DTO của fhir-server (`httpapi.*`) thiếu mô tả trường, `required`, ví dụ ở body mẫu; route thiếu tóm tắt/mô tả/schema phản hồi/mô tả tham số; tag thiếu mô tả |
+| `docs` `TestSwaggerIsStructurallyValid` | Tham số path lệch mẫu hoặc thiếu `required`, `$ref` hỏng, `required` không phải trường thật, tham số query/path có `example` (không hợp lệ ở Swagger 2.0), `produces` không khớp Content-Type thật |
 | Test của `pkg/fhirrouter` và e2e | Hành vi thật của các route FHIR |
 
 Nghĩa là **việc swagger liệt kê đúng các route `/fhir/R4/...` do annotation quyết định và chưa có test máy so với router**. Khi thêm hoặc đổi route FHIR, sửa annotation và sinh lại.
+
+> **Hai kiểu FHIR được khai báo rút gọn thành object tự do** trong `swagger.json`/`swagger.yaml`: `fhir.Extension` (mọi `extension`) và `fhir.ParametersParameter` (phần tử `Parameters.parameter`). Override ở `apps/fhir-server/.swaggo`, dùng khi `make swagger APP=fhir-server`. Lý do: `value[x]` của chúng kéo theo khoảng 25 kiểu dữ liệu FHIR (`Address`, `Dosage`, `TimingRepeat`, `DataRequirement`...), làm spec to gần gấp rưỡi và làm IDE chậm khi mở `swagger.yaml`. Cấu trúc thật theo chuẩn FHIR R4 (xem `CapabilityStatement` ở `GET /fhir/R4/metadata`).
+>
+> **Content-Type thật** (đã kiểm bằng cách gọi server): mọi route `/fhir/R4/...` trả `application/fhir+json`, kể cả lỗi (`OperationOutcome`); trừ `POST /fhir/R4/$graphql` và manifest 200 của `bulkdata/{id}/status` trả `application/json`; `/healthz`, `/readyz` trả `application/json`. `GET /fhir/R4/bulkdata/{id}/status` khi export đang chạy (202) **không có body**, chỉ có header `X-Progress` và `Retry-After`.
 
 ## 1. Địa chỉ và phiên bản
 
@@ -55,9 +61,9 @@ Mỗi nhóm là một `tag` của swagger. Loại resource là tham số đườ
 
 | Route | Mô tả | Xác thực | Yêu cầu | Phản hồi thành công | Mã lỗi |
 |---|---|---|---|---|---|
-| `GET /fhir/R4/$export` | Bulk export ($export) | Bearer | query: _type, _since, _outputFormat | 202 | 400, 401, 403 |
+| `GET /fhir/R4/$export` | Bulk export ($export) | Bearer | query: _type, _since, _outputFormat | 202 `fhir.OperationOutcome` | 400, 401, 403 |
 | `GET /fhir/R4/bulkdata/{id}/status` | Trạng thái bulk export | Bearer | - | 200 `httpapi.ExportManifest`, 202 | 401, 403, 404 |
-| `DELETE /fhir/R4/bulkdata/{id}/status` | Hủy bulk export | Bearer | - | 202 | 401, 403, 404 |
+| `DELETE /fhir/R4/bulkdata/{id}/status` | Hủy bulk export | Bearer | - | 202 `fhir.OperationOutcome` | 401, 403, 404 |
 
 ### Nhóm `fhir` (13 route)
 

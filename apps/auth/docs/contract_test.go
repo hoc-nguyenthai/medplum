@@ -185,6 +185,7 @@ func TestSwaggerIsStructurallyValid(t *testing.T) {
 				Name     string `json:"name"`
 				In       string `json:"in"`
 				Required bool   `json:"required"`
+				Example  any    `json:"example"`
 			} `json:"parameters"`
 			Responses map[string]struct {
 				Schema struct {
@@ -234,6 +235,9 @@ func TestSwaggerIsStructurallyValid(t *testing.T) {
 			id := strings.ToUpper(method) + " " + path
 			got := map[string]bool{}
 			for _, p := range op.Parameters {
+				if p.In != "body" && p.Example != nil {
+					t.Errorf("%s: tham số %s (%s) có `example`: Swagger 2.0 chỉ cho `example` ở schema, không cho tham số query/path/header/formData (đưa ví dụ vào mô tả)", id, p.Name, p.In)
+				}
 				if p.In != "path" {
 					continue
 				}
