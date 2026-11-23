@@ -494,3 +494,30 @@ func TestS3StorageSettings(t *testing.T) {
 		t.Errorf("production https: %v", err)
 	}
 }
+
+func TestSubscriptionAutoDisable(t *testing.T) {
+	s, err := config.FromEnv(env(map[string]string{"FHIR_SUBSCRIPTIONS": "true",
+		"FHIR_SUBSCRIPTION_AUTO_DISABLE": `[{"maxConsecutiveFailures":10,"timeWindowSeconds":3600},{"maxConsecutiveFailures":3,"timeWindowSeconds":60}]`}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := s.AutoDisableTriggers()
+	if err != nil || len(got) != 2 || got[0] != (config.AutoDisableTrigger{MaxConsecutiveFailures: 10, TimeWindowSeconds: 3600}) {
+		t.Fatalf("%+v %v", got, err)
+	}
+	if got, err := config.Default().AutoDisableTriggers(); err != nil || got != nil {
+		t.Fatalf("mặc định phải tắt: %+v %v", got, err)
+	}
+	for name, vars := range map[string]map[string]string{
+		"không phải JSON":  {"FHIR_SUBSCRIPTIONS": "true", "FHIR_SUBSCRIPTION_AUTO_DISABLE": "10/3600"},
+		"số không dương":   {"FHIR_SUBSCRIPTIONS": "true", "FHIR_SUBSCRIPTION_AUTO_DISABLE": `[{"maxConsecutiveFailures":0,"timeWindowSeconds":60}]`},
+		"thiếu trường":     {"FHIR_SUBSCRIPTIONS": "true", "FHIR_SUBSCRIPTION_AUTO_DISABLE": `[{"maxConsecutiveFailures":3}]`},
+		"sai tên trường":   {"FHIR_SUBSCRIPTIONS": "true", "FHIR_SUBSCRIPTION_AUTO_DISABLE": `[{"maxFailures":3,"timeWindowSeconds":60}]`},
+		"tắt Subscription": {"FHIR_SUBSCRIPTION_AUTO_DISABLE": `[{"maxConsecutiveFailures":3,"timeWindowSeconds":60}]`},
+	} {
+		_, err := config.FromEnv(env(vars))
+		if err == nil || !strings.Contains(err.Error(), "FHIR_SUBSCRIPTION_AUTO_DISABLE") {
+			t.Errorf("%s: muốn lỗi FHIR_SUBSCRIPTION_AUTO_DISABLE, được %v", name, err)
+		}
+	}
+}

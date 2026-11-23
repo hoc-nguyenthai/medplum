@@ -98,6 +98,9 @@ lệ job báo `error`, không chạy.
   "địa chỉ đích bị chặn" là chống SSRF (đích nội bộ); chỉ dev mới đặt `FHIR_WEBHOOK_ALLOW_PRIVATE=true`. Thử lại tối đa
   `FHIR_WEBHOOK_MAX_ATTEMPTS` (5) với backoff gấp đôi; hàng đợi giao nằm ở bộ nhớ nên **mất khi restart** (sự kiện chưa xử lý vẫn còn trên
   Redis, nhưng lần giao đang thử lại thì không).
+- **Subscription tự chuyển `off`**: khi đặt `FHIR_SUBSCRIPTION_AUTO_DISABLE`, log WARN `fhirsub: tự tắt Subscription vì giao thất bại lặp lại`
+  (có `subscription`, `project`, `failureCount`, `timeWindowSeconds`) và `Subscription.error` ghi lý do. Sửa bên nhận rồi đặt lại
+  `status=active` (PUT/PATCH Subscription); bộ đếm đã được xóa lúc tắt.
 - **Hàng đợi đầy**: log ERROR `hàng đợi giao đầy, bỏ thông báo`; tăng `FHIR_WEBHOOK_WORKERS` hoặc xử lý bên nhận chậm.
 - **Websocket tách riêng (`FHIR_WS_MODE=issuer`)**: kết nối do `ws-gateway` giữ (xem `apps/ws-gateway/README.md`); deploy hoặc khởi động lại fhir-server KHÔNG ngắt socket (đã kiểm bằng container thật), chỉ ngắt khi gateway khởi động lại (client nhận 1001 và bind lại bằng token mới). Giới hạn kết nối, hạn mức bind và Origin đặt ở gateway, không ở fhir-server. Redis là điểm phụ thuộc chung: khi Redis đứt, ghi vào fhir-server vẫn thành công (lỗi phát sự kiện chỉ được log) nhưng thông báo websocket (và webhook) bị mất, không bù lại; readiness của cả fhir-server lẫn ws-gateway báo 503 vì đã gồm kiểm Redis, nên pod bị rút khỏi load balancer.
 - **Websocket**: số kết nối tối đa mỗi instance `FHIR_WS_MAX_CONNECTIONS` (1000; vượt thì 503); hạn mức bind theo người `FHIR_WS_MAX_BINDINGS_PER_USER` (20; vượt thì đóng 1008, đếm theo instance nên cả cụm có thể cho tối đa N x số replica); client chậm bị ngắt (mã 1013). Cần `Upgrade` đi

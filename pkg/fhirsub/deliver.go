@@ -88,6 +88,7 @@ func (m *Manager) attempt(d *delivery) {
 		status = resp.StatusCode
 		if status >= 200 && status < 300 {
 			atomic.AddInt64(&m.stats.Delivered, 1)
+			m.clearFailures(d.subID)
 			return
 		}
 	}
@@ -99,6 +100,7 @@ func (m *Manager) attempt(d *delivery) {
 		atomic.AddInt64(&m.stats.Failed, 1)
 		slog.Warn("fhirsub: giao thất bại, bỏ cuộc", "subscription", d.subID, "resource", d.resource,
 			"attempts", d.attempt, "status", status, "error", err)
+		m.recordFailure(d)
 		return
 	}
 	delay := m.cfg.BaseDelay << (d.attempt - 1)

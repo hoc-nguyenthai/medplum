@@ -2,6 +2,7 @@
 package config
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net"
@@ -119,6 +120,10 @@ type Settings struct {
 	WebhookMaxAttempts  int
 	WebhookTimeout      time.Duration
 	WebhookAllowPrivate bool // CHỈ cho dev: cho phép giao tới địa chỉ nội bộ (chống SSRF bị tắt)
+	// SubscriptionAutoDisable là JSON mảng trigger tự tắt Subscription rest-hook giao thất bại lặp lại, cùng dạng
+	// subscriptionAutoDisable của Medplum: [{"maxConsecutiveFailures":10,"timeWindowSeconds":3600}]. Rỗng: không tự tắt.
+	// Đọc bằng AutoDisableTriggers.
+	SubscriptionAutoDisable string
 
 	// Kho nội dung Binary (docs/plans/modules/email-storage.md, S3a/S3b). BinaryStorage rỗng: tắt (Binary giữ `data` base64 trong CSDL như
 	// trước, không có /storage và không có Binary thô). Dạng `file:<thư mục>` (giữ bố cục Medplum); tiền tố khác bị từ chối.
@@ -289,6 +294,7 @@ func FromEnv(get func(string) string) (Settings, error) {
 	r.Int(&s.WebhookMaxAttempts, "FHIR_WEBHOOK_MAX_ATTEMPTS")
 	r.Duration(&s.WebhookTimeout, "FHIR_WEBHOOK_TIMEOUT")
 	r.Bool(&s.WebhookAllowPrivate, "FHIR_WEBHOOK_ALLOW_PRIVATE")
+	r.String(&s.SubscriptionAutoDisable, "FHIR_SUBSCRIPTION_AUTO_DISABLE")
 	r.String(&s.BinaryStorage, "FHIR_BINARY_STORAGE")
 	r.String(&s.StorageBaseURL, "FHIR_STORAGE_BASE_URL")
 	r.String(&s.StorageSigningKeyPath, "FHIR_STORAGE_SIGNING_KEY_PATH")
@@ -331,6 +337,32 @@ func ParseTokens(raw string) ([]Token, error) {
 		}
 		seen[name] = true
 		out = append(out, Token{name, secret})
+	}
+	return out, nil
+}
+
+// AutoDisableTrigger là một phần tử của FHIR_SUBSCRIPTION_AUTO_DISABLE.
+type AutoDisableTrigger struct {
+	MaxConsecutiveFailures int `json:"maxConsecutiveFailures"`
+	TimeWindowSeconds      int `json:"timeWindowSeconds"`
+}
+
+// AutoDisableTriggers đọc FHIR_SUBSCRIPTION_AUTO_DISABLE (rỗng: nil). Mỗi trigger phải có hai số nguyên dương.
+func (s Settings) AutoDisableTriggers() ([]AutoDisableTrigger, error) {
+	raw := strings.TrimSpace(s.SubscriptionAutoDisable)
+	if raw == "" {
+		return nil, nil
+	}
+	var out []AutoDisableTrigger
+	d := json.NewDecoder(strings.NewReader(raw))
+	d.DisallowUnknownFields()
+	if err := d.Decode(&out); err != nil {
+		return nil, fmt.Errorf("FHIR_SUBSCRIPTION_AUTO_DISABLE: phải là JSON mảng {maxConsecutiveFailures, timeWindowSeconds}: %w", err)
+	}
+	for i, t := range out {
+		if t.MaxConsecutiveFailures <= 0 || t.TimeWindowSeconds <= 0 {
+			return nil, fmt.Errorf("FHIR_SUBSCRIPTION_AUTO_DISABLE: trigger #%d: maxConsecutiveFailures và timeWindowSeconds phải là số nguyên dương", i+1)
+		}
 	}
 	return out, nil
 }
@@ -458,6 +490,11 @@ func (s Settings) validate() error {
 	}
 	if s.WebhookAllowPrivate && isProd(s.Environment) {
 		errs = append(errs, errors.New("FHIR_WEBHOOK_ALLOW_PRIVATE: không được bật ở staging/production (tắt chống SSRF)"))
+	}
+	if _, err := s.AutoDisableTriggers(); err != nil {
+		errs = append(errs, err)
+	} else if s.SubscriptionAutoDisable != "" && !s.Subscriptions {
+		errs = append(errs, errors.New("FHIR_SUBSCRIPTION_AUTO_DISABLE: cần bật FHIR_SUBSCRIPTIONS"))
 	}
 	errs = append(errs, s.validateWS()...)
 	if s.JobLease <= 0 || s.JobMaintenanceInterval < 0 {

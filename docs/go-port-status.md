@@ -45,7 +45,7 @@ Cập nhật: 2026-11-21. Hướng đi hiện tại: **port toàn bộ backend s
 ## Giới hạn của giai đoạn 6a
 
 - Job chạy bằng `workflow.Inline` (trong process): job đang chạy mất khi process chết và AsyncJob ở trạng thái `accepted` không tự hoàn tất. Chưa có cơ chế khôi phục.
-- Subscription: chỉ `rest-hook`; hàng đợi giao nằm trong bộ nhớ (retry đang hẹn mất khi process chết); chưa kiểm thử với broker Redis ở mức app (chỉ `pkg/messaging` có test Redis riêng); chưa tắt Subscription tự động khi giao lỗi kéo dài.
+- Subscription: chỉ `rest-hook`; hàng đợi giao nằm trong bộ nhớ (retry đang hẹn mất khi process chết); chưa kiểm thử với broker Redis ở mức app (chỉ `pkg/messaging` có test Redis riêng); tự tắt Subscription giao lỗi kéo dài có từ việc #17 (C1, C2; `FHIR_SUBSCRIPTION_AUTO_DISABLE`, mặc định tắt) nhưng chưa ghi đè theo project và chưa tạo `AuditEvent`.
 - `$everything` cắt ở `_count` (trần 10000) và chưa có phân trang; `$expunge` chỉ xóa một resource (chưa có `everything=true`).
 - Chưa có: `$export`, terminology, `$graph`, `$summary`, `$meta*`, `$resend`, GraphQL; 100 trong số 113 operation của Medplum vẫn chưa port.
 
@@ -346,3 +346,9 @@ Chưa kiểm: PATCH/`If-Match` cùng lúc với update thường (đã có `Conc
 - Ghi: mỗi `CreateResource` khoảng 1 ms chủ yếu do lập chỉ mục bằng nhiều câu INSERT riêng lẻ (seed 15 000 resource mất khoảng 15 giây); nạp lượng lớn nên dùng Bundle batch và cân nhắc gom INSERT.
 
 Chưa đo: kích thước 100k trở lên (đường cong thực của các điểm yếu trên), tải nhiều client qua mạng, cache, bulk export lớn, `pg_stat_statements`/`EXPLAIN` từng truy vấn (cần cấu hình PostgreSQL thật, không phải bản nhúng).
+
+## Việc #17 (một phần): tự tắt Subscription
+
+Kế hoạch: [plans/modules/p17-async-batch-download-autodisable.md](plans/modules/p17-async-batch-download-autodisable.md). Mặc định tắt.
+
+- C1, C2 `pkg/fhirsub/failure.go`: `FailureTracker` (bộ nhớ và Redis sorted set, cùng thuật toán Medplum), gắn vào `Manager.attempt`; đủ ngưỡng thì Subscription `active` thành `off` kèm `error` (ghi có `If-Match`). Cấu hình `FHIR_SUBSCRIPTION_AUTO_DISABLE`. Giới hạn: không ghi đè theo project, không `AuditEvent`, replica khác thấy Subscription đã tắt sau tối đa 30 giây.

@@ -114,8 +114,17 @@ func (c *Container) build(ctx context.Context) (err error) {
 			return err
 		}
 		c.onStop(c.Broker.Stop)
+		triggers, err := s.AutoDisableTriggers()
+		if err != nil {
+			return err
+		}
+		var failures fhirsub.FailureTracker // nil: đếm trong bộ nhớ (một replica)
+		if rb, ok := c.Broker.(*messaging.Redis); ok {
+			failures = fhirsub.NewRedisFailureTracker(rb.Client(), "", nil) // các replica cộng dồn chung
+		}
 		c.Manager = fhirsub.NewManager(c.Store, fhirsub.Config{
 			Workers: s.WebhookWorkers, MaxAttempts: s.WebhookMaxAttempts, Timeout: s.WebhookTimeout, AllowPrivate: s.WebhookAllowPrivate,
+			AutoDisable: autoDisableTriggers(triggers), Failures: failures,
 		})
 		c.Manager.Register(c.Broker)
 		switch s.WSModeResolved() {
@@ -445,4 +454,12 @@ func canUpdate(authDisabled bool) func(context.Context, string) bool {
 		}
 		return fhirauth.CanUpdate(ctx, rt)
 	}
+}
+
+func autoDisableTriggers(in []config.AutoDisableTrigger) []fhirsub.Trigger {
+	out := make([]fhirsub.Trigger, len(in))
+	for i, t := range in {
+		out[i] = fhirsub.Trigger(t)
+	}
+	return out
 }

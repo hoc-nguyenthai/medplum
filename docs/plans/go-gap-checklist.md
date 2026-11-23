@@ -8,8 +8,8 @@ Ký hiệu chặn: **M1** runtime Bot, **M3** `agent`/`ccda`/`hl7`, **M4** AI, *
 
 Kế hoạch: [modules/p17-async-batch-download-autodisable.md](modules/p17-async-batch-download-autodisable.md).
 
-- [ ] Tự tắt Subscription lỗi kéo dài (`subscription-failure-tracker`): bản bộ nhớ (C1)
-- [ ] Tự tắt Subscription: bản Redis dùng chung nhiều replica (C2)
+- [x] Tự tắt Subscription lỗi kéo dài (`subscription-failure-tracker`): bản bộ nhớ (C1)
+- [x] Tự tắt Subscription: bản Redis dùng chung nhiều replica (C2)
 - [ ] Trạng thái checkpoint dùng chung cho job (`Input.JobID`, `SaveJobState`) (A1)
 - [ ] `ExpireJobs` dọn cả job `batch?`; `outputBinaryIDs` đọc `valueReference` (A1)
 - [ ] Batch async `POST /fhir/R4` + `Prefer: respond-async` (A2)

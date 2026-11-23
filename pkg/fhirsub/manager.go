@@ -33,6 +33,10 @@ type Config struct {
 	Timeout      time.Duration // timeout mỗi request (10s)
 	CacheTTL     time.Duration // thời gian giữ danh sách Subscription đang hoạt động (30s)
 	AllowPrivate bool          // cho phép giao tới địa chỉ nội bộ (chỉ dev/test)
+	// AutoDisable: các ngưỡng tự tắt Subscription giao thất bại lặp lại (rỗng = không tự tắt); Failures là nơi đếm
+	// (nil thì dùng bộ nhớ của tiến trình).
+	AutoDisable []Trigger
+	Failures    FailureTracker
 }
 
 func (c *Config) defaults() {
@@ -53,6 +57,9 @@ func (c *Config) defaults() {
 	}
 	if c.CacheTTL <= 0 {
 		c.CacheTTL = 30 * time.Second
+	}
+	if c.Failures == nil {
+		c.Failures = NewMemoryFailureTracker(nil)
 	}
 }
 
@@ -81,7 +88,7 @@ type entry struct {
 
 // Manager khớp sự kiện thay đổi với các Subscription đang hoạt động và giao thông báo.
 type Manager struct {
-	repo   fhirrouter.Repository // repository GỐC (không bọc), để nạp Subscription
+	repo   fhirrouter.Repository // repository GỐC (không bọc), để nạp và tự tắt Subscription
 	cfg    Config
 	client *http.Client
 

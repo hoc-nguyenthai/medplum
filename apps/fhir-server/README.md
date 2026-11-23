@@ -83,6 +83,14 @@ Bật bằng `FHIR_SUBSCRIPTIONS=true`. Khi một resource được create, upda
 Sự kiện chỉ được phát **sau khi commit** (transaction bị rollback thì không phát gì). Giao thất bại (lỗi mạng, `408`, `429`, `5xx`) được thử lại
 `FHIR_WEBHOOK_MAX_ATTEMPTS` lần với thời gian chờ tăng gấp đôi (trần 1 phút); các `4xx` khác không thử lại. Không theo redirect.
 
+**Tự tắt Subscription lỗi kéo dài** (như `subscriptionAutoDisable` của Medplum, mặc định tắt): `FHIR_SUBSCRIPTION_AUTO_DISABLE` là JSON mảng
+trigger, ví dụ `[{"maxConsecutiveFailures":10,"timeWindowSeconds":3600}]`. Mỗi sự kiện giao đã bỏ cuộc (hết lượt thử hoặc lỗi không thử lại)
+được đếm; một lần giao thành công xóa bộ đếm. Khi số lần bỏ cuộc trong cửa sổ của một trigger đạt ngưỡng, Subscription đang `active` được
+đổi thành `status=off` với `error` = `Automatically disabled after N consecutive failed events in the last W seconds` (ghi có `If-Match`,
+Subscription đã bị đổi trạng thái thì giữ nguyên) và log WARN `tự tắt Subscription`. Với `BROKER_DRIVER=redis` bộ đếm nằm ở Redis
+(`trivita:sub:failures:<id>`) nên các replica cộng dồn; với `memory` mỗi tiến trình đếm riêng. Chưa có: ghi đè theo project, `AuditEvent`.
+Replica khác thấy Subscription đã tắt sau tối đa 30 giây (hạn cache danh sách Subscription).
+
 **Chống SSRF:** mặc định *không* giao tới loopback, mạng riêng, link-local (kể cả `169.254.169.254` của metadata đám mây), CGNAT và multicast.
 Kiểm tra làm ở bước kết nối trên địa chỉ IP thật nên chống được DNS rebinding; không dùng proxy từ môi trường. `FHIR_WEBHOOK_ALLOW_PRIVATE=true` chỉ cho dev/test và bị từ chối ở staging/production.
 
@@ -189,6 +197,7 @@ Biến môi trường (hoặc `.env`); danh sách đầy đủ ở [`.env.exampl
 | `BROKER_DRIVER`, `REDIS_URL` | `memory` | broker sự kiện: `memory` hoặc `redis` |
 | `FHIR_WEBHOOK_WORKERS`, `FHIR_WEBHOOK_MAX_ATTEMPTS`, `FHIR_WEBHOOK_TIMEOUT` | `4`, `5`, `10s` | giao webhook |
 | `FHIR_WEBHOOK_ALLOW_PRIVATE` | `false` | chỉ dev; tắt chống SSRF; bị từ chối ở staging/production |
+| `FHIR_SUBSCRIPTION_AUTO_DISABLE` | rỗng (tắt) | JSON mảng `{maxConsecutiveFailures, timeWindowSeconds}`: tự tắt Subscription giao thất bại lặp lại; cần `FHIR_SUBSCRIPTIONS=true` |
 | `FHIR_AUTH_DISABLED` | `false` | chỉ dev; bị từ chối ở staging/production |
 | `FHIR_SKIP_CONSTRAINTS` | `false` | chỉ kiểm tra cấu trúc, bỏ invariant FHIRPath |
 | `FHIR_SKIP_VALIDATION` | `false` | không kiểm tra dữ liệu; bị từ chối ở staging/production |
