@@ -1,6 +1,6 @@
-# trivita-observability-go
+# observability
 
-Bản Go của [`trivita-observability`](../trivita-observability) (Python/FastAPI), dùng cho các service Go viết bằng [Echo](https://echo.labstack.com/). Cùng biến môi trường, cùng định dạng log, cùng resource attributes và cùng pipeline Data Prepper, nên service Go và Python hiển thị giống nhau trong OpenSearch.
+Thư viện quan sát của repo (`trivita-fhir/pkg/observability`). Đây là bản nhúng của `trivita-observability-go`, bản Go của `trivita-observability` (Python/FastAPI), dùng cho các service Go viết bằng [Echo](https://echo.labstack.com/). Cùng biến môi trường, cùng định dạng log, cùng resource attributes và cùng pipeline Data Prepper, nên service Go và Python hiển thị giống nhau trong OpenSearch.
 
 - **Tracing**: mỗi request một span SERVER, gửi qua OTLP tới Data Prepper rồi vào OpenSearch Trace Analytics.
 - **Logging**: log JSON ra stdout (luôn bật) qua `log/slog`, và đẩy log qua OTLP (tuỳ chọn). Mỗi dòng log ghi kèm context của request mang `trace_id`/`span_id`.
@@ -13,14 +13,11 @@ Mặc định library **không làm gì** ngoài cấu hình log stdout. Tracing
 
 Yêu cầu Go ≥ 1.26 (theo `go.mod`).
 
-```bash
-go get github.com/TRIVITAAI/trivita-observability-go
-```
+Thư viện nằm trong module `trivita-fhir`, không cần `go get`.
 
 | Package | Dùng cho |
 |---|---|
-| `github.com/TRIVITAAI/trivita-observability-go` | Lõi: `Setup`, `Shutdown`, `Logger`, `Tracer`, `Meter`, HTTP client, helper cho job |
-| `.../echoobs` | Echo **v5** (`github.com/labstack/echo/v5`) |
+| `trivita-fhir/pkg/observability` | Lõi: `Setup`, `Shutdown`, `Logger`, `Tracer`, `Meter`, HTTP client, helper cho job |
 | `.../echo4obs` | Echo **v4** (`github.com/labstack/echo/v4`) |
 
 ## Dùng với Echo
@@ -33,16 +30,16 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/labstack/echo/v5"
+	"github.com/labstack/echo/v4"
 
-	observability "github.com/TRIVITAAI/trivita-observability-go"
-	"github.com/TRIVITAAI/trivita-observability-go/echoobs"
+	observability "trivita-fhir/pkg/observability"
+	"trivita-fhir/pkg/observability/echo4obs"
 )
 
 func main() {
 	ctx := context.Background()
 	e := echo.New()
-	if err := echoobs.Setup(ctx, e, observability.FromEnv()); err != nil {
+	if err := echo4obs.Setup(ctx, e, observability.FromEnv()); err != nil {
 		slog.Error("observability setup failed", "error", err) // service vẫn chạy tiếp
 	}
 	defer observability.Shutdown(0) // flush span, log, metrics; tối đa OTEL_SHUTDOWN_TIMEOUT_MS
@@ -52,13 +49,13 @@ func main() {
 }
 ```
 
-Với Echo v4 thay `echoobs` bằng `echo4obs`; cách dùng giống hệt. Ví dụ đầy đủ (graceful shutdown, HTTP client, metric tự định nghĩa): [`examples/echo`](examples/echo/main.go).
+Cách dùng thật trong repo: `cmd/<tên>/main.go` của `apps/auth`, `apps/fhir-server`, `apps/ws-gateway`.
 
-`echoobs.Setup` sẽ:
+`echo4obs.Setup` sẽ:
 
 1. Gọi `observability.Setup`: cấu hình log stdout (JSON hoặc text, theo `LOG_JSON`) làm logger mặc định của `slog`. Log của package `log` chuẩn cũng đi qua đây.
 2. Đặt `e.Logger` ghi qua cùng handler, nên log của Echo và các middleware (Recover, ...) cũng là JSON và được export.
-3. Đăng ký `echoobs.Middleware()`. Hãy gọi `Setup` **trước** khi `e.Use(...)` các middleware khác, để span SERVER bao trùm chúng.
+3. Đăng ký `echo4obs.Middleware()`. Hãy gọi `Setup` **trước** khi `e.Use(...)` các middleware khác, để span SERVER bao trùm chúng.
 4. Nếu `OTEL_ENABLED=true`: tạo `TracerProvider` toàn cục, export span qua OTLP, đặt propagator W3C (`traceparent`, `baggage`).
 5. Nếu `OTEL_LOGS_ENABLED=true`: thêm handler đẩy log qua OTLP, dùng chung resource với trace (`service.name`, `service.namespace`, `deployment.environment`).
 6. Nếu `OTEL_METRICS_ENABLED=true`: tạo `MeterProvider` với cùng resource, gửi theo chu kỳ.
@@ -82,7 +79,7 @@ Gọi `Setup` nhiều lần vẫn an toàn: provider chỉ được tạo một 
 s := observability.FromEnv()
 s.ServiceName = "billing-api"
 s.ExcludedURLs = []string{"health", "metrics", "swagger"}
-err := echoobs.Setup(ctx, e, s)
+err := echo4obs.Setup(ctx, e, s)
 ```
 
 Dùng `observability.DefaultSettings()` nếu không muốn đọc env. Field để trống (`""`, `0`) được thay bằng giá trị mặc định.
@@ -94,7 +91,7 @@ Dùng `log/slog`. **Truyền context của request** (`InfoContext`, `ErrorConte
 ```go
 var logger = observability.Logger("app.orders") // tạo ở cấp package được, kể cả trước Setup
 
-func getOrder(c *echo.Context) error {
+func getOrder(c echo.Context) error {
 	ctx := c.Request().Context()
 	logger.InfoContext(ctx, "order created", "order_id", 123, "amount", 49.9)
 	...
@@ -112,7 +109,7 @@ Field giống bản Python: `timestamp` (UTC, ms), `level` (`DEBUG`/`INFO`/`WARN
 `slog.Handler` middleware truyền qua `WithLogMiddleware` được áp dụng cho **cả** stdout lẫn OTLP, theo thứ tự truyền vào:
 
 ```go
-echoobs.Setup(ctx, e, s, observability.WithLogMiddleware(redactPII, addTenant))
+echo4obs.Setup(ctx, e, s, observability.WithLogMiddleware(redactPII, addTenant))
 // type LogMiddleware func(next slog.Handler) slog.Handler
 ```
 
@@ -264,7 +261,7 @@ Scheme của endpoint quyết định giao thức, áp dụng cho cả ba tín h
 | `grpcs://host:port` | OTLP/gRPC có TLS |
 | `http(s)://host:port/path` | OTLP/HTTP protobuf (ghi đầy đủ path) |
 
-Với Data Prepper hãy dùng `grpc://`: với cấu hình mặc định, source chỉ nhận gRPC. Cấu hình Data Prepper đã kiểm chứng nằm ở [`deploy/data-prepper/pipelines.yaml`](deploy/data-prepper/pipelines.yaml) (giống hệt bản Python); các lỗi hay gặp và cấu trúc document trong OpenSearch: [docs/data-prepper.md](docs/data-prepper.md).
+Với Data Prepper hãy dùng `grpc://`: với cấu hình mặc định, source chỉ nhận gRPC. Cấu hình Data Prepper đã kiểm chứng nằm ở [`deploy/data-prepper/pipelines.yaml`](../../deploy/data-prepper/pipelines.yaml) (giống hệt bản Python); các lỗi hay gặp và cấu trúc document trong OpenSearch: [docs/observability/data-prepper.md](../../docs/observability/data-prepper.md).
 
 ## Xử lý sự cố
 
@@ -273,7 +270,7 @@ Với Data Prepper hãy dùng `grpc://`: với cấu hình mặc định, source
 | Không có dữ liệu nào | `OTEL_ENABLED` chưa bật; hoặc process thoát mà chưa gọi `observability.Shutdown` |
 | Log không có `trace_id` | Ghi log bằng `slog.Info(...)` thay vì `slog.InfoContext(ctx, ...)`, hoặc dùng `context.Background()` thay vì `c.Request().Context()` |
 | Span DB/HTTP/Redis không nằm trong trace của request | Chưa truyền `ctx` của request vào lời gọi, hoặc client chưa được gắn instrumentation (bảng "Database, Redis, gRPC") |
-| Span SERVER không bao trùm các middleware khác | `e.Use(...)` được gọi trước `echoobs.Setup` |
+| Span SERVER không bao trùm các middleware khác | `e.Use(...)` được gọi trước `echo4obs.Setup` |
 | Log cảnh báo `Observability shutdown exceeded ... ms` | Backend chậm hoặc chết lúc tắt; phần dữ liệu cuối bị bỏ |
 | Log `OpenTelemetry export pipeline error` ở stdout | Exporter không gửi được (sai host/port, sai scheme, sink Data Prepper chưa khởi tạo). Các log này **không** được export qua OTLP để tránh vòng lặp |
 | Exporter báo HTTP 404 hoặc 415 | Dùng `http://` trong khi source Data Prepper chưa bật `unframed_requests`; chuyển sang `grpc://` |
@@ -283,7 +280,7 @@ Với Data Prepper hãy dùng `grpc://`: với cấu hình mặc định, source
 ## Phát triển
 
 ```bash
-go test -race ./...
+go test -race ./pkg/observability/...   # chạy từ gốc repo
 ```
 
 Test không cần backend: span, log và metrics được ghi vào bộ nhớ qua `WithSpanProcessor`, `WithLogProcessor`, `WithMetricReader` (các option này cũng dùng được trong test của service). `export_test.go` dựng một OTLP receiver gRPC và HTTP ngay trong process để kiểm tra exporter thật.
@@ -298,9 +295,7 @@ Test không cần backend: span, log và metrics được ghi vào bộ nhớ qu
 ├── httpserver.go      # span SERVER, metric HTTP server, access log (dùng chung cho mọi router)
 ├── httpclient.go      # HTTPTransport, HTTPClient
 ├── jobs.go            # Traceparent, ContinueTrace, Enqueue, RunJob
-├── echoobs/           # Echo v5
-├── echo4obs/          # Echo v4
-└── examples/echo/     # service mẫu
+└── echo4obs/          # Echo v4
 ```
 
-Quy tắc khi sửa library: [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md).
+Quy tắc khi sửa library: [docs/observability/CONTRIBUTING.md](../../docs/observability/CONTRIBUTING.md).

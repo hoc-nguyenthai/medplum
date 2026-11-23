@@ -8,7 +8,7 @@
 //	}
 //	defer observability.Shutdown(0)
 //
-// For Echo, use the echoobs (Echo v5) or echo4obs (Echo v4) package.
+// For Echo v4, use the echo4obs package.
 package observability
 
 import (

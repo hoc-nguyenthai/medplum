@@ -33,7 +33,7 @@ Dịch vụ xác thực và cấp token, port từ Medplum (đăng nhập, MFA, 
 Test chạy trên bộ nhớ và SQLite; thêm PostgreSQL thật bằng `make test-auth-pg` (cần Docker).
 
 
-> **Docker:** `apps/auth/Dockerfile` là Dockerfile riêng của service, build từ gốc repo: `make docker APP=auth` hoặc `docker build -f apps/auth/Dockerfile --build-context observability=../trivita-observability-go -t trivita-auth .`. e2e dựng chính image này: `make test-service APP=auth`.
+> **Docker:** `apps/auth/Dockerfile` là Dockerfile riêng của service, build từ gốc repo: `make docker APP=auth` hoặc `docker build -f apps/auth/Dockerfile -t trivita-auth .`. e2e dựng chính image này: `make test-service APP=auth`.
 >
 > **Đổi tên (2026-11-22):** service trước đây tên `authen` nay là `auth` (giống `auth` của Medplum). Thay đổi cho người triển khai:
 > thư mục `apps/auth`, binary và lệnh `auth`, image `trivita-auth`, service compose `auth` (và `auth-migrate`), target Make `run-auth` và `test-auth-pg`,

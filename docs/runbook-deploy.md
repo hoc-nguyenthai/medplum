@@ -32,7 +32,6 @@ Trình duyệt / ứng dụng
 | Redis | Bắt buộc ở staging/production cho `auth` (hạn mức MFA, `jti`, topic FHIRcast) và `ws-gateway` |
 | TLS và tên miền công khai | Dừng TLS ở reverse proxy; mọi `AUTH_BASE_URL`, `AUTH_APP_BASE_URL`, origin phải là `https://` |
 | Reverse proxy đặt `X-Forwarded-For` | Phải khai `AUTH_TRUSTED_PROXIES`, `FHIR_TRUSTED_PROXIES`, `WS_TRUSTED_PROXIES`, nếu không mọi người dùng chung một hạn mức theo IP |
-| Mã nguồn của `trivita-observability-go` ở thư mục cạnh repo | Dockerfile nhận qua `--build-context observability=../trivita-observability-go` (`make docker` làm sẵn) |
 
 Mật khẩu, khóa và secret: sinh bằng `openssl rand`, lưu trong kho bí mật của bạn. **Không** đặt vào argv, không commit, không để trong log.
 

@@ -16,7 +16,7 @@ Chạy mọi tầng của service: `make test-app` (trong thư mục này hoặc
 
 Test tích hợp và e2e dựng Redis bằng `pkg/testkit` (testcontainers). Không có Docker thì test **bị bỏ qua có thông báo**; trong CI đặt `TRIVITA_REQUIRE_DOCKER=1` để thiếu Docker thì **thất bại**. `go test -short` luôn bỏ qua các test cần Docker. Lần đầu có thể mất vài phút để kéo image `redis:7.4-alpine` và dựng image gateway (các lần sau dùng cache).
 
-e2e dựng image từ `apps/ws-gateway/Dockerfile` (context là gốc repo; thư viện quan sát, vì `go.mod` có `replace ../trivita-observability-go`, đi qua build context có tên). Cần thư mục `trivita-observability-go` nằm cạnh repo, nếu không e2e **bỏ qua có thông báo**.
+e2e dựng image từ `apps/ws-gateway/Dockerfile` (context là gốc repo, như `make docker APP=ws-gateway`).
 
 ## Quy tắc
 

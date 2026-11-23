@@ -128,7 +128,7 @@ Deployment: `replicas` >= 2; `maxSurge: 1`, **`maxUnavailable: 0`**; `minReadySe
 
 ### 6.8 Quan sát
 
-Log JSON (`LOG_JSON=true` ở container), có request id; telemetry qua `trivita-observability-go` (OTLP); metric **tắt mặc định**, bật bằng `OTEL_METRICS_ENABLED=true`; không bao giờ ghi bí mật, token, hay endpoint đầy đủ vào log hoặc thông báo lỗi trả client (lỗi 5xx không lộ chi tiết nội bộ).
+Log JSON (`LOG_JSON=true` ở container), có request id; telemetry qua `pkg/observability` (OTLP, bản nhúng của `trivita-observability-go`); metric **tắt mặc định**, bật bằng `OTEL_METRICS_ENABLED=true`; không bao giờ ghi bí mật, token, hay endpoint đầy đủ vào log hoặc thông báo lỗi trả client (lỗi 5xx không lộ chi tiết nội bộ).
 
 ### 6.9 Bảo mật mặc định
 
@@ -162,10 +162,10 @@ Một service chỉ được coi là "triển khai được" khi thỏa **tất 
 | 6.4 tắt êm có test | quy ước | quy ước | **ép** |
 | 6.6 manifest K8s mẫu | **chưa** | **chưa** | có |
 | 7.8 bố cục test bốn tầng (`tests/`) | chưa (T2) | chưa (T2) | **có** |
-| Dockerfile riêng cho từng app | **có** (`apps/auth/Dockerfile`, build từ gốc repo, thư viện quan sát qua `--build-context`, e2e dựng chính image) | **có** (`apps/fhir-server/Dockerfile`, e2e dựng chính image) | **có** (`apps/ws-gateway/Dockerfile`, e2e dựng chính image; không `VOLUME`, chạy được với root filesystem chỉ đọc) |
+| Dockerfile riêng cho từng app | **có** (`apps/auth/Dockerfile`, build từ gốc repo, e2e dựng chính image) | **có** (`apps/fhir-server/Dockerfile`, e2e dựng chính image) | **có** (`apps/ws-gateway/Dockerfile`, e2e dựng chính image; không `VOLUME`, chạy được với root filesystem chỉ đọc) |
 | CI | không thấy cấu hình trong repo | | |
 
-Việc tiếp theo theo mức ưu tiên cho triển khai thật: (1) CI phải checkout `trivita-observability-go` cạnh repo (Dockerfile của cả ba service cần nó qua `--build-context`; `replace` vẫn còn trong `go.mod`), (2) manifest K8s cho `auth` và `fhir-server`, (3) thêm `/health/*` vào `fhir-server`, (4) bố cục `tests/` cho hai app còn lại (T2), (5) CI.
+Việc tiếp theo theo mức ưu tiên cho triển khai thật: (1) manifest K8s cho `auth` và `fhir-server`, (2) thêm `/health/*` vào `fhir-server`, (3) bố cục `tests/` cho hai app còn lại (T2), (4) CI. (Việc trước đây đứng đầu, CI phải checkout `trivita-observability-go` cạnh repo, đã hết cần từ khi thư viện được nhúng vào `pkg/observability`.)
 
 ## 9. Điều không làm (anti-pattern đã gặp hoặc đã loại)
 

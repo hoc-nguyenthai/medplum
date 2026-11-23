@@ -9,7 +9,7 @@ import (
 
 // Data Prepper defaults: otlp_traces listens on 21890, otlp_metrics on 21891, otlp_logs on
 // 21892. gRPC, because a Data Prepper source with default settings accepts nothing else:
-// OTLP/HTTP needs `unframed_requests: true` on the source (see docs/data-prepper.md).
+// OTLP/HTTP needs `unframed_requests: true` on the source (see docs/observability/data-prepper.md at the repo root).
 const (
 	DefaultTracesEndpoint  = "grpc://localhost:21890"
 	DefaultMetricsEndpoint = "grpc://localhost:21891"

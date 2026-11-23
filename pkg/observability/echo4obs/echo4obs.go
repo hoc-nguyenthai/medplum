@@ -1,5 +1,4 @@
-// Package echo4obs instruments Echo v4 (github.com/labstack/echo/v4) applications. It
-// mirrors package echoobs (Echo v5).
+// Package echo4obs instruments Echo v4 (github.com/labstack/echo/v4) applications.
 //
 //	e := echo.New()
 //	if err := echo4obs.Setup(ctx, e, observability.FromEnv()); err != nil {
