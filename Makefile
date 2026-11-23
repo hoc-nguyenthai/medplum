@@ -26,7 +26,7 @@ SWAG_DIRS_auth := apps/auth/internal/application,apps/auth/internal/domain/scim,
 SWAG_OVERRIDES_auth := apps/auth/.swaggo
 SWAG_OVERRIDES_fhir-server := apps/fhir-server/.swaggo
 
-swagger: ## Sinh lại OpenAPI của một app: make swagger APP=fhir-server|auth; cần `go install github.com/swaggo/swag/cmd/swag@latest`
+swagger: ## Sinh lại OpenAPI của một app: make swagger APP=fhir-server|auth|ws-gateway; cần `go install github.com/swaggo/swag/cmd/swag@latest`
 	swag init -g swagger.go -d $(APP_DIR)/internal/presentation/httpapi$(if $(SWAG_DIRS_$(APP)),$(comma)$(SWAG_DIRS_$(APP))) -o $(APP_DIR)/docs --parseInternal$(if $(SWAG_OVERRIDES_$(APP)), --overridesFile $(SWAG_OVERRIDES_$(APP)))
 
 tidy: ## go mod tidy

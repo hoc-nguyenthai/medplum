@@ -1,0 +1,944 @@
+basePath: /
+definitions:
+  httpapi.FhircastChangeResponse:
+    properties:
+      event:
+        allOf:
+        - $ref: '#/definitions/httpapi.FhircastEventBody'
+        description: thông điệp đã phát (đã bổ sung context.versionId)
+      success:
+        description: true khi sự kiện đã được chấp nhận và phát cho người đăng ký
+        example: true
+        type: boolean
+    required:
+    - event
+    - success
+    type: object
+  httpapi.FhircastContextItem:
+    properties:
+      key:
+        description: vai trò của resource trong ngữ cảnh (patient, encounter, study,
+          report...)
+        example: patient
+        type: string
+      resource:
+        additionalProperties: {}
+        description: resource FHIR dạng JSON (luôn có resourceType); với sự kiện update
+          là Bundle
+        type: object
+    required:
+    - key
+    - resource
+    type: object
+  httpapi.FhircastContextSTU3:
+    properties:
+      context:
+        description: các phần tử của ngữ cảnh; mảng rỗng khi chưa có
+        items:
+          $ref: '#/definitions/httpapi.FhircastContextItem'
+        type: array
+      context.type:
+        description: loại resource của ngữ cảnh đang mở; rỗng khi chưa có ngữ cảnh
+        example: Patient
+        type: string
+      context.versionId:
+        description: phiên bản ngữ cảnh; vắng khi chưa có ngữ cảnh
+        example: c8fa1e88-c131-4848-8467-9a0b2d1f5e33
+        type: string
+    required:
+    - context
+    - context.type
+    type: object
+  httpapi.FhircastEventBody:
+    properties:
+      event:
+        allOf:
+        - $ref: '#/definitions/httpapi.FhircastEventPayload'
+        description: nội dung sự kiện
+      id:
+        description: id thông điệp do bên gửi đặt, không rỗng
+        example: m-0192f3a4
+        type: string
+      timestamp:
+        description: thời điểm phát sinh (RFC 3339), không rỗng
+        example: "2026-11-23T08:30:00Z"
+        format: date-time
+        type: string
+    required:
+    - event
+    - id
+    - timestamp
+    type: object
+  httpapi.FhircastEventPayload:
+    properties:
+      context:
+        description: ngữ cảnh của sự kiện; mảng (có thể rỗng) các phần tử {key, resource}
+        items:
+          $ref: '#/definitions/httpapi.FhircastContextItem'
+        type: array
+      context.versionId:
+        description: 'phiên bản ngữ cảnh: Hub cấp khi mở; sự kiện DiagnosticReport-update
+          phải gửi đúng phiên bản hiện tại'
+        example: c8fa1e88-c131-4848-8467-9a0b2d1f5e33
+        type: string
+      hub.event:
+        description: tên sự kiện
+        enum:
+        - Patient-open
+        - Patient-close
+        - ImagingStudy-open
+        - ImagingStudy-close
+        - Encounter-open
+        - Encounter-close
+        - DiagnosticReport-open
+        - DiagnosticReport-close
+        - DiagnosticReport-select
+        - DiagnosticReport-update
+        - userlogout
+        - userhibernate
+        - syncerror
+        - heartbeat
+        example: Patient-open
+        type: string
+      hub.topic:
+        description: topic của phiên làm việc; không rỗng, tối đa 256 byte, không
+          ký tự điều khiển
+        example: 7f2c4e1a-9b3d-4c5e-8a1f-2d6b9e0c3a47
+        type: string
+    required:
+    - context
+    - hub.event
+    - hub.topic
+    type: object
+  httpapi.FhircastHubRequest:
+    properties:
+      endpoint:
+        description: dạng hủy, tên trường cũ của client trước @medplum/core 5.1.29;
+          chỉ dùng khi thiếu hub.channel.endpoint
+        example: baa8974b-807b-490d-9e87-334f99a72b6d
+        type: string
+      event:
+        allOf:
+        - $ref: '#/definitions/httpapi.FhircastEventPayload'
+        description: 'dạng đổi ngữ cảnh: nội dung sự kiện'
+      hub.channel.endpoint:
+        description: 'dạng hủy: URL hoặc endpoint đã được cấp lúc đăng ký'
+        example: ws://gw.example.org:8007/ws/fhircast/baa8974b-807b-490d-9e87-334f99a72b6d
+        type: string
+      hub.channel.type:
+        description: 'dạng đăng ký: kênh, chỉ "websocket" (webhook, rest-hook, email
+          bị từ chối)'
+        enum:
+        - websocket
+        example: websocket
+        type: string
+      hub.events:
+        description: 'dạng đăng ký, bắt buộc khi subscribe: tên sự kiện cách nhau
+          bằng dấu phẩy, mỗi tên phải thuộc 14 sự kiện được công bố'
+        example: Patient-open,Patient-close
+        type: string
+      hub.mode:
+        description: 'subscribe: tạo endpoint mới; unsubscribe: hủy endpoint đã cấp'
+        enum:
+        - subscribe
+        - unsubscribe
+        example: subscribe
+        type: string
+      hub.topic:
+        description: 'dạng đăng ký: topic muốn theo dõi'
+        example: 7f2c4e1a-9b3d-4c5e-8a1f-2d6b9e0c3a47
+        type: string
+      id:
+        description: 'dạng đổi ngữ cảnh: id thông điệp'
+        example: m-0192f3a4
+        type: string
+      timestamp:
+        description: 'dạng đổi ngữ cảnh: thời điểm phát sinh'
+        example: "2026-11-23T08:30:00Z"
+        format: date-time
+        type: string
+    type: object
+  httpapi.FhircastHubResponse:
+    properties:
+      event:
+        allOf:
+        - $ref: '#/definitions/httpapi.FhircastEventBody'
+        description: 'dạng đổi ngữ cảnh: thông điệp đã phát (đã bổ sung context.versionId)'
+      hub.channel.endpoint:
+        description: 'dạng đăng ký/hủy: URL WebSocket để nhận sự kiện (mỗi lần đăng
+          ký sinh endpoint mới); với hủy là URL đã hủy'
+        example: ws://gw.example.org:8007/ws/fhircast/baa8974b-807b-490d-9e87-334f99a72b6d
+        type: string
+      success:
+        description: 'dạng đổi ngữ cảnh: true khi sự kiện đã được chấp nhận và phát
+          cho người đăng ký'
+        example: true
+        type: boolean
+    type: object
+  httpapi.FhircastWellKnown:
+    properties:
+      eventsSupported:
+        description: 14 sự kiện Hub chấp nhận, đúng thứ tự của Medplum
+        example:
+        - Patient-open
+        - Patient-close
+        items:
+          type: string
+        type: array
+      fhircastVersion:
+        description: phiên bản của tiền tố đang gọi
+        enum:
+        - STU2
+        - STU3
+        example: STU3
+        type: string
+      getCurrentSupport:
+        description: 'chỉ có ở STU3: Hub hỗ trợ GET ngữ cảnh hiện tại'
+        example: true
+        type: boolean
+      webhookSupport:
+        description: 'luôn false: Hub không bao giờ gọi ra ngoài'
+        example: false
+        type: boolean
+      websocketSupport:
+        description: 'luôn true: kênh duy nhất của Hub'
+        example: true
+        type: boolean
+    required:
+    - eventsSupported
+    - fhircastVersion
+    - webhookSupport
+    - websocketSupport
+    type: object
+  httpapi.HealthResponse:
+    properties:
+      status:
+        description: luôn "ok" khi tiến trình còn sống
+        example: ok
+        type: string
+    required:
+    - status
+    type: object
+  httpapi.OperationOutcome:
+    properties:
+      issue:
+        description: danh sách vấn đề; Hub luôn trả đúng một phần tử
+        items:
+          $ref: '#/definitions/httpapi.OperationOutcomeIssue'
+        type: array
+      resourceType:
+        description: luôn "OperationOutcome"
+        example: OperationOutcome
+        type: string
+    required:
+    - issue
+    - resourceType
+    type: object
+  httpapi.OperationOutcomeDetails:
+    properties:
+      text:
+        description: thông điệp dành cho người dùng; lỗi hạ tầng chỉ là "Internal
+          server error", không lộ chi tiết nội bộ
+        example: Missing hub.mode
+        type: string
+    required:
+    - text
+    type: object
+  httpapi.OperationOutcomeIssue:
+    properties:
+      code:
+        description: 'mã vấn đề: invalid (400), login (401), forbidden (403), conflict
+          (409), too-costly (413), exception (500)'
+        enum:
+        - invalid
+        - login
+        - forbidden
+        - conflict
+        - too-costly
+        - exception
+        example: invalid
+        type: string
+      details:
+        allOf:
+        - $ref: '#/definitions/httpapi.OperationOutcomeDetails'
+        description: chi tiết dạng văn bản
+      severity:
+        description: mức độ; Hub luôn trả "error"
+        example: error
+        type: string
+    required:
+    - code
+    - details
+    - severity
+    type: object
+  httpapi.ReadyResponse:
+    properties:
+      checks:
+        additionalProperties:
+          type: boolean
+        description: kết quả từng phụ thuộc, ví dụ redis; rỗng khi không có phụ thuộc
+          nào được kiểm
+        type: object
+      ready:
+        description: true khi nhận được lưu lượng (không đang tắt và Redis kết nối
+          được)
+        example: true
+        type: boolean
+    required:
+    - checks
+    - ready
+    type: object
+info:
+  contact: {}
+  description: 'Cổng WebSocket của Subscription R4 và Hub FHIRcast (tùy chọn). Spec
+    này gồm probe, Hub FHIRcast (HTTP) và hai route nâng cấp WebSocket; giao thức
+    thông điệp WebSocket nằm ở docs/api-contract.md. Lỗi của Hub trả OperationOutcome
+    (application/fhir+json); lỗi ngoài Hub trả {"error": "..."}.'
+  title: Trivita WS Gateway API
+  version: "1.0"
+paths:
+  /fhircast/STU2:
+    post:
+      consumes:
+      - application/json
+      - application/x-www-form-urlencoded
+      description: 'Một route, hai dạng theo nội dung body. (1) Có trường id hoặc
+        event: đổi ngữ cảnh như POST {v}/{topic} (không kiểm khớp topic đường dẫn);
+        phản hồi 202 có success và event. (2) Không có: đăng ký (hub.mode=subscribe)
+        hoặc hủy (hub.mode=unsubscribe) kênh websocket; phản hồi 202 có hub.channel.endpoint.
+        Đăng ký cần hub.channel.type=websocket, hub.mode, hub.topic, hub.events (14
+        sự kiện được công bố); hủy chỉ cho đúng người, project và topic đã đăng ký,
+        sai bất kỳ điều nào cũng là 400 "Invalid endpoint". Nhận application/json
+        hoặc application/x-www-form-urlencoded (dạng đăng ký). Body vượt FHIRCAST_MAX_BODY_BYTES
+        là 413.'
+      parameters:
+      - description: Yêu cầu đăng ký/hủy hoặc thông điệp đổi ngữ cảnh
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/httpapi.FhircastHubRequest'
+      produces:
+      - application/json
+      - application/fhir+json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            $ref: '#/definitions/httpapi.FhircastHubResponse'
+        "400":
+          description: Thiếu hoặc sai trường (ví dụ Missing hub.mode, Invalid hub.channel.type,
+            Invalid hub.events, Invalid endpoint, Missing event ID)
+          schema:
+            $ref: '#/definitions/httpapi.OperationOutcome'
+        "401":
+          description: 'Thiếu hoặc sai Bearer token (kèm WWW-Authenticate: Bearer
+            realm=\"fhircast\")'
+          schema:
+            $ref: '#/definitions/httpapi.OperationOutcome'
+        "403":
+          description: Token thiếu project hoặc scope fhircast/*
+          schema:
+            $ref: '#/definitions/httpapi.OperationOutcome'
+        "413":
+          description: Body vượt FHIRCAST_MAX_BODY_BYTES
+          schema:
+            $ref: '#/definitions/httpapi.OperationOutcome'
+        "500":
+          description: Lỗi hạ tầng (Redis); thông điệp chung, không lộ chi tiết
+          schema:
+            $ref: '#/definitions/httpapi.OperationOutcome'
+      security:
+      - BearerAuth: []
+      summary: Đăng ký, hủy đăng ký hoặc đổi ngữ cảnh
+      tags:
+      - fhircast
+  /fhircast/STU2/.well-known/fhircast-configuration:
+    get:
+      description: Công khai, không cần token. Hub chỉ hỗ trợ kênh websocket (webhookSupport
+        luôn false). STU3 thêm getCurrentSupport.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpapi.FhircastWellKnown'
+      summary: Cấu hình Hub FHIRcast
+      tags:
+      - fhircast
+  /fhircast/STU2/{topic}:
+    get:
+      description: Mảng các phần tử context của topic trong project của token; chưa
+        có ngữ cảnh thì là mảng rỗng (mở rộng không chuẩn cho Nuance PowerCast Hub).
+        Project khác không thấy.
+      parameters:
+      - description: Topic (đã mã hóa URL)
+        in: path
+        name: topic
+        required: true
+        type: string
+      produces:
+      - application/json
+      - application/fhir+json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/httpapi.FhircastContextItem'
+            type: array
+        "401":
+          description: Thiếu hoặc sai Bearer token
+          schema:
+            $ref: '#/definitions/httpapi.OperationOutcome'
+        "403":
+          description: Token thiếu project hoặc scope fhircast/*
+          schema:
+            $ref: '#/definitions/httpapi.OperationOutcome'
+        "500":
+          description: Lỗi hạ tầng (Redis)
+          schema:
+            $ref: '#/definitions/httpapi.OperationOutcome'
+      security:
+      - BearerAuth: []
+      summary: Ngữ cảnh hiện tại (STU2)
+      tags:
+      - fhircast
+    post:
+      consumes:
+      - application/json
+      description: Gửi thông điệp đổi ngữ cảnh (sự kiện open, close, select hoặc update)
+        cho topic ở đường dẫn. event["hub.topic"] phải trùng topic đường dẫn, nếu
+        không 400 "Topic mismatch" (đặt FHIRCAST_ALLOW_TOPIC_MISMATCH=true để như
+        Medplum). Sự kiện update phải gửi đúng context.versionId hiện tại; ngữ cảnh
+        đổi trong lúc cập nhật là 409. Ngữ cảnh vượt FHIRCAST_MAX_CONTEXT_BYTES hoặc
+        quá nhiều ngữ cảnh đã lưu là 400. Hub phát sự kiện cho mọi người đăng ký của
+        topic trong cùng project.
+      parameters:
+      - description: Topic (đã mã hóa URL, chứa được dấu / hoặc :)
+        in: path
+        name: topic
+        required: true
+        type: string
+      - description: Thông điệp đổi ngữ cảnh
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/httpapi.FhircastEventBody'
+      produces:
+      - application/json
+      - application/fhir+json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            $ref: '#/definitions/httpapi.FhircastChangeResponse'
+        "400":
+          description: Sự kiện sai (Missing event ID, Invalid event[\"hub.event\"],
+            Topic mismatch, No DiagnosticReport currently open for this topic...)
+          schema:
+            $ref: '#/definitions/httpapi.OperationOutcome'
+        "401":
+          description: Thiếu hoặc sai Bearer token
+          schema:
+            $ref: '#/definitions/httpapi.OperationOutcome'
+        "403":
+          description: Token thiếu project hoặc scope fhircast/*
+          schema:
+            $ref: '#/definitions/httpapi.OperationOutcome'
+        "409":
+          description: Ngữ cảnh đổi trong lúc cập nhật, không còn ở phiên bản đã gửi
+          schema:
+            $ref: '#/definitions/httpapi.OperationOutcome'
+        "413":
+          description: Body vượt FHIRCAST_MAX_BODY_BYTES
+          schema:
+            $ref: '#/definitions/httpapi.OperationOutcome'
+        "500":
+          description: Lỗi hạ tầng (Redis)
+          schema:
+            $ref: '#/definitions/httpapi.OperationOutcome'
+      security:
+      - BearerAuth: []
+      summary: Đổi ngữ cảnh của một topic
+      tags:
+      - fhircast
+  /fhircast/STU3:
+    post:
+      consumes:
+      - application/json
+      - application/x-www-form-urlencoded
+      description: 'Một route, hai dạng theo nội dung body. (1) Có trường id hoặc
+        event: đổi ngữ cảnh như POST {v}/{topic} (không kiểm khớp topic đường dẫn);
+        phản hồi 202 có success và event. (2) Không có: đăng ký (hub.mode=subscribe)
+        hoặc hủy (hub.mode=unsubscribe) kênh websocket; phản hồi 202 có hub.channel.endpoint.
+        Đăng ký cần hub.channel.type=websocket, hub.mode, hub.topic, hub.events (14
+        sự kiện được công bố); hủy chỉ cho đúng người, project và topic đã đăng ký,
+        sai bất kỳ điều nào cũng là 400 "Invalid endpoint". Nhận application/json
+        hoặc application/x-www-form-urlencoded (dạng đăng ký). Body vượt FHIRCAST_MAX_BODY_BYTES
+        là 413.'
+      parameters:
+      - description: Yêu cầu đăng ký/hủy hoặc thông điệp đổi ngữ cảnh
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/httpapi.FhircastHubRequest'
+      produces:
+      - application/json
+      - application/fhir+json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            $ref: '#/definitions/httpapi.FhircastHubResponse'
+        "400":
+          description: Thiếu hoặc sai trường (ví dụ Missing hub.mode, Invalid hub.channel.type,
+            Invalid hub.events, Invalid endpoint, Missing event ID)
+          schema:
+            $ref: '#/definitions/httpapi.OperationOutcome'
+        "401":
+          description: 'Thiếu hoặc sai Bearer token (kèm WWW-Authenticate: Bearer
+            realm=\"fhircast\")'
+          schema:
+            $ref: '#/definitions/httpapi.OperationOutcome'
+        "403":
+          description: Token thiếu project hoặc scope fhircast/*
+          schema:
+            $ref: '#/definitions/httpapi.OperationOutcome'
+        "413":
+          description: Body vượt FHIRCAST_MAX_BODY_BYTES
+          schema:
+            $ref: '#/definitions/httpapi.OperationOutcome'
+        "500":
+          description: Lỗi hạ tầng (Redis); thông điệp chung, không lộ chi tiết
+          schema:
+            $ref: '#/definitions/httpapi.OperationOutcome'
+      security:
+      - BearerAuth: []
+      summary: Đăng ký, hủy đăng ký hoặc đổi ngữ cảnh
+      tags:
+      - fhircast
+  /fhircast/STU3/.well-known/fhircast-configuration:
+    get:
+      description: Công khai, không cần token. Hub chỉ hỗ trợ kênh websocket (webhookSupport
+        luôn false). STU3 thêm getCurrentSupport.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpapi.FhircastWellKnown'
+      summary: Cấu hình Hub FHIRcast
+      tags:
+      - fhircast
+  /fhircast/STU3/{topic}:
+    get:
+      description: 'Ngữ cảnh đang mở của topic trong project của token. Project khác
+        không thấy. Chưa có ngữ cảnh: context.type rỗng và context là mảng rỗng.'
+      parameters:
+      - description: Topic (đã mã hóa URL)
+        in: path
+        name: topic
+        required: true
+        type: string
+      produces:
+      - application/json
+      - application/fhir+json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpapi.FhircastContextSTU3'
+        "401":
+          description: Thiếu hoặc sai Bearer token
+          schema:
+            $ref: '#/definitions/httpapi.OperationOutcome'
+        "403":
+          description: Token thiếu project hoặc scope fhircast/*
+          schema:
+            $ref: '#/definitions/httpapi.OperationOutcome'
+        "500":
+          description: Lỗi hạ tầng (Redis)
+          schema:
+            $ref: '#/definitions/httpapi.OperationOutcome'
+      security:
+      - BearerAuth: []
+      summary: Ngữ cảnh hiện tại (STU3)
+      tags:
+      - fhircast
+    post:
+      consumes:
+      - application/json
+      description: Gửi thông điệp đổi ngữ cảnh (sự kiện open, close, select hoặc update)
+        cho topic ở đường dẫn. event["hub.topic"] phải trùng topic đường dẫn, nếu
+        không 400 "Topic mismatch" (đặt FHIRCAST_ALLOW_TOPIC_MISMATCH=true để như
+        Medplum). Sự kiện update phải gửi đúng context.versionId hiện tại; ngữ cảnh
+        đổi trong lúc cập nhật là 409. Ngữ cảnh vượt FHIRCAST_MAX_CONTEXT_BYTES hoặc
+        quá nhiều ngữ cảnh đã lưu là 400. Hub phát sự kiện cho mọi người đăng ký của
+        topic trong cùng project.
+      parameters:
+      - description: Topic (đã mã hóa URL, chứa được dấu / hoặc :)
+        in: path
+        name: topic
+        required: true
+        type: string
+      - description: Thông điệp đổi ngữ cảnh
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/httpapi.FhircastEventBody'
+      produces:
+      - application/json
+      - application/fhir+json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            $ref: '#/definitions/httpapi.FhircastChangeResponse'
+        "400":
+          description: Sự kiện sai (Missing event ID, Invalid event[\"hub.event\"],
+            Topic mismatch, No DiagnosticReport currently open for this topic...)
+          schema:
+            $ref: '#/definitions/httpapi.OperationOutcome'
+        "401":
+          description: Thiếu hoặc sai Bearer token
+          schema:
+            $ref: '#/definitions/httpapi.OperationOutcome'
+        "403":
+          description: Token thiếu project hoặc scope fhircast/*
+          schema:
+            $ref: '#/definitions/httpapi.OperationOutcome'
+        "409":
+          description: Ngữ cảnh đổi trong lúc cập nhật, không còn ở phiên bản đã gửi
+          schema:
+            $ref: '#/definitions/httpapi.OperationOutcome'
+        "413":
+          description: Body vượt FHIRCAST_MAX_BODY_BYTES
+          schema:
+            $ref: '#/definitions/httpapi.OperationOutcome'
+        "500":
+          description: Lỗi hạ tầng (Redis)
+          schema:
+            $ref: '#/definitions/httpapi.OperationOutcome'
+      security:
+      - BearerAuth: []
+      summary: Đổi ngữ cảnh của một topic
+      tags:
+      - fhircast
+  /health/live:
+    get:
+      description: Tiến trình còn sống. Không kiểm Redis nên orchestrator không khởi
+        động lại tiến trình vì lỗi Redis. /healthz dùng cho HEALTHCHECK của Docker;
+        /health/startup trả như /health/live.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpapi.HealthResponse'
+      summary: Liveness probe
+      tags:
+      - health
+  /health/ready:
+    get:
+      description: 200 khi nhận được lưu lượng; 503 khi đang tắt (drain) hoặc Redis
+        chưa kết nối được (Redis chưa lên lúc khởi động không làm tiến trình thoát,
+        chỉ giữ readiness 503). Body cho biết từng phụ thuộc.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpapi.ReadyResponse'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/httpapi.ReadyResponse'
+      summary: Readiness probe
+      tags:
+      - health
+  /health/startup:
+    get:
+      description: Tiến trình còn sống. Không kiểm Redis nên orchestrator không khởi
+        động lại tiến trình vì lỗi Redis. /healthz dùng cho HEALTHCHECK của Docker;
+        /health/startup trả như /health/live.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpapi.HealthResponse'
+      summary: Liveness probe
+      tags:
+      - health
+  /healthz:
+    get:
+      description: Tiến trình còn sống. Không kiểm Redis nên orchestrator không khởi
+        động lại tiến trình vì lỗi Redis. /healthz dùng cho HEALTHCHECK của Docker;
+        /health/startup trả như /health/live.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpapi.HealthResponse'
+      summary: Liveness probe
+      tags:
+      - health
+  /hub:
+    post:
+      consumes:
+      - application/json
+      - application/x-www-form-urlencoded
+      description: 'Một route, hai dạng theo nội dung body. (1) Có trường id hoặc
+        event: đổi ngữ cảnh như POST {v}/{topic} (không kiểm khớp topic đường dẫn);
+        phản hồi 202 có success và event. (2) Không có: đăng ký (hub.mode=subscribe)
+        hoặc hủy (hub.mode=unsubscribe) kênh websocket; phản hồi 202 có hub.channel.endpoint.
+        Đăng ký cần hub.channel.type=websocket, hub.mode, hub.topic, hub.events (14
+        sự kiện được công bố); hủy chỉ cho đúng người, project và topic đã đăng ký,
+        sai bất kỳ điều nào cũng là 400 "Invalid endpoint". Nhận application/json
+        hoặc application/x-www-form-urlencoded (dạng đăng ký). Body vượt FHIRCAST_MAX_BODY_BYTES
+        là 413.'
+      parameters:
+      - description: Yêu cầu đăng ký/hủy hoặc thông điệp đổi ngữ cảnh
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/httpapi.FhircastHubRequest'
+      produces:
+      - application/json
+      - application/fhir+json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            $ref: '#/definitions/httpapi.FhircastHubResponse'
+        "400":
+          description: Thiếu hoặc sai trường (ví dụ Missing hub.mode, Invalid hub.channel.type,
+            Invalid hub.events, Invalid endpoint, Missing event ID)
+          schema:
+            $ref: '#/definitions/httpapi.OperationOutcome'
+        "401":
+          description: 'Thiếu hoặc sai Bearer token (kèm WWW-Authenticate: Bearer
+            realm=\"fhircast\")'
+          schema:
+            $ref: '#/definitions/httpapi.OperationOutcome'
+        "403":
+          description: Token thiếu project hoặc scope fhircast/*
+          schema:
+            $ref: '#/definitions/httpapi.OperationOutcome'
+        "413":
+          description: Body vượt FHIRCAST_MAX_BODY_BYTES
+          schema:
+            $ref: '#/definitions/httpapi.OperationOutcome'
+        "500":
+          description: Lỗi hạ tầng (Redis); thông điệp chung, không lộ chi tiết
+          schema:
+            $ref: '#/definitions/httpapi.OperationOutcome'
+      security:
+      - BearerAuth: []
+      summary: Đăng ký, hủy đăng ký hoặc đổi ngữ cảnh
+      tags:
+      - fhircast
+  /hub/.well-known/fhircast-configuration:
+    get:
+      description: Công khai, không cần token. Hub chỉ hỗ trợ kênh websocket (webhookSupport
+        luôn false). STU3 thêm getCurrentSupport.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpapi.FhircastWellKnown'
+      summary: Cấu hình Hub FHIRcast
+      tags:
+      - fhircast
+  /hub/{topic}:
+    get:
+      description: 'Ngữ cảnh đang mở của topic trong project của token. Project khác
+        không thấy. Chưa có ngữ cảnh: context.type rỗng và context là mảng rỗng.'
+      parameters:
+      - description: Topic (đã mã hóa URL)
+        in: path
+        name: topic
+        required: true
+        type: string
+      produces:
+      - application/json
+      - application/fhir+json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpapi.FhircastContextSTU3'
+        "401":
+          description: Thiếu hoặc sai Bearer token
+          schema:
+            $ref: '#/definitions/httpapi.OperationOutcome'
+        "403":
+          description: Token thiếu project hoặc scope fhircast/*
+          schema:
+            $ref: '#/definitions/httpapi.OperationOutcome'
+        "500":
+          description: Lỗi hạ tầng (Redis)
+          schema:
+            $ref: '#/definitions/httpapi.OperationOutcome'
+      security:
+      - BearerAuth: []
+      summary: Ngữ cảnh hiện tại (STU3)
+      tags:
+      - fhircast
+    post:
+      consumes:
+      - application/json
+      description: Gửi thông điệp đổi ngữ cảnh (sự kiện open, close, select hoặc update)
+        cho topic ở đường dẫn. event["hub.topic"] phải trùng topic đường dẫn, nếu
+        không 400 "Topic mismatch" (đặt FHIRCAST_ALLOW_TOPIC_MISMATCH=true để như
+        Medplum). Sự kiện update phải gửi đúng context.versionId hiện tại; ngữ cảnh
+        đổi trong lúc cập nhật là 409. Ngữ cảnh vượt FHIRCAST_MAX_CONTEXT_BYTES hoặc
+        quá nhiều ngữ cảnh đã lưu là 400. Hub phát sự kiện cho mọi người đăng ký của
+        topic trong cùng project.
+      parameters:
+      - description: Topic (đã mã hóa URL, chứa được dấu / hoặc :)
+        in: path
+        name: topic
+        required: true
+        type: string
+      - description: Thông điệp đổi ngữ cảnh
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/httpapi.FhircastEventBody'
+      produces:
+      - application/json
+      - application/fhir+json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            $ref: '#/definitions/httpapi.FhircastChangeResponse'
+        "400":
+          description: Sự kiện sai (Missing event ID, Invalid event[\"hub.event\"],
+            Topic mismatch, No DiagnosticReport currently open for this topic...)
+          schema:
+            $ref: '#/definitions/httpapi.OperationOutcome'
+        "401":
+          description: Thiếu hoặc sai Bearer token
+          schema:
+            $ref: '#/definitions/httpapi.OperationOutcome'
+        "403":
+          description: Token thiếu project hoặc scope fhircast/*
+          schema:
+            $ref: '#/definitions/httpapi.OperationOutcome'
+        "409":
+          description: Ngữ cảnh đổi trong lúc cập nhật, không còn ở phiên bản đã gửi
+          schema:
+            $ref: '#/definitions/httpapi.OperationOutcome'
+        "413":
+          description: Body vượt FHIRCAST_MAX_BODY_BYTES
+          schema:
+            $ref: '#/definitions/httpapi.OperationOutcome'
+        "500":
+          description: Lỗi hạ tầng (Redis)
+          schema:
+            $ref: '#/definitions/httpapi.OperationOutcome'
+      security:
+      - BearerAuth: []
+      summary: Đổi ngữ cảnh của một topic
+      tags:
+      - fhircast
+  /ws/fhircast/{endpoint}:
+    get:
+      description: Chỉ có khi FHIRCAST_ENABLED=true. Nâng cấp lên WebSocket để nhận
+        sự kiện đã đăng ký. endpoint là bí mật 122 bit do POST {v}/ cấp (không cần
+        Bearer khi nối); đường dẫn có nhiều đoạn sau /ws/fhircast/ cũng vào cùng handler
+        và endpoint sai bị đóng với "invalid endpoint". Khung đầu tiên luôn là xác
+        nhận, sau đó là sự kiện đã đăng ký, heartbeat cục bộ mỗi FHIRCAST_HEARTBEAT.
+        Tối đa FHIRCAST_MAX_SOCKETS_PER_ENDPOINT socket mỗi endpoint mỗi instance.
+      parameters:
+      - description: Endpoint bí mật do đăng ký cấp (phần cuối của hub.channel.endpoint)
+        in: path
+        name: endpoint
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "101":
+          description: 'Switching Protocols: kênh đã mở'
+        "403":
+          description: Origin không nằm trong FHIR_WS_ALLOWED_ORIGINS
+          schema:
+            type: string
+        "429":
+          description: Quá hạn mức mở kết nối (text hoặc JSON {error}, như WebSocket
+            Subscription)
+          schema:
+            type: string
+        "503":
+          description: Đang tắt hoặc hết hạn mức kết nối
+          schema:
+            type: string
+      summary: WebSocket FHIRcast
+      tags:
+      - websocket
+  /ws/subscriptions-r4:
+    get:
+      description: 'Nâng cấp lên WebSocket (Subscriptions R5 Backport, như Medplum).
+        Không dùng header xác thực: client gửi {"type":"bind-with-token","payload":{"token":"..."}}
+        trong khung đầu tiên với token do fhir-server cấp ($get-ws-binding-token),
+        trong 10 giây. Thông điệp, mã đóng và đảm bảo giao hàng: docs/api-contract.md
+        mục 3. Chịu hạn mức mở kết nối theo IP (FHIR_WS_RATE_LIMIT, FHIR_WS_MAX_CONNS_PER_IP)
+        và giới hạn FHIR_WS_MAX_CONNECTIONS.'
+      produces:
+      - text/plain
+      responses:
+        "101":
+          description: 'Switching Protocols: kênh đã mở'
+        "403":
+          description: Origin không nằm trong FHIR_WS_ALLOWED_ORIGINS
+          schema:
+            type: string
+        "429":
+          description: 'Quá FHIR_WS_MAX_CONNS_PER_IP (text, Retry-After: 5) hoặc quá
+            FHIR_WS_RATE_LIMIT (JSON {error}, Retry-After: 1)'
+          schema:
+            type: string
+        "503":
+          description: Đang tắt hoặc hết FHIR_WS_MAX_CONNECTIONS
+          schema:
+            type: string
+      summary: WebSocket Subscription R4
+      tags:
+      - websocket
+securityDefinitions:
+  BearerAuth:
+    description: 'Dạng "Bearer <access_token>": JWT do auth cấp (kiểm bằng JWKS),
+      có claim project và scope fhircast/*.'
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
+tags:
+- description: 'Hub FHIRcast đồng bộ ngữ cảnh giữa ứng dụng lâm sàng; có khi FHIRCAST_ENABLED=true.
+    Ba tiền tố: /fhircast/STU2, /fhircast/STU3 và /hub (bí danh của STU3). Bearer
+    JWT do auth cấp, cần claim project và scope fhircast/*.'
+  name: fhircast
+- description: 'Route nâng cấp lên WebSocket: phản hồi thành công là 101 Switching
+    Protocols, sau đó là khung dữ liệu (xem docs/api-contract.md). Lỗi trước nâng
+    cấp là HTTP thường.'
+  name: websocket
+- description: Probe liveness và readiness cho orchestrator.
+  name: health

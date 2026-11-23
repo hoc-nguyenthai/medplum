@@ -22,3 +22,4 @@ e2e dựng image từ `apps/ws-gateway/Dockerfile` (context là gốc repo, như
 
 - `tests/*` chỉ dùng API công khai và `internal/` của chính gateway, không import app khác (`architecture_test.go`).
 - Test chống lỗi thời: `docs/config.md` được sinh từ `internal/config/config.go`; thêm biến mà quên cập nhật thì `TestConfigDocIsUpToDate` đỏ (cập nhật: `UPDATE_DOCS=1 go test ./apps/ws-gateway/internal/config -run TestConfigDocIsUpToDate`).
+- Test hợp đồng API (không cần Docker): `internal/presentation/httpapi` `TestRoutesMatchSwaggerContract` so route thật với `docs/swagger.json`; `docs` `TestAPIContractIsUpToDate` (bảng route trong `api-contract.md` khớp swagger; cập nhật: `UPDATE_DOCS=1 go test ./apps/ws-gateway/docs -run TestAPIContractIsUpToDate`), `TestSwaggerDTOsAreComplete` và `TestSwaggerIsStructurallyValid`. Sinh lại spec sau khi sửa annotation: `make swagger APP=ws-gateway`.

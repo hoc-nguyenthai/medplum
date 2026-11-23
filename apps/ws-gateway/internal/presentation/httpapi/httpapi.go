@@ -79,13 +79,13 @@ func New(dep Deps) (*echo.Echo, error) {
 
 // HealthResponse là body của các probe còn sống.
 type HealthResponse struct {
-	Status string `json:"status"`
+	Status string `json:"status" binding:"required" example:"ok"` // luôn "ok" khi tiến trình còn sống
 }
 
 // ReadyResponse là body của /health/ready; Checks là kết quả từng phụ thuộc (true = sẵn sàng).
 type ReadyResponse struct {
-	Ready  bool            `json:"ready"`
-	Checks map[string]bool `json:"checks"`
+	Ready  bool            `json:"ready" binding:"required" example:"true"` // true khi nhận được lưu lượng (không đang tắt và Redis kết nối được)
+	Checks map[string]bool `json:"checks" binding:"required"`               // kết quả từng phụ thuộc, ví dụ redis; rỗng khi không có phụ thuộc nào được kiểm
 }
 
 func registerHealth(e *echo.Echo, dep Deps) {

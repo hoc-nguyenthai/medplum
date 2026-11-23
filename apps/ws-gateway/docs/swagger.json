@@ -1,0 +1,1257 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Cổng WebSocket của Subscription R4 và Hub FHIRcast (tùy chọn). Spec này gồm probe, Hub FHIRcast (HTTP) và hai route nâng cấp WebSocket; giao thức thông điệp WebSocket nằm ở docs/api-contract.md. Lỗi của Hub trả OperationOutcome (application/fhir+json); lỗi ngoài Hub trả {\"error\": \"...\"}.",
+        "title": "Trivita WS Gateway API",
+        "contact": {},
+        "version": "1.0"
+    },
+    "basePath": "/",
+    "paths": {
+        "/fhircast/STU2": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Một route, hai dạng theo nội dung body. (1) Có trường id hoặc event: đổi ngữ cảnh như POST {v}/{topic} (không kiểm khớp topic đường dẫn); phản hồi 202 có success và event. (2) Không có: đăng ký (hub.mode=subscribe) hoặc hủy (hub.mode=unsubscribe) kênh websocket; phản hồi 202 có hub.channel.endpoint. Đăng ký cần hub.channel.type=websocket, hub.mode, hub.topic, hub.events (14 sự kiện được công bố); hủy chỉ cho đúng người, project và topic đã đăng ký, sai bất kỳ điều nào cũng là 400 \"Invalid endpoint\". Nhận application/json hoặc application/x-www-form-urlencoded (dạng đăng ký). Body vượt FHIRCAST_MAX_BODY_BYTES là 413.",
+                "consumes": [
+                    "application/json",
+                    "application/x-www-form-urlencoded"
+                ],
+                "produces": [
+                    "application/json",
+                    "application/fhir+json"
+                ],
+                "tags": [
+                    "fhircast"
+                ],
+                "summary": "Đăng ký, hủy đăng ký hoặc đổi ngữ cảnh",
+                "parameters": [
+                    {
+                        "description": "Yêu cầu đăng ký/hủy hoặc thông điệp đổi ngữ cảnh",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.FhircastHubRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.FhircastHubResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Thiếu hoặc sai trường (ví dụ Missing hub.mode, Invalid hub.channel.type, Invalid hub.events, Invalid endpoint, Missing event ID)",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.OperationOutcome"
+                        }
+                    },
+                    "401": {
+                        "description": "Thiếu hoặc sai Bearer token (kèm WWW-Authenticate: Bearer realm=\\\"fhircast\\\")",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.OperationOutcome"
+                        }
+                    },
+                    "403": {
+                        "description": "Token thiếu project hoặc scope fhircast/*",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.OperationOutcome"
+                        }
+                    },
+                    "413": {
+                        "description": "Body vượt FHIRCAST_MAX_BODY_BYTES",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.OperationOutcome"
+                        }
+                    },
+                    "500": {
+                        "description": "Lỗi hạ tầng (Redis); thông điệp chung, không lộ chi tiết",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.OperationOutcome"
+                        }
+                    }
+                }
+            }
+        },
+        "/fhircast/STU2/.well-known/fhircast-configuration": {
+            "get": {
+                "description": "Công khai, không cần token. Hub chỉ hỗ trợ kênh websocket (webhookSupport luôn false). STU3 thêm getCurrentSupport.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "fhircast"
+                ],
+                "summary": "Cấu hình Hub FHIRcast",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.FhircastWellKnown"
+                        }
+                    }
+                }
+            }
+        },
+        "/fhircast/STU2/{topic}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Mảng các phần tử context của topic trong project của token; chưa có ngữ cảnh thì là mảng rỗng (mở rộng không chuẩn cho Nuance PowerCast Hub). Project khác không thấy.",
+                "produces": [
+                    "application/json",
+                    "application/fhir+json"
+                ],
+                "tags": [
+                    "fhircast"
+                ],
+                "summary": "Ngữ cảnh hiện tại (STU2)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Topic (đã mã hóa URL)",
+                        "name": "topic",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/httpapi.FhircastContextItem"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Thiếu hoặc sai Bearer token",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.OperationOutcome"
+                        }
+                    },
+                    "403": {
+                        "description": "Token thiếu project hoặc scope fhircast/*",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.OperationOutcome"
+                        }
+                    },
+                    "500": {
+                        "description": "Lỗi hạ tầng (Redis)",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.OperationOutcome"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Gửi thông điệp đổi ngữ cảnh (sự kiện open, close, select hoặc update) cho topic ở đường dẫn. event[\"hub.topic\"] phải trùng topic đường dẫn, nếu không 400 \"Topic mismatch\" (đặt FHIRCAST_ALLOW_TOPIC_MISMATCH=true để như Medplum). Sự kiện update phải gửi đúng context.versionId hiện tại; ngữ cảnh đổi trong lúc cập nhật là 409. Ngữ cảnh vượt FHIRCAST_MAX_CONTEXT_BYTES hoặc quá nhiều ngữ cảnh đã lưu là 400. Hub phát sự kiện cho mọi người đăng ký của topic trong cùng project.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json",
+                    "application/fhir+json"
+                ],
+                "tags": [
+                    "fhircast"
+                ],
+                "summary": "Đổi ngữ cảnh của một topic",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Topic (đã mã hóa URL, chứa được dấu / hoặc :)",
+                        "name": "topic",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Thông điệp đổi ngữ cảnh",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.FhircastEventBody"
+                        }
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.FhircastChangeResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Sự kiện sai (Missing event ID, Invalid event[\\\"hub.event\\\"], Topic mismatch, No DiagnosticReport currently open for this topic...)",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.OperationOutcome"
+                        }
+                    },
+                    "401": {
+                        "description": "Thiếu hoặc sai Bearer token",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.OperationOutcome"
+                        }
+                    },
+                    "403": {
+                        "description": "Token thiếu project hoặc scope fhircast/*",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.OperationOutcome"
+                        }
+                    },
+                    "409": {
+                        "description": "Ngữ cảnh đổi trong lúc cập nhật, không còn ở phiên bản đã gửi",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.OperationOutcome"
+                        }
+                    },
+                    "413": {
+                        "description": "Body vượt FHIRCAST_MAX_BODY_BYTES",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.OperationOutcome"
+                        }
+                    },
+                    "500": {
+                        "description": "Lỗi hạ tầng (Redis)",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.OperationOutcome"
+                        }
+                    }
+                }
+            }
+        },
+        "/fhircast/STU3": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Một route, hai dạng theo nội dung body. (1) Có trường id hoặc event: đổi ngữ cảnh như POST {v}/{topic} (không kiểm khớp topic đường dẫn); phản hồi 202 có success và event. (2) Không có: đăng ký (hub.mode=subscribe) hoặc hủy (hub.mode=unsubscribe) kênh websocket; phản hồi 202 có hub.channel.endpoint. Đăng ký cần hub.channel.type=websocket, hub.mode, hub.topic, hub.events (14 sự kiện được công bố); hủy chỉ cho đúng người, project và topic đã đăng ký, sai bất kỳ điều nào cũng là 400 \"Invalid endpoint\". Nhận application/json hoặc application/x-www-form-urlencoded (dạng đăng ký). Body vượt FHIRCAST_MAX_BODY_BYTES là 413.",
+                "consumes": [
+                    "application/json",
+                    "application/x-www-form-urlencoded"
+                ],
+                "produces": [
+                    "application/json",
+                    "application/fhir+json"
+                ],
+                "tags": [
+                    "fhircast"
+                ],
+                "summary": "Đăng ký, hủy đăng ký hoặc đổi ngữ cảnh",
+                "parameters": [
+                    {
+                        "description": "Yêu cầu đăng ký/hủy hoặc thông điệp đổi ngữ cảnh",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.FhircastHubRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.FhircastHubResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Thiếu hoặc sai trường (ví dụ Missing hub.mode, Invalid hub.channel.type, Invalid hub.events, Invalid endpoint, Missing event ID)",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.OperationOutcome"
+                        }
+                    },
+                    "401": {
+                        "description": "Thiếu hoặc sai Bearer token (kèm WWW-Authenticate: Bearer realm=\\\"fhircast\\\")",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.OperationOutcome"
+                        }
+                    },
+                    "403": {
+                        "description": "Token thiếu project hoặc scope fhircast/*",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.OperationOutcome"
+                        }
+                    },
+                    "413": {
+                        "description": "Body vượt FHIRCAST_MAX_BODY_BYTES",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.OperationOutcome"
+                        }
+                    },
+                    "500": {
+                        "description": "Lỗi hạ tầng (Redis); thông điệp chung, không lộ chi tiết",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.OperationOutcome"
+                        }
+                    }
+                }
+            }
+        },
+        "/fhircast/STU3/.well-known/fhircast-configuration": {
+            "get": {
+                "description": "Công khai, không cần token. Hub chỉ hỗ trợ kênh websocket (webhookSupport luôn false). STU3 thêm getCurrentSupport.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "fhircast"
+                ],
+                "summary": "Cấu hình Hub FHIRcast",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.FhircastWellKnown"
+                        }
+                    }
+                }
+            }
+        },
+        "/fhircast/STU3/{topic}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Ngữ cảnh đang mở của topic trong project của token. Project khác không thấy. Chưa có ngữ cảnh: context.type rỗng và context là mảng rỗng.",
+                "produces": [
+                    "application/json",
+                    "application/fhir+json"
+                ],
+                "tags": [
+                    "fhircast"
+                ],
+                "summary": "Ngữ cảnh hiện tại (STU3)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Topic (đã mã hóa URL)",
+                        "name": "topic",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.FhircastContextSTU3"
+                        }
+                    },
+                    "401": {
+                        "description": "Thiếu hoặc sai Bearer token",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.OperationOutcome"
+                        }
+                    },
+                    "403": {
+                        "description": "Token thiếu project hoặc scope fhircast/*",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.OperationOutcome"
+                        }
+                    },
+                    "500": {
+                        "description": "Lỗi hạ tầng (Redis)",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.OperationOutcome"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Gửi thông điệp đổi ngữ cảnh (sự kiện open, close, select hoặc update) cho topic ở đường dẫn. event[\"hub.topic\"] phải trùng topic đường dẫn, nếu không 400 \"Topic mismatch\" (đặt FHIRCAST_ALLOW_TOPIC_MISMATCH=true để như Medplum). Sự kiện update phải gửi đúng context.versionId hiện tại; ngữ cảnh đổi trong lúc cập nhật là 409. Ngữ cảnh vượt FHIRCAST_MAX_CONTEXT_BYTES hoặc quá nhiều ngữ cảnh đã lưu là 400. Hub phát sự kiện cho mọi người đăng ký của topic trong cùng project.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json",
+                    "application/fhir+json"
+                ],
+                "tags": [
+                    "fhircast"
+                ],
+                "summary": "Đổi ngữ cảnh của một topic",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Topic (đã mã hóa URL, chứa được dấu / hoặc :)",
+                        "name": "topic",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Thông điệp đổi ngữ cảnh",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.FhircastEventBody"
+                        }
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.FhircastChangeResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Sự kiện sai (Missing event ID, Invalid event[\\\"hub.event\\\"], Topic mismatch, No DiagnosticReport currently open for this topic...)",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.OperationOutcome"
+                        }
+                    },
+                    "401": {
+                        "description": "Thiếu hoặc sai Bearer token",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.OperationOutcome"
+                        }
+                    },
+                    "403": {
+                        "description": "Token thiếu project hoặc scope fhircast/*",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.OperationOutcome"
+                        }
+                    },
+                    "409": {
+                        "description": "Ngữ cảnh đổi trong lúc cập nhật, không còn ở phiên bản đã gửi",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.OperationOutcome"
+                        }
+                    },
+                    "413": {
+                        "description": "Body vượt FHIRCAST_MAX_BODY_BYTES",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.OperationOutcome"
+                        }
+                    },
+                    "500": {
+                        "description": "Lỗi hạ tầng (Redis)",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.OperationOutcome"
+                        }
+                    }
+                }
+            }
+        },
+        "/health/live": {
+            "get": {
+                "description": "Tiến trình còn sống. Không kiểm Redis nên orchestrator không khởi động lại tiến trình vì lỗi Redis. /healthz dùng cho HEALTHCHECK của Docker; /health/startup trả như /health/live.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "health"
+                ],
+                "summary": "Liveness probe",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.HealthResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/health/ready": {
+            "get": {
+                "description": "200 khi nhận được lưu lượng; 503 khi đang tắt (drain) hoặc Redis chưa kết nối được (Redis chưa lên lúc khởi động không làm tiến trình thoát, chỉ giữ readiness 503). Body cho biết từng phụ thuộc.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "health"
+                ],
+                "summary": "Readiness probe",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.ReadyResponse"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.ReadyResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/health/startup": {
+            "get": {
+                "description": "Tiến trình còn sống. Không kiểm Redis nên orchestrator không khởi động lại tiến trình vì lỗi Redis. /healthz dùng cho HEALTHCHECK của Docker; /health/startup trả như /health/live.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "health"
+                ],
+                "summary": "Liveness probe",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.HealthResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/healthz": {
+            "get": {
+                "description": "Tiến trình còn sống. Không kiểm Redis nên orchestrator không khởi động lại tiến trình vì lỗi Redis. /healthz dùng cho HEALTHCHECK của Docker; /health/startup trả như /health/live.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "health"
+                ],
+                "summary": "Liveness probe",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.HealthResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/hub": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Một route, hai dạng theo nội dung body. (1) Có trường id hoặc event: đổi ngữ cảnh như POST {v}/{topic} (không kiểm khớp topic đường dẫn); phản hồi 202 có success và event. (2) Không có: đăng ký (hub.mode=subscribe) hoặc hủy (hub.mode=unsubscribe) kênh websocket; phản hồi 202 có hub.channel.endpoint. Đăng ký cần hub.channel.type=websocket, hub.mode, hub.topic, hub.events (14 sự kiện được công bố); hủy chỉ cho đúng người, project và topic đã đăng ký, sai bất kỳ điều nào cũng là 400 \"Invalid endpoint\". Nhận application/json hoặc application/x-www-form-urlencoded (dạng đăng ký). Body vượt FHIRCAST_MAX_BODY_BYTES là 413.",
+                "consumes": [
+                    "application/json",
+                    "application/x-www-form-urlencoded"
+                ],
+                "produces": [
+                    "application/json",
+                    "application/fhir+json"
+                ],
+                "tags": [
+                    "fhircast"
+                ],
+                "summary": "Đăng ký, hủy đăng ký hoặc đổi ngữ cảnh",
+                "parameters": [
+                    {
+                        "description": "Yêu cầu đăng ký/hủy hoặc thông điệp đổi ngữ cảnh",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.FhircastHubRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.FhircastHubResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Thiếu hoặc sai trường (ví dụ Missing hub.mode, Invalid hub.channel.type, Invalid hub.events, Invalid endpoint, Missing event ID)",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.OperationOutcome"
+                        }
+                    },
+                    "401": {
+                        "description": "Thiếu hoặc sai Bearer token (kèm WWW-Authenticate: Bearer realm=\\\"fhircast\\\")",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.OperationOutcome"
+                        }
+                    },
+                    "403": {
+                        "description": "Token thiếu project hoặc scope fhircast/*",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.OperationOutcome"
+                        }
+                    },
+                    "413": {
+                        "description": "Body vượt FHIRCAST_MAX_BODY_BYTES",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.OperationOutcome"
+                        }
+                    },
+                    "500": {
+                        "description": "Lỗi hạ tầng (Redis); thông điệp chung, không lộ chi tiết",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.OperationOutcome"
+                        }
+                    }
+                }
+            }
+        },
+        "/hub/.well-known/fhircast-configuration": {
+            "get": {
+                "description": "Công khai, không cần token. Hub chỉ hỗ trợ kênh websocket (webhookSupport luôn false). STU3 thêm getCurrentSupport.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "fhircast"
+                ],
+                "summary": "Cấu hình Hub FHIRcast",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.FhircastWellKnown"
+                        }
+                    }
+                }
+            }
+        },
+        "/hub/{topic}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Ngữ cảnh đang mở của topic trong project của token. Project khác không thấy. Chưa có ngữ cảnh: context.type rỗng và context là mảng rỗng.",
+                "produces": [
+                    "application/json",
+                    "application/fhir+json"
+                ],
+                "tags": [
+                    "fhircast"
+                ],
+                "summary": "Ngữ cảnh hiện tại (STU3)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Topic (đã mã hóa URL)",
+                        "name": "topic",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.FhircastContextSTU3"
+                        }
+                    },
+                    "401": {
+                        "description": "Thiếu hoặc sai Bearer token",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.OperationOutcome"
+                        }
+                    },
+                    "403": {
+                        "description": "Token thiếu project hoặc scope fhircast/*",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.OperationOutcome"
+                        }
+                    },
+                    "500": {
+                        "description": "Lỗi hạ tầng (Redis)",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.OperationOutcome"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Gửi thông điệp đổi ngữ cảnh (sự kiện open, close, select hoặc update) cho topic ở đường dẫn. event[\"hub.topic\"] phải trùng topic đường dẫn, nếu không 400 \"Topic mismatch\" (đặt FHIRCAST_ALLOW_TOPIC_MISMATCH=true để như Medplum). Sự kiện update phải gửi đúng context.versionId hiện tại; ngữ cảnh đổi trong lúc cập nhật là 409. Ngữ cảnh vượt FHIRCAST_MAX_CONTEXT_BYTES hoặc quá nhiều ngữ cảnh đã lưu là 400. Hub phát sự kiện cho mọi người đăng ký của topic trong cùng project.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json",
+                    "application/fhir+json"
+                ],
+                "tags": [
+                    "fhircast"
+                ],
+                "summary": "Đổi ngữ cảnh của một topic",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Topic (đã mã hóa URL, chứa được dấu / hoặc :)",
+                        "name": "topic",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Thông điệp đổi ngữ cảnh",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.FhircastEventBody"
+                        }
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.FhircastChangeResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Sự kiện sai (Missing event ID, Invalid event[\\\"hub.event\\\"], Topic mismatch, No DiagnosticReport currently open for this topic...)",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.OperationOutcome"
+                        }
+                    },
+                    "401": {
+                        "description": "Thiếu hoặc sai Bearer token",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.OperationOutcome"
+                        }
+                    },
+                    "403": {
+                        "description": "Token thiếu project hoặc scope fhircast/*",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.OperationOutcome"
+                        }
+                    },
+                    "409": {
+                        "description": "Ngữ cảnh đổi trong lúc cập nhật, không còn ở phiên bản đã gửi",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.OperationOutcome"
+                        }
+                    },
+                    "413": {
+                        "description": "Body vượt FHIRCAST_MAX_BODY_BYTES",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.OperationOutcome"
+                        }
+                    },
+                    "500": {
+                        "description": "Lỗi hạ tầng (Redis)",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.OperationOutcome"
+                        }
+                    }
+                }
+            }
+        },
+        "/ws/fhircast/{endpoint}": {
+            "get": {
+                "description": "Chỉ có khi FHIRCAST_ENABLED=true. Nâng cấp lên WebSocket để nhận sự kiện đã đăng ký. endpoint là bí mật 122 bit do POST {v}/ cấp (không cần Bearer khi nối); đường dẫn có nhiều đoạn sau /ws/fhircast/ cũng vào cùng handler và endpoint sai bị đóng với \"invalid endpoint\". Khung đầu tiên luôn là xác nhận, sau đó là sự kiện đã đăng ký, heartbeat cục bộ mỗi FHIRCAST_HEARTBEAT. Tối đa FHIRCAST_MAX_SOCKETS_PER_ENDPOINT socket mỗi endpoint mỗi instance.",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "websocket"
+                ],
+                "summary": "WebSocket FHIRcast",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Endpoint bí mật do đăng ký cấp (phần cuối của hub.channel.endpoint)",
+                        "name": "endpoint",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "101": {
+                        "description": "Switching Protocols: kênh đã mở"
+                    },
+                    "403": {
+                        "description": "Origin không nằm trong FHIR_WS_ALLOWED_ORIGINS",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "429": {
+                        "description": "Quá hạn mức mở kết nối (text hoặc JSON {error}, như WebSocket Subscription)",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "503": {
+                        "description": "Đang tắt hoặc hết hạn mức kết nối",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/ws/subscriptions-r4": {
+            "get": {
+                "description": "Nâng cấp lên WebSocket (Subscriptions R5 Backport, như Medplum). Không dùng header xác thực: client gửi {\"type\":\"bind-with-token\",\"payload\":{\"token\":\"...\"}} trong khung đầu tiên với token do fhir-server cấp ($get-ws-binding-token), trong 10 giây. Thông điệp, mã đóng và đảm bảo giao hàng: docs/api-contract.md mục 3. Chịu hạn mức mở kết nối theo IP (FHIR_WS_RATE_LIMIT, FHIR_WS_MAX_CONNS_PER_IP) và giới hạn FHIR_WS_MAX_CONNECTIONS.",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "websocket"
+                ],
+                "summary": "WebSocket Subscription R4",
+                "responses": {
+                    "101": {
+                        "description": "Switching Protocols: kênh đã mở"
+                    },
+                    "403": {
+                        "description": "Origin không nằm trong FHIR_WS_ALLOWED_ORIGINS",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "429": {
+                        "description": "Quá FHIR_WS_MAX_CONNS_PER_IP (text, Retry-After: 5) hoặc quá FHIR_WS_RATE_LIMIT (JSON {error}, Retry-After: 1)",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "503": {
+                        "description": "Đang tắt hoặc hết FHIR_WS_MAX_CONNECTIONS",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "httpapi.FhircastChangeResponse": {
+            "type": "object",
+            "required": [
+                "event",
+                "success"
+            ],
+            "properties": {
+                "event": {
+                    "description": "thông điệp đã phát (đã bổ sung context.versionId)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/httpapi.FhircastEventBody"
+                        }
+                    ]
+                },
+                "success": {
+                    "description": "true khi sự kiện đã được chấp nhận và phát cho người đăng ký",
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "httpapi.FhircastContextItem": {
+            "type": "object",
+            "required": [
+                "key",
+                "resource"
+            ],
+            "properties": {
+                "key": {
+                    "description": "vai trò của resource trong ngữ cảnh (patient, encounter, study, report...)",
+                    "type": "string",
+                    "example": "patient"
+                },
+                "resource": {
+                    "description": "resource FHIR dạng JSON (luôn có resourceType); với sự kiện update là Bundle",
+                    "type": "object",
+                    "additionalProperties": {}
+                }
+            }
+        },
+        "httpapi.FhircastContextSTU3": {
+            "type": "object",
+            "required": [
+                "context",
+                "context.type"
+            ],
+            "properties": {
+                "context": {
+                    "description": "các phần tử của ngữ cảnh; mảng rỗng khi chưa có",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/httpapi.FhircastContextItem"
+                    }
+                },
+                "context.type": {
+                    "description": "loại resource của ngữ cảnh đang mở; rỗng khi chưa có ngữ cảnh",
+                    "type": "string",
+                    "example": "Patient"
+                },
+                "context.versionId": {
+                    "description": "phiên bản ngữ cảnh; vắng khi chưa có ngữ cảnh",
+                    "type": "string",
+                    "example": "c8fa1e88-c131-4848-8467-9a0b2d1f5e33"
+                }
+            }
+        },
+        "httpapi.FhircastEventBody": {
+            "type": "object",
+            "required": [
+                "event",
+                "id",
+                "timestamp"
+            ],
+            "properties": {
+                "event": {
+                    "description": "nội dung sự kiện",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/httpapi.FhircastEventPayload"
+                        }
+                    ]
+                },
+                "id": {
+                    "description": "id thông điệp do bên gửi đặt, không rỗng",
+                    "type": "string",
+                    "example": "m-0192f3a4"
+                },
+                "timestamp": {
+                    "description": "thời điểm phát sinh (RFC 3339), không rỗng",
+                    "type": "string",
+                    "format": "date-time",
+                    "example": "2026-11-23T08:30:00Z"
+                }
+            }
+        },
+        "httpapi.FhircastEventPayload": {
+            "type": "object",
+            "required": [
+                "context",
+                "hub.event",
+                "hub.topic"
+            ],
+            "properties": {
+                "context": {
+                    "description": "ngữ cảnh của sự kiện; mảng (có thể rỗng) các phần tử {key, resource}",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/httpapi.FhircastContextItem"
+                    }
+                },
+                "context.versionId": {
+                    "description": "phiên bản ngữ cảnh: Hub cấp khi mở; sự kiện DiagnosticReport-update phải gửi đúng phiên bản hiện tại",
+                    "type": "string",
+                    "example": "c8fa1e88-c131-4848-8467-9a0b2d1f5e33"
+                },
+                "hub.event": {
+                    "description": "tên sự kiện",
+                    "type": "string",
+                    "enum": [
+                        "Patient-open",
+                        "Patient-close",
+                        "ImagingStudy-open",
+                        "ImagingStudy-close",
+                        "Encounter-open",
+                        "Encounter-close",
+                        "DiagnosticReport-open",
+                        "DiagnosticReport-close",
+                        "DiagnosticReport-select",
+                        "DiagnosticReport-update",
+                        "userlogout",
+                        "userhibernate",
+                        "syncerror",
+                        "heartbeat"
+                    ],
+                    "example": "Patient-open"
+                },
+                "hub.topic": {
+                    "description": "topic của phiên làm việc; không rỗng, tối đa 256 byte, không ký tự điều khiển",
+                    "type": "string",
+                    "example": "7f2c4e1a-9b3d-4c5e-8a1f-2d6b9e0c3a47"
+                }
+            }
+        },
+        "httpapi.FhircastHubRequest": {
+            "type": "object",
+            "properties": {
+                "endpoint": {
+                    "description": "dạng hủy, tên trường cũ của client trước @medplum/core 5.1.29; chỉ dùng khi thiếu hub.channel.endpoint",
+                    "type": "string",
+                    "example": "baa8974b-807b-490d-9e87-334f99a72b6d"
+                },
+                "event": {
+                    "description": "dạng đổi ngữ cảnh: nội dung sự kiện",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/httpapi.FhircastEventPayload"
+                        }
+                    ]
+                },
+                "hub.channel.endpoint": {
+                    "description": "dạng hủy: URL hoặc endpoint đã được cấp lúc đăng ký",
+                    "type": "string",
+                    "example": "ws://gw.example.org:8007/ws/fhircast/baa8974b-807b-490d-9e87-334f99a72b6d"
+                },
+                "hub.channel.type": {
+                    "description": "dạng đăng ký: kênh, chỉ \"websocket\" (webhook, rest-hook, email bị từ chối)",
+                    "type": "string",
+                    "enum": [
+                        "websocket"
+                    ],
+                    "example": "websocket"
+                },
+                "hub.events": {
+                    "description": "dạng đăng ký, bắt buộc khi subscribe: tên sự kiện cách nhau bằng dấu phẩy, mỗi tên phải thuộc 14 sự kiện được công bố",
+                    "type": "string",
+                    "example": "Patient-open,Patient-close"
+                },
+                "hub.mode": {
+                    "description": "subscribe: tạo endpoint mới; unsubscribe: hủy endpoint đã cấp",
+                    "type": "string",
+                    "enum": [
+                        "subscribe",
+                        "unsubscribe"
+                    ],
+                    "example": "subscribe"
+                },
+                "hub.topic": {
+                    "description": "dạng đăng ký: topic muốn theo dõi",
+                    "type": "string",
+                    "example": "7f2c4e1a-9b3d-4c5e-8a1f-2d6b9e0c3a47"
+                },
+                "id": {
+                    "description": "dạng đổi ngữ cảnh: id thông điệp",
+                    "type": "string",
+                    "example": "m-0192f3a4"
+                },
+                "timestamp": {
+                    "description": "dạng đổi ngữ cảnh: thời điểm phát sinh",
+                    "type": "string",
+                    "format": "date-time",
+                    "example": "2026-11-23T08:30:00Z"
+                }
+            }
+        },
+        "httpapi.FhircastHubResponse": {
+            "type": "object",
+            "properties": {
+                "event": {
+                    "description": "dạng đổi ngữ cảnh: thông điệp đã phát (đã bổ sung context.versionId)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/httpapi.FhircastEventBody"
+                        }
+                    ]
+                },
+                "hub.channel.endpoint": {
+                    "description": "dạng đăng ký/hủy: URL WebSocket để nhận sự kiện (mỗi lần đăng ký sinh endpoint mới); với hủy là URL đã hủy",
+                    "type": "string",
+                    "example": "ws://gw.example.org:8007/ws/fhircast/baa8974b-807b-490d-9e87-334f99a72b6d"
+                },
+                "success": {
+                    "description": "dạng đổi ngữ cảnh: true khi sự kiện đã được chấp nhận và phát cho người đăng ký",
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "httpapi.FhircastWellKnown": {
+            "type": "object",
+            "required": [
+                "eventsSupported",
+                "fhircastVersion",
+                "webhookSupport",
+                "websocketSupport"
+            ],
+            "properties": {
+                "eventsSupported": {
+                    "description": "14 sự kiện Hub chấp nhận, đúng thứ tự của Medplum",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "Patient-open",
+                        "Patient-close"
+                    ]
+                },
+                "fhircastVersion": {
+                    "description": "phiên bản của tiền tố đang gọi",
+                    "type": "string",
+                    "enum": [
+                        "STU2",
+                        "STU3"
+                    ],
+                    "example": "STU3"
+                },
+                "getCurrentSupport": {
+                    "description": "chỉ có ở STU3: Hub hỗ trợ GET ngữ cảnh hiện tại",
+                    "type": "boolean",
+                    "example": true
+                },
+                "webhookSupport": {
+                    "description": "luôn false: Hub không bao giờ gọi ra ngoài",
+                    "type": "boolean",
+                    "example": false
+                },
+                "websocketSupport": {
+                    "description": "luôn true: kênh duy nhất của Hub",
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "httpapi.HealthResponse": {
+            "type": "object",
+            "required": [
+                "status"
+            ],
+            "properties": {
+                "status": {
+                    "description": "luôn \"ok\" khi tiến trình còn sống",
+                    "type": "string",
+                    "example": "ok"
+                }
+            }
+        },
+        "httpapi.OperationOutcome": {
+            "type": "object",
+            "required": [
+                "issue",
+                "resourceType"
+            ],
+            "properties": {
+                "issue": {
+                    "description": "danh sách vấn đề; Hub luôn trả đúng một phần tử",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/httpapi.OperationOutcomeIssue"
+                    }
+                },
+                "resourceType": {
+                    "description": "luôn \"OperationOutcome\"",
+                    "type": "string",
+                    "example": "OperationOutcome"
+                }
+            }
+        },
+        "httpapi.OperationOutcomeDetails": {
+            "type": "object",
+            "required": [
+                "text"
+            ],
+            "properties": {
+                "text": {
+                    "description": "thông điệp dành cho người dùng; lỗi hạ tầng chỉ là \"Internal server error\", không lộ chi tiết nội bộ",
+                    "type": "string",
+                    "example": "Missing hub.mode"
+                }
+            }
+        },
+        "httpapi.OperationOutcomeIssue": {
+            "type": "object",
+            "required": [
+                "code",
+                "details",
+                "severity"
+            ],
+            "properties": {
+                "code": {
+                    "description": "mã vấn đề: invalid (400), login (401), forbidden (403), conflict (409), too-costly (413), exception (500)",
+                    "type": "string",
+                    "enum": [
+                        "invalid",
+                        "login",
+                        "forbidden",
+                        "conflict",
+                        "too-costly",
+                        "exception"
+                    ],
+                    "example": "invalid"
+                },
+                "details": {
+                    "description": "chi tiết dạng văn bản",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/httpapi.OperationOutcomeDetails"
+                        }
+                    ]
+                },
+                "severity": {
+                    "description": "mức độ; Hub luôn trả \"error\"",
+                    "type": "string",
+                    "example": "error"
+                }
+            }
+        },
+        "httpapi.ReadyResponse": {
+            "type": "object",
+            "required": [
+                "checks",
+                "ready"
+            ],
+            "properties": {
+                "checks": {
+                    "description": "kết quả từng phụ thuộc, ví dụ redis; rỗng khi không có phụ thuộc nào được kiểm",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "boolean"
+                    }
+                },
+                "ready": {
+                    "description": "true khi nhận được lưu lượng (không đang tắt và Redis kết nối được)",
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "description": "Dạng \"Bearer \u003caccess_token\u003e\": JWT do auth cấp (kiểm bằng JWKS), có claim project và scope fhircast/*.",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        }
+    },
+    "tags": [
+        {
+            "description": "Hub FHIRcast đồng bộ ngữ cảnh giữa ứng dụng lâm sàng; có khi FHIRCAST_ENABLED=true. Ba tiền tố: /fhircast/STU2, /fhircast/STU3 và /hub (bí danh của STU3). Bearer JWT do auth cấp, cần claim project và scope fhircast/*.",
+            "name": "fhircast"
+        },
+        {
+            "description": "Route nâng cấp lên WebSocket: phản hồi thành công là 101 Switching Protocols, sau đó là khung dữ liệu (xem docs/api-contract.md). Lỗi trước nâng cấp là HTTP thường.",
+            "name": "websocket"
+        },
+        {
+            "description": "Probe liveness và readiness cho orchestrator.",
+            "name": "health"
+        }
+    ]
+}
