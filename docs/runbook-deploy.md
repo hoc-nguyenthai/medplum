@@ -234,7 +234,7 @@ Chi tiết lệnh: [runbook.md mục 4](runbook.md).
 
 ## 13. Giới hạn đã biết (chưa sẵn sàng production đầy đủ)
 
-1. **Thư**: đã có kênh SMTP (`AUTH_MAIL_PROVIDER=smtp`) nhưng chưa kiểm với nhà cung cấp thật (Gmail, SES SMTP, Office 365...) ngoài máy chủ SMTP giả trong test; chưa có SMTP riêng theo project ở `auth` (cần mã hóa `Project.secret`, Q-E7), chưa có route `/email/v1/send`, chưa có hàng đợi/thử lại (gửi lỗi chỉ ghi log và bỏ qua với luồng công khai).
+1. **Thư**: đã có kênh SMTP (`AUTH_MAIL_PROVIDER=smtp`) nhưng chưa kiểm với nhà cung cấp thật (Gmail, SES SMTP, Office 365...) ngoài máy chủ SMTP giả trong test; đã có route `POST /email/v1/send` (tắt mặc định, `AUTH_EMAIL_ENABLED`) và SMTP riêng theo project (tắt mặc định, `AUTH_EMAIL_ALLOW_PROJECT_SMTP`), nhưng mật khẩu SMTP của project nằm **dạng rõ** trong `Project.secret` (chưa mã hóa, Q-E7) nên chỉ bật khi chấp nhận rủi ro đó; chưa có hàng đợi/thử lại (gửi lỗi chỉ ghi log và bỏ qua với luồng công khai, còn `/email/v1/send` trả `502` cho người gọi).
 2. Hạn mức theo IP đếm trong bộ nhớ từng instance (việc #14).
 3. Chưa có khóa tài khoản theo số lần đăng nhập sai (việc #13).
 4. Thu hồi token có độ trễ ở `fhir-server`: nó kiểm chữ ký, không tra Login mỗi yêu cầu, nên token đã cấp còn hiệu lực tới hết `AUTH_ACCESS_TTL` (mặc định 15 phút) dù đã bị thu hồi hay membership đã bị xóa. Hạ `AUTH_ACCESS_TTL` nếu cần cửa sổ ngắn hơn.
