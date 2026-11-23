@@ -25,7 +25,7 @@ type rule struct {
 	anyThird bool
 }
 
-var observabilityThird = []string{"github.com/TRIVITAAI/trivita-observability-go", "go.opentelemetry.io/otel"}
+var observabilityThird = []string{"trivita-fhir/pkg/observability", "go.opentelemetry.io/otel"}
 
 var rules = []rule{
 	// ---- fhir-server ----
@@ -68,28 +68,29 @@ var rules = []rule{
 
 // pkgRules: thư viện dùng chung không được biết app, và chỉ được phụ thuộc nhau theo hướng cho phép.
 var pkgRules = map[string][]string{
-	"pkg/core":         {},
-	"pkg/messaging":    {mod + "/pkg/core"},
-	"pkg/envconfig":    {},
-	"pkg/httpserve":    {},
-	"pkg/safehttp":     {},
-	"pkg/mailer":       {mod + "/pkg/safehttp"},                                                // gói gốc chỉ stdlib; gói con smtp dùng safehttp.DialContext cho SMTP riêng của project; smtptest chỉ cho test
-	"pkg/binarystore":  {},                                                                     // kho nhị phân + bộ ký URL: chỉ stdlib; gói con storetest chỉ cho test
-	"pkg/fhirbinary":   {mod + "/pkg/fhir", mod + "/pkg/fhirrouter", mod + "/pkg/binarystore"}, // decorator Binary, /storage và Binary thô; không import fhirauth hay fhirstore
-	"pkg/httpsec":      {},                                                                     // middleware net/http thuần (header bảo mật, CORS); không biết framework hay app
-	"pkg/database":     {mod + "/pkg/core"},
-	"pkg/fhir":         {},                                                                                                                                                                                   // kiểu FHIR R4 (phần lớn là mã sinh bởi tools/fhirgen); chỉ stdlib
-	"pkg/fhirpath":     {mod + "/pkg/fhir"},                                                                                                                                                                  // engine FHIRPath dùng schema FHIR để phân giải choice type
-	"pkg/fhirvalidate": {mod + "/pkg/fhir", mod + "/pkg/fhirpath"},                                                                                                                                           // validator: schema + invariant FHIRPath
-	"pkg/fhirsearch":   {mod + "/pkg/fhir", mod + "/pkg/fhirpath"},                                                                                                                                           // parse + đối sánh search
-	"pkg/fhirrouter":   {mod + "/pkg/fhir", mod + "/pkg/fhirsearch", mod + "/pkg/fhirvalidate", mod + "/pkg/workflow"},                                                                                       // REST FHIR trên interface Repository
-	"pkg/fhirauth":     {mod + "/pkg/fhir", mod + "/pkg/fhirrouter", mod + "/pkg/fhirsearch"},                                                                                                                // JWT và tách dữ liệu theo project
-	"pkg/fhirstore":    {mod + "/pkg/fhir", mod + "/pkg/fhirsearch", mod + "/pkg/fhirrouter", mod + "/pkg/database"},                                                                                         // Repository SQL (PostgreSQL, SQLite)
-	"pkg/fhirsub":      {mod + "/pkg/core", mod + "/pkg/fhir", mod + "/pkg/fhirauth", mod + "/pkg/fhirrouter", mod + "/pkg/fhirsearch", mod + "/pkg/messaging", mod + "/pkg/safehttp", mod + "/pkg/wsgroup"}, // Subscription rest-hook + websocket
-	"pkg/fhircast":     {mod + "/pkg/wsgroup"},                                                                                                                                                               // Hub FHIRcast: gói gốc chỉ stdlib + go-redis, gói con ws dùng wsgroup; không gọi mạng ra ngoài (xem TestFhircastNeverDialsOut)
-	"pkg/testkit":      {},                                                                                                                                                                                   // testcontainers cho test tích hợp/e2e; chỉ được import từ test hoặc tests/ (xem TestTestkitOnlyUsedByTests)
-	"pkg/wsgroup":      {},                                                                                                                                                                                   // nhóm kết nối WebSocket dùng chung (Origin, giới hạn, đóng êm); chỉ stdlib và coder/websocket
-	"pkg/workflow":     {},                                                                                                                                                                                   // gồm cả pkg/workflow/temporal (chỉ được phụ thuộc pkg/workflow)
+	"pkg/core":          {},
+	"pkg/messaging":     {mod + "/pkg/core"},
+	"pkg/envconfig":     {},
+	"pkg/httpserve":     {},
+	"pkg/safehttp":      {},
+	"pkg/mailer":        {mod + "/pkg/safehttp"},                                                // gói gốc chỉ stdlib; gói con smtp dùng safehttp.DialContext cho SMTP riêng của project; smtptest chỉ cho test
+	"pkg/binarystore":   {},                                                                     // kho nhị phân + bộ ký URL: chỉ stdlib; gói con storetest chỉ cho test
+	"pkg/fhirbinary":    {mod + "/pkg/fhir", mod + "/pkg/fhirrouter", mod + "/pkg/binarystore"}, // decorator Binary, /storage và Binary thô; không import fhirauth hay fhirstore
+	"pkg/httpsec":       {},                                                                     // middleware net/http thuần (header bảo mật, CORS); không biết framework hay app
+	"pkg/database":      {mod + "/pkg/core"},
+	"pkg/fhir":          {},                                                                                                                                                                                   // kiểu FHIR R4 (phần lớn là mã sinh bởi tools/fhirgen); chỉ stdlib
+	"pkg/fhirpath":      {mod + "/pkg/fhir"},                                                                                                                                                                  // engine FHIRPath dùng schema FHIR để phân giải choice type
+	"pkg/fhirvalidate":  {mod + "/pkg/fhir", mod + "/pkg/fhirpath"},                                                                                                                                           // validator: schema + invariant FHIRPath
+	"pkg/fhirsearch":    {mod + "/pkg/fhir", mod + "/pkg/fhirpath"},                                                                                                                                           // parse + đối sánh search
+	"pkg/fhirrouter":    {mod + "/pkg/fhir", mod + "/pkg/fhirsearch", mod + "/pkg/fhirvalidate", mod + "/pkg/workflow"},                                                                                       // REST FHIR trên interface Repository
+	"pkg/fhirauth":      {mod + "/pkg/fhir", mod + "/pkg/fhirrouter", mod + "/pkg/fhirsearch"},                                                                                                                // JWT và tách dữ liệu theo project
+	"pkg/fhirstore":     {mod + "/pkg/fhir", mod + "/pkg/fhirsearch", mod + "/pkg/fhirrouter", mod + "/pkg/database"},                                                                                         // Repository SQL (PostgreSQL, SQLite)
+	"pkg/fhirsub":       {mod + "/pkg/core", mod + "/pkg/fhir", mod + "/pkg/fhirauth", mod + "/pkg/fhirrouter", mod + "/pkg/fhirsearch", mod + "/pkg/messaging", mod + "/pkg/safehttp", mod + "/pkg/wsgroup"}, // Subscription rest-hook + websocket
+	"pkg/fhircast":      {mod + "/pkg/wsgroup"},                                                                                                                                                               // Hub FHIRcast: gói gốc chỉ stdlib + go-redis, gói con ws dùng wsgroup; không gọi mạng ra ngoài (xem TestFhircastNeverDialsOut)
+	"pkg/testkit":       {},                                                                                                                                                                                   // testcontainers cho test tích hợp/e2e; chỉ được import từ test hoặc tests/ (xem TestTestkitOnlyUsedByTests)
+	"pkg/wsgroup":       {},                                                                                                                                                                                   // nhóm kết nối WebSocket dùng chung (Origin, giới hạn, đóng êm); chỉ stdlib và coder/websocket
+	"pkg/observability": {},                                                                                                                                                                                   // thư viện quan sát (OTel + echo4obs/echoobs): dùng echo ở gói con adapter, không biết app
+	"pkg/workflow":      {mod + "/pkg/observability"},                                                                                                                                                         // gồm cả pkg/workflow/temporal (chỉ được phụ thuộc pkg/workflow) (và pkg/observability cho asynq)
 }
 
 func importsOf(t *testing.T, dir string) map[string][]string { // file -> imports
@@ -179,7 +180,7 @@ func TestEchoAndGormStayInTheirLayers(t *testing.T) {
 		for _, dir := range dirs {
 			for file, imps := range importsOf(t, dir) {
 				for _, p := range imps {
-					if strings.Contains(p, needle) && !(needle == "gorm.io" && dir == "pkg" && strings.HasSuffix(filepath.ToSlash(file), "pkg/database/database.go")) {
+					if strings.Contains(p, needle) && !(needle == "labstack/echo" && strings.Contains(filepath.ToSlash(file), "pkg/observability/")) && !(needle == "gorm.io" && dir == "pkg" && strings.HasSuffix(filepath.ToSlash(file), "pkg/database/database.go")) {
 						t.Errorf("%s import %s: %s không được dùng ở %s", file, p, needle, dir)
 					}
 				}

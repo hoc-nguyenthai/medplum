@@ -126,13 +126,11 @@ fmt: ## gofmt -w
 
 ci: lint test-race ## Những gì CI phải chạy
 
-# Thư viện quan sát (go.mod có `replace ../trivita-observability-go`): mỗi service có Dockerfile RIÊNG (apps/<app>/Dockerfile), build từ gốc repo,
-# thư viện quan sát nhận qua build context có tên. Đặt OBSERVABILITY_DIR nếu nó không nằm cạnh repo.
-OBSERVABILITY_DIR ?= ../trivita-observability-go
+# Mỗi service có Dockerfile RIÊNG (apps/<app>/Dockerfile), build từ gốc repo (thư viện quan sát nằm trong pkg/observability).
 
 docker: ## Build image của một service: make docker APP=auth|fhir-server|ws-gateway (dùng apps/<APP>/Dockerfile)
 	@test -f apps/$(APP)/Dockerfile || { echo "apps/$(APP) không có Dockerfile (chỉ service mới có; fhir-cli là công cụ dòng lệnh)"; exit 2; }
-	docker build -f apps/$(APP)/Dockerfile --build-context observability=$(OBSERVABILITY_DIR) -t $(IMAGE) .
+	docker build -f apps/$(APP)/Dockerfile -t $(IMAGE) .
 
 up: ## Chạy fhir-server + PostgreSQL bằng compose
 	$(COMPOSE) up --build fhir-server postgres

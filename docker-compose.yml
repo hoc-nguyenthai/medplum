@@ -11,8 +11,6 @@ services:
     build:
       context: .
       dockerfile: apps/fhir-server/Dockerfile
-      additional_contexts:
-        observability: ../trivita-observability-go
     image: trivita-fhir-server:local
     restart: unless-stopped
     ports:
@@ -39,8 +37,6 @@ services:
     build:
       context: .
       dockerfile: apps/auth/Dockerfile
-      additional_contexts:
-        observability: ../trivita-observability-go
     image: trivita-auth:local
     restart: unless-stopped
     ports:
@@ -68,8 +64,6 @@ services:
     build:
       context: .
       dockerfile: apps/ws-gateway/Dockerfile
-      additional_contexts:
-        observability: ../trivita-observability-go
     image: trivita-ws-gateway:local
     restart: unless-stopped
     ports:

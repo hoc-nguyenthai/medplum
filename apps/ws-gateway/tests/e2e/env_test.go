@@ -13,7 +13,6 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
-	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -39,8 +38,7 @@ func randHex(n int) string {
 	return hex.EncodeToString(b)
 }
 
-// image dựng image ws-gateway từ Dockerfile RIÊNG: context là gốc repo, thư viện quan sát (go.mod có `replace ../trivita-observability-go`) đi qua
-// build context có tên, cùng cách `make docker APP=ws-gateway`.
+// image dựng image ws-gateway từ Dockerfile RIÊNG: context là gốc repo, cùng cách `make docker APP=ws-gateway`.
 func image(t *testing.T) string {
 	t.Helper()
 	testkit.RequireDocker(t)
@@ -49,13 +47,8 @@ func image(t *testing.T) string {
 		t.Fatalf("không tìm được thư mục module: %v", err)
 	}
 	root := strings.TrimSpace(string(out))
-	obs := filepath.Join(filepath.Dir(root), "trivita-observability-go")
-	if st, err := os.Stat(obs); err != nil || !st.IsDir() {
-		t.Skipf("không có thư viện quan sát ở %s (go.mod có replace tới đó): đặt nó cạnh repo để dựng image", obs)
-	}
 	return testkit.BuildImage(t, testkit.BuildSpec{
 		Name: "ws-gateway", Context: root, Dockerfile: filepath.Join(root, "apps/ws-gateway/Dockerfile"),
-		NamedContexts: map[string]string{"observability": obs},
 	})
 }
 

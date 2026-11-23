@@ -9,7 +9,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
@@ -32,13 +31,8 @@ func image(t *testing.T) string {
 		t.Fatalf("không tìm được thư mục module: %v", err)
 	}
 	root := strings.TrimSpace(string(out))
-	obs := filepath.Join(filepath.Dir(root), "trivita-observability-go")
-	if st, err := os.Stat(obs); err != nil || !st.IsDir() {
-		t.Skipf("không có thư viện quan sát ở %s (go.mod có replace tới đó): đặt nó cạnh repo để dựng image", obs)
-	}
 	return testkit.BuildImage(t, testkit.BuildSpec{
 		Name: "auth", Context: root, Dockerfile: filepath.Join(root, "apps/auth/Dockerfile"),
-		NamedContexts: map[string]string{"observability": obs},
 	})
 }
 

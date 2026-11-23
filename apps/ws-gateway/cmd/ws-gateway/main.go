@@ -16,8 +16,8 @@ import (
 	"github.com/labstack/echo/v4"
 	"go.opentelemetry.io/otel/metric"
 
-	observability "github.com/TRIVITAAI/trivita-observability-go"
-	"github.com/TRIVITAAI/trivita-observability-go/echo4obs"
+	observability "trivita-fhir/pkg/observability"
+	"trivita-fhir/pkg/observability/echo4obs"
 
 	"trivita-fhir/apps/ws-gateway/internal/bootstrap"
 	"trivita-fhir/apps/ws-gateway/internal/config"

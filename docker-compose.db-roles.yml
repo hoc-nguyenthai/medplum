@@ -37,8 +37,6 @@ services:
     build:
       context: .
       dockerfile: apps/auth/Dockerfile
-      additional_contexts:
-        observability: ../trivita-observability-go
     image: trivita-auth:local
     command: ["migrate", "up"]
     restart: "no"
@@ -50,8 +48,6 @@ services:
     build:
       context: .
       dockerfile: apps/fhir-server/Dockerfile
-      additional_contexts:
-        observability: ../trivita-observability-go
     image: trivita-fhir-server:local
     command: ["migrate", "up"]
     restart: "no"

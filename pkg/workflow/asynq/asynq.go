@@ -24,7 +24,7 @@ import (
 	"github.com/hibiken/asynq"
 	"github.com/redis/go-redis/v9"
 
-	observability "github.com/TRIVITAAI/trivita-observability-go"
+	observability "trivita-fhir/pkg/observability"
 
 	"trivita-fhir/pkg/workflow"
 )

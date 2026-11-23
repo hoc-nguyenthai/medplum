@@ -1,8 +1,8 @@
 # syntax=docker/dockerfile:1
-# Dockerfile RIÊNG của fhir-server. Build từ GỐC repo (thư mục chứa go.mod); thư viện quan sát (go.mod có `replace ../trivita-observability-go`)
-# đi qua một build context CÓ TÊN nên không cần context ở thư mục cha và không phụ thuộc tên thư mục của repo:
+# Dockerfile RIÊNG của fhir-server. Build từ GỐC repo (thư mục chứa go.mod).
+# Thư viện quan sát nằm trong repo (pkg/observability) nên không cần build context phụ:
 #
-#   docker build -f apps/fhir-server/Dockerfile --build-context observability=../trivita-observability-go -t trivita-fhir-server .
+#   docker build -f apps/fhir-server/Dockerfile -t trivita-fhir-server .
 #   (hoặc: make docker APP=fhir-server)
 #
 # Chỉ những gì cần cho `go build ./apps/fhir-server/cmd/fhir-server` được đưa vào context (xem apps/fhir-server/Dockerfile.dockerignore).
@@ -10,9 +10,7 @@
 # ---- Stage 1: build binary tĩnh ----
 FROM golang:1.26-alpine AS builder
 ENV CGO_ENABLED=0 GOFLAGS=-trimpath
-# Đường dẫn khớp `replace ../trivita-observability-go`: /src/trivita-codebase-v1 -> /src/trivita-observability-go
 WORKDIR /src/trivita-codebase-v1
-COPY --from=observability . /src/trivita-observability-go
 # Layer 1: chỉ module (cache tốt khi chỉ đổi source)
 COPY go.mod go.sum ./
 RUN --mount=type=cache,target=/go/pkg/mod go mod download
