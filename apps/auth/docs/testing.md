@@ -47,6 +47,7 @@ Cấu hình: `internal/config/config_test.go` (22 hàm) kiểm giá trị mặc 
 | `external_test.go`, `exchange_google_preauth_test.go` | Đăng nhập ngoài, Google, `exchange`, `preauthorize` |
 | `admin_test.go`, `smtp_test.go` | `/admin/projects/*`, gửi thư qua SMTP |
 | `fhircast_test.go`, `ws_split_test.go` | `hub.url`/`hub.topic` và quan hệ với `ws-gateway` |
+| `patient_compartment_test.go` | Bệnh nhân A không đọc được dữ liệu của B qua đọc, search, `_include`, `_revinclude`, history, `$everything`, batch (cờ `AUTH_PATIENT_COMPARTMENT_ENABLED` bật); cờ tắt thì bị chặn |
 
 ## 5. Test bảo vệ
 
