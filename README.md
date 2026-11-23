@@ -16,7 +16,7 @@ Monorepo Go (một module) của phần backend Medplum viết lại bằng Go: 
 | Ứng dụng | Làm gì | Phụ thuộc ngoài | Tài liệu |
 |---|---|---|---|
 | [`fhir-server`](apps/fhir-server) | Máy chủ FHIR R4 (cổng 8005): CRUD, history, search, patch, batch/transaction, Subscription, bulk export, GraphQL, xác thực JWT, nhiều project | PostgreSQL hoặc SQLite; Redis (tùy chọn) | [README](apps/fhir-server/README.md) |
-| [`auth`](apps/auth) | Dịch vụ xác thực và cấp token, port từ Medplum (cổng 8006). **Đang làm: mới xong khung P0**, chưa có route nghiệp vụ; xem [kế hoạch](docs/plans/auth/README.md) | PostgreSQL (schema `identity` trong database dùng chung với `fhir-server`, hoặc database riêng) hoặc SQLite; Redis từ P5 | [README](apps/auth/README.md) |
+| [`auth`](apps/auth) | Dịch vụ xác thực và cấp token, port từ Medplum (cổng 8006): đăng nhập, đăng ký và mật khẩu, MFA, OAuth2/OIDC/SMART, đăng nhập qua IdP ngoài. **Còn rà soát bảo mật B9**; trạng thái chi tiết ở [README](apps/auth/README.md), [kế hoạch](docs/plans/auth/README.md) | PostgreSQL (schema `identity` trong database dùng chung với `fhir-server`, hoặc database riêng) hoặc SQLite; Redis từ P5 | [README](apps/auth/README.md) |
 | [`ws-gateway`](apps/ws-gateway) | Giữ websocket của Subscription (cổng 8007), tách khỏi `fhir-server`: nhận sự kiện do `fhir-server` khớp và phát qua Redis, kiểm quyền từng người nhận. `fhir-server` chạy `FHIR_WS_MODE=issuer` để cấp token và khớp sự kiện (`docker-compose.ws.yml`); xem [kế hoạch](docs/plans/modules/split-scim-ws-services.md) | Redis (không có database) | [README](apps/ws-gateway/README.md) |
 | [`fhir-cli`](apps/fhir-cli) | Client dòng lệnh: read/search/create/update/delete/import/export/reindex | không (chỉ stdlib) | [README](apps/fhir-cli/README.md) |
 
@@ -58,12 +58,19 @@ apps/<tên>/
 | `fhirstore` | `Repository` SQL với chỉ mục search (PostgreSQL, SQLite) |
 | `fhirsub` | Subscription rest-hook và websocket |
 | `fhirauth` | JWT/JWKS, scope SMART, access policy, tách dữ liệu theo project |
-
-Quan sát (log JSON, trace, metric OTLP) dùng thư viện anh em [`trivita-observability-go`](../trivita-observability-go), không nằm trong repo này.
+| `fhirbinary` | nối `binarystore` với FHIR: nội dung `Binary` ra kho, handler `/storage` (URL ký) |
+| `fhircast` | Hub FHIRcast: đồng bộ ngữ cảnh giữa các ứng dụng lâm sàng |
+| `binarystore` | kho nội dung nhị phân theo khóa (Binary, DICOM, tệp đính kèm) và ký URL tải lên/xuống |
+| `mailer` | cổng gửi thư (đặt lại mật khẩu, xác minh, MFA) |
+| `httpsec` | middleware `net/http`: header bảo mật và CORS |
+| `safehttp` | HTTP client ra ngoài chống SSRF, dùng khi gọi URL do người dùng cung cấp |
+| `wsgroup` | phần dùng chung của endpoint WebSocket: kiểm Origin, giới hạn kết nối, đóng êm |
+| `observability` | log JSON, trace, metric OTLP (bản nhúng của `trivita-observability-go`), adapter Echo v4 `echo4obs` |
+| `testkit` | PostgreSQL, Redis và image service thật bằng testcontainers; chỉ dùng trong test |
 
 ## Bắt đầu nhanh
 
-Yêu cầu: **Go ≥ 1.26** và thư mục anh em `../trivita-observability-go` (`go.mod` dùng `replace`). Không cần CGO.
+Yêu cầu: **Go ≥ 1.26**. Không cần CGO, không cần repo nào khác cạnh repo này.
 
 ```bash
 make help                                          # liệt kê mọi lệnh
@@ -86,7 +93,7 @@ make build APP=fhir-cli && bin/fhir-cli help       # build một app bất kỳ 
 
 ## Docker
 
-`go.mod` có `replace ../trivita-observability-go`. **Mỗi service có Dockerfile riêng** (`apps/auth/Dockerfile`, `apps/fhir-server/Dockerfile`, `apps/ws-gateway/Dockerfile`): build từ **gốc repo**, thư viện quan sát đi qua build context có tên (`docker build -f apps/<app>/Dockerfile --build-context observability=../trivita-observability-go -t trivita-<app> .`, hoặc `make docker APP=<app>`); compose dùng `additional_contexts`. Image distroless, chạy non-root. Compose có `fhir-server`, `auth`, `ws-gateway`, `redis` và `postgres` (một database, schema `identity` cho `auth` và `fhir` cho `fhir-server`, tạo bởi `deploy/postgres-init`). Repo không kèm manifest K8s chính thức; riêng `ws-gateway` có bộ ví dụ ở [`deploy/k8s/ws-gateway`](deploy/k8s/ws-gateway) (kustomize, đã kiểm trên cụm thử). Image và compose đã được build và chạy thử (xem `docs/go-port-status.md`, 25a). Build context là thư mục cha nên file ignore nằm ở `Dockerfile.dockerignore` (loại `medplum/`, `docs/`, test, `.env`); container chỉ đọc cấu hình từ `apps/fhir-server/.env` (`--env-file` của compose chỉ dùng để thay biến trong file compose).
+**Mỗi service có Dockerfile riêng** (`apps/auth/Dockerfile`, `apps/fhir-server/Dockerfile`, `apps/ws-gateway/Dockerfile`), build từ **gốc repo**: `docker build -f apps/<app>/Dockerfile -t trivita-<app> .` hoặc `make docker APP=<app>`. Image distroless, chạy non-root. Compose có `fhir-server`, `auth`, `ws-gateway`, `redis` và `postgres` (một database, schema `identity` cho `auth` và `fhir` cho `fhir-server`, tạo bởi `deploy/postgres-init`). Repo không kèm manifest K8s chính thức; riêng `ws-gateway` có bộ ví dụ ở [`deploy/k8s/ws-gateway`](deploy/k8s/ws-gateway) (kustomize, đã kiểm trên cụm thử). Image và compose đã được build và chạy thử (xem `docs/go-port-status.md`, 25a). Mỗi Dockerfile có file ignore riêng cạnh nó (`apps/<app>/Dockerfile.dockerignore`, danh sách cho phép: `go.mod`, `go.sum`, `pkg/` và `apps/<app>`, bỏ file test); container chỉ đọc cấu hình từ `apps/fhir-server/.env` (`--env-file` của compose chỉ dùng để thay biến trong file compose).
 
 ## Test
 

@@ -57,7 +57,7 @@ LOG_JSON=true
 
 ## `pipelines.yaml`
 
-Dùng [`deploy/data-prepper/pipelines.yaml`](../deploy/data-prepper/pipelines.yaml). Integration test chạy chính file này với container thật, và yêu cầu span, log và metric cùng xuất hiện trong OpenSearch trong vòng 30 giây. Hãy sao chép file đó thay vì tự viết pipeline.
+Dùng [`deploy/data-prepper/pipelines.yaml`](../../deploy/data-prepper/pipelines.yaml). Integration test chạy chính file này với container thật, và yêu cầu span, log và metric cùng xuất hiện trong OpenSearch trong vòng 30 giây. Hãy sao chép file đó thay vì tự viết pipeline.
 
 ### Các lỗi hay gặp
 

@@ -23,7 +23,6 @@ require (
 
 require (
 	github.com/coder/websocket v1.8.15
-	github.com/labstack/echo/v5 v5.4.7
 	github.com/moby/moby/api v1.56.1
 	github.com/pquerna/otp v1.5.0
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e

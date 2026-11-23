@@ -1,6 +1,6 @@
 # Danh sách việc
 
-Cập nhật 2026-11-21. Thứ tự ưu tiên do người dùng chốt: **hoàn thành các module và gắn thành service API trước**; việc hardening riêng lẻ (như khóa tài khoản) làm sau. Chi tiết từng việc nằm ở tài liệu được dẫn; file này chỉ là sổ theo dõi.
+Cập nhật 2026-11-23 (thêm mục Ưu tiên 1b từ đối chiếu route, [coverage-matrix.md](coverage-matrix.md) mục 5). Thứ tự ưu tiên do người dùng chốt: **hoàn thành các module và gắn thành service API trước**; việc hardening riêng lẻ (như khóa tài khoản) làm sau. Chi tiết từng việc nằm ở tài liệu được dẫn; file này chỉ là sổ theo dõi.
 
 Trạng thái: `[ ]` chưa làm, `[~]` đang chặn bởi quyết định, `[x]` xong.
 
@@ -22,6 +22,23 @@ Trạng thái: `[ ]` chưa làm, `[~]` đang chặn bởi quyết định, `[x]`
 | 12 | (một phần xong: B8 test hai tiến trình; B9 đã chạy thử `docker-compose.auth.yml` bằng Docker OK với auth + fhir-server + postgres; còn `dicomweb`, K8s) Đóng gói và chạy thành service: compose/K8s cho `fhir-server`, `auth`, `dicomweb`; `auth` cấp token cho `fhir-server` qua JWKS; kiểm đầu-cuối cả chuỗi | [ ] | Làm khi #1 xong; liên quan Q-SC-1 và `Principal.Membership` | [apps-auth.md](apps-auth.md) |
 | 12b | Tổ chức microservice theo nghiệp vụ, dùng chung một PostgreSQL (schema và role riêng cho từng service) | [ ] | D-DB-1, D-DB-2 và D-DB-3 đã chốt (D-DB-3: chưa tách `fhir-worker`, chờ đo tải); **P1, P2 và P3a xong (2026-11-22)**; còn D-DB-4 và D-DB-5 | [microservices-shared-db.md](microservices-shared-db.md) |
 | 12c | **Đo tải export song song với API** (quyết định có mở P3b `fhir-worker` hay không): chạy `export` lớn cùng lúc với tải API, ghi p95/p99 của API, CPU và bộ nhớ, so với đường cơ sở không có export | [ ] | Điều kiện mở lại P3b (D-DB-3). Cần chốt: kích thước dữ liệu mẫu, môi trường đo (máy cục bộ hay có máy riêng), ngưỡng "bị ảnh hưởng" (ví dụ p95 API tăng quá X%). Kết quả tính được ngay cho `FHIR_JOB_CONCURRENCY` | [microservices-shared-db.md](microservices-shared-db.md) mục 14 |
+
+## Ưu tiên 1b: phần còn thiếu theo đối chiếu route (2026-11-23)
+
+Nguồn: [coverage-matrix.md](coverage-matrix.md) mục 5. Thứ tự là đề xuất, chưa được duyệt.
+
+| # | Việc | Trạng thái | Ghi chú / chặn bởi | Chi tiết |
+|---|---|---|---|---|
+| 17 | Batch/transaction async (`Prefer: respond-async`), worker `download`, tự tắt Subscription lỗi kéo dài (`subscription-failure-tracker`) | [ ] | không chặn; dùng job nền sẵn có của `fhirrouter` | mục 5.4 |
+| 18 | Nạp định nghĩa: `CodeSystem/$import`, `ConceptMap/$import`, `PackageRelease/$install`, bước seed SearchParameter/StructureDefinition/ValueSet | [ ] | không chặn; điều kiện để có SNOMED/LOINC | mục 5.2, 5.4 |
+| 19 | Operation lâm sàng không bị chặn: `Patient/$summary`, `QuestionnaireResponse/$extract`, `Patient/$match`, `$graph`, `$csv`, `$refresh-reference-display`, `$resend`, `StructureDefinition/$expand-profile` | [ ] | WP-9 | mục 5.2 |
+| 20 | Kiểm soát truy cập trong server: resource `AccessPolicy`, compartment `patient/` và `%patient`, `hiddenFields` | [ ] | WP-2b, WP-2c; trùng #16, gộp khi lập kế hoạch | mục 5.5 |
+| 21 | Quản trị: `Project/$init`, `$clone`, `$archive`, `$restore`, `$rate-limits`, `User/$rescope`, `$update-email`, `ClientApplication/$rotate-secret`, `$smart-launch`, `/admin/projects/:id/bot`, `/:projectId/secrets`, lệnh CLI thay `/admin/super/*` | [ ] | chốt ranh giới `auth` và `fhir-server`; WP-15 | mục 5.2, 5.3 |
+| 22 | Base URL theo project (`/projects/:projectId/*`, `/api/*`), `/openapi.json`, `/.well-known/api-catalog` | [ ] | Q-F1 (mức tương thích với client Medplum) | mục 5.3 |
+| 23 | SMART Health Cards/Links (`$generate-*`, `$verify-smart-health-card`, `$resolve-smart-health-link`, `/shl/`) | [ ] | không chặn; cần khóa ký | mục 5.2 |
+| 24 | Lịch hẹn (`Appointment/$find`, `$book`, `$hold`, `$cancel`, `$confirm`, `$reschedule`) | [~] | Q-F4; WP-10 | mục 5.2 |
+| 25 | Operation vận hành và DB (`$explain`, `$db-*`, `$get-ws-sub-*`, `$clear-all-ws-subs`, `$versions`, `Binary/$scan`) | [ ] | ưu tiên thấp | mục 5.2 |
+| 26 | Phần chờ quyết định: Bot (`$execute`, `$deploy`, `cron`, thanh toán, `$set-accounts`) M1; Agent và `ws/agent` M3; `$ccda-export` M3; `$ai`, `$aws-textract`, `ws/ai-realtime` M4; cloud ngoài S3 M5 | [~] | trùng #9, #11; ghi để đủ danh sách | mục 5.2 đến 5.4 |
 
 ## Ưu tiên 2: hardening, làm sau khi module đã chạy thành service
 

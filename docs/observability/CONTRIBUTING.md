@@ -1,6 +1,6 @@
 # Đóng góp cho trivita-observability-go
 
-Tài liệu dành cho người sửa code của library. Cách dùng xem [README](../README.md); vận hành Data Prepper xem [data-prepper.md](data-prepper.md). Library này là bản Go của `trivita-observability` (Python): yêu cầu chức năng và quyết định thiết kế gốc nằm trong `docs/SPEC.md` của repo Python. Khi đổi hành vi dùng chung (tên biến môi trường, field log JSON, resource attributes, endpoint mặc định), hãy đổi ở cả hai repo.
+Tài liệu dành cho người sửa code của library. Cách dùng xem [README](../../pkg/observability/README.md); vận hành Data Prepper xem [data-prepper.md](data-prepper.md). Library này là bản Go của `trivita-observability` (Python): yêu cầu chức năng và quyết định thiết kế gốc nằm trong `docs/SPEC.md` của repo Python. Khi đổi hành vi dùng chung (tên biến môi trường, field log JSON, resource attributes, endpoint mặc định), hãy đổi ở cả hai repo.
 
 ## Môi trường phát triển
 
@@ -33,7 +33,7 @@ go vet ./...
 
 11. **Status code ghi lại là status client nhận được.** Adapter gọi error handler của framework ngay trong middleware rồi mới đọc status, và vẫn trả lỗi về cho middleware bên ngoài.
 
-12. **Adapter framework phải mỏng.** Logic span, metric, semantic convention và access log nằm trong `httpserver.go` (`StartServerRequest` / `End`); adapter chỉ cung cấp route template, client IP, status, kích thước response và lỗi. Thêm framework mới (chi, gin, net/http `ServeMux`) bằng một package adapter tương tự `echoobs`.
+12. **Adapter framework phải mỏng.** Logic span, metric, semantic convention và access log nằm trong `httpserver.go` (`StartServerRequest` / `End`); adapter chỉ cung cấp route template, client IP, status, kích thước response và lỗi. Thêm framework mới (chi, gin, net/http `ServeMux`) bằng một package adapter tương tự `echo4obs`.
 
 ## Viết test
 
