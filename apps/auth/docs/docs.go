@@ -948,12 +948,6 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Client có identityProvider riêng",
-                        "name": "clientId",
-                        "in": "path"
-                    },
-                    {
-                        "type": "string",
                         "description": "Authorization code của IdP",
                         "name": "code",
                         "in": "query",
@@ -1028,6 +1022,66 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/application.MethodResult"
                         }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/fhir.OperationOutcome"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/fhir.OperationOutcome"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/fhir.OperationOutcome"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/external/{clientId}": {
+            "get": {
+                "description": "IdP chuyển trình duyệt về đây với code và state. state phải do /auth/method phát (đã ký) và trình duyệt phải mang cookie auth-external-state tương ứng. Thành công: 302 tới redirectUri của client kèm login và code, hoặc về trang đăng nhập của app kèm login. Lỗi trả OperationOutcome JSON 400 (không chuyển hướng). /auth/external/{clientId} là callback riêng của client có identityProvider.",
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Callback đăng nhập qua identity provider ngoài (OIDC)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Client có identityProvider riêng",
+                        "name": "clientId",
+                        "in": "path"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authorization code của IdP",
+                        "name": "code",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "state do /auth/method phát",
+                        "name": "state",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Issuer (RFC 9207)",
+                        "name": "iss",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "302": {
+                        "description": "Found"
                     },
                     "400": {
                         "description": "Bad Request",

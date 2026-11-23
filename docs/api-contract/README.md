@@ -1,4 +1,6 @@
-# API Contract
+# API Contract (tham chiếu Medplum gốc)
+
+> **Hợp đồng của từng service Go nằm cạnh service**, chỉ gồm phần ĐÃ CÀI và có test chống lệch: [auth](../../apps/auth/docs/api-contract.md), [fhir-server](../../apps/fhir-server/docs/api-contract.md), [ws-gateway](../../apps/ws-gateway/docs/api-contract.md). Thư mục này là tham chiếu Medplum gốc (nhiều thứ chưa cài) và các diễn giải, ví dụ JSON dài.
 
 Hợp đồng API của `medplum-server`. Các bảng route được **sinh tự động từ mã nguồn** (`docs/_generator/gen_docs.py`, chạy lại được khi còn thư mục `medplum/`); không sửa tay.
 

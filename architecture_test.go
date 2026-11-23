@@ -68,6 +68,7 @@ var rules = []rule{
 
 // pkgRules: thư viện dùng chung không được biết app, và chỉ được phụ thuộc nhau theo hướng cho phép.
 var pkgRules = map[string][]string{
+	"pkg/apicontract":   {}, // sinh bảng route của api-contract.md từ swagger.json; chỉ stdlib
 	"pkg/core":          {},
 	"pkg/messaging":     {mod + "/pkg/core"},
 	"pkg/envconfig":     {},

@@ -1,8 +1,8 @@
 # auth
 
-Dịch vụ xác thực và cấp token, port từ Medplum (đăng nhập, MFA, OAuth2/OIDC). Kế hoạch: [docs/plans/auth/README.md](../../docs/plans/auth/README.md). Hợp đồng API: [docs/api-contract/auth-dto.md](../../docs/api-contract/auth-dto.md).
+Dịch vụ xác thực và cấp token, port từ Medplum (đăng nhập, MFA, OAuth2/OIDC). Kế hoạch: [docs/plans/auth/README.md](../../docs/plans/auth/README.md). Hợp đồng API của service: [docs/api-contract.md](docs/api-contract.md) (bảng route sinh từ swagger, có test chống lệch); diễn giải và ví dụ: [docs/api-contract/auth-dto.md](../../docs/api-contract/auth-dto.md).
 
-**Trạng thái: xong P0 (khung), P1 (lõi dữ liệu và an toàn), bước 7.0 (CLI), P2 (đăng nhập lõi qua HTTP) và P3 một phần (B1 khóa/JWKS/well-known, B2 `client_credentials` và Bearer, B3 `authorization_code` + PKCE, B4 `refresh_token`, B5 `userinfo`/`introspect`/`logout`, B6 `authorize`, B7 `private_key_jwt`/`pre-authorized_code`/`register`, B8 tích hợp `fhir-server` (test hai tiến trình `make test-e2e`); còn rà soát bảo mật B9).** Chưa có đăng ký và mật khẩu qua HTTP (P4), MFA (P5), đăng nhập ngoài (P6).
+**Trạng thái (2026-11-23):** đã có đăng nhập lõi, đăng ký và mật khẩu (P4), MFA (P5), OAuth2/OIDC đầy đủ (P3, gồm `private_key_jwt`, `pre-authorized_code`, `register`, tích hợp `fhir-server`), đăng nhập ngoài, Google, `exchange`, `preauthorize` (P6), lệnh quản trị `auth ...`, `/admin/projects/*`, SCIM 2.0 và `POST /email/v1/send` (ba route sau tắt mặc định). Kế hoạch theo pha ở [docs/plans/auth/README.md](../../docs/plans/auth/README.md) (dòng trạng thái ở đó còn cũ). Tài liệu của service: [docs/README.md](docs/README.md) (kiến trúc, cấu hình, kiểm thử).
 
 | Route | Ghi chú |
 |---|---|
@@ -82,13 +82,13 @@ Xem [.env.example](.env.example). Điều bắt buộc nhớ: dữ liệu của 
 ## Cấu trúc
 
 ```
-cmd/auth            điểm vào: serve | migrate | healthcheck
+cmd/auth              điểm vào: serve | migrate | healthcheck | seed | client | user | domain | project | purge-logins | keys
 internal/domain       luật thuần (chỉ stdlib và pkg/fhir)
 internal/application  use case và cổng (ports.go)
 internal/infrastructure adapter: kho trên pkg/fhirstore, bcrypt, TOTP, mail...
 internal/presentation/httpapi  Echo, DTO, validator, ánh xạ lỗi
 internal/bootstrap    composition root
-docs/                 OpenAPI do swaggo sinh
+docs/                 architecture.md, config.md (sinh từ mã), testing.md; OpenAPI do swaggo sinh
 ```
 
 Quy tắc phụ thuộc giữa các tầng được `architecture_test.go` (gốc repo) kiểm tra.
@@ -97,60 +97,7 @@ Quy tắc phụ thuộc giữa các tầng được `architecture_test.go` (gố
 
 `auth` ký access token (RS256 mặc định, ES256/ES384 tùy chọn) mà `fhir-server` nhận qua JWKS. Cấu hình `fhir-server`: `FHIR_JWT_ISSUER` = `AUTH_ISSUER` (mặc định `AUTH_BASE_URL`, **đúng từng ký tự**), `FHIR_JWT_AUDIENCE` = `AUTH_AUDIENCE` (mặc định chính issuer), `FHIR_JWKS_URL` = `<AUTH_BASE_URL>/.well-known/jwks.json`, và `FHIR_JOB_SIGNING_KEY` (bắt buộc khi dùng JWKS).
 
-| Biến | Mặc định | Ý nghĩa |
-|---|---|---|
-| `AUTH_SIGNING_KEY_PATH` | rỗng | thư mục chứa khóa riêng `*.pem` (sinh bằng `auth keys generate`). **Bắt buộc ở staging/production**; ở dev để trống thì dùng khóa ES256 tạm trong bộ nhớ |
-| `AUTH_ACTIVE_KID` | rỗng | chọn khóa ký khi thư mục có nhiều khóa (xoay khóa); rỗng chỉ hợp lệ khi có đúng một khóa |
-| `AUTH_SIGNING_ALG` | `RS256` | thuật toán của khóa do `keys generate` sinh: `RS256` (RSA 3072), `ES256`, `ES384` |
-| `AUTH_ACCESS_TTL`, `AUTH_REFRESH_TTL`, `AUTH_ID_TTL` | `15m`, `336h`, `1h` | dạng Go. `AUTH_ACCESS_TTL` là cửa sổ thu hồi ở `fhir-server` (nó không tra Login mỗi yêu cầu) |
-| `AUTH_MAIL_PROVIDER` | `log` ở local/development/test, `none` ở staging/production | kênh gửi thư: `log` in thư (KÈM link có secret) ra log (**cấm ở staging/production**), `none` bỏ qua, `smtp` gửi thật qua SMTP (xem các biến `AUTH_SMTP_*` bên dưới) |
-| `AUTH_SMTP_HOST`, `AUTH_SMTP_PORT` | rỗng, `587` | máy chủ SMTP (bắt buộc khi `AUTH_MAIL_PROVIDER=smtp`); cổng 465 hoặc `AUTH_SMTP_SECURE=true` là TLS ngay từ đầu, ngược lại STARTTLS |
-| `AUTH_SMTP_FROM` | rỗng | người gửi mặc định, `a@b` hoặc `Tên <a@b>` (bắt buộc); `AUTH_SMTP_APPROVED_SENDERS` là các địa chỉ trần khác (cách nhau bằng dấu phẩy) được đề nghị làm người gửi |
-| `AUTH_SMTP_USERNAME`, `AUTH_SMTP_PASSWORD` | rỗng | đăng nhập SMTP (PLAIN hoặc LOGIN; chỉ gửi sau khi đã mã hóa). Bỏ trống username nếu relay không cần đăng nhập. Mật khẩu chỉ qua biến môi trường, không bao giờ vào log |
-| `AUTH_SMTP_SECURE` | rỗng (suy ra theo cổng) | `true` TLS ngay từ đầu, `false` STARTTLS |
-| `AUTH_SMTP_CA_FILE` | rỗng | tệp PEM CA riêng được tin thêm (relay nội bộ dùng chứng chỉ tự cấp) |
-| `AUTH_SMTP_TIMEOUT` | `20s` | chờ nối và nhận lời chào (sau đó là 120s nhàn rỗi, 5 phút tổng) |
-| `AUTH_SMTP_ALLOW_PLAINTEXT` | `false` | **chỉ dev**: cho gửi không mã hóa khi máy chủ thiếu STARTTLS; cấm ở staging/production. Mặc định TLS là bắt buộc: thư và mật khẩu không bao giờ đi ở dạng rõ |
-| `AUTH_EMAIL_ENABLED` | `false` | bật `POST /email/v1/send` (admin project có tính năng `email`); xem `docs/api-contract/others.md` |
-| `AUTH_EMAIL_ALLOW_PROJECT_SMTP` | `false` | cho dùng SMTP riêng khai ở `Project.secret` (mật khẩu nằm dạng rõ ở đó: bật có cân nhắc) |
-| `AUTH_EMAIL_FHIR_URL` | trống | gốc API FHIR (ví dụ `https://fhir.internal/fhir/R4`) để `POST /email/v1/send` đọc tệp đính kèm `Binary/<id>` **bằng chính Bearer token của người gọi** (quyền, project, `securityContext` do fhir-server quyết định; token phải được fhir-server chấp nhận). Rỗng: `Binary/<id>` bị từ chối là chưa hỗ trợ. Địa chỉ nội bộ được phép (do vận hành viên đặt) nhưng không theo redirect, không dùng proxy môi trường; staging/production bắt buộc https vì token được gửi tới đó |
-| `AUTH_EMAIL_FHIR_TIMEOUT` | `30s` | timeout đọc một Binary từ dịch vụ FHIR |
-| `AUTH_EMAIL_ALLOW_UNSAFE_OUTBOUND` | `false` | **chỉ dev/test**: tắt chặn địa chỉ nội bộ của SMTP project và tệp đính kèm URL; cấm ở staging/production |
-| `AUTH_EMAIL_MAX_RECIPIENTS`, `AUTH_EMAIL_MAX_BYTES` | `50`, `10485760` | tổng người nhận mỗi thư; cỡ thư và cỡ mỗi tệp tải theo URL |
-| `AUTH_RECAPTCHA_SITE_KEY`, `AUTH_RECAPTCHA_SECRET_KEY` | rỗng | reCAPTCHA mức máy chủ cho `newuser` và `resetpassword`; `SECRET_KEY` rỗng thì không kiểm (project vẫn đặt khóa riêng được trong `Project.site`). Lỗi gọi Google là lỗi 500 (fail đóng), không cho qua. Secret gửi trong body POST, không đặt trong URL |
-| `AUTH_RECAPTCHA_TIMEOUT` | `3s` | thời gian chờ Google; phải > 0 |
-| `AUTH_REQUIRE_VERIFIED_EMAIL_FOR_PROJECT_CREATION` | `false` | `newuser` với `projectId=new` gửi thư xác minh và trả `emailVerificationRequired: true` |
-| `AUTH_MFA_SECRET_KEYS` | rỗng (lưu thô, chỉ dev/test) | danh sách `kid:base64(32 byte)` cách nhau bằng dấu phẩy để mã hóa `User.mfaSecret` khi lưu; khóa đầu tiên mã hóa, mọi khóa giải mã (xoay khóa: thêm khóa mới lên đầu). **Bắt buộc ở staging/production**, sai định dạng thì không khởi động |
-| `AUTH_MFA_WINDOW`, `AUTH_MFA_LOGIN_ATTEMPT_LIMIT`, `AUTH_MFA_USER_ATTEMPT_LIMIT` | `1`, `5`, `20` | số bước TOTP chấp nhận mỗi bên; lượt thử tối đa mỗi login và mỗi user |
-| `AUTH_MFA_LOGIN_EXPIRATION`, `AUTH_MFA_EMAIL_CODE_EXPIRATION`, `AUTH_MFA_ENROLLMENT_EXPIRATION` | `10m`, `20m`, `20m` | tuổi tối đa của login chờ MFA (cũng là cửa sổ đếm), hạn mã email, hạn secret được mời |
-| `AUTH_MFA_EMAIL_SEND_LIMIT` | `5` | số lần gửi mã email tối đa mỗi login trong thời hạn mã |
-| `AUTH_EXTERNAL_STATE_KEY` | rỗng (khóa tạm trong bộ nhớ, chỉ dev/test) | khóa HMAC ký `state` đăng nhập ngoài (base64, tối thiểu 32 byte), mọi instance dùng chung; **bắt buộc ở staging/production khi có `AUTH_APP_BASE_URL`** |
-| `AUTH_GOOGLE_CLIENT_ID` | rỗng | Google client chính của `POST /auth/google`; đặt giá trị này (hoặc `AUTH_GOOGLE_ENABLED=true`) thì route được bật; client của project khai ở `Project.site.googleClientId` cũng được nhận |
-| `AUTH_GOOGLE_ENABLED` | `false` | bật `/auth/google` chỉ với client của project (không có client chính) |
-| `AUTH_ADMIN_ENABLED` | `false` | bật `/admin/projects/*` (quản trị project qua HTTP, chỉ Bearer của admin project); xem `docs/api-contract/admin.md` |
-| `AUTH_BLOCKED_EMAIL_DOMAINS` | rỗng | các tên miền email bị chặn khi mời Practitioner (cách nhau bằng dấu phẩy; ưu tiên hơn `allowedPractitionerEmailDomain` của project) |
-| `AUTH_SCIM_ENABLED` | `false` | bật `/scim/v2/Users` (SCIM 2.0); project còn phải có tính năng `scim` (`auth project feature -project <id> -feature scim`) |
-| `AUTH_SCIM_ALLOW_BASIC` | `true` | cho `Authorization: Basic` của client có quyền admin (Okta chỉ có Basic). **Staging/production bắt buộc kèm `AUTH_SCIM_ALLOWED_IPS`** |
-| `AUTH_SCIM_ALLOWED_IPS` | rỗng | CIDR (cách nhau bằng dấu phẩy) được gọi `/scim/v2`; rỗng là không hạn chế |
-| `AUTH_SCIM_MAX_PAGE`, `AUTH_SCIM_MAX_PATCH_OPS`, `AUTH_SCIM_MAX_BODY_BYTES` | `100`, `50`, `1048576` | cỡ trang mặc định và trần, số thao tác PATCH tối đa, cỡ body tối đa (echo còn giới hạn chung 1 MiB) |
-| `AUTH_GOOGLE_JWKS_URL` | JWKS của Google | chỉ cho test; URL nội bộ cần `AUTH_ALLOW_PRIVATE_JWKS` |
-| `AUTH_EXTERNAL_STATE_TTL` | `10m` | hạn của state và cookie liên kết |
-| `AUTH_EXTERNAL_AUTH_PROVIDERS` | rỗng | JSON mảng `{issuer, identityProvider}` tra theo `issuer` của state (IdP cấu hình ở máy chủ) |
-| `AUTH_SUPPORT_EMAIL` | rỗng | địa chỉ hỗ trợ trong thư chào (địa chỉ thuần); rỗng thì bỏ dòng này |
-| `AUTH_MAIL_APP_NAME` | `Trivita` | tên trong thư |
-| `AUTH_APP_BASE_URL` | `http://localhost:3000` khi `ENVIRONMENT=local`, ngoài đó rỗng | địa chỉ ứng dụng đăng nhập; `/oauth2/authorize` chuyển tới `<AUTH_APP_BASE_URL>/oauth`. **Rỗng thì không có `/oauth2/authorize`.** https bắt buộc ở staging/production |
-| `AUTH_FHIR_BASE_URL` | rỗng | địa chỉ `fhir-server`, được chấp nhận làm `aud` ở `/oauth2/authorize` (SMART) |
-| `AUTH_OAUTH_REGISTER_ENABLED` | `false` | bật `POST /oauth2/register` (tra client dựng sẵn theo redirect URI) |
-| `AUTH_ALLOW_PRIVATE_JWKS` | `false` | cho `jwks_uri` của client là http hoặc trỏ vào dải nội bộ. **Chỉ dev/test**, cấm ở staging/production (tắt chống SSRF) |
-| `DATABASE_REQUIRE_SCHEMA` | `false` | (chỉ PostgreSQL) `true` -> từ chối khởi động và từ chối `migrate` nếu `search_path` của role không phải đúng MỘT schema riêng đã tồn tại (không phải `public`, không kèm schema khác). Bật khi chung một database với `fhir-server` (xem [docs/runbook.md mục 12](../../docs/runbook.md)) |
-| `DATABASE_MIGRATE_URL` | rỗng | (chỉ PostgreSQL) URL của role `identity_migrate` (có DDL) dùng riêng cho lệnh `auth migrate`; app chạy bằng `DATABASE_URL` là role `identity_app` chỉ có DML (D-DB-4, xem [runbook mục 12.5](../../docs/runbook.md)). Đặt thì **bắt buộc** `DATABASE_AUTO_MIGRATE=false` |
-| `AUTH_REDIS_URL` | rỗng | nơi nhớ `jti` của client assertion, topic FHIRcast **và trạng thái MFA** (secret được mời, hạn mức thử, mã TOTP đã dùng; khóa tiền tố `auth:mfa:`) dùng chung nhiều instance; rỗng thì nhớ trong bộ nhớ (chỉ đúng với một instance: chạy nhiều instance thì hạn mức MFA nhân lên theo số instance). **Bắt buộc ở staging/production** |
-| `AUTH_FHIRCAST_HUB_URL` | rỗng (tắt) | địa chỉ Hub FHIRcast công khai (thường `https://<ws-gateway>/fhircast/STU3`) trả ở `hub.url`; có thì token có scope `fhircast/` kèm `hub.url` và `hub.topic` (ổn định theo chủ thể token, giữ ở `AUTH_REDIS_URL`). Không query/fragment; https ở staging/production, và staging/production **bắt buộc** `AUTH_REDIS_URL` (topic phải giống nhau giữa các instance) |
-| `AUTH_AUTH_CODE_TTL` | `10m` | hạn của authorization code tính từ lúc phát |
-| `AUTH_REFRESH_GRACE` | `30s` | cửa sổ chấp nhận lại refresh token vừa xoay, chỉ từ cùng IP; `0` là tắt |
-| `AUTH_SESSION_MAX_AGE` | `0` | trần tuyệt đối của phiên refresh tính từ lúc đăng nhập (`0`: không giới hạn, phiên có thể sống vô hạn vì mỗi lần xoay cấp lại hạn đầy) |
-| `AUTH_ALLOW_PLAIN_PKCE` | `false` | cho `code_challenge_method=plain` (mặc định chỉ S256) |
-| `AUTH_MAX_POLICY_CLAIM_BYTES` | `16384` | trần claim `fhir_access_policy`; vượt thì từ chối cấp token |
+Mọi biến (mặc định, ý nghĩa, ràng buộc ở staging/production) nằm ở [docs/config.md](docs/config.md), **sinh từ mã** và có test chống lỗi thời; không chép lại ở đây.
 
 Xoay khóa: `auth keys generate` (khóa mới vào cùng thư mục) → triển khai để JWKS có cả hai khóa → đợi quá TTL cache của người xác minh (`fhirauth`: 10 phút) → đặt `AUTH_ACTIVE_KID` là kid mới → khi mọi token cũ đã hết hạn thì xóa file khóa cũ. Token ký bằng khóa cũ vẫn xác minh được trong lúc đó.
 

@@ -11,7 +11,7 @@ Bộ tài liệu phục vụ việc port backend medplum sang Go (xem go-port-st
 | [features/README.md](features/README.md) | 12 tính năng, module liên quan, endpoint, ghi chú |
 | [diagrams/business-flow.md](diagrams/business-flow.md) | Sơ đồ luồng nghiệp vụ và kiến trúc (Mermaid) |
 | [diagrams/user-flow.md](diagrams/user-flow.md) | Sơ đồ luồng người dùng (Mermaid) |
-| [api-contract/README.md](api-contract/README.md) | Hợp đồng API: FHIR REST, operations, auth, OAuth, admin, khác |
+| [api-contract/README.md](api-contract/README.md) | Tham chiếu hợp đồng API của Medplum gốc (FHIR REST, operations, auth, OAuth, admin, khác). Hợp đồng của từng service Go: `apps/<service>/docs/api-contract.md` |
 
 ## Nguồn và độ tin cậy
 

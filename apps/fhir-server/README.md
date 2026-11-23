@@ -31,7 +31,7 @@ Với PostgreSQL: đặt `DATABASE_URL=postgres://...`; nhiều replica thì đ�
 
 ## Endpoint
 
-Gốc: `/fhir/R4`. Ví dụ đầy đủ trong [`test_main.http`](test_main.http). Chi tiết hợp đồng API: [`docs/api-contract`](../../docs/api-contract/README.md).
+Gốc: `/fhir/R4`. Ví dụ đầy đủ trong [`test_main.http`](test_main.http). Hợp đồng API của service: [`docs/api-contract.md`](docs/api-contract.md) (bảng route sinh từ swagger); ví dụ JSON: [`docs/api-contract/fhir-server-go.md`](../../docs/api-contract/fhir-server-go.md); tham chiếu Medplum gốc: [`docs/api-contract`](../../docs/api-contract/README.md).
 
 | Method và đường dẫn | Việc |
 |---|---|

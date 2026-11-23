@@ -2,6 +2,7 @@
 
 | Tài liệu | Nội dung |
 |---|---|
+| [api-contract.md](api-contract.md) | **Hợp đồng API**: route, giao thức WebSocket, mã đóng, Hub FHIRcast (viết tay, không có OpenAPI) |
 | [architecture.md](architecture.md) | Làm gì, không làm gì, các thành phần, luồng dữ liệu, hành vi khi lỗi |
 | [config.md](config.md) | Mọi biến môi trường, mặc định và ý nghĩa (**sinh từ mã**, có test chống lỗi thời) |
 | [testing.md](testing.md) | Bốn tầng test, cách chạy, yêu cầu Docker |

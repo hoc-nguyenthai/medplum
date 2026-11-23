@@ -48,6 +48,7 @@ func registerExternal(g *echo.Group, h *authHandlers, slow []echo.MiddlewareFunc
 //	@Failure		404	{object}	fhir.OperationOutcome
 //	@Failure		429	{object}	fhir.OperationOutcome
 //	@Router			/auth/external [get]
+//	@Router			/auth/external/{clientId} [get]
 func (h *authHandlers) externalCallback(c echo.Context) error {
 	nonce := ""
 	if ck, err := c.Cookie(externalStateCookie); err == nil {
