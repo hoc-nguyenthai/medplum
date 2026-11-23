@@ -147,6 +147,7 @@ Một service chỉ được coi là "triển khai được" khi thỏa **tất 
 7. Hợp đồng dây với service khác được ghim bằng test (C-6), có phiên bản.
 8. Test theo bốn tầng: đơn vị cạnh mã, `tests/integration` (Docker thật), `tests/e2e` (image), `tests/load` nếu có SLO về tải; đột biến vào đường quan trọng đều làm test đỏ.
 9. Tài liệu: `README.md`, `docs/{architecture,config,testing}.md`, mục trong `runbook.md` (sự cố thường gặp, định cỡ), manifest K8s mẫu, mục trong bản đồ ở mục 2.
+10. Hợp đồng API: `docs/api-contract.md` có bảng route sinh từ `swagger.json`; `docs/contract_test.go` gọi `pkg/apicontract` (`SyncDoc`, `Completeness`, `Structure`) và khai báo phần riêng của service trong `apicontract.Options` (DTO tùy chọn có lý do, phản hồi không body, Content-Type thật); thêm test so route thật với spec bằng `apicontract.DiffRoutes`. Mẫu: `apps/auth/docs/contract_test.go`. [ép]
 10. Kèm số đo cho định cỡ (nếu điều kiện tách là A).
 
 ## 8. Hiện trạng đối chiếu (trung thực)

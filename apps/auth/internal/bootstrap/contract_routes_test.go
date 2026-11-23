@@ -1,14 +1,13 @@
 package bootstrap
 
 import (
-	"encoding/json"
 	"os"
 	"regexp"
-	"sort"
 	"strings"
 	"testing"
 
 	"trivita-fhir/apps/auth/internal/config"
+	"trivita-fhir/pkg/apicontract"
 )
 
 var echoParam = regexp.MustCompile(`:([A-Za-z0-9_]+)`)
@@ -32,49 +31,27 @@ func TestRoutesMatchSwaggerContract(t *testing.T) {
 	outsideContract := func(path string) bool {
 		return strings.HasPrefix(path, "/swagger") || path == "/healthz" || path == "/health/startup" || strings.Contains(path, "*")
 	}
-	served := map[string]bool{}
+	var served []string
 	for _, r := range e.Routes() {
 		path := echoParam.ReplaceAllString(r.Path, "{$1}")
 		if outsideContract(path) || r.Method == "echo_route_not_found" || r.Method == "HEAD" || r.Method == "OPTIONS" || r.Method == "CONNECT" || r.Method == "TRACE" || r.Method == "PROPFIND" || r.Method == "REPORT" {
 			continue
 		}
-		served[strings.ToLower(r.Method)+" "+path] = true
+		served = append(served, strings.ToLower(r.Method)+" "+path)
 	}
 
 	raw, err := os.ReadFile("../../docs/swagger.json")
 	if err != nil {
 		t.Fatal(err)
 	}
-	var spec struct {
-		Paths map[string]map[string]json.RawMessage `json:"paths"`
-	}
-	if err := json.Unmarshal(raw, &spec); err != nil {
+	inCodeOnly, inSpecOnly, err := apicontract.DiffRoutes(raw, served, nil)
+	if err != nil {
 		t.Fatal(err)
 	}
-	documented := map[string]bool{}
-	for p, ms := range spec.Paths {
-		for m := range ms {
-			documented[m+" "+p] = true
-		}
+	if len(inCodeOnly) > 0 {
+		t.Errorf("route có trong code nhưng thiếu ở swagger.json (thêm annotation rồi `make swagger APP=auth`):\n  %s", strings.Join(inCodeOnly, "\n  "))
 	}
-
-	var missingInSpec, missingInCode []string
-	for k := range served {
-		if !documented[k] {
-			missingInSpec = append(missingInSpec, k)
-		}
-	}
-	for k := range documented {
-		if !served[k] {
-			missingInCode = append(missingInCode, k)
-		}
-	}
-	sort.Strings(missingInSpec)
-	sort.Strings(missingInCode)
-	if len(missingInSpec) > 0 {
-		t.Errorf("route có trong code nhưng thiếu ở swagger.json (thêm annotation rồi `make swagger APP=auth`):\n  %s", strings.Join(missingInSpec, "\n  "))
-	}
-	if len(missingInCode) > 0 {
-		t.Errorf("route có trong swagger.json nhưng không được phục vụ (đã bật mọi tính năng tùy chọn):\n  %s", strings.Join(missingInCode, "\n  "))
+	if len(inSpecOnly) > 0 {
+		t.Errorf("route có trong swagger.json nhưng không được phục vụ (đã bật mọi tính năng tùy chọn):\n  %s", strings.Join(inSpecOnly, "\n  "))
 	}
 }

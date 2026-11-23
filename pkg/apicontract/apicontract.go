@@ -1,6 +1,10 @@
-// Package apicontract sinh bảng route của hợp đồng API từ tệp OpenAPI 2.0 (swagger.json) mà swaggo sinh từ annotation, để
-// `apps/<service>/docs/api-contract.md` không thể lệch khỏi spec: phần giữa hai dấu BEGIN/END là mã sinh, phần còn lại viết tay.
-// Chỉ stdlib; test của từng service gọi Check (xem apps/auth/docs/contract_test.go).
+// Package apicontract giữ phần dùng chung của hợp đồng API theo từng service (swagger.json do swaggo sinh từ annotation):
+//   - Render và Splice sinh bảng route của `apps/<service>/docs/api-contract.md` từ swagger.json: phần giữa hai dấu BEGIN/END là mã sinh, phần còn lại viết tay;
+//   - SyncDoc đọc, so và (khi UPDATE_DOCS=1) ghi lại tệp đó;
+//   - Completeness và Structure là bộ quy tắc kiểm swagger.json đủ DTO và đúng cấu trúc, chỉ khác nhau ở Options của từng service;
+//   - DiffRoutes so route phục vụ thật với route trong swagger.json.
+//
+// Chỉ dùng stdlib, không import `testing`: hàm trả danh sách vi phạm để test của từng service tự báo lỗi (xem apps/<service>/docs/contract_test.go).
 package apicontract
 
 import (
