@@ -23,9 +23,27 @@ Trạng thái: `[ ]` chưa làm, `[~]` đang chặn bởi quyết định, `[x]`
 | 12b | Tổ chức microservice theo nghiệp vụ, dùng chung một PostgreSQL (schema và role riêng cho từng service) | [ ] | D-DB-1, D-DB-2 và D-DB-3 đã chốt (D-DB-3: chưa tách `fhir-worker`, chờ đo tải); **P1, P2 và P3a xong (2026-11-22)**; còn D-DB-4 và D-DB-5 | [microservices-shared-db.md](microservices-shared-db.md) |
 | 12c | **Đo tải export song song với API** (quyết định có mở P3b `fhir-worker` hay không): chạy `export` lớn cùng lúc với tải API, ghi p95/p99 của API, CPU và bộ nhớ, so với đường cơ sở không có export | [ ] | Điều kiện mở lại P3b (D-DB-3). Cần chốt: kích thước dữ liệu mẫu, môi trường đo (máy cục bộ hay có máy riêng), ngưỡng "bị ảnh hưởng" (ví dụ p95 API tăng quá X%). Kết quả tính được ngay cho `FHIR_JOB_CONCURRENCY` | [microservices-shared-db.md](microservices-shared-db.md) mục 14 |
 
+## Thứ tự thực hiện đã chốt (2026-11-23, người dùng duyệt)
+
+Áp dụng cho các việc còn lại của Ưu tiên 1 và 1b; nguyên tắc: hoàn thành module và gắn thành service API trước, hardening (Ưu tiên 2) làm sau. Việc không bị chặn bởi quyết định đi trước.
+
+| Thứ tự | Việc | Số việc | Ghi chú |
+|---|---|---|---|
+| 1 | Compartment Patient (P8 M1 đến M5) | #16, #20 | Đã duyệt trước đó. **Đang làm** từ 2026-11-23: M0 và M1 xong (`_compartment` ở `pkg/fhirsearch`, đẩy điều kiện chính sách xuống kho, `$everything` với token giới hạn); còn M2 (OR nhiều criteria), M3 (`auth`), M4 (e2e), M5 (tài liệu) |
+| 2 | Nạp định nghĩa: `$import`, `PackageRelease/$install`, seed | #18 | Điều kiện để có SNOMED/LOINC |
+| 3 | Worker `download` (B1, B2) | #17 | Đóng nốt #17 |
+| 4 | Operation lâm sàng không bị chặn | #19 | `$summary`, `$match`, `$extract`, `$graph`, `$csv`, `$refresh-reference-display`, `$resend`, `$expand-profile` |
+| 5 | `keyvalue`, `mcp` | #6 | `mcp` cần claim `fhir_membership`, làm sau thứ tự 1 |
+| 6 | Quản trị qua FHIR, `/admin/super/*` | #21 | Cần vạch ranh giới với `auth` trước |
+| 7 | Base URL theo project, `/openapi.json`, `api-catalog` | #22 | Chờ Q-F1 |
+| 8 | SMART Health Cards/Links | #23 | Cần khóa ký |
+| 9 | Operation vận hành và DB | #25 | Ưu tiên thấp |
+| sau cùng | Hardening: khóa tài khoản, hạn mức dùng chung nhiều replica | #13, #14 | Ưu tiên 2. #12c (đo tải) chạy khi tiện, quyết định có tách `fhir-worker` |
+| chặn | Bot, `cds`, `webhook`, `cron`, `$execute`, thanh toán, xử lý HL7 | #9, #26 | Chờ **M1**; `agent`/`hl7`/`ccda` chờ **M3**; `ai` chờ M4; cloud ngoài S3 chờ M5; `dicom` chờ H1 đến H5. Đề nghị chốt M1 sớm vì chặn nhiều nhất |
+
 ## Ưu tiên 1b: phần còn thiếu theo đối chiếu route (2026-11-23)
 
-Nguồn: [coverage-matrix.md](coverage-matrix.md) mục 5. Thứ tự là đề xuất, chưa được duyệt. Từng việc nhỏ (route, operation) để đánh dấu: [go-gap-checklist.md](go-gap-checklist.md).
+Nguồn: [coverage-matrix.md](coverage-matrix.md) mục 5. Thứ tự thực hiện đã chốt ở mục ngay trên (2026-11-23). Từng việc nhỏ (route, operation) để đánh dấu: [go-gap-checklist.md](go-gap-checklist.md).
 
 | # | Việc | Trạng thái | Ghi chú / chặn bởi | Chi tiết |
 |---|---|---|---|---|

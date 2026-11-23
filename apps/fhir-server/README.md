@@ -121,7 +121,7 @@ batch/transaction vì có thể chứa thao tác ghi) và **ADMIN** (ghi và qu�
 `[{"resourceType":"Patient","criteria":"_id=123","readonly":true}, "Observation?subject=Patient/123"]`. Token có claim này chỉ truy cập
 các loại được liệt kê; resource phải thỏa `criteria` (query FHIR, không chained/`_has`/`_include`) mới thấy hoặc ghi được; ghi ra ngoài tiêu
 chí bị 403; rule `readonly` chặn ghi. Mỗi loại một rule. Mảng rỗng là từ chối mọi loại; claim sai định dạng làm token bị 403. Chính sách
-giao với scope SMART. `$reindex` và `$expunge` bị chặn với token có chính sách. `$export` chạy đúng quyền của người gọi (xem dưới). Search hệ thống (không chỉ định loại) lọc kết quả
+giao với scope SMART. `criteria` còn nhận `_compartment=Patient/<id>` (đúng một Patient): resource thuộc compartment khi một tham số compartment của loại đó (ví dụ Observation: `subject`, `performer`) trỏ tới Patient ấy; Patient thì thêm chính nó. Điều kiện của chính sách được đẩy xuống kho nên `total` và phân trang chỉ tính phần được thấy. `$reindex` và `$expunge` bị chặn với token có chính sách. `$export` chạy đúng quyền của người gọi (xem dưới). Search hệ thống (không chỉ định loại) lọc kết quả
 sau khi truy vấn nên `total` và phân trang có thể lệch.
 
 **Job nền mang quyền của người gọi (giai đoạn 11c).** Khi tạo job, server ký (HMAC-SHA256) ảnh chụp quyền của người gọi (project, scope theo

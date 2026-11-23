@@ -301,6 +301,7 @@ func (r *Repo) Search(ctx context.Context, req *fhirsearch.Request) (*fhirrouter
 	if pol != nil {
 		if req.ResourceType != "" {
 			scoped.Filters = append(append([]fhirsearch.Filter(nil), scoped.Filters...), pol.filters(req.ResourceType)...)
+			scoped.Exprs = append(append([]*fhirsearch.Expr(nil), scoped.Exprs...), pol.exprs(req.ResourceType)...)
 		} else {
 			scoped.Types = intersect(scoped.Types, pol.Types(), req.Types)
 			if len(scoped.Types) == 0 {
@@ -309,7 +310,9 @@ func (r *Repo) Search(ctx context.Context, req *fhirsearch.Request) (*fhirrouter
 		}
 	}
 	pf := fhirsearch.Filter{Code: fhir.ProjectParam.Code, Def: fhir.ProjectParam, Values: []string{project}}
-	scoped.Filters = append(append([]fhirsearch.Filter(nil), req.Filters...), pf)
+	// Giữ cả điều kiện của chính sách đã thêm ở trên: đẩy xuống kho để total và phân trang chỉ tính phần người gọi được thấy (không lộ số lượng
+	// resource ngoài chính sách). filterPolicy bên dưới vẫn lọc lại từng kết quả (kể cả _include) như lớp phòng thủ thứ hai.
+	scoped.Filters = append(append([]fhirsearch.Filter(nil), scoped.Filters...), pf)
 	res, err := r.inner.Search(ctx, &scoped)
 	if err != nil {
 		return nil, err

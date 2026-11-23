@@ -114,7 +114,8 @@ func ParsePolicy(v any) (*Policy, error) {
 			if err != nil {
 				return nil, fmt.Errorf("criteria của %s: %v", rt, err)
 			}
-			if fhirsearch.NeedsResolution(req) || len(req.Exprs) > 0 || len(req.Include) > 0 || len(req.Revinclude) > 0 {
+			// Biểu thức duy nhất được phép là do `_compartment=Patient/<id>` sinh ra (Request.Compartment); `_filter` của người dùng thì không.
+			if fhirsearch.NeedsResolution(req) || len(req.ExprRaw) > 0 || len(req.Include) > 0 || len(req.Revinclude) > 0 {
 				return nil, fmt.Errorf("criteria của %s không được dùng chained/_has/_include, _filter hoặc modifier :in/:above/:below", rt)
 			}
 			r.req = req
@@ -154,6 +155,17 @@ func (p *Policy) filters(rt string) []fhirsearch.Filter {
 	}
 	if r, ok := p.ruleFor(rt); ok && r.req != nil {
 		return r.req.Filters
+	}
+	return nil
+}
+
+// exprs trả các biểu thức cần AND thêm cho loại rt (hiện chỉ có biểu thức của `_compartment`); nil nếu không có.
+func (p *Policy) exprs(rt string) []*fhirsearch.Expr {
+	if p == nil {
+		return nil
+	}
+	if r, ok := p.ruleFor(rt); ok && r.req != nil {
+		return r.req.Exprs
 	}
 	return nil
 }

@@ -2,8 +2,10 @@ package fhirrouter
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
+	"net/http"
 	"net/url"
 	"slices"
 	"sort"
@@ -219,6 +221,7 @@ func (r *Router) everything(ctx context.Context, req *Request) (*Response, error
 collect:
 	for _, t := range types {
 		found := map[string]fhir.Resource{}
+	collectParams:
 		for _, param := range comp[t] {
 			q := url.Values{param: {"Patient/" + id}}
 			if since != "" {
@@ -233,6 +236,12 @@ collect:
 			for {
 				res, err := repo.Search(ctx, sr)
 				if err != nil {
+					// Không chỉ định _type: loại người gọi không được tìm kiếm (token giới hạn theo loại hoặc chính sách) bị bỏ qua thay vì làm hỏng cả
+					// $everything, giống $export. Có chỉ định _type mà bị cấm thì vẫn lỗi để người gọi biết.
+					var re *Error
+					if len(allowed) == 0 && errors.As(err, &re) && re.Status == http.StatusForbidden {
+						continue collectParams
+					}
 					return nil, err
 				}
 				for _, m := range res.Matches {

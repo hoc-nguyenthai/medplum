@@ -67,6 +67,9 @@ type Request struct {
 	// Exprs là các biểu thức _filter (AND với nhau và với Filters); ExprRaw là chuỗi gốc để dựng lại query.
 	Exprs   []*Expr
 	ExprRaw []string
+	// Compartment là giá trị _compartment (Patient/<id>) nếu có. Biểu thức tương ứng nằm trong Exprs (OR của các tham số compartment) nhưng KHÔNG nằm
+	// trong ExprRaw: nó được dựng lại từ trường này khi tạo query.
+	Compartment string
 }
 
 // HasCriteria cho biết yêu cầu có điều kiện lọc nào (tham số thường, chained/_has hoặc _filter).
@@ -187,6 +190,20 @@ func (r *Request) apply(key, raw string) error {
 		}
 		r.Exprs = append(r.Exprs, e)
 		r.ExprRaw = append(r.ExprRaw, raw)
+		return nil
+	case "_compartment":
+		if r.ResourceType == "" {
+			return errf("_compartment cần chỉ định loại resource")
+		}
+		if r.Compartment != "" {
+			return errf("_compartment chỉ được đặt một lần")
+		}
+		e, err := compartmentExpr(r.ResourceType, raw)
+		if err != nil {
+			return err
+		}
+		r.Exprs = append(r.Exprs, e)
+		r.Compartment = raw
 		return nil
 	case "_query", "_contained", "_containedType":
 		return errf("tham số %s chưa được hỗ trợ", key)
@@ -436,6 +453,9 @@ func (r *Request) Query(offset int) url.Values {
 	}
 	for _, raw := range r.ExprRaw {
 		q.Add("_filter", raw)
+	}
+	if r.Compartment != "" {
+		q.Set("_compartment", r.Compartment)
 	}
 	if len(r.Types) > 0 {
 		q.Set("_type", strings.Join(r.Types, ","))
