@@ -1,6 +1,6 @@
 # Kế hoạch `apps/auth`: tổng hợp
 
-Trạng thái (cập nhật 2026-11-23): **P0 đến P7 đã làm** (kể cả đăng ký và mật khẩu, MFA, OAuth2/OIDC, đăng nhập ngoài, `/admin/projects/*`, SCIM, email); **P8 (compartment Patient) đang làm**, tiến độ ở cuối [p8-compartment.md](p8-compartment.md). Trạng thái chi tiết từng tính năng: [../../README.md](../../README.md). Bảng pha và ước lượng bên dưới là kế hoạch ban đầu, giữ để tra cứu quyết định và lý do. Các đề xuất ở mục 5 đã được duyệt toàn bộ ngày 2026-11-21. Đây là bản tổng hợp của kế hoạch tổng [apps-auth.md](apps-auth.md) và các kế hoạch chi tiết cùng thư mục. Đọc file này trước, vào file chi tiết khi cần số dòng source, thuật toán hoặc danh sách ca test.
+Trạng thái (cập nhật 2026-11-23): **P0 đến P7 đã làm** (kể cả đăng ký và mật khẩu, MFA, OAuth2/OIDC, đăng nhập ngoài, `/admin/projects/*`, SCIM, email); **P8 (compartment Patient) đã duyệt 2026-11-23, M0 xong, M1 đến M5 chưa làm**; tiến độ ở cuối [p8-compartment.md](p8-compartment.md). Trạng thái chi tiết từng tính năng: [../../README.md](../../README.md). Bảng pha và ước lượng bên dưới là kế hoạch ban đầu, giữ để tra cứu quyết định và lý do. Các đề xuất ở mục 5 đã được duyệt toàn bộ ngày 2026-11-21. Đây là bản tổng hợp của kế hoạch tổng [apps-auth.md](apps-auth.md) và các kế hoạch chi tiết cùng thư mục. Đọc file này trước, vào file chi tiết khi cần số dòng source, thuật toán hoặc danh sách ca test.
 
 | File | Nội dung | Cỡ (ước lượng của người viết) |
 |---|---|---|

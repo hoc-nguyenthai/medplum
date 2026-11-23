@@ -1,39 +1,39 @@
 # Ma trận phủ kế hoạch: server Medplum so với các kế hoạch hiện có
 
-Trạng thái: **chưa đủ.** (Cập nhật: nhóm mức B đã có kế hoạch chi tiết ở [modules/README.md](modules/README.md); chúng nay là mức A, nhưng còn nhiều câu hỏi mở và hai lỗi bảo mật cần xử lý sớm.) Nguồn: `~/Downloads/medplum/packages/server/src` (v5.2.18). Số dòng là dòng source **không tính test**, do tôi đếm; số dòng chỉ là thước đo thô về quy mô, không phản ánh độ khó. Ba mức: **A** có kế hoạch chi tiết (và có thể đã cài), **B** chỉ có khảo sát ([modules-survey.md](modules-survey.md)), **C** chưa có gì.
+Trạng thái (cập nhật 2026-11-23 cho khớp code): về **kế hoạch** vẫn **chưa đủ** (nhóm mức B đã có kế hoạch chi tiết ở [modules/README.md](modules/README.md), nay là mức A, nhưng còn nhiều câu hỏi mở, mục 3); về **cài đặt** các khu vực `auth`, `oauth`, `scim`, `email`, `storage`, `ws`, `fhircast` đã chạy trong `apps/auth`, `apps/fhir-server`, `apps/ws-gateway`, phần còn lại của mức A và toàn bộ mức B/C chưa có code (cột "Code Go" ở mục 1). Nguồn: `~/Downloads/medplum/packages/server/src` (v5.2.18). Số dòng là dòng source **không tính test**, do tôi đếm; số dòng chỉ là thước đo thô về quy mô, không phản ánh độ khó. Ba mức **kế hoạch**: **A** có kế hoạch chi tiết (và có thể đã cài), **B** chỉ có khảo sát ([modules-survey.md](modules-survey.md)), **C** chưa có gì. Cột "Code Go" là trạng thái **cài đặt** tại ngày cập nhật, đối chiếu bằng cách tìm route, operation và cấu hình trong mã, nên độc lập với mức kế hoạch.
 
 ## 1. Theo từng khu vực
 
-| Khu vực | Dòng | Mức | Ở đâu / ghi chú |
-|---|---|---|---|
-| `auth` | 3858 | A | [auth/](../../apps/auth/docs/plans/README.md); **đã cài** P0 đến P6, 7.0 (CLI), P7 HTTP một phần; còn B9 (rà soát bảo mật) |
-| `oauth` | 4267 | A | `auth` P3, **đã cài** (B1 đến B8) |
-| `admin` | 1926 | A (hoãn) | `auth` P7; CLI 7.0 thay phần tối thiểu |
-| `cds` | 82 | A | [cds-dicom/cds.md](cds-dicom/cds.md); chặn bởi quyết định runtime Bot |
-| `dicom` (+ worker `dicom`) | 934 (+246) | A | [cds-dicom/dicom.md](cds-dicom/dicom.md) |
-| `email` | 548 | A | [email-storage.md](modules/email-storage.md); dùng chung với `Mailer` của `auth` |
-| `storage` | 577 | A | [email-storage.md](modules/email-storage.md); là nền của DICOM |
-| `keyvalue` | 128 | A | [keyvalue-mcp-webhook.md](modules/keyvalue-mcp-webhook.md); đã có kế hoạch |
-| `mcp` | 220 | A | [keyvalue-mcp-webhook.md](modules/keyvalue-mcp-webhook.md); đã có kế hoạch |
-| `scim` | 694 | A | [scim-ws-fhircast.md](modules/scim-ws-fhircast.md); thuộc `auth` |
-| `webhook` | 74 | A | [keyvalue-mcp-webhook.md](modules/keyvalue-mcp-webhook.md); chặn bởi runtime Bot |
-| `ws` | 1965 | A | [scim-ws-fhircast.md](modules/scim-ws-fhircast.md); `subscriptions-r4` đã có ở Go |
-| `fhircast` | 930 | A | [scim-ws-fhircast.md](modules/scim-ws-fhircast.md); đã có kế hoạch |
-| `fhir` | 37352 | A (kiểm kê) | [modules/fhir-parity-audit.md](modules/fhir-parity-audit.md): 204 mục, 45 CÓ, 35 MỘT PHẦN, 97 CHƯA, 27 KHÔNG ÁP DỤNG; 17 gói công việc |
-| `workers` (11 hàng đợi) | 5286 | B/C | chỉ có bảng đối chiếu ở mục 7.3 của khảo sát; chưa có kế hoạch cho `download`, `dispatch`, `set-accounts`, `cron`, `batch` (async) |
-| `bots` (`execute`, `vmcontext`, `utils`) | 877 | B/C | chỉ là "phương án D" trong `cds.md`; **chưa có kế hoạch**, mà `cds`, `webhook`, `cron`, `$execute` đều chờ nó |
-| `cloud` (aws, azure, gcp, fission) | 2241 | **C** | S3/Azure/GCP storage, SES, Lambda (chạy Bot), Textract, Fission; chưa nhắc tới ngoài việc "chỉ làm SMTP và hệ thống tệp" |
-| `ai` (`openai.ts`) | 652 | **C** | gắn với `$ai` và `ws/ai-realtime`; chưa có |
-| `config` (loader, SSM, file) | 1293 | C | Go dùng `envconfig` theo từng app; không cần port nguyên, nhưng chưa ghi quyết định |
-| `util` | 1795 | C | hàm phụ trợ; đa số sẽ có sẵn hoặc không cần |
-| `migrations` | 30248 | C | **migration schema PostgreSQL của Medplum, không áp dụng** cho kho Go (goose riêng). Điều **chưa có** là kế hoạch **chuyển dữ liệu** từ một CSDL Medplum đang chạy (nếu có), xem mục 3 |
-| `otel`, `pubsub`, `redis`, `database`, `context`, `logger`, `healthcheck` | 390, 181, 221, 414, 380, 43, 150 | C | hạ tầng; Go đã có phần tương đương (`pkg/observability`, `pkg/messaging`, `pkg/database`, `httpserve`) nhưng chưa có bảng đối chiếu |
-| `ratelimit`, `heartbeat`, `server-registry` | 197, 36, 147 | C | rate limit là điều kiện trước khi mở `auth` ra Internet (`fhir-server` đã có hạn mức theo IP trong bộ nhớ, bật mặc định 20 rps ở staging/production, + `pkg/httpsec`, 2026-11-21; `auth` cũng đã có, 2026-11-21: chung 20 rps và đăng nhập 1 rps/IP); `server-registry` chưa đọc |
-| `seed`, `seeds` | 143, 36 | C | `auth seed project` thay phần cần thiết; `seeds/` nạp search parameter, structure definition, value set đã dựng sẵn |
-| `openapi`, `api-catalog`, `wellknown` | 500, 91, 89 | C/A | `wellknown` nằm trong `auth` P3; `openapi.json` và `api-catalog` chưa quyết định |
-| `hl7`, `sharding`, `agent` | 26, 18, 14 | C | nhỏ; `hl7` chỉ cần khi có Bot |
+| Khu vực | Dòng | Mức | Code Go (2026-11-23) | Ở đâu / ghi chú |
+|---|---|---|---|---|
+| `auth` | 3858 | A | **Xong P0 đến P7**: đăng nhập, đăng ký, mật khẩu, MFA, đăng nhập ngoài, `exchange`/`google`/`preauthorize`, `/admin/projects/*`, CLI. P8 (compartment Patient): đã duyệt, **M0 xong**, M1 đến M5 chưa | [auth/](../../apps/auth/docs/plans/README.md); chi tiết route: [auth api-contract](../../apps/auth/docs/api-contract.md) |
+| `oauth` | 4267 | A | **Xong** (`auth` P3, B1 đến B9): authorize, token (`authorization_code`, `refresh_token`, `client_credentials`, `private_key_jwt`, `pre-authorized_code`), userinfo, introspect, logout, register, well-known | `auth` P3 |
+| `admin` | 1926 | A | **Một phần**: `/admin/projects/*` (project, client, invite, members, settings, sites, setpassword, resetpassword, mfa/reset; tắt mặc định `AUTH_ADMIN_ENABLED`) và CLI; **chưa** `/admin/super/*`, `/:id/bot`, `/:projectId/secrets` | `auth` P7 |
+| `cds` | 82 | A | Chưa | [cds-dicom/cds.md](cds-dicom/cds.md); chặn bởi quyết định runtime Bot |
+| `dicom` (+ worker `dicom`) | 934 (+246) | A | Chưa | [cds-dicom/dicom.md](cds-dicom/dicom.md) |
+| `email` | 548 | A | **Xong** (phần cần thiết): `pkg/mailer` (SMTP), `POST /email/v1/send` kèm đính kèm URL và `Binary/<id>`, SMTP riêng theo project (tắt mặc định); chưa SES | [email-storage.md](modules/email-storage.md); dùng chung với `Mailer` của `auth` |
+| `storage` | 577 | A | **Xong** (S1 đến S7): `pkg/binarystore` (tệp `file:` và S3), Binary thô, `/storage` URL ký, `$presigned-url`, `fhir-server sweep-binary`; chưa Azure/GCP | [email-storage.md](modules/email-storage.md); là nền của DICOM |
+| `keyvalue` | 128 | A | Chưa | [keyvalue-mcp-webhook.md](modules/keyvalue-mcp-webhook.md); đã có kế hoạch |
+| `mcp` | 220 | A | Chưa | [keyvalue-mcp-webhook.md](modules/keyvalue-mcp-webhook.md); đã có kế hoạch |
+| `scim` | 694 | A | **Xong** (`/scim/v2/Users` trong `auth`, tắt mặc định `AUTH_SCIM_ENABLED`) | [scim-ws-fhircast.md](modules/scim-ws-fhircast.md); thuộc `auth` |
+| `webhook` | 74 | A | Chưa | [keyvalue-mcp-webhook.md](modules/keyvalue-mcp-webhook.md); chặn bởi runtime Bot |
+| `ws` | 1965 | A | **Một phần**: `/ws/subscriptions-r4` đã chạy trong `apps/ws-gateway` (tách khỏi `fhir-server` 2026-11-22); chưa `agent`, `ai-realtime`, `echo` | [scim-ws-fhircast.md](modules/scim-ws-fhircast.md), [split-scim-ws-services.md](modules/split-scim-ws-services.md) |
+| `fhircast` | 930 | A | **Xong** (Hub STU2/STU3 trong `ws-gateway`, tắt mặc định `FHIRCAST_ENABLED`; token của `auth` kèm `hub.url`, `hub.topic`) | [scim-ws-fhircast.md](modules/scim-ws-fhircast.md) |
+| `fhir` | 37352 | A (kiểm kê) | **Một phần lớn**: lõi REST, search, batch/transaction, history, bulk export, job bền, terminology cơ bản, Subscription rest-hook, GraphQL, SMART v2 (WP-2a); xem mục 5 | [modules/fhir-parity-audit.md](modules/fhir-parity-audit.md): kiểm kê 2026-11-21, 204 mục, 45 CÓ, 35 MỘT PHẦN, 97 CHƯA, 27 KHÔNG ÁP DỤNG, **chưa tính lại** sau các việc đã xong từ đó (batch async, tự tắt Subscription, kho Binary S3); 17 gói công việc |
+| `workers` (11 hàng đợi) | 5286 | B/C | **Một phần**: có `bulk-export`, `reindex`, `subscription` (rest-hook), `batch` async (`FHIR_ASYNC_BATCH`, tắt mặc định, có checkpoint), tự tắt Subscription lỗi kéo dài (`FHIR_SUBSCRIPTION_AUTO_DISABLE`); chưa `download`, `dispatch`, `set-accounts`, `cron`, `dicom` | bảng đối chiếu ở mục 7.3 của khảo sát và mục 5.4 dưới đây |
+| `bots` (`execute`, `vmcontext`, `utils`) | 877 | B/C | Chưa | chỉ là "phương án D" trong `cds.md`; **chưa có kế hoạch**, mà `cds`, `webhook`, `cron`, `$execute` đều chờ nó |
+| `cloud` (aws, azure, gcp, fission) | 2241 | **C** | **Rất ít**: chỉ S3 storage và SMTP; chưa Azure, GCP, SES, Lambda, Fission, Textract | chưa nhắc tới ngoài việc "chỉ làm SMTP, S3 và hệ thống tệp" |
+| `ai` (`openai.ts`) | 652 | **C** | Chưa | gắn với `$ai` và `ws/ai-realtime`; chưa có |
+| `config` (loader, SSM, file) | 1293 | C | **Có theo cách riêng của Go**: `pkg/envconfig` từng app, tài liệu cấu hình sinh từ mã (`apps/*/docs/config.md`) kèm test chống lỗi thời, `.env.example` đủ biến; không có SSM/loader kiểu Medplum | không cần port nguyên; quyết định ghi ở [service-principles.md](../service-principles.md) mục 6.2 |
+| `util` | 1795 | C | Không áp dụng nguyên khối | hàm phụ trợ; đa số sẽ có sẵn hoặc không cần |
+| `migrations` | 30248 | C | Không áp dụng (kho Go dùng goose riêng, `*/migrate`) | **migration schema PostgreSQL của Medplum, không áp dụng** cho kho Go. Điều **chưa có** là kế hoạch **chuyển dữ liệu** từ một CSDL Medplum đang chạy (nếu có), xem mục 3 |
+| `otel`, `pubsub`, `redis`, `database`, `context`, `logger`, `healthcheck` | 390, 181, 221, 414, 380, 43, 150 | C | **Có phần tương đương**: `pkg/observability` (đã nhúng vào repo 2026-11-23), `pkg/messaging`, `pkg/database`, `pkg/httpserve` (probe, tắt êm) | hạ tầng; vẫn chưa có bảng đối chiếu từng mục |
+| `ratelimit`, `heartbeat`, `server-registry` | 197, 36, 147 | C | **Có hạn mức theo IP trong bộ nhớ ở cả ba service**: `fhir-server` (20 rps ở staging/production, `pkg/httpsec`), `auth` (20 rps chung và đăng nhập 1 rps mỗi IP), `ws-gateway` (10 lần mở websocket mỗi giây mỗi IP); hạn mức đếm **theo instance** (chạy N replica thì nhân N); `server-registry` chưa đọc | rate limit là điều kiện trước khi mở `auth` ra Internet |
+| `seed`, `seeds` | 143, 36 | C | **Một phần**: `auth seed project` thay phần cần thiết; chưa có bước nạp `seeds/` (search parameter, structure definition, value set dựng sẵn) | xem mục 5.4 |
+| `openapi`, `api-catalog`, `wellknown` | 500, 91, 89 | C/A | **Một phần**: `wellknown` ở `auth` (jwks, openid-configuration, oauth-authorization-server, smart-configuration, smart-styles, oauth-protected-resource); **OpenAPI (swaggo) cho cả ba service** (`apps/*/docs/swagger.*`, có test chống lệch); chưa có `/openapi.json` theo kiểu Medplum và `/.well-known/api-catalog` | quyết định về `openapi.json` và `api-catalog` vẫn chưa có |
+| `hl7`, `sharding`, `agent` | 26, 18, 14 | C | Chưa | nhỏ; `hl7` chỉ cần khi có Bot |
 
-Tổng khoảng 69,5 nghìn dòng (chưa tính `migrations`). Phần có kế hoạch chi tiết (mức A) khoảng 11 nghìn dòng, tức khoảng một phần sáu theo dòng, nhưng `fhir` một mình chiếm hơn một nửa nên con số này gây hiểu lầm: theo **số khu vực**, 5 trong khoảng 30 khu vực có kế hoạch chi tiết.
+Tổng khoảng 69,5 nghìn dòng (chưa tính `migrations`). Phần có kế hoạch chi tiết (mức A) khoảng 11 nghìn dòng, tức khoảng một phần sáu theo dòng, nhưng `fhir` một mình chiếm hơn một nửa nên con số này gây hiểu lầm: theo **số khu vực**, 5 trong khoảng 30 khu vực có kế hoạch chi tiết. Về **cài đặt**, sáu khu vực đã xong phần cần thiết (`auth`, `oauth`, `scim`, `email`, `storage`, `fhircast`), ba khu vực một phần (`admin`, `ws`, `workers`) và `fhir` đã có phần lõi.
 
 ## 2. Ngoài `server`: các package khác của monorepo Medplum
 
@@ -47,25 +47,25 @@ Tổng khoảng 69,5 nghìn dòng (chưa tính `migrations`). Phần có kế ho
 | M2 | Có cần **chuyển dữ liệu** từ CSDL Medplum hiện có sang kho Go không? | Nếu có, cần kế hoạch di trú (ánh xạ bảng, băm mật khẩu `$2b$`, resource, binary); nếu không, `migrations/` hoàn toàn không liên quan |
 | M3 | Phạm vi `agent`, `ccda`, `hl7` và các tích hợp bên thứ ba (Health Gorilla, DoseSpot, ScriptSure) | Chưa rõ có thuộc migration không |
 | M4 | `ai`: có dùng nhà cung cấp AI nào, và có cần `$ai` và `ws/ai-realtime` không | Chặn `ai` |
-| M5 | Lưu trữ đối tượng: chỉ hệ thống tệp, hay S3/Azure/GCP | Chặn `storage` và `cloud` |
+| M5 | Lưu trữ đối tượng: chỉ hệ thống tệp, hay S3/Azure/GCP | Đã làm hệ thống tệp và S3 (S1 đến S7); câu hỏi còn lại là Azure/GCP, chặn phần còn lại của `cloud` |
 
 ## 4. Việc nên làm để "đủ" ở mức kế hoạch
 
 1. Chốt M1 đến M5 (hoặc ghi rõ "ngoài phạm vi").
 2. Bản kiểm kê tương đương cho `fhir` (đã ở mục 6 của khảo sát).
-3. Viết kế hoạch chi tiết cho các khu vực mức B mà bạn muốn làm trước (đề xuất: `email` + `storage`, `keyvalue`, `mcp`).
+3. ~~Viết kế hoạch chi tiết cho `email` + `storage`, `keyvalue`, `mcp`~~ (đã có, xem mục 1); `email` và `storage` đã cài, `keyvalue` và `mcp` chưa.
 4. Kế hoạch cho `workers` (nhóm theo hàng đợi, gắn với từng module sở hữu nó) và cho `bots` nếu chọn phương án D ở M1.
 5. Bảng đối chiếu hạ tầng (`otel`, `redis`, `pubsub`, `ratelimit`, `config`, `healthcheck`) để biết phần nào Go đã có, phần nào còn thiếu.
 
 ## 5. Đối chiếu route và operation (2026-11-23)
 
-So trực tiếp các route và operation đăng ký trong `medplum/packages/server/src` (`fhir/routes.ts`, `app.ts`, `wellknown.ts` và router của từng module) với route đăng ký trong `apps/*` và `pkg/fhirrouter`. "Chưa có" nghĩa là không tìm thấy route hoặc handler tương ứng trong Go; tính năng ngang (không phải route) kiểm bằng grep, nên có thể sót. **Lưu ý phiên bản:** bản Medplum dùng để so là `v5.2.17-5-ge7e7e4019` (`/Users/hoc.nguyenthai/Documents/med-vita/medplum`), cũ hơn tag `v5.2.18` ghi ở [UPSTREAM.md](../UPSTREAM.md); thay đổi chỉ có ở 5.2.18 không hiện ra ở đây.
+Cập nhật 2026-11-23 cho khớp code hiện tại (đối chiếu lại từng dòng bằng cách tìm trong `pkg/` và `apps/`; các mục "chưa có" bên dưới đã được kiểm lại, trừ chỗ ghi rõ). So trực tiếp các route và operation đăng ký trong `medplum/packages/server/src` (`fhir/routes.ts`, `app.ts`, `wellknown.ts` và router của từng module) với route đăng ký trong `apps/*` và `pkg/fhirrouter`. "Chưa có" nghĩa là không tìm thấy route hoặc handler tương ứng trong Go; tính năng ngang (không phải route) kiểm bằng grep, nên có thể sót. **Lưu ý phiên bản:** bản Medplum dùng để so là `v5.2.17-5-ge7e7e4019` (`/Users/hoc.nguyenthai/Documents/med-vita/medplum`), cũ hơn tag `v5.2.18` ghi ở [UPSTREAM.md](../UPSTREAM.md); thay đổi chỉ có ở 5.2.18 không hiện ra ở đây.
 
 ### 5.1 Đã có ở Go
 
-- `fhir-server`: CRUD, history, search, PATCH, batch/transaction, update-as-create; `$export` (hệ thống, Patient, Group); `Patient/$everything`, `$expunge`, `$reindex`, `$validate`, `$graphql`; `$lookup`, `$subsumes`, `$validate-code`, `$expand`, `$translate`; `Binary/$presigned-url`, `/storage/`; `Subscription/$get-ws-binding-token`.
-- `auth`: `/auth/*`, `/oauth2/*`, `/.well-known/*` (trừ `api-catalog`), MFA, `/scim/v2/Users`, `/email/v1/send`, `/admin/projects/*` (`client`, `invite`, `members`, `settings`, `sites`).
-- `ws-gateway`: `/ws/subscriptions-r4`, FHIRcast (`/fhircast/STU2|STU3`, `/hub`, `/ws/fhircast`).
+- `fhir-server`: CRUD, history, search, PATCH, batch/transaction (kể cả batch async `Prefer: respond-async` khi bật `FHIR_ASYNC_BATCH`, có checkpoint), update-as-create; `$export` (hệ thống, Patient, Group) và `bulkdata/{id}/status`, `job/{id}/status`; `Patient/$everything`, `$expunge`, `$reindex`, `$validate`, `$graphql`; `$lookup`, `$subsumes`, `$validate-code`, `$expand`, `$translate`; Binary thô, `Binary/$presigned-url`, `/storage/` (kho `file:` hoặc `s3:`); `Subscription/$get-ws-binding-token`; Subscription rest-hook (kể cả tự tắt khi lỗi lặp lại); CLI `migrate`, `assign-project`, `sweep-binary`.
+- `auth`: `/auth/*` (đăng ký, đăng nhập, mật khẩu, MFA, `exchange`, `google`, `preauthorize`, đăng nhập ngoài), `/oauth2/*`, `/.well-known/*` (trừ `api-catalog`), `/scim/v2/Users`, `/email/v1/send`, `/admin/projects/*` (`client`, `invite`, `members`, `settings`, `sites`, `setpassword`, `resetpassword`, `mfa/reset`); ba nhóm `/admin/projects/*`, `/scim/v2/Users` và `/email/v1/send` **tắt mặc định**.
+- `ws-gateway`: `/ws/subscriptions-r4`, FHIRcast (`/fhircast/STU2|STU3`, `/hub`, `/ws/fhircast/{endpoint}`, tắt mặc định), probe `/health/*`.
 
 ### 5.2 FHIR operation còn thiếu
 
@@ -102,18 +102,17 @@ So trực tiếp các route và operation đăng ký trong `medplum/packages/ser
 | Worker Medplum | Ở Go |
 |---|---|
 | `bulk-export`, `reindex`, `subscription` (rest-hook) | có |
-| `batch` (batch/transaction với `Prefer: respond-async`) | chưa: Go chỉ nhận `respond-async` cho `$export` |
+| `batch` (batch/transaction với `Prefer: respond-async`) | **có** (`FHIR_ASYNC_BATCH`, tắt mặc định; job `AsyncJob` có checkpoint, hủy bằng `DELETE job/{id}/status`) |
 | `download` (tải attachment URL ngoài về Binary) | chưa |
-| `subscription-failure-tracker` (tự tắt Subscription lỗi kéo dài) | chưa |
+| `subscription-failure-tracker` (tự tắt Subscription lỗi kéo dài) | **có** (`FHIR_SUBSCRIPTION_AUTO_DISABLE`; chưa tạo `AuditEvent`, chỉ ghi log) |
 | `cron` | chưa; M1 |
 | `dispatch`, `set-accounts`, `dicom`, `lambda-cleaner`, `post-deploy-migration` | chưa; một phần không áp dụng |
 | `seeds/` (SearchParameter, StructureDefinition, ValueSet dựng sẵn) | chưa có bước seed tương đương |
-| `cloud` | chỉ có S3 storage; chưa có Azure, GCP, SES, Lambda, Fission, Textract (M5, M1, M4) |
+| `cloud` | chỉ có S3 storage và SMTP; chưa có Azure, GCP, SES, Lambda, Fission, Textract (M5, M1, M4) |
 
 ### 5.5 Tính năng ngang còn thiếu
 
-- Kiểm soát truy cập: resource `AccessPolicy` lưu trong server (chính sách chỉ đến từ claim), compartment `patient/` và `%patient`, `hiddenFields` (WP-2b, WP-2c).
-- Search: `_contained`, SubscriptionTopic (R5), chained trong `_sort`/`_include`.
-- Validator: profile/slicing, binding terminology, kiểm tra đích Reference (WP-5).
-- `AuditEvent`: kiểm toán mới là dòng log.
-
+- Kiểm soát truy cập: resource `AccessPolicy` do `auth` lưu (schema `identity`) và dịch thành claim `fhir_access_policy`; `fhir-server` chỉ đọc claim, không lưu `AccessPolicy` (WP-2b). `ParsePolicy` đã **từ chối khóa lạ** (P8 M0 xong). **Chưa có:** compartment `patient/` và `%patient` (P8 M1 đến M5: đã duyệt 2026-11-23, chưa làm), `hiddenFields` (hiện `auth` dịch thành cấm cả loại, chưa lọc từng trường; WP-2c).
+- Search: `_contained` (bị bỏ qua), SubscriptionTopic (R5), chained trong `_sort`/`_include`.
+- Validator: profile/slicing, fixed/pattern, binding terminology, kiểm tra đích Reference (WP-5).
+- `AuditEvent`: kiểm toán mới là dòng log (`audit=true` của super-admin, tự tắt Subscription...); Go chưa lưu `AuditEvent` vào kho.

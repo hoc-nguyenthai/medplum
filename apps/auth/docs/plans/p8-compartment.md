@@ -50,4 +50,5 @@ Ghi (tạo `QuestionnaireResponse`, `Communication`), `hiddenFields`, `interacti
 
 ## Tiến độ
 
-(chưa bắt đầu)
+- **M0 xong:** `ParsePolicy` (`pkg/fhirauth/policy.go`) từ chối khóa lạ trong rule (test `khóa lạ` ở `policy_test.go`), nên bản `fhir-server` cũ không cấp rộng hơn ý định khi `auth` mới phát claim dạng mới.
+- M1 đến M5: chưa làm (`_compartment` chưa có trong `pkg/fhirsearch`). Cập nhật 2026-11-23.
