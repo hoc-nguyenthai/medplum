@@ -29,7 +29,7 @@ Trạng thái: `[ ]` chưa làm, `[~]` đang chặn bởi quyết định, `[x]`
 
 | Thứ tự | Việc | Số việc | Ghi chú |
 |---|---|---|---|
-| 1 | Compartment Patient (P8 M1 đến M5) | #16, #20 | Đã duyệt trước đó. **Đang làm** từ 2026-11-23: M0, M1, M2 xong (`_compartment` ở `pkg/fhirsearch`, đẩy điều kiện chính sách xuống kho, `$everything` với token giới hạn, OR nhiều rule cùng loại); còn M3 (`auth`), M4 (e2e), M5 (tài liệu) |
+| 1 | Compartment Patient (P8 M1 đến M5) | #16, #20 | Đã duyệt trước đó. **Đang làm** từ 2026-11-23: M0 đến M3 xong (`_compartment` ở `pkg/fhirsearch`, đẩy điều kiện chính sách xuống kho, `$everything` với token giới hạn, OR nhiều rule cùng loại, `auth` giải `%patient`/`%profile` sau cờ `AUTH_PATIENT_COMPARTMENT_ENABLED` mặc định tắt); còn M4 (e2e hai tiến trình), M5 (tài liệu, thứ tự deploy) |
 | 2 | Nạp định nghĩa: `$import`, `PackageRelease/$install`, seed | #18 | Điều kiện để có SNOMED/LOINC |
 | 3 | Worker `download` (B1, B2) | #17 | Đóng nốt #17 |
 | 4 | Operation lâm sàng không bị chặn | #19 | `$summary`, `$match`, `$extract`, `$graph`, `$csv`, `$refresh-reference-display`, `$resend`, `$expand-profile` |

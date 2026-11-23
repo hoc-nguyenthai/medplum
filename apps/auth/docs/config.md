@@ -53,6 +53,7 @@ Tệp này **được sinh từ `internal/config/config.go`** (xem `docs_test.go
 | `AUTH_MFA_WINDOW` | `1` | Số bước TOTP được chấp nhận mỗi bên (trong [0, 5]). |
 | `AUTH_NEW_PROJECT_REGISTRATION_ENABLED` | `true` | false: chỉ tắt tạo project mới (đăng ký người dùng vẫn mở nếu AUTH_REGISTER_ENABLED=true). |
 | `AUTH_OAUTH_REGISTER_ENABLED` | `false` | bật POST /oauth2/register (tra client dựng sẵn theo redirect_uri, mặc định tắt). AllowPrivateJWKS cho phép jwks_uri của client là http hoặc trỏ vào dải nội bộ (chỉ dev/test, cấm ở staging/production). RedisURL (tùy chọn) là nơi nhớ jti của client assertion dùng chung nhiều instance; rỗng thì nhớ trong bộ nhớ (chỉ đúng với một instance). |
+| `AUTH_PATIENT_COMPARTMENT_ENABLED` | `false` | bật dịch chính sách có `%patient`/`%profile` và nhiều rule cùng loại sang claim (compartment Patient, P8 M3): token bệnh nhân và người thân đọc được dữ liệu trong compartment của mình. Mặc định TẮT (các loại đó bị cấm cả loại). CHỈ bật sau khi mọi fhir-server đã nâng cấp: bản cũ từ chối claim dạng này nên token bị 403. Thứ tự deploy: fhir-server trước, rồi bật biến này ở auth. |
 | `AUTH_PWNED_ENABLED` | `true` | bật kiểm tra mật khẩu rò rỉ (HIBP). Chỉ được tắt ở local, development, test: lỗi dịch vụ là lỗi (fail đóng). |
 | `AUTH_PWNED_TIMEOUT` | `3s` | Thời gian chờ khi gọi API mật khẩu rò rỉ; hết hạn tính là lỗi (fail đóng). |
 | `AUTH_PWNED_URL` | `(rỗng)` | rỗng = API chính thức |

@@ -49,7 +49,7 @@ func (s *Service) authorization(ctx context.Context, loginScope string, m *fhir.
 	if err != nil {
 		return "", nil, domain.ErrAccessDenied(invalidAccessPolicy)
 	}
-	claim, narrowed, err := domain.PolicyClaim(pols)
+	claim, narrowed, err := domain.PolicyClaimWith(pols, domain.PolicyOptions{Compartment: s.Tokens.PatientCompartment, Vars: policyVars(m)})
 	if len(narrowed) > 0 {
 		s.Logger.InfoContext(ctx, "access policy được thu hẹp khi dịch sang claim", "membership", m.ID, "changes", narrowed)
 	}

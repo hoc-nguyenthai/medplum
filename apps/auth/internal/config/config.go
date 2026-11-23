@@ -83,6 +83,10 @@ type Settings struct {
 	RefreshGrace, SessionMaxAge time.Duration
 	// MaxPolicyClaimBytes là trần kích thước claim fhir_access_policy; vượt thì từ chối cấp token.
 	MaxPolicyClaimBytes int
+	// PatientCompartmentEnabled bật dịch chính sách có `%patient`/`%profile` và nhiều rule cùng loại sang claim (compartment Patient, P8 M3): token bệnh nhân
+	// và người thân đọc được dữ liệu trong compartment của mình. Mặc định TẮT (các loại đó bị cấm cả loại). CHỈ bật sau khi mọi fhir-server đã nâng cấp: bản
+	// cũ từ chối claim dạng này nên token bị 403. Thứ tự deploy: fhir-server trước, rồi bật biến này ở auth.
+	PatientCompartmentEnabled bool
 
 	// RegisterEnabled=false tắt mọi đăng ký; NewProjectRegistrationEnabled=false chỉ tắt tạo project mới.
 	RegisterEnabled               bool
@@ -313,6 +317,7 @@ func FromEnv(get func(string) string) (Settings, error) {
 	r.Duration(&s.RefreshGrace, "AUTH_REFRESH_GRACE")
 	r.Duration(&s.SessionMaxAge, "AUTH_SESSION_MAX_AGE")
 	r.Int(&s.MaxPolicyClaimBytes, "AUTH_MAX_POLICY_CLAIM_BYTES")
+	r.Bool(&s.PatientCompartmentEnabled, "AUTH_PATIENT_COMPARTMENT_ENABLED")
 	r.Bool(&s.RegisterEnabled, "AUTH_REGISTER_ENABLED")
 	r.Bool(&s.NewProjectRegistrationEnabled, "AUTH_NEW_PROJECT_REGISTRATION_ENABLED")
 	r.String(&s.RecaptchaSiteKey, "AUTH_RECAPTCHA_SITE_KEY")

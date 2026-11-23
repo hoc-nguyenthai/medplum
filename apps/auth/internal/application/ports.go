@@ -257,6 +257,9 @@ type TokenConfig struct {
 	AccessTTL, RefreshTTL, IDTTL time.Duration
 	// MaxPolicyBytes là trần kích thước claim fhir_access_policy (0: 8192).
 	MaxPolicyBytes int
+	// PatientCompartment bật giải `%patient`/`%profile` và nhiều rule cùng loại khi dịch AccessPolicy sang claim (P8 M3). Chỉ bật khi mọi fhir-server đã
+	// nâng cấp (P8 M0 đến M2); bản cũ từ chối claim dạng này.
+	PatientCompartment bool
 	// BaseURL là địa chỉ công khai của auth, để dựng smart_style_url trong phản hồi token.
 	BaseURL string
 	// AppBaseURL là địa chỉ ứng dụng đăng nhập: /oauth2/authorize chuyển người dùng tới <AppBaseURL>/oauth. Rỗng thì không có /oauth2/authorize.

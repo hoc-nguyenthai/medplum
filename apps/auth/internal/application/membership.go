@@ -44,6 +44,44 @@ func accessPolicyRefs(m *fhir.ProjectMembership) []*fhir.Reference {
 	return refs
 }
 
+// policyVars dựng biến cho từng AccessPolicy của membership, cùng thứ tự với accessPolicyRefs (accessPolicy trước, rồi access[i].policy). Chỉ có hai biến
+// được dùng ở claim: `profile` là hồ sơ của membership (không ai ghi đè được); `patient` lấy từ tham số `patient` của chính access[i] (valueReference hoặc
+// valueString), nếu không có thì là chính hồ sơ khi hồ sơ là Patient. Giá trị chưa kiểm định dạng: domain.ResolvePolicyCriteria kiểm khi dùng.
+func policyVars(m *fhir.ProjectMembership) []map[string]string {
+	profile := ""
+	if m.Profile != nil {
+		profile = m.Profile.Reference
+	}
+	base := func() map[string]string {
+		v := map[string]string{"profile": profile}
+		if strings.HasPrefix(profile, "Patient/") {
+			v["patient"] = profile
+		}
+		return v
+	}
+	var out []map[string]string
+	if m.AccessPolicy != nil {
+		out = append(out, base())
+	}
+	for _, a := range m.Access {
+		if a.Policy == nil {
+			continue
+		}
+		v := base()
+		for _, p := range a.Parameter {
+			val := p.ValueString
+			if p.ValueReference != nil {
+				val = p.ValueReference.Reference
+			}
+			if p.Name != "" && p.Name != "profile" {
+				v[p.Name] = val
+			}
+		}
+		out = append(out, v)
+	}
+	return out
+}
+
 // ResolveIPAccessRules đọc các AccessPolicy của membership và gom ipAccessRule theo thứ tự. Đọc lỗi, hoặc policy thuộc
 // project khác, thì từ chối với một thông báo chung (không lộ chi tiết cấu hình khi đăng nhập). Medplum còn thay biến
 // (%profile, %patient, tham số) trong cả policy; biến không có tác dụng với ipAccessRule nên bỏ qua. Policy của project

@@ -272,7 +272,7 @@ func (c *Container) initTokens() error {
 	}
 	c.Auth.Tokens = application.TokenConfig{
 		Issuer: s.IssuerURL(), Audiences: []string{s.AccessAudience()}, AccessTTL: s.AccessTTL, RefreshTTL: s.RefreshTTL, IDTTL: s.IDTTL,
-		MaxPolicyBytes: s.MaxPolicyClaimBytes, BaseURL: s.BaseURL, AuthCodeTTL: s.AuthCodeTTL, AllowPlainPKCE: s.AllowPlainPKCE, RefreshGrace: s.RefreshGrace, SessionMaxAge: s.SessionMaxAge, AppBaseURL: s.AppBaseURL, FHIRBaseURL: s.FHIRBaseURL,
+		MaxPolicyBytes: s.MaxPolicyClaimBytes, PatientCompartment: s.PatientCompartmentEnabled, BaseURL: s.BaseURL, AuthCodeTTL: s.AuthCodeTTL, AllowPlainPKCE: s.AllowPlainPKCE, RefreshGrace: s.RefreshGrace, SessionMaxAge: s.SessionMaxAge, AppBaseURL: s.AppBaseURL, FHIRBaseURL: s.FHIRBaseURL,
 	}
 	if c.Authenticator == nil {
 		c.Authenticator = c.Auth

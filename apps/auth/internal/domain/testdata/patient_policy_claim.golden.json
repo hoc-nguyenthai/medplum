@@ -1,0 +1,91 @@
+[
+  {
+    "criteria": "_id=00000000-0000-4000-8000-000000000001",
+    "resourceType": "Patient"
+  },
+  {
+    "criteria": "_compartment=Patient/00000000-0000-4000-8000-000000000001",
+    "resourceType": "AllergyIntolerance"
+  },
+  {
+    "criteria": "_compartment=Patient/00000000-0000-4000-8000-000000000001",
+    "resourceType": "Appointment"
+  },
+  {
+    "criteria": "_compartment=Patient/00000000-0000-4000-8000-000000000001",
+    "resourceType": "CarePlan"
+  },
+  {
+    "criteria": "_compartment=Patient/00000000-0000-4000-8000-000000000001",
+    "resourceType": "CareTeam"
+  },
+  {
+    "criteria": "recipient=Patient/00000000-0000-4000-8000-000000000001",
+    "resourceType": "Communication"
+  },
+  {
+    "criteria": "sender=Patient/00000000-0000-4000-8000-000000000001",
+    "resourceType": "Communication"
+  },
+  {
+    "criteria": "_compartment=Patient/00000000-0000-4000-8000-000000000001",
+    "resourceType": "Condition"
+  },
+  {
+    "criteria": "_compartment=Patient/00000000-0000-4000-8000-000000000001",
+    "resourceType": "Coverage"
+  },
+  {
+    "criteria": "_compartment=Patient/00000000-0000-4000-8000-000000000001",
+    "resourceType": "DiagnosticReport"
+  },
+  {
+    "criteria": "_compartment=Patient/00000000-0000-4000-8000-000000000001",
+    "resourceType": "DocumentReference"
+  },
+  {
+    "criteria": "_compartment=Patient/00000000-0000-4000-8000-000000000001",
+    "resourceType": "Encounter"
+  },
+  {
+    "criteria": "_compartment=Patient/00000000-0000-4000-8000-000000000001",
+    "resourceType": "Goal"
+  },
+  {
+    "criteria": "_compartment=Patient/00000000-0000-4000-8000-000000000001",
+    "resourceType": "Immunization"
+  },
+  {
+    "criteria": "_compartment=Patient/00000000-0000-4000-8000-000000000001",
+    "resourceType": "MedicationRequest"
+  },
+  {
+    "criteria": "_compartment=Patient/00000000-0000-4000-8000-000000000001",
+    "resourceType": "MedicationStatement"
+  },
+  {
+    "criteria": "_compartment=Patient/00000000-0000-4000-8000-000000000001",
+    "resourceType": "Observation"
+  },
+  {
+    "criteria": "_compartment=Patient/00000000-0000-4000-8000-000000000001",
+    "resourceType": "Procedure"
+  },
+  {
+    "criteria": "_compartment=Patient/00000000-0000-4000-8000-000000000001",
+    "resourceType": "QuestionnaireResponse"
+  },
+  {
+    "criteria": "_compartment=Patient/00000000-0000-4000-8000-000000000001",
+    "readonly": true,
+    "resourceType": "RelatedPerson"
+  },
+  {
+    "criteria": "_compartment=Patient/00000000-0000-4000-8000-000000000001",
+    "resourceType": "ServiceRequest"
+  },
+  {
+    "criteria": "_compartment=Patient/00000000-0000-4000-8000-000000000001",
+    "resourceType": "Task"
+  }
+]
