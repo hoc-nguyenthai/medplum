@@ -15,7 +15,7 @@ var _ = fhir.Bundle{} // để swag phân giải kiểu pkg/fhir
 // @tag.name					fhir
 // @tag.description			FHIR R4 REST: CRUD, search, history, batch/transaction, GraphQL, metadata (CapabilityStatement). Lỗi trả OperationOutcome (application/fhir+json).
 // @tag.name					operation
-// @tag.description			Operation FHIR ($validate, $everything, $reindex, $expunge) và trạng thái job nền. $reindex và $expunge cần quyền admin.
+// @tag.description			Operation FHIR ($validate, $everything, $reindex, $expunge, PackageRelease/$install) và trạng thái job nền. $reindex, $expunge và $install cần quyền admin.
 // @tag.name					terminology
 // @tag.description			Terminology cơ bản: ValueSet/$expand và CodeSystem/$lookup.
 // @tag.name					bulk
@@ -25,7 +25,7 @@ var _ = fhir.Bundle{} // để swag phân giải kiểu pkg/fhir
 // @securityDefinitions.apikey	BearerAuth
 // @in							header
 // @name						Authorization
-// @description				Dạng "Bearer <token>". Vai trò: read (GET, _search, operation không ghi), write (ghi, batch), admin ($reindex, $expunge). /fhir/R4/metadata công khai.
+// @description				Dạng "Bearer <token>". Vai trò: read (GET, _search, operation không ghi), write (ghi, batch), admin ($reindex, $expunge, $install). /fhir/R4/metadata công khai.
 
 // FHIRResource là body FHIR JSON của một resource bất kỳ (luôn có resourceType); schema cụ thể xem pkg/fhir.
 type FHIRResource map[string]any
@@ -477,6 +477,22 @@ func reindexOne() {}
 //	@Failure		404				{object}	fhir.OperationOutcome	"Không tồn tại"
 //	@Router			/fhir/R4/{resourceType}/{id}/$expunge [post]
 func expunge() {}
+
+// packageInstall godoc
+//
+//	@Summary		PackageRelease/$install (nạp gói định nghĩa)
+//	@Description	Cần quyền admin project. Đọc Bundle (batch hoặc transaction) trong Binary mà PackageRelease.content.url trỏ tới (dạng Binary/<id>, tối đa 64 MiB) và chạy với quyền của người gọi. Ghi một PackageInstallation: installing rồi installed, hoặc error khi có entry lỗi (transaction được hoàn tác). Trả Bundle kết quả.
+//	@Tags			operation
+//	@Security		BearerAuth
+//	@Produce		application/fhir+json
+//	@Param			id	path		string	true	"Id của PackageRelease"
+//	@Success		200	{object}	fhir.Bundle
+//	@Failure		400	{object}	fhir.OperationOutcome	"Gói không phải Bundle JSON, content.url sai dạng hoặc có entry lỗi"
+//	@Failure		401	{object}	fhir.OperationOutcome	"Thiếu hoặc sai Bearer token"
+//	@Failure		403	{object}	fhir.OperationOutcome	"Token không đủ quyền (cần quyền admin)"
+//	@Failure		404	{object}	fhir.OperationOutcome	"PackageRelease hoặc Binary không tồn tại"
+//	@Router			/fhir/R4/PackageRelease/{id}/$install [post]
+func packageInstall() {}
 
 // jobStatus godoc
 //

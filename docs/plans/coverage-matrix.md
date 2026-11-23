@@ -75,7 +75,7 @@ Cập nhật 2026-11-23 cho khớp code hiện tại (đối chiếu lại từn
 | C-CDA | `Patient/$ccda-export` | M3 |
 | Lịch hẹn | `Appointment/$find`, `$book`, `$hold`, `$cancel`, `$confirm`, `$reschedule` | Q-F4 |
 | Thanh toán | `Claim/$submit`, `Claim/$export`, `CoverageEligibilityRequest/$submit`, `ChargeItemDefinition/$apply`, `$set-accounts` | M1, Q-F5 |
-| Nạp định nghĩa | `CodeSystem/$import`, `ConceptMap/$import`, `PackageRelease/$install`, `$rebuild-base-definitions` | không; cần để nạp SNOMED/LOINC |
+| Nạp định nghĩa | `PackageRelease/$install` **có** (2026-11-23). Chưa có: `CodeSystem/$import`, `ConceptMap/$import`, `$rebuild-base-definitions` | không; cần để nạp SNOMED/LOINC; kế hoạch [modules/definitions-import.md](modules/definitions-import.md) |
 | SMART Health Cards/Links | `$generate-smart-health-card`, `$generate-smart-health-link`, `$verify-smart-health-card`, `$resolve-smart-health-link`, route `/shl/` | không |
 | Quản trị qua FHIR | `Project/$init`, `$clone`, `$archive`, `/$restore`, `Project/:id/$rate-limits`, `User/$rescope`, `User/$update-email`, `ClientApplication/$rotate-secret`, `ClientApplication/$smart-launch` | ranh giới với `auth` |
 | Bot | `Bot/$execute` (4 biến thể), `Bot/$deploy`, `Bot/$init` | M1 |

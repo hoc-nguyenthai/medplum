@@ -30,7 +30,7 @@ Trạng thái: `[ ]` chưa làm, `[~]` đang chặn bởi quyết định, `[x]`
 | Thứ tự | Việc | Số việc | Ghi chú |
 |---|---|---|---|
 | 1 | Compartment Patient (P8 M1 đến M5) | #16, #20 | Đã duyệt trước đó. **XONG 2026-11-23** (M0 đến M5) (`_compartment` ở `pkg/fhirsearch`, đẩy điều kiện chính sách xuống kho, `$everything` với token giới hạn, OR nhiều rule cùng loại, `auth` giải `%patient`/`%profile` sau cờ `AUTH_PATIENT_COMPARTMENT_ENABLED` mặc định tắt, e2e hai tiến trình); tài liệu, thứ tự deploy và quy trình tạo Patient cùng id ở runbook auth §12. Còn hở: chưa tự đồng bộ Patient sang fhir-server |
-| 2 | Nạp định nghĩa: `$import`, `PackageRelease/$install`, seed | #18 | Điều kiện để có SNOMED/LOINC |
+| 2 | Nạp định nghĩa: `$import`, `PackageRelease/$install`, seed | #18 | Điều kiện để có SNOMED/LOINC. **Đang làm**: D1 (`$install`) xong 2026-11-23, tiếp D2 (`CodeSystem/$import` + bảng dẫn xuất) |
 | 3 | Worker `download` (B1, B2) | #17 | Đóng nốt #17 |
 | 4 | Operation lâm sàng không bị chặn | #19 | `$summary`, `$match`, `$extract`, `$graph`, `$csv`, `$refresh-reference-display`, `$resend`, `$expand-profile` |
 | 5 | `keyvalue`, `mcp` | #6 | `mcp` cần claim `fhir_membership`, làm sau thứ tự 1 |
@@ -48,7 +48,7 @@ Nguồn: [coverage-matrix.md](coverage-matrix.md) mục 5. Thứ tự thực hi�
 | # | Việc | Trạng thái | Ghi chú / chặn bởi | Chi tiết |
 |---|---|---|---|---|
 | 17 | Batch/transaction async (`Prefer: respond-async`), worker `download`, tự tắt Subscription lỗi kéo dài (`subscription-failure-tracker`) | [ ] một phần: **xong** A1 đến A3 (batch async có checkpoint, `FHIR_ASYNC_BATCH`, tắt mặc định) và C1, C2 (tự tắt Subscription, `FHIR_SUBSCRIPTION_AUTO_DISABLE`, bộ đếm bộ nhớ và Redis); **chưa** B1, B2 (worker `download`) | B1, B2 chưa làm (không có worker tải trong mã); Q-17.1 đến Q-17.5 theo đề xuất trong kế hoạch | [modules/p17-async-batch-download-autodisable.md](modules/p17-async-batch-download-autodisable.md) |
-| 18 | Nạp định nghĩa: `CodeSystem/$import`, `ConceptMap/$import`, `PackageRelease/$install`, bước seed SearchParameter/StructureDefinition/ValueSet | [ ] | không chặn; điều kiện để có SNOMED/LOINC | mục 5.2, 5.4 |
+| 18 | Nạp định nghĩa: `CodeSystem/$import`, `ConceptMap/$import`, `PackageRelease/$install`, bước seed SearchParameter/StructureDefinition/ValueSet | [~] D1 (`$install`) xong 2026-11-23; còn D2 đến D5 theo [modules/definitions-import.md](modules/definitions-import.md) (Q-D1 = bảng dẫn xuất mới, đã duyệt) | không chặn; điều kiện để có SNOMED/LOINC | mục 5.2, 5.4 |
 | 19 | Operation lâm sàng không bị chặn: `Patient/$summary`, `QuestionnaireResponse/$extract`, `Patient/$match`, `$graph`, `$csv`, `$refresh-reference-display`, `$resend`, `StructureDefinition/$expand-profile` | [ ] | WP-9 | mục 5.2 |
 | 20 | Kiểm soát truy cập trong server: resource `AccessPolicy`, compartment `patient/` và `%patient`, `hiddenFields` | [~] compartment và `%patient` xong (P8); còn `hiddenFields` | WP-2b, WP-2c; trùng #16, gộp khi lập kế hoạch | mục 5.5 |
 | 21 | Quản trị: `Project/$init`, `$clone`, `$archive`, `$restore`, `$rate-limits`, `User/$rescope`, `$update-email`, `ClientApplication/$rotate-secret`, `$smart-launch`, `/admin/projects/:id/bot`, `/:projectId/secrets`, lệnh CLI thay `/admin/super/*` | [ ] | chốt ranh giới `auth` và `fhir-server`; WP-15 | mục 5.2, 5.3 |

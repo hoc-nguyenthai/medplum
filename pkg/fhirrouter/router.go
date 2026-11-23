@@ -116,6 +116,9 @@ type Options struct {
 	// Mặc định: workflow.Inline với 2 job đồng thời (trong process, mất job đang chạy khi restart);
 	// dùng adapter asynq hoặc Temporal để bền vững và chạy ở tiến trình khác.
 	NewOrchestrator func(run workflow.JobRunner) workflow.JobOrchestrator
+	// BinaryContent (tùy chọn) trả nội dung của một Binary khi `data` không nằm trong resource (đã chuyển ra kho đối tượng). Không đặt
+	// thì đọc `data` base64 trong resource. Dùng cho PackageRelease/$install.
+	BinaryContent func(ctx context.Context, b *fhir.Binary) ([]byte, error)
 	// JobRepository là repository mà job nền dùng để nạp/ghi AsyncJob và chạy hàm của job. Mặc định là repo của router.
 	// Khi repo của router tách dữ liệu theo người gọi (pkg/fhirauth), job chạy ngoài yêu cầu HTTP nên không có
 	// người gọi: truyền repository không tách (hoặc có quyền hệ thống) vào đây. Job như $reindex khi đó chạy trên mọi project.

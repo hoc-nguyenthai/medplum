@@ -343,6 +343,7 @@ func (r *Router) registerOperations() {
 	r.registerBulk()
 	r.registerAsyncBatch()
 	r.registerTerminology()
+	r.registerPackages()
 	r.registerGraphQL()
 	r.RegisterJob("reindex", func(ctx context.Context, repo Repository, in *Input) (*fhir.Parameters, error) {
 		ri, ok := repo.(Reindexer)

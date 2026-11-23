@@ -31,6 +31,7 @@ var (
 	_ fhirrouter.Transactional = (*Repo)(nil)
 	_ fhirrouter.Reindexer     = (*Repo)(nil)
 	_ fhirrouter.Expunger      = (*Repo)(nil)
+	_ fhirrouter.AdminChecker  = (*Repo)(nil)
 )
 
 func projectOf(ctx context.Context) (string, error) {
@@ -68,6 +69,22 @@ func CanUpdate(ctx context.Context, rt string) bool {
 		return false
 	}
 	return allow(ctx, rt, PermUpdate) == nil
+}
+
+// RequireAdmin chỉ cho qua quản trị project (scope fhir.admin) không bị chính sách truy cập thu hẹp, hoặc super-admin.
+// Các thao tác quản trị như PackageRelease/$install dùng nó, ngoài quyền theo loại resource của từng thao tác con.
+func (r *Repo) RequireAdmin(ctx context.Context) error {
+	p, ok := PrincipalFrom(ctx)
+	if !ok {
+		return fhirrouter.Forbidden("Không xác định được người gọi")
+	}
+	if p.Super {
+		return nil
+	}
+	if p.Role < RoleAdmin || p.Policy != nil {
+		return fhirrouter.Forbidden("Thao tác này chỉ dành cho quản trị project")
+	}
+	return nil
 }
 
 // jobType được miễn kiểm theo loại để router tạo, đọc, hủy job của chính người gọi.

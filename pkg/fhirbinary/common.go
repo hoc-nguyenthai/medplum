@@ -3,6 +3,7 @@ package fhirbinary
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"io"
 	"log/slog"
@@ -97,4 +98,44 @@ func (r *recorder) relay(w http.ResponseWriter) {
 	}
 	w.WriteHeader(r.code)
 	_, _ = w.Write(r.body.Bytes())
+}
+
+// ReadContent trả hàm đọc nội dung Binary cho fhirrouter.Options.BinaryContent: lấy từ kho theo (id, versionId) nếu `data` không còn
+// trong resource, ngược lại giải mã `data`. Đọc tối đa max byte (max <= 0: không giới hạn); vượt thì lỗi 400.
+func ReadContent(store binarystore.Store, max int64) func(context.Context, *fhir.Binary) ([]byte, error) {
+	return func(ctx context.Context, b *fhir.Binary) ([]byte, error) {
+		if b.Data != "" {
+			raw, err := base64.StdEncoding.DecodeString(b.Data)
+			if err != nil {
+				return nil, fhirrouter.BadRequest("Invalid base64 data")
+			}
+			return raw, nil
+		}
+		ver := ""
+		if b.Meta != nil {
+			ver = b.Meta.VersionId
+		}
+		key, err := binarystore.Key(b.ID, ver)
+		if err != nil {
+			return nil, fhirrouter.NotFound()
+		}
+		rc, err := store.Open(ctx, key)
+		if err != nil {
+			slog.WarnContext(ctx, "Error reading Binary content", "binary", "Binary/"+b.ID, "versionId", ver, "error", err.Error())
+			return nil, fhirrouter.NotFound()
+		}
+		defer rc.Close()
+		var r io.Reader = rc
+		if max > 0 {
+			r = io.LimitReader(rc, max+1)
+		}
+		raw, err := io.ReadAll(r)
+		if err != nil {
+			return nil, err
+		}
+		if max > 0 && int64(len(raw)) > max {
+			return nil, fhirrouter.BadRequest("Nội dung Binary vượt quá giới hạn")
+		}
+		return raw, nil
+	}
 }

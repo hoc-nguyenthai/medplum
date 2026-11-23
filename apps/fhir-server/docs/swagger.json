@@ -265,6 +265,64 @@
                 }
             }
         },
+        "/fhir/R4/PackageRelease/{id}/$install": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Cần quyền admin project. Đọc Bundle (batch hoặc transaction) trong Binary mà PackageRelease.content.url trỏ tới (dạng Binary/\u003cid\u003e, tối đa 64 MiB) và chạy với quyền của người gọi. Ghi một PackageInstallation: installing rồi installed, hoặc error khi có entry lỗi (transaction được hoàn tác). Trả Bundle kết quả.",
+                "produces": [
+                    "application/fhir+json"
+                ],
+                "tags": [
+                    "operation"
+                ],
+                "summary": "PackageRelease/$install (nạp gói định nghĩa)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Id của PackageRelease",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/fhir.Bundle"
+                        }
+                    },
+                    "400": {
+                        "description": "Gói không phải Bundle JSON, content.url sai dạng hoặc có entry lỗi",
+                        "schema": {
+                            "$ref": "#/definitions/fhir.OperationOutcome"
+                        }
+                    },
+                    "401": {
+                        "description": "Thiếu hoặc sai Bearer token",
+                        "schema": {
+                            "$ref": "#/definitions/fhir.OperationOutcome"
+                        }
+                    },
+                    "403": {
+                        "description": "Token không đủ quyền (cần quyền admin)",
+                        "schema": {
+                            "$ref": "#/definitions/fhir.OperationOutcome"
+                        }
+                    },
+                    "404": {
+                        "description": "PackageRelease hoặc Binary không tồn tại",
+                        "schema": {
+                            "$ref": "#/definitions/fhir.OperationOutcome"
+                        }
+                    }
+                }
+            }
+        },
         "/fhir/R4/Patient/{id}/$everything": {
             "get": {
                 "security": [
@@ -6227,7 +6285,7 @@
     },
     "securityDefinitions": {
         "BearerAuth": {
-            "description": "Dạng \"Bearer \u003ctoken\u003e\". Vai trò: read (GET, _search, operation không ghi), write (ghi, batch), admin ($reindex, $expunge). /fhir/R4/metadata công khai.",
+            "description": "Dạng \"Bearer \u003ctoken\u003e\". Vai trò: read (GET, _search, operation không ghi), write (ghi, batch), admin ($reindex, $expunge, $install). /fhir/R4/metadata công khai.",
             "type": "apiKey",
             "name": "Authorization",
             "in": "header"
@@ -6239,7 +6297,7 @@
             "name": "fhir"
         },
         {
-            "description": "Operation FHIR ($validate, $everything, $reindex, $expunge) và trạng thái job nền. $reindex và $expunge cần quyền admin.",
+            "description": "Operation FHIR ($validate, $everything, $reindex, $expunge, PackageRelease/$install) và trạng thái job nền. $reindex, $expunge và $install cần quyền admin.",
             "name": "operation"
         },
         {

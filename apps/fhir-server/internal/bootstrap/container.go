@@ -213,11 +213,14 @@ func (c *Container) build(ctx context.Context) (err error) {
 
 	c.routerRepo = routerRepo
 	var responseHook func(context.Context, fhir.Resource) fhir.Resource
-	if c.storage != nil { // đọc: tham chiếu Binary thành URL ký theo quyền của người gọi (repo đã tách project)
+	var binaryContent func(context.Context, *fhir.Binary) ([]byte, error)
+	if c.storage != nil {
+		binaryContent = fhirbinary.ReadContent(c.storage.store, 64<<20) // PackageRelease/$install đọc gói từ kho đối tượng // đọc: tham chiếu Binary thành URL ký theo quyền của người gọi (repo đã tách project)
 		responseHook = fhirbinary.NewRewriter(rewriteConfig(s), routerRepo, c.storage.signer).Response
 	}
 	c.Router = fhirrouter.New(routerRepo, fhirrouter.Options{
 		ResponseHook:  responseHook,
+		BinaryContent: binaryContent,
 		JobRepository: jobRepo, ScopedJobRepository: scopedJobRepo, JobContext: jobContext,
 		JobSeal: jobSeal(sealer), JobOpen: jobOpen(sealer),
 		JobLease: s.JobLease, JobMaintenanceInterval: s.JobMaintenanceInterval, ExportRetention: s.ExportRetention,

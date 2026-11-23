@@ -90,10 +90,11 @@ Mỗi nhóm là một `tag` của swagger. Loại resource là tham số đườ
 | `GET /healthz` | Liveness probe | công khai | - | 200 `httpapi.HealthResponse` | - |
 | `GET /readyz` | Readiness probe (kiểm tra phụ thuộc) | công khai | - | 200 `httpapi.ReadyResponse` | 503 |
 
-### Nhóm `operation` (6 route)
+### Nhóm `operation` (7 route)
 
 | Route | Mô tả | Xác thực | Yêu cầu | Phản hồi thành công | Mã lỗi |
 |---|---|---|---|---|---|
+| `POST /fhir/R4/PackageRelease/{id}/$install` | PackageRelease/$install (nạp gói định nghĩa) | Bearer | - | 200 `fhir.Bundle` | 400, 401, 403, 404 |
 | `GET /fhir/R4/Patient/{id}/$everything` | Patient/$everything | Bearer | query: _count, _since, _type | 200 `fhir.Bundle` | 401, 403, 404 |
 | `GET /fhir/R4/job/{id}/status` | Trạng thái job nền | Bearer | - | 200 `fhir.Parameters` | 401, 403, 404 |
 | `POST /fhir/R4/{resourceType}/$reindex` | $reindex cả loại resource (job nền) | Bearer | - | 202 `fhir.OperationOutcome` | 401, 403 |
