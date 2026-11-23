@@ -3685,6 +3685,47 @@ paths:
       summary: Đọc một phiên bản
       tags:
       - fhir
+  /fhir/R4/CodeSystem/$import:
+    post:
+      consumes:
+      - application/fhir+json
+      description: Như CodeSystem/{id}/$import nhưng chọn CodeSystem bằng tham số
+        system (url canonical) trong body.
+      parameters:
+      - description: Parameters có system
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/fhir.Parameters'
+      produces:
+      - application/fhir+json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/fhir.Parameters'
+        "400":
+          description: Thiếu system, property chưa khai báo hoặc code không xác định
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "401":
+          description: Thiếu hoặc sai Bearer token
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "403":
+          description: Token không đủ quyền (cần quyền admin)
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "404":
+          description: CodeSystem không tồn tại
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+      security:
+      - BearerAuth: []
+      summary: CodeSystem/$import theo system (không cần id)
+      tags:
+      - operation
   /fhir/R4/CodeSystem/$lookup:
     get:
       description: 'Tra cứu thông tin một code trong CodeSystem: display, definition,
@@ -3736,6 +3777,59 @@ paths:
       summary: CodeSystem/$lookup
       tags:
       - terminology
+  /fhir/R4/CodeSystem/{id}/$import:
+    post:
+      consumes:
+      - application/fhir+json
+      description: 'Cần quyền admin project. Body Parameters: system (uri; bỏ nếu
+        dùng đường dẫn có id), concept (valueCoding: code, display), property (part
+        code, property, value) và designation (part code, language, value); mỗi loại
+        tối đa 10000 phần tử mỗi lần gọi. Concept lưu ở bảng dẫn xuất, không sửa JSON
+        của CodeSystem. Property phải khai báo trong CodeSystem.property (hoặc là
+        parent/hierarchyMeaning), code phải đã có hoặc có trong cùng lần gọi; lỗi
+        thì hoàn tác cả lần gọi. Gọi lại với cùng dữ liệu là an toàn. Trả Parameters
+        với return là CodeSystem.'
+      parameters:
+      - description: Id của CodeSystem
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Parameters
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/fhir.Parameters'
+      produces:
+      - application/fhir+json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/fhir.Parameters'
+        "400":
+          description: Thiếu CodeSystem, property chưa khai báo hoặc code không xác
+            định
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "401":
+          description: Thiếu hoặc sai Bearer token
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "403":
+          description: Token không đủ quyền (cần quyền admin)
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "404":
+          description: CodeSystem không tồn tại
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+      security:
+      - BearerAuth: []
+      summary: CodeSystem/$import (nạp concept cho bảng mã lớn)
+      tags:
+      - operation
   /fhir/R4/PackageRelease/{id}/$install:
     post:
       description: 'Cần quyền admin project. Đọc Bundle (batch hoặc transaction) trong
@@ -4032,7 +4126,7 @@ paths:
 securityDefinitions:
   BearerAuth:
     description: 'Dạng "Bearer <token>". Vai trò: read (GET, _search, operation không
-      ghi), write (ghi, batch), admin ($reindex, $expunge, $install). /fhir/R4/metadata
+      ghi), write (ghi, batch), admin ($reindex, $expunge, $install, $import). /fhir/R4/metadata
       công khai.'
     in: header
     name: Authorization
@@ -4042,8 +4136,9 @@ tags:
 - description: 'FHIR R4 REST: CRUD, search, history, batch/transaction, GraphQL, metadata
     (CapabilityStatement). Lỗi trả OperationOutcome (application/fhir+json).'
   name: fhir
-- description: Operation FHIR ($validate, $everything, $reindex, $expunge, PackageRelease/$install)
-    và trạng thái job nền. $reindex, $expunge và $install cần quyền admin.
+- description: Operation FHIR ($validate, $everything, $reindex, $expunge, PackageRelease/$install,
+    CodeSystem/$import) và trạng thái job nền. $reindex, $expunge, $install và $import
+    cần quyền admin.
   name: operation
 - description: 'Terminology cơ bản: ValueSet/$expand và CodeSystem/$lookup.'
   name: terminology

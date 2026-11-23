@@ -535,6 +535,11 @@ func (s *Store) Expunge(ctx context.Context, rt, id string) error {
 				return internal(err)
 			}
 		}
+		if rt == "CodeSystem" {
+			if _, err := s.deleteConcepts(ctx, q, id); err != nil {
+				return err
+			}
+		}
 		return nil
 	})
 }

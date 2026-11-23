@@ -706,6 +706,7 @@ func Run(t *testing.T, mk Factory) {
 	t.Run("ConditionalRead", func(t *testing.T) { testConditionalRead(t, mk) })
 	t.Run("BulkExport", func(t *testing.T) { testBulkExport(t, mk) })
 	t.Run("Terminology", func(t *testing.T) { testTerminology(t, mk) })
+	t.Run("CodeSystemImport", func(t *testing.T) { testCodeSystemImport(t, mk) })
 	t.Run("ConcurrentIfMatch", func(t *testing.T) { testConcurrentIfMatch(t, mk) })
 	t.Run("ConcurrentConditionalCreate", func(t *testing.T) { testConcurrentConditionalCreate(t, mk) })
 	t.Run("ConcurrentUpdateAsCreate", func(t *testing.T) { testConcurrentUpdateAsCreate(t, mk) })
@@ -1971,5 +1972,91 @@ func testConcurrentConditionalDelete(t *testing.T, mk Factory) {
 		if counts[204] != n || total.body["total"] != float64(0) {
 			t.Fatalf("vòng %d: muốn %d×204 và 0 resource; mã trả về %v, còn %v", round, n, counts, total.body["total"])
 		}
+	}
+}
+
+// ---------------------------------------------------------------- CodeSystem/$import
+
+func importParams(system string, params ...map[string]any) map[string]any {
+	ps := []any{}
+	if system != "" {
+		ps = append(ps, map[string]any{"name": "system", "valueUri": system})
+	}
+	for _, p := range params {
+		ps = append(ps, p)
+	}
+	return map[string]any{"resourceType": "Parameters", "parameter": ps}
+}
+
+func impConcept(code, display string) map[string]any {
+	return map[string]any{"name": "concept", "valueCoding": map[string]any{"code": code, "display": display}}
+}
+
+func impPart(name string, parts map[string]string) map[string]any {
+	var ps []any
+	for k, v := range parts {
+		pt := map[string]any{"name": k, "valueString": v}
+		if k == "code" || k == "property" || k == "language" {
+			pt = map[string]any{"name": k, "valueCode": v}
+		}
+		ps = append(ps, pt)
+	}
+	return map[string]any{"name": name, "part": ps}
+}
+
+func testCodeSystemImport(t *testing.T, mk Factory) {
+	e := newEnv(t, mk)
+	cs, ok := e.repo.(fhirrouter.ConceptStore)
+	if !ok {
+		t.Skip("repository không cài ConceptStore")
+	}
+	ctx := context.Background()
+	created := e.mustDo(201, "POST", "CodeSystem", map[string]any{"resourceType": "CodeSystem", "url": "http://example.org/big",
+		"status": "active", "content": "not-present", "hierarchyMeaning": "is-a",
+		"property": []any{map[string]any{"code": "kind", "type": "string"}}})
+	big := str(created.body, "id")
+
+	body := importParams("http://example.org/big",
+		impConcept("A", "Alpha"), impConcept("B", "Beta"),
+		impPart("property", map[string]string{"code": "B", "property": "is-a", "value": "A"}),
+		impPart("property", map[string]string{"code": "A", "property": "kind", "value": "root"}),
+		impPart("designation", map[string]string{"code": "A", "language": "vi", "value": "Anpha"}))
+	if r := e.mustDo(200, "POST", "CodeSystem/$import", body); str(r.body, "resourceType") != "Parameters" {
+		t.Fatalf("kết quả: %v", r.body)
+	}
+	a, err := cs.GetConcept(ctx, big, "A")
+	if err != nil || a == nil || a.Display != "Alpha" || len(a.Properties) != 1 || a.Properties[0].Type != "string" ||
+		len(a.Designations) != 1 || a.Designations[0].Language != "vi" {
+		t.Fatalf("concept A: %+v %v", a, err)
+	}
+	if b, _ := cs.GetConcept(ctx, big, "B"); b == nil || len(b.Properties) != 1 || b.Properties[0].Property != "is-a" || b.Properties[0].Type != "code" {
+		t.Fatalf("concept B: %+v", b)
+	}
+
+	// idempotent, và đổi display thì ghi đè
+	body = importParams("", impConcept("A", "Alpha 2"), impPart("property", map[string]string{"code": "A", "property": "kind", "value": "root"}))
+	e.mustDo(200, "POST", "CodeSystem/"+big+"/$import", body)
+	a, _ = cs.GetConcept(ctx, big, "A")
+	if a.Display != "Alpha 2" || len(a.Properties) != 1 || len(a.Designations) != 1 {
+		t.Fatalf("sau nạp lại: %+v", a)
+	}
+
+	// lỗi: property chưa khai báo, code chưa có, thiếu CodeSystem. Lỗi giữa chừng không để lại concept của lần gọi đó
+	e.mustDo(400, "POST", "CodeSystem/$import", importParams("http://example.org/big", impConcept("C", "x"),
+		impPart("property", map[string]string{"code": "C", "property": "nope", "value": "1"})))
+	e.mustDo(400, "POST", "CodeSystem/$import", importParams("http://example.org/big", impConcept("D", "x"),
+		impPart("designation", map[string]string{"code": "ZZ", "value": "1"})))
+	if c, _ := cs.GetConcept(ctx, big, "D"); c != nil {
+		if _, tx := e.repo.(fhirrouter.Transactional); tx {
+			t.Fatalf("concept D còn lại sau lỗi: %+v", c)
+		}
+	}
+	e.mustDo(400, "POST", "CodeSystem/$import", importParams("", impConcept("E", "x")))
+	e.mustDo(404, "POST", "CodeSystem/missing/$import", importParams("", impConcept("E", "x")))
+
+	// xóa hẳn CodeSystem thì concept đi theo
+	e.mustDo(200, "POST", "CodeSystem/"+big+"/$expunge", map[string]any{"resourceType": "Parameters"})
+	if a, _ := cs.GetConcept(ctx, big, "A"); a != nil {
+		t.Fatalf("concept còn sau expunge: %+v", a)
 	}
 }

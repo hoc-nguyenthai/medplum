@@ -248,7 +248,7 @@ func TestPersistenceAndMigrateCLI(t *testing.T) {
 		t.Fatalf("muốn từ chối vì chưa migrate, được %v", err)
 	}
 	var out bytes.Buffer
-	if err := bootstrap.Migrate(ctx, s, "status", &out); err != nil || !strings.Contains(out.String(), "1") {
+	if err := bootstrap.Migrate(ctx, s, "status", &out); err != nil || !strings.Contains(out.String(), "2") { // 00001_init, 00002_coding
 		t.Fatalf("status trước: %q %v", out.String(), err)
 	}
 	if err := bootstrap.Migrate(ctx, s, "up", &out); err != nil {

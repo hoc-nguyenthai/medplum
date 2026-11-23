@@ -140,3 +140,54 @@ func (r *Repo) Expunge(ctx context.Context, rt, id string) error {
 	}
 	return ex.Expunge(ctx, rt, id)
 }
+
+// ConceptStore: chuyển cho repository bên trong (xem fhirrouter.ConceptStore).
+func (r *Repo) cs() (fhirrouter.ConceptStore, error) {
+	cs, ok := r.Repository.(fhirrouter.ConceptStore)
+	if !ok {
+		return nil, fhirrouter.NotImplemented("Repository không hỗ trợ kho concept")
+	}
+	return cs, nil
+}
+
+func (r *Repo) PutConcepts(ctx context.Context, sid string, c []fhirrouter.Concept) error {
+	cs, err := r.cs()
+	if err != nil {
+		return err
+	}
+	return cs.PutConcepts(ctx, sid, c)
+}
+
+func (r *Repo) PutConceptProperties(ctx context.Context, sid string, p []fhirrouter.ConceptProperty) error {
+	cs, err := r.cs()
+	if err != nil {
+		return err
+	}
+	return cs.PutConceptProperties(ctx, sid, p)
+}
+
+func (r *Repo) PutConceptDesignations(ctx context.Context, sid string, d []fhirrouter.ConceptDesignation) error {
+	cs, err := r.cs()
+	if err != nil {
+		return err
+	}
+	return cs.PutConceptDesignations(ctx, sid, d)
+}
+
+func (r *Repo) GetConcept(ctx context.Context, sid, code string) (*fhirrouter.StoredConcept, error) {
+	cs, err := r.cs()
+	if err != nil {
+		return nil, err
+	}
+	return cs.GetConcept(ctx, sid, code)
+}
+
+func (r *Repo) DeleteConcepts(ctx context.Context, sid string) (int, error) {
+	cs, err := r.cs()
+	if err != nil {
+		return 0, err
+	}
+	return cs.DeleteConcepts(ctx, sid)
+}
+
+var _ fhirrouter.ConceptStore = (*Repo)(nil)

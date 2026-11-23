@@ -16,6 +16,7 @@ import (
 // Lưu ý: transaction chỉ nguyên tử với người gọi; ghi đồng thời từ goroutine khác trong lúc transaction
 // đang chạy sẽ bị mất nếu transaction bị hủy.
 type MemoryRepository struct {
+	memConcepts
 	mu   sync.RWMutex
 	txMu sync.Mutex // tuần tự hóa các transaction
 	data map[string]map[string]*record
@@ -366,10 +367,12 @@ func (m *MemoryRepository) RunInTransaction(_ context.Context, fn func(Repositor
 	m.mu.RLock()
 	snap := m.snapshot()
 	m.mu.RUnlock()
+	csnap := m.memConcepts.clone()
 	if err := fn(m); err != nil {
 		m.mu.Lock()
 		m.data = snap
 		m.mu.Unlock()
+		m.memConcepts.restore(csnap)
 		return err
 	}
 	return nil
@@ -411,6 +414,9 @@ func (m *MemoryRepository) Expunge(_ context.Context, rt, id string) error {
 		return NotFound()
 	}
 	delete(m.data[rt], id)
+	if rt == "CodeSystem" {
+		_, _ = m.DeleteConcepts(context.Background(), id)
+	}
 	return nil
 }
 

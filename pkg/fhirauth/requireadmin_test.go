@@ -76,3 +76,31 @@ func TestPackageInstallRespectsRoleAndProject(t *testing.T) {
 }
 
 func b64(s string) string { return base64.StdEncoding.EncodeToString([]byte(s)) }
+
+// CodeSystem/$import qua HTTP với repo tách project: chỉ admin, và chỉ vào CodeSystem của project mình.
+func TestCodeSystemImportRespectsRoleAndProject(t *testing.T) {
+	onEachBackend(t, func(t *testing.T, e *compEnv) {
+		cs := mustCreate(t, e.repo, e.admin, `{"resourceType":"CodeSystem","url":"http://example.org/cs-imp","status":"active","content":"not-present"}`)
+		path := "CodeSystem/" + cs + "/$import"
+		body := `{"resourceType":"Parameters","parameter":[{"name":"concept","valueCoding":{"code":"A","display":"Alpha"}}]}`
+
+		write := &fhirauth.Principal{Subject: "w", Project: "p1", Role: fhirauth.RoleWrite}
+		if code, _ := e.do(write, "POST", path, body); code != 403 {
+			t.Errorf("write phải 403, được %d", code)
+		}
+		other := &fhirauth.Principal{Subject: "o", Project: "p2", Role: fhirauth.RoleAdmin}
+		if code, _ := e.do(other, "POST", path, body); code != 404 {
+			t.Errorf("CodeSystem của project khác phải 404, được %d", code)
+		}
+		if code, b := e.do(e.admin1(), "POST", path, body); code != 200 {
+			t.Fatalf("admin nạp: %d %v", code, b)
+		}
+		cstore := e.repo.(fhirrouter.ConceptStore)
+		if c, err := cstore.GetConcept(fhirauth.WithPrincipal(context.Background(), e.admin1()), cs, "A"); err != nil || c == nil || c.Display != "Alpha" {
+			t.Errorf("concept sau khi nạp: %+v %v", c, err)
+		}
+		if _, err := cstore.GetConcept(fhirauth.WithPrincipal(context.Background(), other), cs, "A"); err == nil {
+			t.Error("project khác không được đọc concept")
+		}
+	})
+}

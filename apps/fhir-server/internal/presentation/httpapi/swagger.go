@@ -15,7 +15,7 @@ var _ = fhir.Bundle{} // để swag phân giải kiểu pkg/fhir
 // @tag.name					fhir
 // @tag.description			FHIR R4 REST: CRUD, search, history, batch/transaction, GraphQL, metadata (CapabilityStatement). Lỗi trả OperationOutcome (application/fhir+json).
 // @tag.name					operation
-// @tag.description			Operation FHIR ($validate, $everything, $reindex, $expunge, PackageRelease/$install) và trạng thái job nền. $reindex, $expunge và $install cần quyền admin.
+// @tag.description			Operation FHIR ($validate, $everything, $reindex, $expunge, PackageRelease/$install, CodeSystem/$import) và trạng thái job nền. $reindex, $expunge, $install và $import cần quyền admin.
 // @tag.name					terminology
 // @tag.description			Terminology cơ bản: ValueSet/$expand và CodeSystem/$lookup.
 // @tag.name					bulk
@@ -25,7 +25,7 @@ var _ = fhir.Bundle{} // để swag phân giải kiểu pkg/fhir
 // @securityDefinitions.apikey	BearerAuth
 // @in							header
 // @name						Authorization
-// @description				Dạng "Bearer <token>". Vai trò: read (GET, _search, operation không ghi), write (ghi, batch), admin ($reindex, $expunge, $install). /fhir/R4/metadata công khai.
+// @description				Dạng "Bearer <token>". Vai trò: read (GET, _search, operation không ghi), write (ghi, batch), admin ($reindex, $expunge, $install, $import). /fhir/R4/metadata công khai.
 
 // FHIRResource là body FHIR JSON của một resource bất kỳ (luôn có resourceType); schema cụ thể xem pkg/fhir.
 type FHIRResource map[string]any
@@ -493,6 +493,41 @@ func expunge() {}
 //	@Failure		404	{object}	fhir.OperationOutcome	"PackageRelease hoặc Binary không tồn tại"
 //	@Router			/fhir/R4/PackageRelease/{id}/$install [post]
 func packageInstall() {}
+
+// codeSystemImport godoc
+//
+//	@Summary		CodeSystem/$import (nạp concept cho bảng mã lớn)
+//	@Description	Cần quyền admin project. Body Parameters: system (uri; bỏ nếu dùng đường dẫn có id), concept (valueCoding: code, display), property (part code, property, value) và designation (part code, language, value); mỗi loại tối đa 10000 phần tử mỗi lần gọi. Concept lưu ở bảng dẫn xuất, không sửa JSON của CodeSystem. Property phải khai báo trong CodeSystem.property (hoặc là parent/hierarchyMeaning), code phải đã có hoặc có trong cùng lần gọi; lỗi thì hoàn tác cả lần gọi. Gọi lại với cùng dữ liệu là an toàn. Trả Parameters với return là CodeSystem.
+//	@Tags			operation
+//	@Security		BearerAuth
+//	@Accept			application/fhir+json
+//	@Produce		application/fhir+json
+//	@Param			id		path		string	true	"Id của CodeSystem"
+//	@Param			body	body		fhir.Parameters	true	"Parameters"
+//	@Success		200		{object}	fhir.Parameters
+//	@Failure		400		{object}	fhir.OperationOutcome	"Thiếu CodeSystem, property chưa khai báo hoặc code không xác định"
+//	@Failure		401		{object}	fhir.OperationOutcome	"Thiếu hoặc sai Bearer token"
+//	@Failure		403		{object}	fhir.OperationOutcome	"Token không đủ quyền (cần quyền admin)"
+//	@Failure		404		{object}	fhir.OperationOutcome	"CodeSystem không tồn tại"
+//	@Router			/fhir/R4/CodeSystem/{id}/$import [post]
+func codeSystemImport() {}
+
+// codeSystemImportByURL godoc
+//
+//	@Summary		CodeSystem/$import theo system (không cần id)
+//	@Description	Như CodeSystem/{id}/$import nhưng chọn CodeSystem bằng tham số system (url canonical) trong body.
+//	@Tags			operation
+//	@Security		BearerAuth
+//	@Accept			application/fhir+json
+//	@Produce		application/fhir+json
+//	@Param			body	body		fhir.Parameters	true	"Parameters có system"
+//	@Success		200		{object}	fhir.Parameters
+//	@Failure		400		{object}	fhir.OperationOutcome	"Thiếu system, property chưa khai báo hoặc code không xác định"
+//	@Failure		401		{object}	fhir.OperationOutcome	"Thiếu hoặc sai Bearer token"
+//	@Failure		403		{object}	fhir.OperationOutcome	"Token không đủ quyền (cần quyền admin)"
+//	@Failure		404		{object}	fhir.OperationOutcome	"CodeSystem không tồn tại"
+//	@Router			/fhir/R4/CodeSystem/$import [post]
+func codeSystemImportByURL() {}
 
 // jobStatus godoc
 //
