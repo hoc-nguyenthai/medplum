@@ -144,8 +144,14 @@ type Options struct {
 	// mồ côi (mặc định 30 giây, tránh giành job vừa tạo còn đang xếp hàng).
 	JobMaintenanceInterval time.Duration
 	JobRecoveryGrace       time.Duration
-	// ExportRetention là thời gian giữ kết quả bulk export (mặc định 24 giờ; âm = không bao giờ xóa).
+	// ExportRetention là thời gian giữ kết quả bulk export và batch async (mặc định 24 giờ; âm = không bao giờ xóa).
 	ExportRetention time.Duration
+	// AsyncBatch cho POST Bundle batch kèm "Prefer: respond-async" chạy thành job nền (xem batch_async.go). Tắt thì header bị
+	// bỏ qua và batch chạy đồng bộ. Transaction kèm respond-async luôn bị từ chối (400) khi bật.
+	AsyncBatch bool
+	// BatchCheckpointEntries và BatchCheckpointInterval: nhịp lưu checkpoint của batch async (mặc định 10 entry, 5 giây).
+	BatchCheckpointEntries  int
+	BatchCheckpointInterval time.Duration
 }
 
 type segment struct {
@@ -182,6 +188,12 @@ func New(repo Repository, opts Options) *Router {
 	}
 	if r.opts.ExportRetention == 0 {
 		r.opts.ExportRetention = 24 * time.Hour
+	}
+	if r.opts.BatchCheckpointEntries <= 0 {
+		r.opts.BatchCheckpointEntries = 10
+	}
+	if r.opts.BatchCheckpointInterval <= 0 {
+		r.opts.BatchCheckpointInterval = 5 * time.Second
 	}
 	r.registerStandard()
 	r.registerOperations()

@@ -29,7 +29,7 @@ Nguồn: [coverage-matrix.md](coverage-matrix.md) mục 5. Thứ tự là đề 
 
 | # | Việc | Trạng thái | Ghi chú / chặn bởi | Chi tiết |
 |---|---|---|---|---|
-| 17 | Batch/transaction async (`Prefer: respond-async`), worker `download`, tự tắt Subscription lỗi kéo dài (`subscription-failure-tracker`) | [ ] | có kế hoạch (bản nháp chờ duyệt, Q-17.1 đến Q-17.7); dùng job nền sẵn có của `fhirrouter` | [modules/p17-async-batch-download-autodisable.md](modules/p17-async-batch-download-autodisable.md) |
+| 17 | Batch/transaction async (`Prefer: respond-async`), worker `download`, tự tắt Subscription lỗi kéo dài (`subscription-failure-tracker`) | [ ] | C1, C2 (tự tắt Subscription), A1–A3 (batch async có checkpoint) xong; còn B (`download`); Q-17.1 đến Q-17.5 theo đề xuất trong kế hoạch | [modules/p17-async-batch-download-autodisable.md](modules/p17-async-batch-download-autodisable.md) |
 | 18 | Nạp định nghĩa: `CodeSystem/$import`, `ConceptMap/$import`, `PackageRelease/$install`, bước seed SearchParameter/StructureDefinition/ValueSet | [ ] | không chặn; điều kiện để có SNOMED/LOINC | mục 5.2, 5.4 |
 | 19 | Operation lâm sàng không bị chặn: `Patient/$summary`, `QuestionnaireResponse/$extract`, `Patient/$match`, `$graph`, `$csv`, `$refresh-reference-display`, `$resend`, `StructureDefinition/$expand-profile` | [ ] | WP-9 | mục 5.2 |
 | 20 | Kiểm soát truy cập trong server: resource `AccessPolicy`, compartment `patient/` và `%patient`, `hiddenFields` | [ ] | WP-2b, WP-2c; trùng #16, gộp khi lập kế hoạch | mục 5.5 |

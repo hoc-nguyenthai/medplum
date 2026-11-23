@@ -34,6 +34,7 @@ type Input struct {
 	values    map[string][]string
 	resources map[string]map[string]any
 	Body      map[string]any // body nguyên bản nếu là object (resource hoặc Parameters)
+	JobID     string         // id của AsyncJob khi Input là đầu vào của job nền (để đọc/ghi trạng thái, xem Router.SaveJobState)
 }
 
 // ParseInput đọc tham số: query string trước, rồi Parameters.parameter[] trong body.
@@ -331,6 +332,7 @@ func (r *Router) registerOperations() {
 	r.Add("POST", ":resourceType/:id/$expunge", r.expunge)
 	r.Add("GET", "job/:id/status", r.jobStatus)
 	r.registerBulk()
+	r.registerAsyncBatch()
 	r.registerTerminology()
 	r.registerGraphQL()
 	r.RegisterJob("reindex", func(ctx context.Context, repo Repository, in *Input) (*fhir.Parameters, error) {

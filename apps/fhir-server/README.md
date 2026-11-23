@@ -60,6 +60,8 @@ Tìm chuỗi không phân biệt hoa thường và bỏ dấu (`nguyen` khớp `
 | `POST /{type}/{id}/$reindex` | ADMIN | lập lại chỉ mục một resource (đồng bộ) |
 | `POST /{type}/{id}/$expunge` | ADMIN | xóa vĩnh viễn resource và toàn bộ lịch sử (không hoàn tác) |
 | `GET /job/{id}/status` | READ | `202` đang chạy, `200` + `AsyncJob` (có `output`) khi xong, `500` + `OperationOutcome` khi lỗi |
+| `POST /` (Bundle `batch`) + `Prefer: respond-async` | WRITE | khi bật `FHIR_ASYNC_BATCH`: batch **chạy nền**, `202` + `Content-Location: .../job/{id}/status`; xem dưới |
+| `DELETE /job/{id}/status` | WRITE | hủy batch async đang chạy (dừng ở entry kế tiếp, dọn kết quả tạm) hoặc xóa job đã xong cùng Binary kết quả |
 
 Job lưu dưới dạng resource `AsyncJob`, chạy bằng `pkg/workflow` (mặc định trong process, `FHIR_JOB_CONCURRENCY` job đồng thời).
 Adapter asynq/Temporal của `pkg/workflow` cắm được qua `fhirrouter.Options.NewOrchestrator`.
@@ -68,7 +70,15 @@ Adapter asynq/Temporal của `pkg/workflow` cắm được qua `fhirrouter.Optio
 hoặc bị tắt giữa chừng, vòng bảo trì (`FHIR_JOB_MAINTENANCE_INTERVAL`, chạy cả lúc khởi động) đưa lại các job `accepted` đã hết lease
 vào hàng đợi, nên job mồ côi tự chạy tiếp, kể cả ở replica khác; việc nhận job qua cập nhật có điều kiện nên không chạy trùng. Tắt êm
 (SIGTERM) nhả lease để job được tiếp quản ngay. Job phải idempotent (`$reindex` và `$export` đều vậy). Vòng bảo trì cũng xóa kết quả
-bulk export cũ hơn `FHIR_EXPORT_RETENTION` (cùng các file Binary).
+bulk export và batch async cũ hơn `FHIR_EXPORT_RETENTION` (cùng các file Binary).
+
+**Batch async** (như `Prefer: respond-async` của Medplum, mặc định tắt bằng `FHIR_ASYNC_BATCH=false`; tắt thì header bị bỏ qua và batch chạy
+đồng bộ). Bundle được kiểm cú pháp ngay (lỗi trả `400`, không tạo job); `transaction` kèm `respond-async` bị từ chối `400` vì transaction luôn
+chạy nguyên tử. Job chạy với quyền và project của người gọi, kết quả giống batch đồng bộ: entry ngoài quyền là `403` của riêng entry đó. Xong
+thì `AsyncJob.output` là `Parameters{results: valueReference Binary/<id>}`, Binary chứa Bundle `batch-response`. Checkpoint mỗi
+`FHIR_BATCH_CHECKPOINT_ENTRIES` entry (mặc định 10) hoặc 5 giây; bị gián đoạn thì chạy tiếp từ checkpoint cuối, các entry sau đó chạy lại
+(ít nhất một lần mỗi entry). POST không điều kiện được cấp id từ đầu nên chạy lại không tạo bản trùng; PUT, PATCH, DELETE chạy lại thì có
+thể thêm một phiên bản. Bundle đầu vào, các đoạn kết quả và kết quả là Binary nằm trong CSDL (base64, như bulk export), không qua kho Binary.
 
 ### Subscription (rest-hook)
 
@@ -82,6 +92,14 @@ Bật bằng `FHIR_SUBSCRIPTIONS=true`. Khi một resource được create, upda
 
 Sự kiện chỉ được phát **sau khi commit** (transaction bị rollback thì không phát gì). Giao thất bại (lỗi mạng, `408`, `429`, `5xx`) được thử lại
 `FHIR_WEBHOOK_MAX_ATTEMPTS` lần với thời gian chờ tăng gấp đôi (trần 1 phút); các `4xx` khác không thử lại. Không theo redirect.
+
+**Tự tắt Subscription lỗi kéo dài** (như `subscriptionAutoDisable` của Medplum, mặc định tắt): `FHIR_SUBSCRIPTION_AUTO_DISABLE` là JSON mảng
+trigger, ví dụ `[{"maxConsecutiveFailures":10,"timeWindowSeconds":3600}]`. Mỗi sự kiện giao đã bỏ cuộc (hết lượt thử hoặc lỗi không thử lại)
+được đếm; một lần giao thành công xóa bộ đếm. Khi số lần bỏ cuộc trong cửa sổ của một trigger đạt ngưỡng, Subscription đang `active` được
+đổi thành `status=off` với `error` = `Automatically disabled after N consecutive failed events in the last W seconds` (ghi có `If-Match`,
+Subscription đã bị đổi trạng thái thì giữ nguyên) và log WARN `tự tắt Subscription`. Với `BROKER_DRIVER=redis` bộ đếm nằm ở Redis
+(`trivita:sub:failures:<id>`) nên các replica cộng dồn; với `memory` mỗi tiến trình đếm riêng. Chưa có: ghi đè theo project, `AuditEvent`.
+Replica khác thấy Subscription đã tắt sau tối đa 30 giây (hạn cache danh sách Subscription).
 
 **Chống SSRF:** mặc định *không* giao tới loopback, mạng riêng, link-local (kể cả `169.254.169.254` của metadata đám mây), CGNAT và multicast.
 Kiểm tra làm ở bước kết nối trên địa chỉ IP thật nên chống được DNS rebinding; không dùng proxy từ môi trường. `FHIR_WEBHOOK_ALLOW_PRIVATE=true` chỉ cho dev/test và bị từ chối ở staging/production.
@@ -184,11 +202,14 @@ Biến môi trường (hoặc `.env`); danh sách đầy đủ ở [`.env.exampl
 | `FHIR_JOB_CONCURRENCY` | `2` | số job nền chạy đồng thời |
 | `FHIR_JOB_LEASE` | `5m` | thời gian giữ quyền chạy job trước khi replica khác tiếp quản |
 | `FHIR_JOB_MAINTENANCE_INTERVAL` | `30s` | chu kỳ khôi phục job mồ côi và xóa export hết hạn (`0` = tắt) |
-| `FHIR_EXPORT_RETENTION` | `24h` | thời gian giữ kết quả bulk export (âm = không bao giờ xóa) |
+| `FHIR_EXPORT_RETENTION` | `24h` | thời gian giữ kết quả bulk export và batch async (âm = không bao giờ xóa) |
+| `FHIR_ASYNC_BATCH` | `false` | cho batch kèm `Prefer: respond-async` chạy nền |
+| `FHIR_BATCH_CHECKPOINT_ENTRIES` | `10` | số entry giữa hai checkpoint của batch async |
 | `FHIR_SUBSCRIPTIONS` | `false` | bật Subscription rest-hook |
 | `BROKER_DRIVER`, `REDIS_URL` | `memory` | broker sự kiện: `memory` hoặc `redis` |
 | `FHIR_WEBHOOK_WORKERS`, `FHIR_WEBHOOK_MAX_ATTEMPTS`, `FHIR_WEBHOOK_TIMEOUT` | `4`, `5`, `10s` | giao webhook |
 | `FHIR_WEBHOOK_ALLOW_PRIVATE` | `false` | chỉ dev; tắt chống SSRF; bị từ chối ở staging/production |
+| `FHIR_SUBSCRIPTION_AUTO_DISABLE` | rỗng (tắt) | JSON mảng `{maxConsecutiveFailures, timeWindowSeconds}`: tự tắt Subscription giao thất bại lặp lại; cần `FHIR_SUBSCRIPTIONS=true` |
 | `FHIR_AUTH_DISABLED` | `false` | chỉ dev; bị từ chối ở staging/production |
 | `FHIR_SKIP_CONSTRAINTS` | `false` | chỉ kiểm tra cấu trúc, bỏ invariant FHIRPath |
 | `FHIR_SKIP_VALIDATION` | `false` | không kiểm tra dữ liệu; bị từ chối ở staging/production |

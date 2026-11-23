@@ -8,12 +8,12 @@ Ký hiệu chặn: **M1** runtime Bot, **M3** `agent`/`ccda`/`hl7`, **M4** AI, *
 
 Kế hoạch: [modules/p17-async-batch-download-autodisable.md](modules/p17-async-batch-download-autodisable.md).
 
-- [ ] Tự tắt Subscription lỗi kéo dài (`subscription-failure-tracker`): bản bộ nhớ (C1)
-- [ ] Tự tắt Subscription: bản Redis dùng chung nhiều replica (C2)
-- [ ] Trạng thái checkpoint dùng chung cho job (`Input.JobID`, `SaveJobState`) (A1)
-- [ ] `ExpireJobs` dọn cả job `batch?`; `outputBinaryIDs` đọc `valueReference` (A1)
-- [ ] Batch async `POST /fhir/R4` + `Prefer: respond-async` (A2)
-- [ ] Checkpoint, giữ id POST và hủy giữa chừng cho batch async (A3)
+- [x] Tự tắt Subscription lỗi kéo dài (`subscription-failure-tracker`): bản bộ nhớ (C1)
+- [x] Tự tắt Subscription: bản Redis dùng chung nhiều replica (C2)
+- [x] Trạng thái checkpoint dùng chung cho job (`Input.JobID`, `SaveJobState`) (A1)
+- [x] `ExpireJobs` dọn cả job `batch?`; `outputBinaryIDs` đọc `valueReference` (A1)
+- [x] Batch async `POST /fhir/R4` + `Prefer: respond-async` (A2)
+- [x] Checkpoint, giữ id POST và hủy giữa chừng cho batch async (A3)
 - [ ] Worker `download`: tải attachment URL ngoài về Binary (B1, B2)
 - [ ] Extension `subscription-max-attempts` trên Subscription
 - [ ] Worker `dispatch`, `set-accounts`, `dicom`, `lambda-cleaner`, `post-deploy-migration` — xét từng cái có cần không (một phần không áp dụng cho Go)

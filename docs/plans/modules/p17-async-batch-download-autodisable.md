@@ -1,6 +1,6 @@
 # Kế hoạch việc #17: batch async, tự tải attachment, tự tắt Subscription lỗi
 
-Trạng thái: **bản nháp chờ duyệt**, chưa có code. Việc #17 trong [task-list.md](../task-list.md) (Ưu tiên 1b), nguồn ở [coverage-matrix.md](../coverage-matrix.md) mục 5.4.
+Trạng thái: **C1, C2, A1–A3 đã làm** (2026-11-23: `pkg/fhirsub/failure.go`, `pkg/fhirrouter/jobs_state.go`, `pkg/fhirrouter/batch_async.go`); B chưa làm, các câu hỏi ở mục 5 tạm theo cột đề xuất. Việc #17 trong [task-list.md](../task-list.md) (Ưu tiên 1b), nguồn ở [coverage-matrix.md](../coverage-matrix.md) mục 5.4.
 
 Nguồn Medplum (chỉ đọc): `/Users/hoc.nguyenthai/Documents/med-vita/medplum/packages/server/src` (gọi tắt `S/`), bản `v5.2.17-5-ge7e7e4019`, cũ hơn tag `v5.2.18` ghi ở [UPSTREAM.md](../../UPSTREAM.md); hành vi dưới đây có thể đã đổi ở 5.2.18. Đường dẫn Go tính từ gốc repo. Quy ước như các kế hoạch khác: điều đã đọc ghi kèm `file:dòng`; điều chưa kiểm ghi "chưa xác nhận" và gom ở mục 7.
 
@@ -55,6 +55,8 @@ Thứ tự đề xuất: **C → A → B**. C nhỏ, không đổi API và giả
 4. **Dọn dẹp**: `ExpireJobs` nhận cả `batch?`; `outputBinaryIDs` đọc thêm `valueReference` `Binary/<id>`.
 5. **Bật/tắt**: `FHIR_ASYNC_BATCH` (mặc định `false`) thay feature `async-batch` theo project của Medplum, vì `fhir-server` không có resource `Project` (Q-17.1). Tắt thì `Prefer: respond-async` bị bỏ qua và batch chạy đồng bộ như hiện nay. Chưa xác nhận Medplum trả gì khi thiếu feature mà có header: code là 400 (`S/async-batch.ts:27`); Go chọn chạy đồng bộ để client không gửi header không bị ảnh hưởng — **cần duyệt** (Q-17.1).
 6. **Kích thước**: giữ trần 16 MB chung; nếu cần batch lớn hơn thì thêm `FHIR_MAX_BATCH_BYTES` và cho POST gốc vào danh sách tự đặt trần (`ownsBodyLimit`, `httpapi.go:30`), làm sau.
+
+Đã làm khác thiết kế: trạng thái checkpoint là chuỗi (`JobState`/`SaveJobState`), không phải `[]byte`; Binary tạm và kết quả ghi bằng `JobRepository` gắn `meta.project` của AsyncJob (người gọi không cần quyền tạo Binary); entry chạy qua `Handle` với repo của router và context mang quyền người gọi (nên đi qua kho Binary như batch đồng bộ); thêm `DELETE job/{id}/status` (chỉ cho job `batch`, cần quyền ghi); lỗi hạ tầng giữa chừng chưa trả kết quả từng phần.
 
 Lưu ý: Binary của job đi qua `JobRepository`, **không** qua `fhirbinary.Wrap` (như bulk export, `apps/fhir-server/internal/bootstrap/container.go:162-163`), nên nằm trong CSDL dạng base64. Batch rất lớn sẽ phình bảng resource; chấp nhận cho đợt đầu, ghi vào giới hạn.
 
@@ -143,7 +145,8 @@ Lưu ý: Binary của job đi qua `JobRepository`, **không** qua `fhirbinary.Wr
 2. **Gắn vào `attempt`**: nhánh bỏ cuộc (`deliver.go:96`) gọi `Record`; nhánh 2xx (`:89`) gọi `Clear`. Lỗi của chính tracker chỉ ghi log, không ảnh hưởng việc giao.
 3. **Tắt**: PATCH Subscription bằng repo hệ thống với `test /status = active`, `replace /status = off`, `add /error = <cùng câu Medplum>`; xung đột hoặc `test` sai (đã bị tắt hay đổi) thì bỏ qua. Sau đó `Clear` và đánh dấu cache Subscription cần nạp lại (`Manager.invalid`). Ghi log cảnh báo có `subscription`, `project`, `failureCount`, `timeWindowSeconds`. **Không** tạo `AuditEvent` vì Go chưa lưu AuditEvent; làm cùng việc AuditEvent sau (ghi ở mục 7).
 4. **Cấu hình**: `FHIR_SUBSCRIPTION_AUTO_DISABLE` = JSON mảng trigger như Medplum, rỗng = tắt (mặc định). Kiểm định dạng lúc khởi động (`maxConsecutiveFailures` và `timeWindowSeconds` là số nguyên dương), sai thì từ chối khởi động.
-5. **Không làm đợt này**: ghi đè theo project (`fhir-server` không có `Project`, Q-17.6); extension `subscription-max-attempts` (việc nhỏ, có thể làm kèm nếu được duyệt).
+5. **Đã làm khác thiết kế**: không dùng PATCH mà đọc rồi `UpdateResource` với `If-Match` (repo hệ thống không có PATCH); kết quả tương đương `test`. Ghi qua repo gốc nên không phát `ChangeEvent`: replica khác thấy Subscription đã tắt sau tối đa `CacheTTL` (30 giây).
+6. **Không làm đợt này**: ghi đè theo project (`fhir-server` không có `Project`, Q-17.6); extension `subscription-max-attempts` (việc nhỏ, có thể làm kèm nếu được duyệt).
 
 ### C.4 Kiểm thử
 

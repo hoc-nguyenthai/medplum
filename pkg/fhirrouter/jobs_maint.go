@@ -2,6 +2,7 @@ package fhirrouter
 
 import (
 	"context"
+	"encoding/json"
 	"log/slog"
 	"net/url"
 	"strings"
@@ -92,19 +93,45 @@ func (r *Router) heartbeat(ctx context.Context, repo Repository, id string, canc
 	}
 }
 
-// outputBinaryIDs liệt kê id Binary trong Output của job (kết quả bulk export).
+// outputBinaryIDs liệt kê id Binary trong Output của job: url trong part của bulk export, và valueReference Binary/<id>
+// (kết quả batch async).
 func outputBinaryIDs(out *fhir.Parameters) []string {
 	if out == nil {
 		return nil
 	}
 	var ids []string
 	for _, p := range out.Parameter {
+		if p.ValueReference != nil {
+			if id, ok := strings.CutPrefix(p.ValueReference.Reference, "Binary/"); ok {
+				ids = append(ids, id)
+			}
+		}
 		for _, part := range p.Part {
 			if part.Name == "url" {
 				if i := strings.LastIndex(part.ValueUri, "/Binary/"); i >= 0 {
 					ids = append(ids, part.ValueUri[i+len("/Binary/"):])
 				}
 			}
+		}
+	}
+	return ids
+}
+
+// jobBinaryIDs liệt kê mọi Binary của job: kết quả (outputBinaryIDs), và với batch async cả Bundle đầu vào cùng các đoạn
+// kết quả tạm còn ghi trong checkpoint (job bị hủy trước khi chạy hoặc dừng giữa chừng).
+func jobBinaryIDs(job *fhir.AsyncJob) []string {
+	ids := outputBinaryIDs(job.Output)
+	kind, query, _ := strings.Cut(job.Request, "?")
+	if kind != batchJobKind {
+		return ids
+	}
+	if q, err := url.ParseQuery(query); err == nil && q.Get("input") != "" {
+		ids = append(ids, q.Get("input"))
+	}
+	for _, e := range job.Extension {
+		var st batchState
+		if e.URL == JobStateURL && json.Unmarshal([]byte(e.ValueString), &st) == nil {
+			ids = append(ids, st.Chunks...)
 		}
 	}
 	return ids
@@ -157,7 +184,7 @@ func (r *Router) RecoverJobs(ctx context.Context) (int, error) {
 	}
 }
 
-// ExpireJobs xóa kết quả bulk export (AsyncJob và các Binary) đã quá ExportRetention. Trả về số job đã xóa.
+// ExpireJobs xóa kết quả bulk export và batch async (AsyncJob và các Binary) đã quá ExportRetention. Trả về số job đã xóa.
 func (r *Router) ExpireJobs(ctx context.Context) (int, error) {
 	if r.opts.ExportRetention < 0 {
 		return 0, nil
@@ -178,10 +205,10 @@ func (r *Router) ExpireJobs(ctx context.Context) (int, error) {
 		removed := 0
 		for _, m := range res.Matches {
 			job, ok := m.(*fhir.AsyncJob)
-			if !ok || !strings.HasPrefix(job.Request, "export?") {
+			if !ok || !(strings.HasPrefix(job.Request, "export?") || strings.HasPrefix(job.Request, "batch?")) {
 				continue
 			}
-			deleteBinaries(ctx, repo, outputBinaryIDs(job.Output))
+			deleteBinaries(ctx, repo, jobBinaryIDs(job))
 			if err := repo.DeleteResource(ctx, "AsyncJob", job.ID); err == nil {
 				removed++
 			}

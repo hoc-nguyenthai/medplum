@@ -374,33 +374,7 @@ func binaryRaw(res fhir.Resource, accept string) *Response {
 // exportCancel: DELETE /bulkdata/{id}/status. Job đang chạy bị hủy (và bỏ kết quả); job đã xong, lỗi hoặc đã hủy
 // được xóa cùng các file. Trả 202 theo đặc tả.
 func (r *Router) exportCancel(ctx context.Context, req *Request) (*Response, error) {
-	repo := r.repoOf(ctx)
-	res, err := repo.ReadResource(ctx, "AsyncJob", req.Params["id"])
-	if err != nil {
-		return nil, err
-	}
-	job, ok := res.(*fhir.AsyncJob)
-	if !ok || !strings.HasPrefix(job.Request, "export?") {
-		return nil, NotFound()
-	}
-	if job.Status == "accepted" {
-		job.Status = "cancelled"
-		if _, err := repo.UpdateResource(ctx, job, UpdateOptions{}); err != nil {
-			return nil, err
-		}
-		r.jobs.mu.RLock()
-		cancel := r.jobs.cancels[job.ID]
-		r.jobs.mu.RUnlock()
-		if cancel != nil {
-			cancel()
-		}
-		return &Response{Status: 202, Resource: informational("Cancelled")}, nil
-	}
-	deleteBinaries(ctx, repo, outputBinaryIDs(job.Output))
-	if err := repo.DeleteResource(ctx, "AsyncJob", job.ID); err != nil {
-		return nil, err
-	}
-	return &Response{Status: 202, Resource: informational("Deleted")}, nil
+	return r.cancelJob(ctx, req.Params["id"], "export?")
 }
 
 // exportControlParams là các tham số điều khiển search không được dùng trong _typeFilter (chỉ nhận điều kiện lọc).
