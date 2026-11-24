@@ -68,7 +68,7 @@ Nguồn: [fhir-server-split-candidates.md](fhir-server-split-candidates.md) (m�
 |---|---|---|---|---|
 | 27 | S0: P0-3 (`$reindex` cả loại chỉ chạm project của người gọi), P0-5 (mô tả `IGNORED_PREFIXES`, test nhận lại sự kiện cho `fhirdownload`) | [x] 2026-11-24 (`7b500ed`) | | mục 7, S0 |
 | 28 | S1: công tắc tắt phía nghe/giao (rest-hook, tự tải) ở `fhir-server`; tùy chọn để API không tự chạy job; P0-4 (cấm broker `memory` khi phía nghe ở ngoài) | [x] 2026-11-24: `FHIR_SUBSCRIPTION_DELIVERY`, `FHIR_AUTO_DOWNLOAD_WORKER`, `FHIR_JOB_EXECUTION`, `fhirrouter.Options.DisableJobExecution` | S0 | mục 7, S1 |
-| 29 | S2: `apps/fhir-downloader` | [ ] | S1 | mục 3.1, 7 |
+| 29 | S2: `apps/fhir-downloader` | [x] 2026-11-24: service, 4 tầng test (đơn vị, tích hợp PostgreSQL/Redis thật, e2e image), tài liệu; sửa `safehttp` thiếu dải `0.0.0.0/8` | S1 | [../../apps/fhir-downloader/docs/architecture.md](../../apps/fhir-downloader/docs/architecture.md); mục 3.1, 7 |
 | 30 | S3: P0-1 (rest-hook bền), rồi `apps/fhir-notifier` | [ ] | S1; D-SP-4 | mục 3.2, 7 |
 | 31 | S4: đo tải #12c cỡ lớn (200.000 resource, máy riêng, nhiều job đồng thời, resource lớn) | [~] công cụ và một lần đo xong (xem #12c) | chốt D-SP-7 | mục 3.3, 7 |
 | 32 | S5: P0-2 (kết quả export ra kho đối tượng), rồi `apps/fhir-worker` | [ ] | S1, S4; có thể hoãn (#12c chưa cho thấy API bị ảnh hưởng) | mục 3.3, 7 |

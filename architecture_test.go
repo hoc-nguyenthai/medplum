@@ -70,6 +70,13 @@ var rules = []rule{
 	{dir: "apps/dicomweb/internal/config", allow: []string{mod + "/apps/dicomweb/internal/config", mod + "/pkg/envconfig", mod + "/pkg/httpsec"}},
 	{dir: "apps/dicomweb/internal/bootstrap", anyThird: true, allow: []string{mod + "/apps/dicomweb/", mod + "/pkg/"}},
 
+	// ---- fhir-downloader ----
+	// Như dicomweb: không có domain/application riêng. Nghiệp vụ tải nằm ở pkg/fhirdownload; presentation chỉ có probe (net/http, không route nghiệp vụ);
+	// bootstrap là composition root (DB, kho Binary, broker Redis, worker).
+	{dir: "apps/fhir-downloader/internal/presentation", allow: []string{mod + "/apps/fhir-downloader/internal/presentation", mod + "/pkg/httpsec"}},
+	{dir: "apps/fhir-downloader/internal/config", allow: []string{mod + "/apps/fhir-downloader/internal/config", mod + "/pkg/envconfig"}},
+	{dir: "apps/fhir-downloader/internal/bootstrap", anyThird: true, allow: []string{mod + "/apps/fhir-downloader/", mod + "/pkg/"}},
+
 	// ---- fhir-cli ----
 	// Client độc lập: chỉ stdlib + chính nó. Không kéo thư viện server (pkg/*) vào binary CLI.
 	{dir: "apps/fhir-cli", allow: []string{mod + "/apps/fhir-cli"}},

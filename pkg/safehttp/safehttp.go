@@ -23,6 +23,7 @@ var ErrBlockedAddress = errors.New("safehttp: địa chỉ đích bị chặn (d
 var blockedPrefixes = func() []netip.Prefix {
 	var out []netip.Prefix
 	for _, s := range []string{
+		"0.0.0.0/8",       // "mạng này" (RFC 1122): chỉ 0.0.0.0 là IsUnspecified, nhưng cả dải có thể được định tuyến về chính máy (OrbStack: host.docker.internal = 0.250.250.254)
 		"100.64.0.0/10",   // CGNAT (RFC 6598)
 		"192.0.0.0/24",    // IETF protocol assignments (RFC 6890)
 		"192.0.2.0/24",    // TEST-NET-1
