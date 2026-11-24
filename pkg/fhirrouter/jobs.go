@@ -108,6 +108,9 @@ func (r *Router) startJob(ctx context.Context, kind string, q url.Values, prepar
 			return nil, err
 		}
 	}
+	if r.opts.DisableJobExecution {
+		return job, nil // tiến trình khác nhận job (RecoverJobs)
+	}
 	if err := r.jobs.orch.Submit(ctx, job.ID); err != nil {
 		return nil, Internal("không đưa được job vào hàng đợi: " + err.Error())
 	}

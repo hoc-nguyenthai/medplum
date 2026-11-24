@@ -562,3 +562,44 @@ func TestAsyncBatchSettings(t *testing.T) {
 		t.Fatalf("muốn lỗi, được %v", err)
 	}
 }
+
+// Công tắc chuẩn bị tách service (S1): mặc định bật cả ba; tắt phía giao hoặc phía tải thì sự kiện phải đi qua Redis (P0-4).
+func TestSplitSwitches(t *testing.T) {
+	d := config.Default()
+	if !d.SubscriptionDelivery || !d.AutoDownloadWorker || !d.JobExecution {
+		t.Fatalf("mặc định phải bật cả ba: %+v", d)
+	}
+	redis := map[string]string{"BROKER_DRIVER": "redis"}
+	merge := func(ms ...map[string]string) map[string]string {
+		out := map[string]string{}
+		for _, m := range ms {
+			for k, v := range m {
+				out[k] = v
+			}
+		}
+		return out
+	}
+	storage := map[string]string{"FHIR_BINARY_STORAGE": "file:/tmp/x"}
+	for name, c := range map[string]struct {
+		vars map[string]string
+		bad  string // rỗng: hợp lệ
+	}{
+		"giao tắt, Redis":              {merge(redis, map[string]string{"FHIR_SUBSCRIPTIONS": "true", "FHIR_SUBSCRIPTION_DELIVERY": "false"}), ""},
+		"giao tắt, issuer":             {merge(redis, map[string]string{"FHIR_SUBSCRIPTIONS": "true", "FHIR_SUBSCRIPTION_DELIVERY": "false", "FHIR_WS_MODE": "issuer", "FHIR_WS_SIGNING_KEY": strings.Repeat("w", 40), "FHIR_WS_URL": "wss://ws.example.org/ws/subscriptions-r4"}), ""},
+		"giao tắt, broker bộ nhớ":      {map[string]string{"FHIR_SUBSCRIPTIONS": "true", "FHIR_SUBSCRIPTION_DELIVERY": "false"}, "FHIR_SUBSCRIPTION_DELIVERY"},
+		"giao tắt, không Subscription": {merge(redis, map[string]string{"FHIR_SUBSCRIPTION_DELIVERY": "false"}), "FHIR_SUBSCRIPTION_DELIVERY"},
+		"giao tắt, websocket embedded": {merge(redis, map[string]string{"FHIR_SUBSCRIPTIONS": "true", "FHIR_SUBSCRIPTION_DELIVERY": "false", "FHIR_WS_MODE": "embedded", "FHIR_WS_SIGNING_KEY": strings.Repeat("w", 40)}), "FHIR_SUBSCRIPTION_DELIVERY"},
+		"tải tắt, Redis":               {merge(redis, storage, map[string]string{"FHIR_AUTO_DOWNLOAD": "true", "FHIR_AUTO_DOWNLOAD_WORKER": "false"}), ""},
+		"tải tắt, broker bộ nhớ":       {merge(storage, map[string]string{"FHIR_AUTO_DOWNLOAD": "true", "FHIR_AUTO_DOWNLOAD_WORKER": "false"}), "FHIR_AUTO_DOWNLOAD_WORKER"},
+		"tải tắt, không tự tải":        {merge(redis, map[string]string{"FHIR_AUTO_DOWNLOAD_WORKER": "false"}), "FHIR_AUTO_DOWNLOAD_WORKER"},
+		"tắt thực thi job":             {map[string]string{"FHIR_JOB_EXECUTION": "false"}, ""},
+	} {
+		_, err := config.FromEnv(env(c.vars))
+		switch {
+		case c.bad == "" && err != nil:
+			t.Errorf("%s: muốn hợp lệ, lỗi %v", name, err)
+		case c.bad != "" && (err == nil || !strings.Contains(err.Error(), c.bad)):
+			t.Errorf("%s: muốn lỗi nêu %s, được %v", name, c.bad, err)
+		}
+	}
+}

@@ -1,0 +1,126 @@
+package bootstrap_test
+
+import (
+	"context"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"sync/atomic"
+	"testing"
+	"time"
+
+	goredis "github.com/redis/go-redis/v9"
+
+	"trivita-fhir/apps/fhir-server/internal/config"
+)
+
+// Công tắc chuẩn bị tách service (S1 của docs/plans/fhir-server-split-candidates.md): tắt phía giao, phía tải và thực thi job ở API.
+// Mặc định bật cả ba (hành vi cũ, các test khác đã phủ); ở đây kiểm khi tắt thì API chỉ phát sự kiện và nhận job chứ không làm thay.
+
+// streamLen đếm sự kiện ghi resource đã được phát lên Redis (đọc thẳng stream, không qua consumer nào).
+func streamLen(t *testing.T, addr string) int64 {
+	t.Helper()
+	c := goredis.NewClient(&goredis.Options{Addr: addr})
+	defer c.Close()
+	ctx := context.Background()
+	keys, err := c.Keys(ctx, "*fhir.resource.changed").Result()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var n int64
+	for _, k := range keys {
+		l, err := c.XLen(ctx, k).Result()
+		if err != nil {
+			t.Fatal(err)
+		}
+		n += l
+	}
+	return n
+}
+
+func TestSubscriptionDeliveryOffPublishesButDoesNotDeliver(t *testing.T) {
+	addr := issuerRedis(t)
+	hook, rec := newReceiver(t)
+	c, srv := newServer(t, settings(func(s *config.Settings) {
+		s.Subscriptions, s.WebhookAllowPrivate, s.SubscriptionDelivery = true, true, false
+		s.BrokerDriver, s.RedisURL = "redis", "redis://"+addr
+	}))
+	if c.Manager != nil || c.Broker == nil {
+		t.Fatalf("giao tắt: Manager phải nil, Broker phải có (manager=%v broker=%v)", c.Manager != nil, c.Broker != nil)
+	}
+	want(t, call(t, srv, "POST", "/fhir/R4/Subscription", writeSecret, map[string]any{
+		"resourceType": "Subscription", "status": "active", "reason": "e2e", "criteria": "Patient?family=Hooked",
+		"channel": map[string]any{"type": "rest-hook", "endpoint": hook.URL},
+	}), 201)
+	want(t, call(t, srv, "POST", "/fhir/R4/Patient", writeSecret, patient("Hooked")), 201)
+
+	deadline := time.Now().Add(5 * time.Second)
+	for time.Now().Before(deadline) && streamLen(t, addr) < 2 {
+		time.Sleep(20 * time.Millisecond)
+	}
+	if n := streamLen(t, addr); n < 2 {
+		t.Fatalf("API phải vẫn phát sự kiện (Subscription và Patient) lên Redis, có %d", n)
+	}
+	time.Sleep(500 * time.Millisecond)
+	if rec.count() != 0 {
+		t.Fatalf("API không được giao rest-hook khi FHIR_SUBSCRIPTION_DELIVERY=false, đã gọi %d lần", rec.count())
+	}
+}
+
+func TestAutoDownloadWorkerOffPublishesButDoesNotDownload(t *testing.T) {
+	addr := issuerRedis(t)
+	var hits atomic.Int32
+	ext := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hits.Add(1)
+		_, _ = w.Write([]byte("%PDF"))
+	}))
+	defer ext.Close()
+	mut, _ := storageSettings(t, func(s *config.Settings) {
+		s.AutoDownload, s.AutoDownloadAllowPrivate, s.AutoDownloadWorker = true, true, false
+		s.BrokerDriver, s.RedisURL = "redis", "redis://"+addr
+	})
+	_, srv := newServer(t, settings(mut))
+	body := `{"resourceType":"DocumentReference","status":"current","content":[{"attachment":{"url":"` + ext.URL + `/a.pdf"}}]}`
+	id := want(t, call(t, srv, "POST", "/fhir/R4/DocumentReference", writeSecret, body), 201).str(t, "id")
+
+	deadline := time.Now().Add(5 * time.Second)
+	for time.Now().Before(deadline) && streamLen(t, addr) < 1 {
+		time.Sleep(20 * time.Millisecond)
+	}
+	if streamLen(t, addr) < 1 {
+		t.Fatal("API phải vẫn phát sự kiện ghi lên Redis")
+	}
+	time.Sleep(500 * time.Millisecond)
+	got := want(t, call(t, srv, "GET", "/fhir/R4/DocumentReference/"+id, writeSecret, nil), 200).str(t, "content", "0", "attachment", "url")
+	if hits.Load() != 0 || !strings.HasPrefix(got, ext.URL) {
+		t.Fatalf("API không được tải khi FHIR_AUTO_DOWNLOAD_WORKER=false: gọi ngoài %d lần, url=%q", hits.Load(), got)
+	}
+}
+
+func TestJobExecutionOffLeavesJobAccepted(t *testing.T) {
+	for _, exec := range []bool{true, false} {
+		name := "chạy tại chỗ"
+		if !exec {
+			name = "tắt thực thi"
+		}
+		t.Run(name, func(t *testing.T) {
+			_, srv := newServer(t, settings(withAdmin, func(s *config.Settings) { s.JobExecution = exec }))
+			want(t, call(t, srv, "POST", "/fhir/R4/Patient", writeSecret, patient("Alpha")), 201)
+			acc := want(t, call(t, srv, "POST", "/fhir/R4/Patient/$reindex", adminSecret, ""), 202)
+			path := strings.TrimPrefix(acc.header.Get("Content-Location"), "http://fhir.test")
+			var st resp
+			for i := 0; i < 50; i++ {
+				if st = call(t, srv, "GET", path, readSecret, nil); st.status != 202 {
+					break
+				}
+				time.Sleep(10 * time.Millisecond)
+			}
+			if exec && (st.status != 200 || st.str(t, "status") != "completed") {
+				t.Fatalf("mặc định job phải chạy xong: %d %s", st.status, st.body)
+			}
+			if !exec && st.status != 202 {
+				t.Fatalf("API không được chạy job khi FHIR_JOB_EXECUTION=false: %d %s", st.status, st.body)
+			}
+		})
+	}
+}

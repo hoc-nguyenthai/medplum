@@ -232,7 +232,9 @@ func (r *Router) startMaintenance() {
 		defer close(r.jobs.maintDone)
 		for {
 			ctx, cancel := context.WithTimeout(context.Background(), max(every, 30*time.Second))
-			if n, err := r.RecoverJobs(ctx); err != nil {
+			if r.opts.DisableJobExecution {
+				// không chạy job ở đây: không tiếp quản job mồ côi
+			} else if n, err := r.RecoverJobs(ctx); err != nil {
 				slog.Warn("khôi phục job lỗi", "error", err)
 			} else if n > 0 {
 				slog.Info("đã đưa lại job mồ côi vào hàng đợi", "count", n)

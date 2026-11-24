@@ -26,12 +26,14 @@ Tệp này **được sinh từ `internal/config/config.go`** (xem `docs_test.go
 | `FHIR_AUTO_DOWNLOAD_IGNORED_PREFIXES` | `(rỗng)` | (cách nhau bằng dấu phẩy) là các tiền tố URL KHÔNG bao giờ tải; thắng danh sách cho phép. Địa chỉ API và /storage của chính server luôn bị bỏ qua, không cần khai. |
 | `FHIR_AUTO_DOWNLOAD_MAX_BYTES` | `0` | là trần kích thước một tệp tải về; 0: dùng FHIR_STORAGE_MAX_UPLOAD_BYTES. |
 | `FHIR_AUTO_DOWNLOAD_TIMEOUT` | `30s` | là hạn của mỗi lần tải. |
+| `FHIR_AUTO_DOWNLOAD_WORKER` | `true` | (mặc định true) cho tiến trình này chạy worker tải attachment. Đặt false khi việc tải do service riêng (fhir-downloader) làm: API vẫn phát sự kiện ghi lên broker nhưng không gọi ra Internet. Cần FHIR_AUTO_DOWNLOAD=true và BROKER_DRIVER=redis. |
 | `FHIR_BASE64_BINARY_MAX_BYTES` | `1048576` | là trần `data` base64 (đã giải mã) khi ghi resource Binary (mặc định 1 MiB; âm: không trần). |
 | `FHIR_BASE_URL` | `http://localhost:8005/fhir/R4` | là địa chỉ công khai của API FHIR (dùng cho Location, fullUrl, link phân trang), ví dụ https://fhir.example.org/fhir/R4. |
 | `FHIR_BATCH_CHECKPOINT_ENTRIES` | `10` | Số entry giữa hai lần lưu checkpoint của batch async (ngoài ra lưu ít nhất mỗi 5 giây); phải > 0. |
 | `FHIR_BINARY_STORAGE` | `(rỗng)` | Kho nội dung Binary (docs/plans/modules/email-storage.md, S3a/S3b). BinaryStorage rỗng: tắt (Binary giữ `data` base64 trong CSDL như trước, không có /storage và không có Binary thô). Dạng `file:<thư mục>` (giữ bố cục Medplum); tiền tố khác bị từ chối. |
 | `FHIR_EXPORT_RETENTION` | `24h0m0s` | Thời gian giữ kết quả bulk export trước khi bị dọn; âm là không bao giờ xóa. |
 | `FHIR_JOB_CONCURRENCY` | `2` | Job nền (AsyncJob): số job chạy đồng thời trong process. |
+| `FHIR_JOB_EXECUTION` | `true` | (mặc định true) cho tiến trình này chạy job nền (bulk export, $reindex cả loại, batch async, bảo trì khôi phục job). Đặt false khi job do service riêng (fhir-worker) chạy: API vẫn nhận yêu cầu, tạo AsyncJob (202) nhưng không thực thi và không tiếp quản job mồ côi. Dùng khi đã có tiến trình khác chạy job, nếu không job ở trạng thái accepted mãi. |
 | `FHIR_JOB_LEASE` | `5m0s` | JobLease: thời gian một replica giữ quyền chạy job trước khi replica khác tiếp quản (tự gia hạn khi job còn chạy). JobMaintenanceInterval: chu kỳ chạy lại job mồ côi và xóa kết quả export hết hạn (0 = tắt). ExportRetention: thời gian giữ kết quả bulk export (âm = không bao giờ xóa). |
 | `FHIR_JOB_MAINTENANCE_INTERVAL` | `30s` | Chu kỳ chạy lại job mồ côi và xóa kết quả export hết hạn; 0 là tắt (phải >= 0). |
 | `FHIR_JOB_SIGNING_KEY` | `(rỗng)` | khóa ký quyền của job nền (dùng chung mọi replica); bắt buộc với JWKS, dev HMAC tự suy ra |
@@ -63,6 +65,7 @@ Tệp này **được sinh từ `internal/config/config.go`** (xem `docs_test.go
 | `FHIR_STORAGE_URL_TTL` | `1h0m0s` | hạn URL ký (mặc định 1h, tối đa 24h) |
 | `FHIR_SUBSCRIPTIONS` | `false` | Subscription (rest-hook). Sự kiện thay đổi đi qua broker: memory (1 process) \| redis (nhiều replica). |
 | `FHIR_SUBSCRIPTION_AUTO_DISABLE` | `(rỗng)` | là JSON mảng trigger tự tắt Subscription rest-hook giao thất bại lặp lại, cùng dạng subscriptionAutoDisable của Medplum: [{"maxConsecutiveFailures":10,"timeWindowSeconds":3600}]. Rỗng: không tự tắt. Đọc bằng AutoDisableTriggers. |
+| `FHIR_SUBSCRIPTION_DELIVERY` | `true` | (mặc định true) cho tiến trình này giao rest-hook và khớp sự kiện websocket. Đặt false khi việc đó do service riêng (fhir-notifier) làm: API vẫn PHÁT sự kiện lên broker (cần FHIR_SUBSCRIPTIONS=true) và vẫn cấp token bind (FHIR_WS_MODE=issuer) nhưng không giao. Cần BROKER_DRIVER=redis (broker bộ nhớ không đến được tiến trình khác) và không dùng được với FHIR_WS_MODE=embedded (Hub nằm trong tiến trình giao). |
 | `FHIR_TRUSTED_PROXIES` | `(rỗng)` | là CIDR của reverse proxy được tin khi đọc IP người gọi từ X-Forwarded-For (cách nhau bằng dấu phẩy). Rỗng: dùng IP kết nối trực tiếp, nên đứng sau proxy mà không khai thì mọi người gọi dùng chung một IP (và một hạn mức). |
 | `FHIR_UPDATE_AS_CREATE` | `false` | UpdateAsCreate: PUT Type/id tạo mới với id do client chọn khi chưa có (mặc định tắt: 404). |
 | `FHIR_WEBHOOK_ALLOW_PRIVATE` | `false` | CHỈ cho dev: cho phép giao tới địa chỉ nội bộ (chống SSRF bị tắt) |

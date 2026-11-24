@@ -147,6 +147,9 @@ type Options struct {
 	// mồ côi (mặc định 30 giây, tránh giành job vừa tạo còn đang xếp hàng).
 	JobMaintenanceInterval time.Duration
 	JobRecoveryGrace       time.Duration
+	// DisableJobExecution: router chỉ NHẬN và tạo AsyncJob (accepted), không đưa vào orchestrator và vòng bảo trì không tiếp quản job mồ côi
+	// (RecoverJobs); một tiến trình khác (fhir-worker) chạy job qua RecoverJobs. Mặc định false: chạy tại chỗ như cũ.
+	DisableJobExecution bool
 	// ExportRetention là thời gian giữ kết quả bulk export và batch async (mặc định 24 giờ; âm = không bao giờ xóa).
 	ExportRetention time.Duration
 	// AsyncBatch cho POST Bundle batch kèm "Prefer: respond-async" chạy thành job nền (xem batch_async.go). Tắt thì header bị

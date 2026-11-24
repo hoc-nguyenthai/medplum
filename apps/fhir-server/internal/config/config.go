@@ -84,6 +84,10 @@ type Settings struct {
 
 	// Job nền (AsyncJob): số job chạy đồng thời trong process.
 	JobConcurrency int
+	// JobExecution (mặc định true) cho tiến trình này chạy job nền (bulk export, $reindex cả loại, batch async, bảo trì khôi phục job). Đặt false khi
+	// job do service riêng (fhir-worker) chạy: API vẫn nhận yêu cầu, tạo AsyncJob (202) nhưng không thực thi và không tiếp quản job mồ côi.
+	// Dùng khi đã có tiến trình khác chạy job, nếu không job ở trạng thái accepted mãi.
+	JobExecution bool
 	// JobLease: thời gian một replica giữ quyền chạy job trước khi replica khác tiếp quản (tự gia hạn khi job còn chạy).
 	// JobMaintenanceInterval: chu kỳ chạy lại job mồ côi và xóa kết quả export hết hạn (0 = tắt).
 	// ExportRetention: thời gian giữ kết quả bulk export (âm = không bao giờ xóa).
@@ -97,6 +101,10 @@ type Settings struct {
 
 	// Subscription (rest-hook). Sự kiện thay đổi đi qua broker: memory (1 process) | redis (nhiều replica).
 	Subscriptions bool
+	// SubscriptionDelivery (mặc định true) cho tiến trình này giao rest-hook và khớp sự kiện websocket. Đặt false khi việc đó do service riêng
+	// (fhir-notifier) làm: API vẫn PHÁT sự kiện lên broker (cần FHIR_SUBSCRIPTIONS=true) và vẫn cấp token bind (FHIR_WS_MODE=issuer) nhưng không giao.
+	// Cần BROKER_DRIVER=redis (broker bộ nhớ không đến được tiến trình khác) và không dùng được với FHIR_WS_MODE=embedded (Hub nằm trong tiến trình giao).
+	SubscriptionDelivery bool
 	// WSMode chọn nơi giữ websocket của Subscription: "off" (không có), "embedded" (Hub trong chính tiến trình này) hoặc "issuer"
 	// (chỉ cấp token bind và khớp sự kiện; kết nối do ws-gateway giữ, cần Redis). Rỗng: suy từ WebSocket (bí danh cũ
 	// FHIR_WEBSOCKET=true là "embedded", còn lại "off"). Dùng WSModeResolved để đọc.
@@ -143,6 +151,9 @@ type Settings struct {
 	AutoDownloadIgnoredPrefixes string
 	// AutoDownloadAllowPrivate CHỈ cho dev: cho phép tải từ địa chỉ nội bộ (chống SSRF bị tắt).
 	AutoDownloadAllowPrivate bool
+	// AutoDownloadWorker (mặc định true) cho tiến trình này chạy worker tải attachment. Đặt false khi việc tải do service riêng (fhir-downloader)
+	// làm: API vẫn phát sự kiện ghi lên broker nhưng không gọi ra Internet. Cần FHIR_AUTO_DOWNLOAD=true và BROKER_DRIVER=redis.
+	AutoDownloadWorker bool
 
 	// Kho nội dung Binary (docs/plans/modules/email-storage.md, S3a/S3b). BinaryStorage rỗng: tắt (Binary giữ `data` base64 trong CSDL như
 	// trước, không có /storage và không có Binary thô). Dạng `file:<thư mục>` (giữ bố cục Medplum); tiền tố khác bị từ chối.
@@ -239,8 +250,8 @@ func Default() Settings {
 		DatabaseURL:       "sqlite://./fhir.db", DatabaseAutoMigrate: true,
 		DatabaseMaxOpenConns: 20, DatabaseMaxIdleConns: 5, DatabaseConnLifetime: 30 * time.Minute,
 		BaseURL:        "http://localhost:8005/fhir/R4",
-		JobConcurrency: 2,
-		JobLease:       5 * time.Minute, JobMaintenanceInterval: 30 * time.Second, ExportRetention: 24 * time.Hour, BatchCheckpointEntries: 10,
+		JobConcurrency: 2, JobExecution: true, SubscriptionDelivery: true, AutoDownloadWorker: true,
+		JobLease: 5 * time.Minute, JobMaintenanceInterval: 30 * time.Second, ExportRetention: 24 * time.Hour, BatchCheckpointEntries: 10,
 		JWTProjectClaim: "fhir_project", JWTScopeClaim: "scope", JWTPolicyClaim: "fhir_access_policy",
 		BrokerDriver: "memory", RedisURL: "redis://localhost:6379/0",
 		WebhookWorkers: 4, WebhookMaxAttempts: 5, WebhookTimeout: 10 * time.Second, AutoDownloadTimeout: 30 * time.Second,
@@ -301,6 +312,9 @@ func FromEnv(get func(string) string) (Settings, error) {
 	r.Bool(&s.AsyncBatch, "FHIR_ASYNC_BATCH")
 	r.Int(&s.BatchCheckpointEntries, "FHIR_BATCH_CHECKPOINT_ENTRIES")
 	r.Bool(&s.Subscriptions, "FHIR_SUBSCRIPTIONS")
+	r.Bool(&s.SubscriptionDelivery, "FHIR_SUBSCRIPTION_DELIVERY")
+	r.Bool(&s.AutoDownloadWorker, "FHIR_AUTO_DOWNLOAD_WORKER")
+	r.Bool(&s.JobExecution, "FHIR_JOB_EXECUTION")
 	r.String(&s.WSMode, "FHIR_WS_MODE")
 	r.Bool(&s.WebSocket, "FHIR_WEBSOCKET")
 	r.String(&s.WSSigningKey, "FHIR_WS_SIGNING_KEY")
@@ -529,6 +543,25 @@ func (s Settings) validate() error {
 	}
 	if (s.Subscriptions || s.AutoDownload) && s.BrokerDriver == "redis" && s.RedisURL == "" {
 		errs = append(errs, errors.New("REDIS_URL: bắt buộc khi BROKER_DRIVER=redis"))
+	}
+	// Phía nghe/giao đặt ở service khác: sự kiện phải đi qua broker dùng chung (P0-4)
+	if !s.SubscriptionDelivery {
+		switch {
+		case !s.Subscriptions:
+			errs = append(errs, errors.New("FHIR_SUBSCRIPTION_DELIVERY=false: vô nghĩa khi FHIR_SUBSCRIPTIONS=false (không có gì để phát)"))
+		case s.BrokerDriver != "redis":
+			errs = append(errs, errors.New("FHIR_SUBSCRIPTION_DELIVERY=false: cần BROKER_DRIVER=redis (broker bộ nhớ không đến được service giao)"))
+		case s.WSModeResolved() == WSModeEmbedded:
+			errs = append(errs, errors.New("FHIR_SUBSCRIPTION_DELIVERY=false: không dùng được với FHIR_WS_MODE=embedded (Hub nằm trong tiến trình giao); dùng issuer hoặc off"))
+		}
+	}
+	if !s.AutoDownloadWorker {
+		switch {
+		case !s.AutoDownload:
+			errs = append(errs, errors.New("FHIR_AUTO_DOWNLOAD_WORKER=false: vô nghĩa khi FHIR_AUTO_DOWNLOAD=false (không có gì để phát)"))
+		case s.BrokerDriver != "redis":
+			errs = append(errs, errors.New("FHIR_AUTO_DOWNLOAD_WORKER=false: cần BROKER_DRIVER=redis (broker bộ nhớ không đến được service tải)"))
+		}
 	}
 	if s.AutoDownload && !s.StorageEnabled() {
 		errs = append(errs, errors.New("FHIR_AUTO_DOWNLOAD: cần FHIR_BINARY_STORAGE (nơi lưu tệp tải về)"))

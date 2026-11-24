@@ -118,7 +118,16 @@ func (c *Container) build(ctx context.Context) (err error) {
 		}
 		c.onStop(c.Broker.Stop)
 	}
-	if s.Subscriptions {
+	if s.Subscriptions && !s.SubscriptionDelivery {
+		// giao và khớp do service khác làm (fhir-notifier): ở đây chỉ phát sự kiện (Wrap bên dưới) và cấp token bind khi FHIR_WS_MODE=issuer
+		slog.Info("FHIR_SUBSCRIPTION_DELIVERY=false: không giao rest-hook, không khớp websocket trong tiến trình này")
+		if s.WSModeResolved() == config.WSModeIssuer {
+			if c.Tokens, err = newTokens(s); err != nil {
+				return err
+			}
+		}
+	}
+	if s.Subscriptions && s.SubscriptionDelivery {
 		triggers, err := s.AutoDisableTriggers()
 		if err != nil {
 			return err
@@ -180,7 +189,10 @@ func (c *Container) build(ctx context.Context) (err error) {
 		}
 		routerRepo = inner
 	}
-	if s.AutoDownload {
+	if s.AutoDownload && !s.AutoDownloadWorker {
+		slog.Info("FHIR_AUTO_DOWNLOAD_WORKER=false: không tải attachment trong tiến trình này")
+	}
+	if s.AutoDownload && s.AutoDownloadWorker {
 		maxBytes := int64(s.AutoDownloadMaxBytes)
 		if maxBytes == 0 {
 			maxBytes = int64(s.StorageMaxUploadBytes)
@@ -251,7 +263,8 @@ func (c *Container) build(ctx context.Context) (err error) {
 		BinaryContent: binaryContent,
 		JobRepository: jobRepo, ScopedJobRepository: scopedJobRepo, JobContext: jobContext,
 		JobSeal: jobSeal(sealer), JobOpen: jobOpen(sealer),
-		JobLease: s.JobLease, JobMaintenanceInterval: s.JobMaintenanceInterval, ExportRetention: s.ExportRetention,
+		DisableJobExecution: !s.JobExecution,
+		JobLease:            s.JobLease, JobMaintenanceInterval: s.JobMaintenanceInterval, ExportRetention: s.ExportRetention,
 		AsyncBatch: s.AsyncBatch, BatchCheckpointEntries: s.BatchCheckpointEntries,
 		BaseURL:         strings.TrimRight(s.BaseURL, "/"),
 		SkipValidation:  s.SkipValidation,
@@ -400,6 +413,9 @@ func Serve(ctx context.Context, s config.Settings, opts ServeOptions) error {
 	}
 	if s.RateLimit == 0 && (s.Environment == "production" || s.Environment == "staging") {
 		slog.Warn("FHIR_RATE_LIMIT=0: không giới hạn tần suất yêu cầu; đặt hạn mức theo IP hoặc giới hạn ở gateway trước khi mở ra Internet")
+	}
+	if !s.JobExecution {
+		slog.Warn("FHIR_JOB_EXECUTION=false: tiến trình này không chạy job nền; phải có tiến trình khác chạy, nếu không export, reindex và batch async ở trạng thái accepted mãi")
 	}
 	if s.SkipValidation {
 		slog.Warn("FHIR_SKIP_VALIDATION=true: dữ liệu ghi vào không được kiểm tra")
