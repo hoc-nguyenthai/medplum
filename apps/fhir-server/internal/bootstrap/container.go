@@ -25,6 +25,7 @@ import (
 	"trivita-fhir/pkg/fhir"
 	"trivita-fhir/pkg/fhirauth"
 	"trivita-fhir/pkg/fhirbinary"
+	"trivita-fhir/pkg/fhirdownload"
 	"trivita-fhir/pkg/fhirrouter"
 	"trivita-fhir/pkg/fhirstore"
 	"trivita-fhir/pkg/fhirsub"
@@ -109,11 +110,13 @@ func (c *Container) build(ctx context.Context) (err error) {
 	// Repository dùng cho router: bọc bằng bộ phát sự kiện nếu bật Subscription. Manager đọc Subscription từ
 	// store GỐC (không bọc) để tránh vòng lặp.
 	var repo fhirrouter.Repository = c.Store
-	if s.Subscriptions {
+	if s.Subscriptions || s.AutoDownload { // broker cũng phục vụ worker tự tải attachment
 		if c.Broker, err = messaging.New(messaging.Config{Driver: s.BrokerDriver, RedisURL: s.RedisURL}); err != nil {
 			return err
 		}
 		c.onStop(c.Broker.Stop)
+	}
+	if s.Subscriptions {
 		triggers, err := s.AutoDisableTriggers()
 		if err != nil {
 			return err
@@ -154,14 +157,8 @@ func (c *Container) build(ctx context.Context) (err error) {
 				return err
 			}
 		}
-		if err := c.Broker.Start(ctx); err != nil {
-			return err
-		}
-		c.Manager.Start()
-		c.onStop(c.Manager.Stop)
-		if c.Hub != nil {
-			c.onStop(c.Hub.Close) // đăng ký sau Broker nên dừng trước: ngắt websocket (GoingAway) trước khi đóng broker
-		}
+	}
+	if c.Broker != nil {
 		repo = fhirsub.Wrap(c.Store, c.Broker)
 	}
 
@@ -180,6 +177,35 @@ func (c *Container) build(ctx context.Context) (err error) {
 			inner = fhirsub.Wrap(inner, c.Broker)
 		}
 		routerRepo = inner
+	}
+	if s.AutoDownload {
+		maxBytes := int64(s.AutoDownloadMaxBytes)
+		if maxBytes == 0 {
+			maxBytes = int64(s.StorageMaxUploadBytes)
+		}
+		w, err := fhirdownload.New(fhirdownload.Config{
+			Repo: repo, BinaryRepo: c.Store, Blobs: c.storage.store, MaxBytes: maxBytes, Timeout: s.AutoDownloadTimeout, AllowPrivate: s.AutoDownloadAllowPrivate,
+			OwnPrefixes: []string{strings.TrimRight(s.BaseURL, "/") + "/", s.StoragePublicURL()},
+			Allowed:     config.AutoDownloadPrefixes(s.AutoDownloadAllowedPrefixes), Ignored: config.AutoDownloadPrefixes(s.AutoDownloadIgnoredPrefixes),
+			Async: s.BrokerDriver != "redis", // broker trong bộ nhớ giao đồng bộ trong yêu cầu ghi: việc tải ngoài phải chạy nền; Redis thử lại và dead-letter theo broker
+		})
+		if err != nil {
+			return err
+		}
+		w.Register(c.Broker)
+		c.onStop(w.Shutdown)
+	}
+	if c.Broker != nil {
+		if err := c.Broker.Start(ctx); err != nil {
+			return err
+		}
+		if c.Manager != nil {
+			c.Manager.Start()
+			c.onStop(c.Manager.Stop)
+		}
+		if c.Hub != nil {
+			c.onStop(c.Hub.Close) // đăng ký sau Broker nên dừng trước: ngắt websocket (GoingAway) trước khi đóng broker
+		}
 	}
 	var scopedJobRepo fhirrouter.Repository
 	var jobContext func(context.Context, *fhir.AsyncJob) context.Context

@@ -522,6 +522,32 @@ func TestSubscriptionAutoDisable(t *testing.T) {
 	}
 }
 
+func TestAutoDownloadSettings(t *testing.T) {
+	d := config.Default()
+	if d.AutoDownload || d.AutoDownloadAllowPrivate || d.AutoDownloadTimeout != 30*time.Second {
+		t.Fatalf("mặc định phải TẮT: %+v", d)
+	}
+	ok, err := config.FromEnv(env(map[string]string{"FHIR_BINARY_STORAGE": "file:/tmp/x", "FHIR_AUTO_DOWNLOAD": "true", "FHIR_AUTO_DOWNLOAD_MAX_BYTES": "1000",
+		"FHIR_AUTO_DOWNLOAD_ALLOWED_PREFIXES": " https://a/ , ,https://b/x ", "FHIR_AUTO_DOWNLOAD_IGNORED_PREFIXES": "https://a/no/", "FHIR_AUTO_DOWNLOAD_TIMEOUT": "5s"}))
+	if err != nil || !ok.AutoDownload || ok.AutoDownloadMaxBytes != 1000 || ok.AutoDownloadTimeout != 5*time.Second {
+		t.Fatalf("hợp lệ: %+v %v", ok, err)
+	}
+	if got := config.AutoDownloadPrefixes(ok.AutoDownloadAllowedPrefixes); len(got) != 2 || got[0] != "https://a/" || got[1] != "https://b/x" {
+		t.Errorf("tách tiền tố: %q", got)
+	}
+	for name, vars := range map[string]map[string]string{
+		"thiếu kho":            {"FHIR_AUTO_DOWNLOAD": "true"},
+		"tiền tố khi tắt":      {"FHIR_AUTO_DOWNLOAD_ALLOWED_PREFIXES": "https://a/"},
+		"AllowPrivate khi tắt": {"FHIR_AUTO_DOWNLOAD_ALLOW_PRIVATE": "true"},
+		"MaxBytes âm":          {"FHIR_BINARY_STORAGE": "file:/tmp/x", "FHIR_AUTO_DOWNLOAD": "true", "FHIR_AUTO_DOWNLOAD_MAX_BYTES": "-1"},
+		"hạn 0":                {"FHIR_BINARY_STORAGE": "file:/tmp/x", "FHIR_AUTO_DOWNLOAD": "true", "FHIR_AUTO_DOWNLOAD_TIMEOUT": "0s"},
+	} {
+		if _, err := config.FromEnv(env(vars)); err == nil || !strings.Contains(err.Error(), "FHIR_AUTO_DOWNLOAD") && !strings.Contains(err.Error(), "REDIS_URL") {
+			t.Errorf("%s: %v", name, err)
+		}
+	}
+}
+
 func TestAsyncBatchSettings(t *testing.T) {
 	d := config.Default()
 	if d.AsyncBatch || d.BatchCheckpointEntries != 10 {

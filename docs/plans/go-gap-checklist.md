@@ -14,7 +14,7 @@ Kế hoạch: [modules/p17-async-batch-download-autodisable.md](modules/p17-asyn
 - [x] `ExpireJobs` dọn cả job `batch?`; `outputBinaryIDs` đọc `valueReference` (A1)
 - [x] Batch async `POST /fhir/R4` + `Prefer: respond-async` (A2)
 - [x] Checkpoint, giữ id POST và hủy giữa chừng cho batch async (A3)
-- [ ] Worker `download`: tải attachment URL ngoài về Binary (B1, B2)
+- [x] Worker `download`: tải attachment URL ngoài về Binary (B1, B2) — xong 2026-11-24, `pkg/fhirdownload`, `FHIR_AUTO_DOWNLOAD` (mặc định tắt)
 - [ ] Extension `subscription-max-attempts` trên Subscription
 - [ ] Worker `dispatch`, `set-accounts`, `dicom`, `lambda-cleaner`, `post-deploy-migration` — xét từng cái có cần không (một phần không áp dụng cho Go)
 - [ ] `cron` (Bot chạy theo lịch) — chặn bởi **M1**

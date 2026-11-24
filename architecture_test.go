@@ -83,10 +83,11 @@ var pkgRules = map[string][]string{
 	"pkg/envconfig":     {},
 	"pkg/httpserve":     {},
 	"pkg/safehttp":      {},
-	"pkg/mailer":        {mod + "/pkg/safehttp"},                                                // gói gốc chỉ stdlib; gói con smtp dùng safehttp.DialContext cho SMTP riêng của project; smtptest chỉ cho test
-	"pkg/binarystore":   {},                                                                     // kho nhị phân + bộ ký URL: chỉ stdlib; gói con storetest chỉ cho test
-	"pkg/fhirbinary":    {mod + "/pkg/fhir", mod + "/pkg/fhirrouter", mod + "/pkg/binarystore"}, // decorator Binary, /storage và Binary thô; không import fhirauth hay fhirstore
-	"pkg/httpsec":       {},                                                                     // middleware net/http thuần (header bảo mật, CORS); không biết framework hay app
+	"pkg/mailer":        {mod + "/pkg/safehttp"},                                                                                                                     // gói gốc chỉ stdlib; gói con smtp dùng safehttp.DialContext cho SMTP riêng của project; smtptest chỉ cho test
+	"pkg/binarystore":   {},                                                                                                                                          // kho nhị phân + bộ ký URL: chỉ stdlib; gói con storetest chỉ cho test
+	"pkg/fhirdownload":  {mod + "/pkg/binarystore", mod + "/pkg/fhir", mod + "/pkg/fhirrouter", mod + "/pkg/fhirsub", mod + "/pkg/messaging", mod + "/pkg/safehttp"}, // tự tải attachment ngoài về Binary khi nhận sự kiện ghi resource
+	"pkg/fhirbinary":    {mod + "/pkg/fhir", mod + "/pkg/fhirrouter", mod + "/pkg/binarystore"},                                                                      // decorator Binary, /storage và Binary thô; không import fhirauth hay fhirstore
+	"pkg/httpsec":       {},                                                                                                                                          // middleware net/http thuần (header bảo mật, CORS); không biết framework hay app
 	"pkg/database":      {mod + "/pkg/core"},
 	"pkg/fhir":          {},                                                                                                                                                                                   // kiểu FHIR R4 (phần lớn là mã sinh bởi tools/fhirgen); chỉ stdlib
 	"pkg/fhirpath":      {mod + "/pkg/fhir"},                                                                                                                                                                  // engine FHIRPath dùng schema FHIR để phân giải choice type

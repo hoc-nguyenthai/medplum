@@ -128,6 +128,18 @@ type Settings struct {
 	// subscriptionAutoDisable của Medplum: [{"maxConsecutiveFailures":10,"timeWindowSeconds":3600}]. Rỗng: không tự tắt.
 	// Đọc bằng AutoDisableTriggers.
 	SubscriptionAutoDisable string
+	// AutoDownload bật tự tải attachment có URL NGOÀI về kho Binary sau khi resource được ghi (như worker `download` của Medplum, nhưng mặc định TẮT: gọi URL do người dùng cung cấp là
+	// bề mặt SSRF và chi phí). Cần FHIR_BINARY_STORAGE; việc tải chạy nền, thử lại 3 lần với broker bộ nhớ (broker Redis: thử lại và dead-letter theo broker).
+	AutoDownload bool
+	// AutoDownloadMaxBytes là trần kích thước một tệp tải về; 0: dùng FHIR_STORAGE_MAX_UPLOAD_BYTES.
+	AutoDownloadMaxBytes int
+	// AutoDownloadTimeout là hạn của mỗi lần tải.
+	AutoDownloadTimeout time.Duration
+	// AutoDownloadAllowedPrefixes (cách nhau bằng dấu phẩy, không rỗng) chỉ cho tải URL bắt đầu bằng một tiền tố trong danh sách; AutoDownloadIgnoredPrefixes là danh sách bỏ qua (thắng danh sách cho phép).
+	AutoDownloadAllowedPrefixes string
+	AutoDownloadIgnoredPrefixes string
+	// AutoDownloadAllowPrivate CHỈ cho dev: cho phép tải từ địa chỉ nội bộ (chống SSRF bị tắt).
+	AutoDownloadAllowPrivate bool
 
 	// Kho nội dung Binary (docs/plans/modules/email-storage.md, S3a/S3b). BinaryStorage rỗng: tắt (Binary giữ `data` base64 trong CSDL như
 	// trước, không có /storage và không có Binary thô). Dạng `file:<thư mục>` (giữ bố cục Medplum); tiền tố khác bị từ chối.
@@ -179,6 +191,17 @@ func (s Settings) S3Prefix() string {
 	return p + "/"
 }
 
+// AutoDownloadPrefixes tách danh sách tiền tố cách nhau bằng dấu phẩy (bỏ phần tử rỗng).
+func AutoDownloadPrefixes(list string) []string {
+	var out []string
+	for _, p := range strings.Split(list, ",") {
+		if p = strings.TrimSpace(p); p != "" {
+			out = append(out, p)
+		}
+	}
+	return out
+}
+
 // StorageEnabled cho biết kho Binary được bật.
 func (s Settings) StorageEnabled() bool { return s.BinaryStorage != "" }
 
@@ -217,7 +240,7 @@ func Default() Settings {
 		JobLease:       5 * time.Minute, JobMaintenanceInterval: 30 * time.Second, ExportRetention: 24 * time.Hour, BatchCheckpointEntries: 10,
 		JWTProjectClaim: "fhir_project", JWTScopeClaim: "scope", JWTPolicyClaim: "fhir_access_policy",
 		BrokerDriver: "memory", RedisURL: "redis://localhost:6379/0",
-		WebhookWorkers: 4, WebhookMaxAttempts: 5, WebhookTimeout: 10 * time.Second,
+		WebhookWorkers: 4, WebhookMaxAttempts: 5, WebhookTimeout: 10 * time.Second, AutoDownloadTimeout: 30 * time.Second,
 		StorageURLTTL: time.Hour, StorageMaxUploadBytes: 256 << 20, Base64BinaryMaxBytes: 1 << 20,
 		WSMaxConnections: 1000, WSMaxBindingsPerUser: 20, WSHeartbeat: 30 * time.Second,
 	}
@@ -301,6 +324,12 @@ func FromEnv(get func(string) string) (Settings, error) {
 	r.Duration(&s.WebhookTimeout, "FHIR_WEBHOOK_TIMEOUT")
 	r.Bool(&s.WebhookAllowPrivate, "FHIR_WEBHOOK_ALLOW_PRIVATE")
 	r.String(&s.SubscriptionAutoDisable, "FHIR_SUBSCRIPTION_AUTO_DISABLE")
+	r.Bool(&s.AutoDownload, "FHIR_AUTO_DOWNLOAD")
+	r.Int(&s.AutoDownloadMaxBytes, "FHIR_AUTO_DOWNLOAD_MAX_BYTES")
+	r.Duration(&s.AutoDownloadTimeout, "FHIR_AUTO_DOWNLOAD_TIMEOUT")
+	r.String(&s.AutoDownloadAllowedPrefixes, "FHIR_AUTO_DOWNLOAD_ALLOWED_PREFIXES")
+	r.String(&s.AutoDownloadIgnoredPrefixes, "FHIR_AUTO_DOWNLOAD_IGNORED_PREFIXES")
+	r.Bool(&s.AutoDownloadAllowPrivate, "FHIR_AUTO_DOWNLOAD_ALLOW_PRIVATE")
 	r.String(&s.BinaryStorage, "FHIR_BINARY_STORAGE")
 	r.String(&s.StorageBaseURL, "FHIR_STORAGE_BASE_URL")
 	r.String(&s.StorageSigningKeyPath, "FHIR_STORAGE_SIGNING_KEY_PATH")
@@ -491,8 +520,20 @@ func (s Settings) validate() error {
 	if err := envconfig.OneOf("BROKER_DRIVER", s.BrokerDriver, "memory", "redis"); err != nil {
 		errs = append(errs, err)
 	}
-	if s.Subscriptions && s.BrokerDriver == "redis" && s.RedisURL == "" {
+	if (s.Subscriptions || s.AutoDownload) && s.BrokerDriver == "redis" && s.RedisURL == "" {
 		errs = append(errs, errors.New("REDIS_URL: bắt buộc khi BROKER_DRIVER=redis"))
+	}
+	if s.AutoDownload && !s.StorageEnabled() {
+		errs = append(errs, errors.New("FHIR_AUTO_DOWNLOAD: cần FHIR_BINARY_STORAGE (nơi lưu tệp tải về)"))
+	}
+	if !s.AutoDownload && (s.AutoDownloadAllowedPrefixes != "" || s.AutoDownloadIgnoredPrefixes != "" || s.AutoDownloadAllowPrivate || s.AutoDownloadMaxBytes != 0) {
+		errs = append(errs, errors.New("FHIR_AUTO_DOWNLOAD_*: cần bật FHIR_AUTO_DOWNLOAD"))
+	}
+	if s.AutoDownloadMaxBytes < 0 || s.AutoDownloadTimeout <= 0 {
+		errs = append(errs, errors.New("FHIR_AUTO_DOWNLOAD_MAX_BYTES không được âm và FHIR_AUTO_DOWNLOAD_TIMEOUT phải > 0"))
+	}
+	if s.AutoDownloadAllowPrivate && isProd(s.Environment) {
+		errs = append(errs, errors.New("FHIR_AUTO_DOWNLOAD_ALLOW_PRIVATE: không được bật ở staging/production (tắt chống SSRF)"))
 	}
 	if s.WebhookAllowPrivate && isProd(s.Environment) {
 		errs = append(errs, errors.New("FHIR_WEBHOOK_ALLOW_PRIVATE: không được bật ở staging/production (tắt chống SSRF)"))

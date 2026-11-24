@@ -1,6 +1,6 @@
 # Kế hoạch việc #17: batch async, tự tải attachment, tự tắt Subscription lỗi
 
-Trạng thái: **C1, C2, A1–A3 đã làm** (2026-11-23: `pkg/fhirsub/failure.go`, `pkg/fhirrouter/jobs_state.go`, `pkg/fhirrouter/batch_async.go`); B chưa làm, các câu hỏi ở mục 5 tạm theo cột đề xuất. Việc #17 trong [task-list.md](../task-list.md) (Ưu tiên 1b), nguồn ở [coverage-matrix.md](../coverage-matrix.md) mục 5.4.
+Trạng thái: **C1, C2, A1–A3 và B1, B2 đã làm (2026-11-24: `pkg/fhirdownload`, `FHIR_AUTO_DOWNLOAD`; việc #17 xong)**; trước đó: **C1, C2, A1–A3 đã làm** (2026-11-23: `pkg/fhirsub/failure.go`, `pkg/fhirrouter/jobs_state.go`, `pkg/fhirrouter/batch_async.go`); B chưa làm, các câu hỏi ở mục 5 tạm theo cột đề xuất. Việc #17 trong [task-list.md](../task-list.md) (Ưu tiên 1b), nguồn ở [coverage-matrix.md](../coverage-matrix.md) mục 5.4.
 
 Nguồn Medplum (chỉ đọc): `/Users/hoc.nguyenthai/Documents/med-vita/medplum/packages/server/src` (gọi tắt `S/`), bản `v5.2.17-5-ge7e7e4019`, cũ hơn tag `v5.2.18` ghi ở [UPSTREAM.md](../../UPSTREAM.md); hành vi dưới đây có thể đã đổi ở 5.2.18. Đường dẫn Go tính từ gốc repo. Quy ước như các kế hoạch khác: điều đã đọc ghi kèm `file:dòng`; điều chưa kiểm ghi "chưa xác nhận" và gom ở mục 7.
 
@@ -200,3 +200,16 @@ Mỗi bước: test đơn vị trước (TDD như các phần khác), cập nh�
 - `pkgRules` hiện cho `pkg/fhirbinary` phụ thuộc những gói nào (`architecture_test.go`); B2 cần `pkg/safehttp` và `pkg/messaging`.
 - Medplum tiền xử lý batch (`BatchProcessor.preprocess`) làm gì ngoài cấp id POST (thứ tự entry, conditional create); chưa đọc `S/fhir/batch*.ts`.
 - `S/workers/subscription.ts` có tính lỗi "preamble" (không nạp được Subscription hay resource, `MAX_PREAMBLE_ATTEMPTS`) vào bộ đếm tự tắt hay không; đọc kỹ trước C1.
+
+## Tiến độ B (2026-11-24): B1 và B2 xong
+
+`pkg/fhirdownload` (gói riêng, không đặt trong `pkg/fhirbinary` như dự kiến để không kéo `fhirsub` và `messaging` vào gói Binary; luật kiến trúc đã thêm). Làm đúng thiết kế B.3 (Q-17.4 tắt mặc định, Q-17.5 cấp server), kèm các điều chỉnh sau khi đọc mã:
+
+- **Broker trong bộ nhớ giao ĐỒNG BỘ trong yêu cầu ghi** (`pkg/messaging/memory.go`) nên tải ngoài trong handler sẽ chặn client; worker có chế độ `Async` (hàng đợi 1024 trong tiến trình, `FHIR_AUTO_DOWNLOAD` dùng hai goroutine, thử lại 3 lần lùi 1 và 2 giây) bật khi `BROKER_DRIVER` không phải `redis`. Với Redis, handler làm trực tiếp và trả lỗi cho broker thử lại/dead-letter. Hàng đợi trong bộ nhớ **không bền** (như worker pixelData của dicomweb).
+- **Tìm attachment bằng reflection theo KIỂU `fhir.Attachment`** (không theo tên khóa `url`): `Extension.url` và `Reference` không bị tải nhầm (có test). Đọc lại và ghi bằng `UpdateResource` + `If-Match` (không cần JSON Patch).
+- Binary tạo bằng kho gốc (không phát sự kiện), nội dung ghi thẳng vào `binarystore` theo luồng với trần `MaxBytes`; `meta.project` giữ theo resource (kho chưa tách project không tự gán, bài học từ D11 của dicomweb), `securityContext` trỏ về resource. Lần ghi cập nhật resource phát sự kiện (Subscription thấy thay đổi) và kích hoạt lại worker nhưng không còn URL ngoài nên không tải lặp.
+- Lỗi tạm (mạng, HTTP >= 400, ghi kho, xung đột `If-Match`) trả về để thử lại và dọn Binary vừa tạo; lỗi vĩnh viễn (URL bị chặn, quá lớn, loại nội dung bị cấm, resource đã xóa hoặc đã đổi URL) chỉ ghi log. Lỗi mạng không lộ query string (`url.Error` chứa cả URL).
+- Đọc resource trả `url` là URL ký của kho Binary (`/storage/<id>/<ver>?...`) nhờ bộ viết lại phản hồi, không phải chuỗi `Binary/<id>`: client cần hiểu cả hai dạng.
+- **Cấu hình:** `FHIR_AUTO_DOWNLOAD`, `_MAX_BYTES`, `_TIMEOUT`, `_ALLOWED_PREFIXES`, `_IGNORED_PREFIXES`, `_ALLOW_PRIVATE` (cấm ở production). Bật tự tải dựng broker và bọc `fhirsub.Wrap` kể cả khi `FHIR_SUBSCRIPTIONS` tắt: `container.go` tách việc dựng broker khỏi Subscription, `Broker.Start` chuyển xuống sau khi mọi handler đã đăng ký.
+- **Kiểm thử:** `pkg/fhirdownload` (tải đúng, project, trùng URL, bỏ qua URL không ngoài/không cho phép/Extension, chặn nội bộ, lỗi tạm và vĩnh viễn không để lại rác, xung đột phiên bản, resource đổi hoặc xóa giữa chừng, chế độ Async không chặn ghi và thử lại, `-race`; đột biến 13 lần, các sống sót đều là tương đương), `apps/fhir-server/internal/bootstrap/autodownload_e2e_test.go` (server thật: cả khi Subscription bật hay tắt, project khác 404, tắt mặc định, SSRF, lọc tiền tố, ghi không bị chặn bởi tải chậm).
+- **Chưa làm:** cấu hình theo project (cần `Project` setting từ `auth`), tự tải attachment trong `contained`, chia sẻ hàng đợi bền khi một replica tắt giữa chừng (cần broker Redis), kiểm với Redis thật (đã kiểm riêng broker Redis ở `pkg/messaging`).
