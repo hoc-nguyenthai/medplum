@@ -58,6 +58,11 @@ type Config struct {
 	Driver   string // "memory" (mặc định) | "redis"
 	RedisURL string
 	Group    string // consumer group (redis); mặc định "trivita"
+	// Concurrency (redis) là số message xử lý song song trong một instance; mặc định 1 (lần lượt).
+	Concurrency int
+	// ClaimIdle (redis) là thời gian một message nằm trong PEL không được ACK thì instance khác nhận lại; mặc định 30s. Phải LỚN HƠN thời gian xử lý lâu nhất của
+	// một handler, nếu không message đang xử lý bị xử lý trùng ở instance khác.
+	ClaimIdle time.Duration
 }
 
 // New tạo broker theo Config.
@@ -69,7 +74,7 @@ func New(cfg Config) (Broker, error) {
 		if cfg.RedisURL == "" {
 			return nil, errors.New("messaging: RedisURL là bắt buộc khi driver=redis")
 		}
-		return NewRedis(cfg.RedisURL, RedisOptions{Group: cfg.Group})
+		return NewRedis(cfg.RedisURL, RedisOptions{Group: cfg.Group, Concurrency: cfg.Concurrency, ClaimIdle: cfg.ClaimIdle})
 	default:
 		return nil, fmt.Errorf("messaging: driver không được hỗ trợ: %q", cfg.Driver)
 	}

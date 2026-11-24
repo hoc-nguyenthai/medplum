@@ -593,6 +593,9 @@ func TestSplitSwitches(t *testing.T) {
 		"tải tắt, broker bộ nhớ":       {merge(storage, map[string]string{"FHIR_AUTO_DOWNLOAD": "true", "FHIR_AUTO_DOWNLOAD_WORKER": "false"}), "FHIR_AUTO_DOWNLOAD_WORKER"},
 		"tải tắt, không tự tải":        {merge(redis, map[string]string{"FHIR_AUTO_DOWNLOAD_WORKER": "false"}), "FHIR_AUTO_DOWNLOAD_WORKER"},
 		"tắt thực thi job":             {map[string]string{"FHIR_JOB_EXECUTION": "false"}, ""},
+		"giao bền, Redis":              {merge(redis, map[string]string{"FHIR_SUBSCRIPTIONS": "true", "FHIR_WEBHOOK_DURABLE": "true"}), ""},
+		"giao bền, broker bộ nhớ":      {map[string]string{"FHIR_SUBSCRIPTIONS": "true", "FHIR_WEBHOOK_DURABLE": "true"}, "FHIR_WEBHOOK_DURABLE"},
+		"giao bền, không Subscription": {merge(redis, map[string]string{"FHIR_WEBHOOK_DURABLE": "true"}), "FHIR_WEBHOOK_DURABLE"},
 	} {
 		_, err := config.FromEnv(env(c.vars))
 		switch {

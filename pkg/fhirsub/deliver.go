@@ -2,13 +2,16 @@ package fhirsub
 
 import (
 	"bytes"
+	"context"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"io"
 	"log/slog"
 	"net/http"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"time"
 )
@@ -67,52 +70,138 @@ func retryable(status int) bool {
 	return status == http.StatusRequestTimeout || status == http.StatusTooManyRequests || status >= 500
 }
 
-// attempt thực hiện một lần giao; thất bại thì hẹn thử lại (không chặn worker) hoặc bỏ cuộc.
-func (m *Manager) attempt(d *delivery) {
-	if m.ctx.Err() != nil {
-		return
-	}
+// outcome là kết quả của một lần thử giao.
+type outcome int
+
+const (
+	delivered outcome = iota // 2xx
+	retry                    // lỗi mạng, 408, 429, 5xx: đáng thử lại
+	giveUp                   // lỗi không thử lại được (4xx khác, địa chỉ bị chặn, request hỏng)
+	canceled                 // ctx bị hủy giữa chừng (tắt máy): chưa biết kết quả
+)
+
+// try thực hiện MỘT lần giao tới endpoint (tăng d.attempt) và phân loại kết quả.
+func (m *Manager) try(ctx context.Context, d *delivery) (outcome, int, error) {
 	d.attempt++
 	req, err := d.request()
 	if err != nil {
-		atomic.AddInt64(&m.stats.Failed, 1)
 		slog.Error("fhirsub: không dựng được request", "subscription", d.subID, "error", err)
-		return
+		return giveUp, 0, err
 	}
-	req = req.WithContext(m.ctx)
-	resp, err := m.client.Do(req)
+	resp, err := m.client.Do(req.WithContext(ctx))
 	status := 0
 	if err == nil {
 		_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, 64<<10))
 		resp.Body.Close()
 		status = resp.StatusCode
 		if status >= 200 && status < 300 {
-			atomic.AddInt64(&m.stats.Delivered, 1)
-			m.clearFailures(d.subID)
-			return
+			return delivered, status, nil
 		}
 	}
-	retry := err != nil || retryable(status)
-	if errIsBlocked(err) {
-		retry = false // địa chỉ bị chặn sẽ không tự hết bị chặn
+	if ctx.Err() != nil {
+		return canceled, status, err
 	}
-	if !retry || d.attempt >= m.cfg.MaxAttempts {
-		atomic.AddInt64(&m.stats.Failed, 1)
-		slog.Warn("fhirsub: giao thất bại, bỏ cuộc", "subscription", d.subID, "resource", d.resource,
-			"attempts", d.attempt, "status", status, "error", err)
-		m.recordFailure(d)
+	if errIsBlocked(err) {
+		return giveUp, status, err // địa chỉ bị chặn sẽ không tự hết bị chặn
+	}
+	if err != nil || retryable(status) {
+		return retry, status, err
+	}
+	return giveUp, status, err
+}
+
+// attempt thực hiện một lần giao (chế độ hàng đợi); thất bại thì hẹn thử lại (không chặn worker) hoặc bỏ cuộc.
+func (m *Manager) attempt(d *delivery) {
+	if m.ctx.Err() != nil {
 		return
 	}
-	delay := m.cfg.BaseDelay << (d.attempt - 1)
-	if delay > time.Minute || delay <= 0 {
-		delay = time.Minute
+	out, status, err := m.try(m.ctx, d)
+	switch out {
+	case delivered:
+		atomic.AddInt64(&m.stats.Delivered, 1)
+		m.clearFailures(d.subID)
+		return
+	case canceled:
+		return
+	}
+	if out == giveUp || d.attempt >= m.cfg.MaxAttempts {
+		m.giveUp(d, status, err)
+		return
 	}
 	atomic.AddInt64(&m.stats.Retried, 1)
-	time.AfterFunc(delay, func() {
+	time.AfterFunc(m.cfg.backoff(d.attempt), func() {
 		if m.ctx.Err() == nil {
 			m.enqueue(d)
 		}
 	})
+}
+
+func (m *Manager) giveUp(d *delivery, status int, err error) {
+	atomic.AddInt64(&m.stats.Failed, 1)
+	slog.Warn("fhirsub: giao thất bại, bỏ cuộc", "subscription", d.subID, "resource", d.resource,
+		"attempts", d.attempt, "status", status, "error", err)
+	m.recordFailure(d)
+}
+
+// deliverSync giao một thông báo tại chỗ, thử lại tới MaxAttempts (chờ theo backoff). Trả true khi đã xong (giao được hoặc bỏ cuộc), false khi ctx bị hủy giữa chừng
+// (tắt máy: thông báo chưa xong, message phải ở lại PEL để nơi khác giao).
+func (m *Manager) deliverSync(ctx context.Context, d *delivery) bool {
+	for {
+		out, status, err := m.try(ctx, d)
+		switch out {
+		case delivered:
+			atomic.AddInt64(&m.stats.Delivered, 1)
+			m.clearFailures(d.subID)
+			return true
+		case canceled:
+			return false
+		}
+		if out == giveUp || d.attempt >= m.cfg.MaxAttempts {
+			m.giveUp(d, status, err)
+			return true
+		}
+		atomic.AddInt64(&m.stats.Retried, 1)
+		select {
+		case <-time.After(m.cfg.backoff(d.attempt)):
+		case <-ctx.Done():
+			return false
+		}
+	}
+}
+
+// deliverAll giao song song (tối đa Workers) mọi thông báo của một sự kiện và chờ xong. Trả lỗi nếu còn thông báo dở dang vì tắt máy, để broker không ACK.
+func (m *Manager) deliverAll(ctx context.Context, ds []*delivery) error {
+	if len(ds) == 0 {
+		return nil
+	}
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	stop := context.AfterFunc(m.ctx, cancel) // Manager.Stop hủy các lần giao đang chạy
+	defer stop()
+	sem := make(chan struct{}, m.cfg.Workers)
+	var wg sync.WaitGroup
+	var incomplete atomic.Bool
+	for _, d := range ds {
+		select {
+		case sem <- struct{}{}:
+		case <-ctx.Done():
+			incomplete.Store(true)
+			continue
+		}
+		wg.Add(1)
+		go func(d *delivery) {
+			defer wg.Done()
+			defer func() { <-sem }()
+			if !m.deliverSync(ctx, d) {
+				incomplete.Store(true)
+			}
+		}(d)
+	}
+	wg.Wait()
+	if incomplete.Load() {
+		return errors.New("fhirsub: dừng giữa lúc giao rest-hook, sự kiện sẽ được giao lại")
+	}
+	return nil
 }
 
 func errIsBlocked(err error) bool {

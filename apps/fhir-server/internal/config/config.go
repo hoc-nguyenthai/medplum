@@ -134,6 +134,12 @@ type Settings struct {
 	WebhookMaxAttempts  int
 	WebhookTimeout      time.Duration
 	WebhookAllowPrivate bool // CHỈ cho dev: cho phép giao tới địa chỉ nội bộ (chống SSRF bị tắt)
+	// WebhookDurable (mặc định false) giao rest-hook ĐỒNG BỘ trong handler của Redis Stream và chỉ ACK sau khi giao xong hoặc bỏ cuộc (hết FHIR_WEBHOOK_MAX_ATTEMPTS), nên
+	// tiến trình chết hay restart không làm mất thông báo đang chờ hoặc đang hẹn thử lại (nơi khác nhận lại sau ClaimIdle; giao ít nhất một lần, bên nhận có thể thấy
+	// trùng). Mặc định (false): hàng đợi trong bộ nhớ (sức chứa 1024, đầy thì bỏ, restart thì mất). Cần FHIR_SUBSCRIPTIONS và BROKER_DRIVER=redis (broker bộ nhớ gọi
+	// handler trong yêu cầu ghi nên webhook chậm sẽ chặn client). FHIR_WEBHOOK_WORKERS thành số sự kiện xử lý song song và số webhook giao song song mỗi sự kiện.
+	// Broker dùng chung với tự tải attachment: lần thử lại sự kiện lỗi của nó chờ lâu hơn (ClaimIdle dài hơn).
+	WebhookDurable bool
 	// SubscriptionAutoDisable là JSON mảng trigger tự tắt Subscription rest-hook giao thất bại lặp lại, cùng dạng
 	// subscriptionAutoDisable của Medplum: [{"maxConsecutiveFailures":10,"timeWindowSeconds":3600}]. Rỗng: không tự tắt.
 	// Đọc bằng AutoDisableTriggers.
@@ -313,6 +319,7 @@ func FromEnv(get func(string) string) (Settings, error) {
 	r.Int(&s.BatchCheckpointEntries, "FHIR_BATCH_CHECKPOINT_ENTRIES")
 	r.Bool(&s.Subscriptions, "FHIR_SUBSCRIPTIONS")
 	r.Bool(&s.SubscriptionDelivery, "FHIR_SUBSCRIPTION_DELIVERY")
+	r.Bool(&s.WebhookDurable, "FHIR_WEBHOOK_DURABLE")
 	r.Bool(&s.AutoDownloadWorker, "FHIR_AUTO_DOWNLOAD_WORKER")
 	r.Bool(&s.JobExecution, "FHIR_JOB_EXECUTION")
 	r.String(&s.WSMode, "FHIR_WS_MODE")
@@ -553,6 +560,16 @@ func (s Settings) validate() error {
 			errs = append(errs, errors.New("FHIR_SUBSCRIPTION_DELIVERY=false: cần BROKER_DRIVER=redis (broker bộ nhớ không đến được service giao)"))
 		case s.WSModeResolved() == WSModeEmbedded:
 			errs = append(errs, errors.New("FHIR_SUBSCRIPTION_DELIVERY=false: không dùng được với FHIR_WS_MODE=embedded (Hub nằm trong tiến trình giao); dùng issuer hoặc off"))
+		}
+	}
+	if s.WebhookDurable {
+		switch {
+		case !s.Subscriptions:
+			errs = append(errs, errors.New("FHIR_WEBHOOK_DURABLE: cần FHIR_SUBSCRIPTIONS=true"))
+		case !s.SubscriptionDelivery:
+			errs = append(errs, errors.New("FHIR_WEBHOOK_DURABLE: vô nghĩa khi FHIR_SUBSCRIPTION_DELIVERY=false (service fhir-notifier luôn giao bền)"))
+		case s.BrokerDriver != "redis":
+			errs = append(errs, errors.New("FHIR_WEBHOOK_DURABLE: cần BROKER_DRIVER=redis (broker bộ nhớ gọi handler trong yêu cầu ghi, webhook chậm sẽ chặn client)"))
 		}
 	}
 	if !s.AutoDownloadWorker {

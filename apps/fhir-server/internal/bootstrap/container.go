@@ -113,7 +113,13 @@ func (c *Container) build(ctx context.Context) (err error) {
 	// store GỐC (không bọc) để tránh vòng lặp.
 	var repo fhirrouter.Repository = c.Store
 	if s.Subscriptions || s.AutoDownload { // broker cũng phục vụ worker tự tải attachment
-		if c.Broker, err = messaging.New(messaging.Config{Driver: s.BrokerDriver, RedisURL: s.RedisURL}); err != nil {
+		bcfg := messaging.Config{Driver: s.BrokerDriver, RedisURL: s.RedisURL}
+		if s.Subscriptions && s.SubscriptionDelivery && s.WebhookDurable {
+			// giao bền: handler giao đồng bộ nên cần xử lý song song và ClaimIdle dài hơn chuỗi giao xấu nhất (xem fhirsub.Config.DurableClaimIdle)
+			bcfg.Concurrency = s.WebhookWorkers
+			bcfg.ClaimIdle = fhirsub.Config{MaxAttempts: s.WebhookMaxAttempts, Timeout: s.WebhookTimeout}.DurableClaimIdle()
+		}
+		if c.Broker, err = messaging.New(bcfg); err != nil {
 			return err
 		}
 		c.onStop(c.Broker.Stop)
@@ -138,7 +144,7 @@ func (c *Container) build(ctx context.Context) (err error) {
 		}
 		c.Manager = fhirsub.NewManager(c.Store, fhirsub.Config{
 			Workers: s.WebhookWorkers, MaxAttempts: s.WebhookMaxAttempts, Timeout: s.WebhookTimeout, AllowPrivate: s.WebhookAllowPrivate,
-			AutoDisable: autoDisableTriggers(triggers), Failures: failures,
+			AutoDisable: autoDisableTriggers(triggers), Failures: failures, Durable: s.WebhookDurable,
 		})
 		c.Manager.Register(c.Broker)
 		switch s.WSModeResolved() {

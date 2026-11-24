@@ -26,6 +26,9 @@ type RedisOptions struct {
 	ClaimIdle     time.Duration // mặc định 30s
 	ClaimInterval time.Duration // mặc định 10s
 	MaxDeliveries int           // mặc định 5
+	// Concurrency là số message xử lý SONG SONG trong một instance (mặc định 1: lần lượt, một handler chậm chặn mọi message sau nó). Mỗi message vẫn được ACK
+	// riêng khi handler của nó xong; thứ tự giữa các message không còn được bảo đảm. Stop chờ các handler đang chạy.
+	Concurrency int
 }
 
 // Redis dùng Redis Streams + consumer group: giao at-least-once, có ACK.
@@ -39,6 +42,7 @@ type Redis struct {
 
 	claimIdle, claimEvery time.Duration
 	maxDeliveries         int
+	concurrency           int
 
 	mu       sync.RWMutex
 	handlers map[string][]Handler
@@ -82,8 +86,11 @@ func NewRedisFromClient(c redis.UniversalClient, opts RedisOptions) *Redis {
 	if opts.MaxDeliveries <= 0 {
 		opts.MaxDeliveries = 5
 	}
+	if opts.Concurrency <= 0 {
+		opts.Concurrency = 1
+	}
 	return &Redis{
-		claimIdle: opts.ClaimIdle, claimEvery: opts.ClaimInterval, maxDeliveries: opts.MaxDeliveries,
+		claimIdle: opts.ClaimIdle, claimEvery: opts.ClaimInterval, maxDeliveries: opts.MaxDeliveries, concurrency: opts.Concurrency,
 		client:   c,
 		group:    opts.Group,
 		prefix:   opts.Prefix,
@@ -249,6 +256,12 @@ func (b *Redis) consumeBroadcast(ctx context.Context, last map[string]string) {
 
 func (b *Redis) consume(ctx context.Context, topics []string) {
 	defer close(b.done)
+	var inflight sync.WaitGroup
+	defer inflight.Wait() // Stop chờ handler đang chạy (chạy trước close(done) vì defer ngược thứ tự)
+	var sem chan struct{}
+	if b.concurrency > 1 {
+		sem = make(chan struct{}, b.concurrency)
+	}
 	streams := make([]string, 0, 2*len(topics))
 	for _, t := range topics {
 		streams = append(streams, b.stream(t))
@@ -279,9 +292,25 @@ func (b *Redis) consume(ctx context.Context, topics []string) {
 		for _, s := range res {
 			topic := strings.TrimPrefix(s.Stream, b.prefix+":")
 			for _, m := range s.Messages {
-				if b.dispatch(ctx, topic, m) {
-					b.ack(ctx, s.Stream, m.ID)
+				if sem == nil {
+					if b.dispatch(ctx, topic, m) {
+						b.ack(ctx, s.Stream, m.ID)
+					}
+					continue
 				}
+				select {
+				case sem <- struct{}{}:
+				case <-ctx.Done():
+					continue // đang dừng: message chưa xử lý nằm trong PEL cho instance khác
+				}
+				inflight.Add(1)
+				go func(stream, topic string, m redis.XMessage) {
+					defer inflight.Done()
+					defer func() { <-sem }()
+					if b.dispatch(ctx, topic, m) {
+						b.ack(ctx, stream, m.ID)
+					}
+				}(s.Stream, topic, m)
 			}
 		}
 	}

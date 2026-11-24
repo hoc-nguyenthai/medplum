@@ -340,3 +340,61 @@ func TestRedisReclaimsMessagesOfDeadConsumer(t *testing.T) {
 		return err == nil && p.Count == 0
 	})
 }
+
+// Concurrency > 1: một handler chậm không chặn các message sau nó (mặc định 1 thì chặn); mỗi message được ACK riêng; Stop chờ handler đang chạy.
+func TestRedisConcurrencyDoesNotBlockBehindSlowHandler(t *testing.T) {
+	for _, conc := range []int{1, 4} {
+		t.Run(map[int]string{1: "lần lượt", 4: "song song"}[conc], func(t *testing.T) {
+			mr := newRedis(t)
+			b, err := messaging.NewRedis("redis://"+mr.Addr(), messaging.RedisOptions{Group: "g", Block: 20 * time.Millisecond, Concurrency: conc})
+			if err != nil {
+				t.Fatal(err)
+			}
+			release := make(chan struct{})
+			var fast, slowDone atomic.Int32
+			b.Subscribe("ThingHappened", func(_ context.Context, env messaging.Envelope) error {
+				var e thingHappened
+				_ = env.Decode(&e)
+				if e.Name == "slow" {
+					<-release
+					slowDone.Add(1)
+					return nil
+				}
+				fast.Add(1)
+				return nil
+			})
+			ctx := context.Background()
+			if err := b.Start(ctx); err != nil {
+				t.Fatal(err)
+			}
+			_ = b.Publish(ctx, newEvent("slow"))
+			time.Sleep(100 * time.Millisecond)
+			for i := 0; i < 3; i++ {
+				_ = b.Publish(ctx, newEvent("fast"))
+			}
+			time.Sleep(500 * time.Millisecond)
+			if conc == 1 && fast.Load() != 0 {
+				t.Errorf("lần lượt: message sau handler chậm phải chờ, đã xử lý %d", fast.Load())
+			}
+			if conc > 1 && fast.Load() != 3 {
+				t.Errorf("song song: 3 message nhanh phải xong trong lúc handler chậm còn chạy, xong %d", fast.Load())
+			}
+			stopped := make(chan struct{})
+			go func() { _ = b.Stop(ctx); close(stopped) }()
+			select {
+			case <-stopped:
+				t.Fatal("Stop phải chờ handler đang chạy")
+			case <-time.After(300 * time.Millisecond):
+			}
+			close(release)
+			select {
+			case <-stopped:
+			case <-time.After(5 * time.Second):
+				t.Fatal("Stop không thoát sau khi handler xong")
+			}
+			if slowDone.Load() != 1 {
+				t.Errorf("handler chậm chưa xong: %d", slowDone.Load())
+			}
+		})
+	}
+}

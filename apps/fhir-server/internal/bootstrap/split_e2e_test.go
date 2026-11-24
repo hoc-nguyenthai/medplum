@@ -124,3 +124,39 @@ func TestJobExecutionOffLeavesJobAccepted(t *testing.T) {
 		})
 	}
 }
+
+// FHIR_WEBHOOK_DURABLE qua server thật trên Redis: giao đồng bộ trong handler, thử lại tại chỗ khi máy nhận trả 503, rồi ACK (không giao thêm).
+func TestWebhookDurableDeliversAndRetriesInPlace(t *testing.T) {
+	addr := issuerRedis(t)
+	var calls atomic.Int32
+	hook := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if calls.Add(1) == 1 {
+			w.WriteHeader(http.StatusServiceUnavailable) // lần đầu lỗi tạm
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer hook.Close()
+	_, srv := newServer(t, settings(func(s *config.Settings) {
+		s.Subscriptions, s.WebhookAllowPrivate, s.WebhookDurable = true, true, true
+		s.BrokerDriver, s.RedisURL = "redis", "redis://"+addr
+	}))
+	want(t, call(t, srv, "POST", "/fhir/R4/Subscription", writeSecret, map[string]any{
+		"resourceType": "Subscription", "status": "active", "reason": "e2e", "criteria": "Patient?family=Hooked",
+		"channel": map[string]any{"type": "rest-hook", "endpoint": hook.URL},
+	}), 201)
+	time.Sleep(300 * time.Millisecond) // chờ Subscription được nạp (sự kiện Subscription làm mới danh sách)
+	want(t, call(t, srv, "POST", "/fhir/R4/Patient", writeSecret, patient("Hooked")), 201)
+
+	deadline := time.Now().Add(10 * time.Second)
+	for time.Now().Before(deadline) && calls.Load() < 2 {
+		time.Sleep(20 * time.Millisecond)
+	}
+	if calls.Load() != 2 {
+		t.Fatalf("muốn 2 lần gọi (503 rồi 200), được %d", calls.Load())
+	}
+	time.Sleep(600 * time.Millisecond)
+	if calls.Load() != 2 {
+		t.Errorf("sau khi giao được không được giao thêm: %d", calls.Load())
+	}
+}

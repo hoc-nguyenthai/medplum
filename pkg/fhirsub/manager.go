@@ -37,6 +37,35 @@ type Config struct {
 	// (nil thì dùng bộ nhớ của tiến trình).
 	AutoDisable []Trigger
 	Failures    FailureTracker
+	// Durable: giao rest-hook ĐỒNG BỘ ngay trong handler của sự kiện (không qua hàng đợi trong bộ nhớ), thử lại tại chỗ tới MaxAttempts; handler chỉ trả nil (broker
+	// ACK) khi mọi lần giao đã thành công hoặc đã bỏ cuộc. Tiến trình chết hoặc tắt giữa chừng thì message còn trong PEL của Redis và được instance khác nhận lại sau
+	// ClaimIdle (xem DurableClaimIdle), nên không mất thông báo đang chờ hay đang hẹn thử lại; đổi lại giao ít nhất một lần (bên nhận có thể thấy trùng, kể cả
+	// với Subscription đã được giao trước khi chết). CHỈ dùng với broker bền chạy handler ngoài yêu cầu ghi (Redis): broker bộ nhớ gọi handler trong yêu cầu ghi
+	// nên webhook chậm sẽ chặn client. QueueSize không dùng. Websocket (AttachRemote) không đổi.
+	Durable bool
+}
+
+// DurableClaimIdle là thời gian nhỏ nhất nên đặt cho ClaimIdle của broker khi Durable: dài hơn gấp đôi thời gian xấu nhất của MỘT chuỗi giao (mọi lần thử hết
+// hạn cộng mọi lần chờ), tối thiểu 1 phút. Ngắn hơn thì replica khác nhận lại message còn đang được xử lý và giao trùng.
+func (c Config) DurableClaimIdle() time.Duration {
+	c.defaults()
+	var total time.Duration
+	for i := 1; i <= c.MaxAttempts; i++ {
+		total += c.Timeout
+		if i < c.MaxAttempts {
+			total += c.backoff(i)
+		}
+	}
+	return max(2*total, time.Minute)
+}
+
+// backoff là thời gian chờ sau lần thử thứ attempt (1, 2, ...): BaseDelay nhân đôi mỗi lần, trần 1 phút.
+func (c Config) backoff(attempt int) time.Duration {
+	delay := c.BaseDelay << (attempt - 1)
+	if delay > time.Minute || delay <= 0 {
+		delay = time.Minute
+	}
+	return delay
 }
 
 func (c *Config) defaults() {
@@ -151,8 +180,11 @@ func (m *Manager) wsLookup(ctx context.Context, subID string) (string, bool) {
 	return "", false
 }
 
-// Start chạy các worker giao.
+// Start chạy các worker giao (không cần khi Durable: việc giao nằm trong handler).
 func (m *Manager) Start() {
+	if m.cfg.Durable {
+		return
+	}
 	for i := 0; i < m.cfg.Workers; i++ {
 		m.wg.Add(1)
 		go func() {
@@ -308,6 +340,7 @@ func (m *Manager) dispatch(ctx context.Context, env messaging.Envelope, wantWS b
 		m.Invalidate() // Subscription vừa đổi: có hiệu lực ngay trong replica này
 	}
 	var doc map[string]any
+	var durable []*delivery
 	evProject := resourceProject(ev.Resource)
 	for _, e := range m.active(ctx) {
 		if e.resourceType != ev.ResourceType {
@@ -358,9 +391,13 @@ func (m *Manager) dispatch(ctx context.Context, env messaging.Envelope, wantWS b
 			m.publishRemote(ctx, e, ev)
 			continue
 		}
+		if m.cfg.Durable {
+			durable = append(durable, newDelivery(e, ev))
+			continue
+		}
 		m.enqueue(newDelivery(e, ev))
 	}
-	return nil
+	return m.deliverAll(ctx, durable)
 }
 
 func (m *Manager) enqueue(d *delivery) {
