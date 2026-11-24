@@ -87,7 +87,7 @@ WADO-URI; `rendered`; bộ lọc QIDO; bulkdata; tích hợp OHIF phía server n
 
 ## 9. Quyết định đã chốt và câu hỏi mở
 
-Chốt 2026-11-24: H2 = app riêng `apps/dicomweb`; H4 = `pkg/binarystore` (tệp + S3, đã có); H5 = sửa các lỗi của Medplum ở mục 3 (kéo theo Q-D6 = theo chuẩn). Q-D2 coi như xong (tệp và S3). **D0 xong 2026-11-24**: báo cáo [d0-spike.md](d0-spike.md): Q-D3 = `suyashkumar/dicom` v1.1.0 với `SkipPixelData` + bộ quét luồng riêng + chốt chặn SQ lồng sâu (tệp 60 KB làm thư viện dùng 2,2 GB) và tệp cắt giữa PixelData. Bước tiếp theo: D1.
+Chốt 2026-11-24: H2 = app riêng `apps/dicomweb`; H4 = `pkg/binarystore` (tệp + S3, đã có); H5 = sửa các lỗi của Medplum ở mục 3 (kéo theo Q-D6 = theo chuẩn). Q-D2 coi như xong (tệp và S3). **D0 xong 2026-11-24**: báo cáo [d0-spike.md](d0-spike.md): Q-D3 = `suyashkumar/dicom` v1.1.0 với `SkipPixelData` + bộ quét luồng riêng + chốt chặn SQ lồng sâu (tệp 60 KB làm thư viện dùng 2,2 GB) và tệp cắt giữa PixelData. **D1 xong 2026-11-24**: khung `apps/dicomweb` (cấu hình, probe, xác thực JWT, cô lập project, bốn tiền tố, giới hạn body, lỗi `{"error"}`, swagger, Dockerfile, test), mọi route DICOMweb trả 501. Quyết định kèm theo: **D-DW-1** dicomweb dùng chung schema `fhir` và role ứng dụng của fhir-server, không tự migrate ([architecture.md](../../../apps/dicomweb/docs/architecture.md)). Bước tiếp theo: D2 (`pkg/dicomweb`).
 
 
 | # | Câu hỏi | Khuyến nghị |

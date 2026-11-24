@@ -61,6 +61,15 @@ var rules = []rule{
 	{dir: "apps/ws-gateway/internal/config", allow: []string{mod + "/apps/ws-gateway/internal/config", mod + "/pkg/envconfig"}},
 	{dir: "apps/ws-gateway/internal/bootstrap", anyThird: true, allow: []string{mod + "/apps/ws-gateway/", mod + "/pkg/"}},
 
+	// ---- dicomweb ----
+	// Như ws-gateway: không có domain/application riêng. Nghiệp vụ DICOM sẽ nằm ở pkg/dicomweb (D2 trở đi); presentation chỉ gắn route, xác thực và probe vào Echo;
+	// bootstrap là composition root (DB, kho Binary, Verifier).
+	{dir: "apps/dicomweb/internal/presentation",
+		allow: []string{mod + "/apps/dicomweb/internal/presentation", mod + "/apps/dicomweb/docs", mod + "/pkg/fhirauth", mod + "/pkg/httpsec"},
+		third: []string{"github.com/labstack/echo/v4", "github.com/swaggo/echo-swagger", "golang.org/x/time/rate"}},
+	{dir: "apps/dicomweb/internal/config", allow: []string{mod + "/apps/dicomweb/internal/config", mod + "/pkg/envconfig", mod + "/pkg/httpsec"}},
+	{dir: "apps/dicomweb/internal/bootstrap", anyThird: true, allow: []string{mod + "/apps/dicomweb/", mod + "/pkg/"}},
+
 	// ---- fhir-cli ----
 	// Client độc lập: chỉ stdlib + chính nó. Không kéo thư viện server (pkg/*) vào binary CLI.
 	{dir: "apps/fhir-cli", allow: []string{mod + "/apps/fhir-cli"}},

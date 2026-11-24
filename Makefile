@@ -9,10 +9,11 @@ MIGRATE    ?= status
 FHIR_SERVER_PORT ?= :8005
 AUTH_PORT ?= :8006
 WS_GATEWAY_PORT ?= :8007
+DICOMWEB_PORT ?= :8008
 comma := ,
 
 .DEFAULT_GOAL := help
-.PHONY: help swagger tidy build run run-fhir-server run-auth run-ws-gateway test-unit test-db test-integration test-service test-app test-e2e bench-ws test-auth-pg migrate test test-race test-pg bench cover lint fmt ci docker up down
+.PHONY: help swagger tidy build run run-fhir-server run-auth run-ws-gateway run-dicomweb test-unit test-db test-integration test-service test-app test-e2e bench-ws test-auth-pg migrate test test-race test-pg bench cover lint fmt ci docker up down
 
 help: ## Liệt kê các lệnh
 	@grep -E '^[a-zA-Z0-9_-]+:.*##' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}'
@@ -46,6 +47,9 @@ run-auth: ## auth :8006 (SQLite ./auth.db chỉ dev; đọc apps/auth/.env nếu
 
 run-ws-gateway: ## ws-gateway :8007 (cần Redis và FHIR_WS_SIGNING_KEY giống fhir-server; đọc apps/ws-gateway/.env nếu có)
 	cd apps/ws-gateway && HTTP_ADDR=$(WS_GATEWAY_PORT) go run ./cmd/ws-gateway
+
+run-dicomweb: ## dicomweb :8008 (cần schema đã migrate bởi fhir-server, FHIR_JWT_*, FHIR_BINARY_STORAGE; đọc apps/dicomweb/.env nếu có)
+	cd apps/dicomweb && HTTP_ADDR=$(DICOMWEB_PORT) go run ./cmd/dicomweb
 
 migrate: ## Chạy migration của APP có DB: make migrate APP=fhir-server MIGRATE=up|down|status
 	cd $(APP_DIR) && go run ./cmd/$(APP) migrate $(MIGRATE)
