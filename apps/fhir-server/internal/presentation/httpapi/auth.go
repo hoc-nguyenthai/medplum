@@ -91,7 +91,7 @@ func bearer(r *http.Request) string {
 }
 
 // RequiredRole cho biết vai trò tối thiểu của một yêu cầu FHIR:
-//   - quản trị ($reindex, $expunge): RoleAdmin;
+//   - quản trị ($reindex, $expunge, $import, $install, ghi trực tiếp AsyncJob): RoleAdmin;
 //   - đọc và tìm kiếm (GET, HEAD, POST _search) và các operation không ghi ($validate, $everything, $expand, $lookup, $validate-code, $subsumes, $translate, $export): RoleRead;
 //   - mọi thao tác còn lại (kể cả batch/transaction, vì có thể chứa thao tác ghi): RoleWrite.
 func RequiredRole(method, path string) Role {
@@ -100,6 +100,14 @@ func RequiredRole(method, path string) Role {
 	case strings.Contains(p, "/bulkdata/") && strings.HasSuffix(p, "/status"):
 		return RoleRead // theo dõi hoặc hủy export của chính mình, mọi method
 	case strings.HasSuffix(p, "/$reindex") || strings.HasSuffix(p, "/$expunge"):
+		return RoleAdmin
+	// Nạp hàng loạt và cài gói: chỉ quản trị. Handler cũng gọi RequireAdmin, nhưng chỉ khi repo là fhirauth.Repo (chế độ JWT); ở chế độ token
+	// tĩnh cổng này là chốt duy nhất.
+	case strings.HasSuffix(p, "/$import") || strings.HasSuffix(p, "/$install"):
+		return RoleAdmin
+	// Ghi trực tiếp AsyncJob (kể cả điều kiện, qua Bundle): chỉ quản trị. Job do router tự tạo, client không có lý do ghi; ở chế độ token tĩnh
+	// không có chữ ký quyền nên RecoverJobs sẽ chạy bản ghi thô với quyền hệ thống. Đọc job vẫn là read.
+	case isAsyncJobWrite(method, p):
 		return RoleAdmin
 	case strings.HasSuffix(p, "/$validate") || strings.HasSuffix(p, "/$everything") || strings.HasSuffix(p, "/$expand") ||
 		strings.HasSuffix(p, "/$lookup") || strings.HasSuffix(p, "/$validate-code") || strings.HasSuffix(p, "/$graphql") || strings.HasSuffix(p, "/$get-ws-binding-token") || strings.HasSuffix(p, "/$subsumes") || strings.HasSuffix(p, "/$translate"):
@@ -127,6 +135,17 @@ func AuthorizeEntry(ctx context.Context, method, path string) error {
 		return fhirrouter.Forbidden("Token không đủ quyền cho thao tác này")
 	}
 	return nil
+}
+
+// isAsyncJobWrite: yêu cầu ghi (khác GET/HEAD/OPTIONS) vào chính loại AsyncJob, với hoặc không có tiền tố /fhir/R4.
+func isAsyncJobWrite(method, path string) bool {
+	switch method {
+	case http.MethodGet, http.MethodHead, http.MethodOptions:
+		return false
+	}
+	seg := strings.TrimLeft(strings.TrimPrefix(strings.TrimLeft(path, "/"), strings.TrimLeft(Prefix, "/")), "/")
+	first, _, _ := strings.Cut(seg, "/")
+	return first == "AsyncJob"
 }
 
 // Guard là middleware kiểm tra token theo RequiredRole. /metadata công khai (để client tự khám phá).

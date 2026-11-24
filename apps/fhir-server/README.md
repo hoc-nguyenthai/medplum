@@ -115,7 +115,7 @@ Lỗi trả về là `OperationOutcome` (`Content-Type: application/fhir+json`),
 ## Xác thực
 
 Bearer token tĩnh, ba mức: **READ** (đọc, tìm kiếm kể cả `POST .../_search`, `$validate`, `$everything`), **WRITE** (mọi thao tác ghi, kể cả
-batch/transaction vì có thể chứa thao tác ghi) và **ADMIN** (ghi và quản trị: `$reindex`, `$expunge`). Token dạng `tên:secret`, secret tối thiểu 24 ký tự, so khớp bằng băm SHA-256 với thời gian không phụ thuộc nội dung.
+batch/transaction vì có thể chứa thao tác ghi) và **ADMIN** (ghi và quản trị: `$reindex`, `$expunge`, `$import`, `$install`, ghi trực tiếp `AsyncJob`). Token dạng `tên:secret`, secret tối thiểu 24 ký tự, so khớp bằng băm SHA-256 với thời gian không phụ thuộc nội dung.
 **Scope SMART theo từng chữ.** Scope `system|user/<Loại|*>.<quyền>` cấp ĐÚNG thao tác của từng chữ: `c` tạo, `r` đọc (read, vread, history), `u` sửa (PUT), `d` xóa, `s` tìm kiếm; `.read` = `rs`, `.write` = `cud`, `.*` = `cruds`; scope `fhir.read` = `rs` và `fhir.write`/`fhir.admin` = `cruds` trên mọi loại. PATCH cần `r` và `u`; thao tác có điều kiện (PUT, PATCH, DELETE theo query, `If-None-Exist`) cần thêm `s`; update-as-create cần `c`. Thiếu quyền thì 403 kèm chữ còn thiếu. Scope `patient/`, scope có tham số (`?category=...`) và chữ lạ không cấp quyền gì.
 **AccessPolicy trong token (giai đoạn 11b).** Claim `fhir_access_policy` là mảng rule, giống `AccessPolicy.resource` của Medplum:
 `[{"resourceType":"Patient","criteria":"_id=123","readonly":true}, "Observation?subject=Patient/123"]`. Token có claim này chỉ truy cập

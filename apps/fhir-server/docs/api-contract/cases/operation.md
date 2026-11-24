@@ -58,13 +58,13 @@ Quyền quản trị được kiểm ở **hai lớp**, và hai lớp không áp
 | Lớp | Nơi | Áp cho | Từ chối bằng |
 |---|---|---|---|
 | Cổng HTTP (`RequiredRole`, `httpapi/auth.go`) | trước router, theo đuôi đường dẫn | `$reindex` (cả hai route) và `$expunge`: cần `admin`. `$validate`, `$everything` và `GET job/{id}/status`: cần `read`. `$import`, `$install`: chỉ cần `write` (là `POST` thường) | `403` `Token không đủ quyền cho thao tác này` |
-| `RequireAdmin` (`fhirauth.Repo`, trong handler) | sau khi khớp route | `PackageRelease/{id}/$install`, `CodeSystem/$import`, `CodeSystem/{id}/$import`, `ConceptMap/$import`, `ConceptMap/{id}/$import` | `403` `Thao tác này chỉ dành cho quản trị project` (hoặc `Không xác định được người gọi` khi thiếu Principal) |
+| `RequireAdmin` (`fhirauth.Repo`, trong handler; chỉ chế độ JWT, lớp thứ hai sau cổng HTTP `admin`) | sau khi khớp route | `PackageRelease/{id}/$install`, `CodeSystem/$import`, `CodeSystem/{id}/$import`, `ConceptMap/$import`, `ConceptMap/{id}/$import` | `403` `Thao tác này chỉ dành cho quản trị project` (hoặc `Không xác định được người gọi` khi thiếu Principal) |
 
 **Ai là admin.** Chế độ JWT: scope `fhir.admin` (vai trò `admin`, quyền `cruds` trên mọi loại) hoặc `fhir.super` khi `AllowSuperAdmin`. `RequireAdmin` còn đòi **không có AccessPolicy** (claim chính sách khác rỗng thì `403` ngay cả khi có `fhir.admin`) trừ super-admin. Scope SMART theo loại (`system/*.cruds`, `system/Patient.cruds`...) **không bao giờ** cho vai trò `admin`: tối đa `write`. Chế độ token tĩnh: token trong `FHIR_ADMIN_TOKENS` có vai trò `admin`; `FHIR_WRITE_TOKENS` là `write`; `FHIR_READ_TOKENS` là `read`.
 
 **Super-admin** phải gửi `X-Fhir-Project` hợp lệ (thiếu: `400` `Super-admin phải chọn project bằng header X-Fhir-Project`); mọi yêu cầu của họ vào nhóm này được ghi log kiểm toán (`"audit": true`), kể cả bị từ chối. Thao tác chạy trong đúng project đã chọn.
 
-**Hiện thực tế ở chế độ token tĩnh (rủi ro, ghi trung thực).** `AdminChecker` chỉ do lớp tách project `fhirauth.Repo` cài, và lớp này chỉ được bọc khi bật JWT. Ở chế độ token tĩnh, router giữ kho thường (không cài `RequireAdmin`) nên bước kiểm admin trong handler **bị bỏ qua**: một token `write` tĩnh gọi được `PackageRelease/{id}/$install`, `CodeSystem/{id}/$import` và `ConceptMap/{id}/$import` (đã đo: token `FHIR_WRITE_TOKENS` nạp concept vào CodeSystem và ánh xạ vào ConceptMap, `200`; gọi `$install` PackageRelease không tồn tại ra `404`, không phải `403`). Chỉ `$reindex` và `$expunge` vẫn chặn token `write` tĩnh vì được chặn ở cổng HTTP. Chế độ JWT đúng như bảng trên (đã đo: token `fhir.write` gọi `$install` và `$import` đều `403` `Thao tác này chỉ dành cho quản trị project`). Route `GET job/{id}/status` không đòi `admin` ở cả hai chế độ.
+**[ĐÃ SỬA 2026-11-24] Chế độ token tĩnh.** Trước đó `AdminChecker` chỉ do `fhirauth.Repo` (chỉ khi bật JWT) cài nên token `write` tĩnh gọi được `$install` và `$import`. Nay `RequiredRole` đòi `admin` ngay ở cổng HTTP cho `$import`, `$install` (cả hai chế độ, cả entry trong Bundle): token `write` hoặc `read` nhận `403` `Token không đủ quyền cho thao tác này`; `RequireAdmin` trong handler vẫn là lớp thứ hai ở chế độ JWT (chặn admin bị AccessPolicy thu hẹp). Test: `TestStaticTokenCannotRunAdminOnlyOperations`, `TestRequiredRole`. Mô tả cũ (đã lỗi thời): `AdminChecker` chỉ do lớp tách project cài, bước kiểm admin trong handler bị bỏ qua ở chế độ tĩnh. Route `GET job/{id}/status` không đòi `admin` ở cả hai chế độ.
 
 **Quyền theo loại resource** (chế độ JWT) tiếp tục kiểm ở kho: `$expunge` đòi quyền `d` trên loại, `$reindex` (cả hai) đòi quyền `u`, `$import` ghi concept đòi `u` trên `CodeSystem`/`ConceptMap`; `fhir.admin` có sẵn `cruds` nên chỉ token SMART ghép (ví dụ `fhir.admin` bị thu hẹp bằng AccessPolicy) mới gặp các lỗi này. Với AccessPolicy: `$reindex` và `$expunge` bị từ chối (`Reindex không dùng được với chính sách truy cập`, `Expunge không dùng được với chính sách truy cập`, `403`; ghim bằng `pkg/fhirauth/policy_test.go`).
 
@@ -125,7 +125,7 @@ Hệ quả vận hành: khóa `FHIR_JOB_SIGNING_KEY` phải **giống nhau trên
 ### Quyền xem, hạn mức, tác dụng phụ chung
 
 - **Ai xem được job**: mọi token có vai trò `read` trở lên **trong cùng project** (không chỉ người tạo): `AsyncJob` được miễn kiểm quyền theo loại, nhưng vẫn bị tách project (job của project khác là `404`). Token tĩnh: mọi token đọc được mọi job.
-- **Ai tạo được job `reindex`**: chỉ `admin`. Lưu ý: bất kỳ token `write` nào cũng `POST /AsyncJob` ghi được một bản ghi `AsyncJob` thô (đã đo, `201`); ở chế độ JWT job đó vô hại (không có chữ ký hợp lệ nên chạy là `error`), ở chế độ tĩnh bản ghi `accepted` với `request` hợp lệ (ví dụ `reindex?resourceType=Patient`) sẽ được vòng `RecoverJobs` nhặt và chạy vì không có chữ ký để kiểm (suy từ mã, chưa đo).
+- **Ai tạo được job `reindex`**: chỉ `admin`. Ghi trực tiếp `AsyncJob` (`POST`/`PUT`/`PATCH`/`DELETE`) cũng chỉ `admin` ở cổng HTTP từ 2026-11-24 (trước đó mọi token `write` ghi được bản ghi thô, và ở chế độ tĩnh `RecoverJobs` chạy bản ghi `accepted` hợp lệ vì không có chữ ký để kiểm; chế độ JWT vốn vô hại vì job thiếu chữ ký chạy ra `error`). Admin vẫn ghi được; đọc job là `read`.
 - **Hạn mức**: không có hạn mức số job theo người dùng hay project. Chỉ có hạn mức theo IP của cả API (`429`, mục chung) và `FHIR_JOB_CONCURRENCY` giới hạn số job chạy đồng thời mỗi tiến trình (job thừa chờ trong hàng đợi trong bộ nhớ, không bị từ chối). `ExpireJobs` xóa `AsyncJob` `completed`/`error`/`cancelled` loại `export?`, `batch?`, `reindex?` quá `FHIR_EXPORT_RETENTION` (mặc định 24 giờ; âm là không bao giờ), kèm các Binary kết quả (bằng Expunge nếu được).
 - **Tác dụng phụ**: một dòng `AsyncJob` (mỗi lần tạo, cộng một phiên bản mỗi lần đổi trạng thái hoặc gia hạn lease, nên `_history` của job dài theo thời gian chạy); kết quả ở `output`. Mọi lần ghi `AsyncJob` đi qua kho đã bọc `fhirsub` (khi có broker) và `pkg/fhirsub` không loại trừ loại `AsyncJob`, nên phát sự kiện `fhir.resource.changed` như resource khác `(chưa kiểm bằng test: chỉ suy từ mã)`.
 
@@ -491,7 +491,7 @@ Content-Type: application/fhir+json; charset=utf-8
 
 Cài một gói định nghĩa: nội dung gói là `Bundle` (batch hoặc transaction) nằm trong một `Binary` mà `PackageRelease.content.url` trỏ tới (`Binary/<id>`). **Đồng bộ** (không có `202`, không có job). [Tham chiếu trường](../reference/operation.md#post-fhir-r4-packagerelease-id-install)
 
-**Vai trò:** cổng HTTP chỉ cần `write`; trong handler `RequireAdmin` (chỉ có tác dụng ở chế độ JWT, xem [Vai trò admin](#vai-trò-admin)). Bundle chạy **với quyền của người gọi**: mọi kiểm tra quyền theo loại, tách project, AccessPolicy áp cho từng entry; quản trị mà thiếu quyền ghi một loại trong gói thì entry đó lỗi.
+**Vai trò:** cổng HTTP đòi `admin` (từ 2026-11-24; trước đó chỉ `write`); trong handler `RequireAdmin` (lớp thứ hai, chỉ chế độ JWT; xem [Vai trò admin](#vai-trò-admin)). Bundle chạy **với quyền của người gọi**: mọi kiểm tra quyền theo loại, tách project, AccessPolicy áp cho từng entry; quản trị mà thiếu quyền ghi một loại trong gói thì entry đó lỗi.
 
 **Thứ tự kiểm tra:**
 1. Hạn mức, xác thực, vai trò `write`.
@@ -516,7 +516,7 @@ Cài một gói định nghĩa: nội dung gói là `Bundle` (batch hoặc trans
 | I9 | Thiếu quyền admin (JWT) | token `write` | 403 | - | `Thao tác này chỉ dành cho quản trị project` (đã đo) | không ghi gì |
 | I10 | Thiếu quyền route | token `read` | 403 | - | `Token không đủ quyền cho thao tác này` | không ghi gì |
 | I11 | Không xác thực | - | 401 | `WWW-Authenticate: Bearer realm="fhir"` | `Thiếu hoặc sai bearer token` | không ghi gì |
-| I12 | Token `write` tĩnh | chế độ token tĩnh | 200 / theo thao tác | - | không bị chặn ở bước admin (xem [Vai trò admin](#vai-trò-admin)): đã đo gọi `$install` PackageRelease lạ ra `404`, không phải `403` | như I1 |
+| I12 | Token `write` tĩnh | chế độ token tĩnh | 403 | - | `Token không đủ quyền cho thao tác này` (cổng `admin`, từ 2026-11-24; trước đó đo ra `404` vì không bị chặn) | không ghi gì |
 
 Lỗi 413, 429, 500 theo mục chung. **Chú ý `Prefer: return=minimal`** làm mất `Bundle` phản hồi (`writeResponse`; chưa đo riêng route này).
 
@@ -550,7 +550,7 @@ Content-Type: application/fhir+json; charset=utf-8
 
 Nạp concept, thuộc tính và designation vào **kho concept dẫn xuất** của một `CodeSystem` (cho bảng mã lớn), không sửa JSON của CodeSystem. **Đồng bộ.** [Tham chiếu trường](../reference/operation.md#post-fhir-r4-codesystem-id-import)
 
-**Vai trò:** cổng `write`; `RequireAdmin` trong handler (JWT; xem [Vai trò admin](#vai-trò-admin)).
+**Vai trò:** cổng `admin` (từ 2026-11-24); `RequireAdmin` trong handler là lớp thứ hai ở chế độ JWT (xem [Vai trò admin](#vai-trò-admin)).
 
 **Body bắt buộc là `Parameters`** với các phần lặp lại: `concept` (`valueCoding` `{code, display}`), `property` (`part` `code`, `property`, `value[x]`), `designation` (`part` `code`, `language`, `value`). Mỗi loại tối đa **10000** phần tử mỗi lần gọi (tối đa 30000 phần tử tổng, thân tối đa 16 MiB). `display` và `value` của designation được chuẩn hóa Unicode NFC. Phần có `name` khác bị bỏ qua.
 
@@ -579,7 +579,7 @@ Nạp concept, thuộc tính và designation vào **kho concept dẫn xuất** c
 | C11 | Không xác thực | - | 401 | `WWW-Authenticate: Bearer realm="fhir"` | `Thiếu hoặc sai bearer token` | không ghi gì |
 | C12 | Kho không có kho concept | kho tự cắm | 501 | - | `Repository không hỗ trợ kho concept` | không ghi gì |
 | C13 | Thân quá lớn | trên 16 MiB | 413 | - | `Body quá lớn` | không ghi gì |
-| C14 | Token `write` tĩnh | chế độ token tĩnh | 200 | - | không bị chặn ở bước admin (đã đo `200`) | như C1 |
+| C14 | Token `write` tĩnh | chế độ token tĩnh | 403 | - | `Token không đủ quyền cho thao tác này` (cổng `admin`, từ 2026-11-24; trước đó `200`) | không ghi gì |
 | C15 | `id` không phải CodeSystem | `POST /Patient/$import` | 405 | - | `POST không được hỗ trợ cho Patient/$import` | không ghi gì |
 
 **Ví dụ**
@@ -655,7 +655,7 @@ Content-Type: application/fhir+json; charset=utf-8
 
 Nạp ánh xạ concept vào **kho ánh xạ dẫn xuất** của một `ConceptMap` (cho bảng ánh xạ lớn; `ConceptMap/$translate` đọc lại từ đó). **Đồng bộ.** [Tham chiếu trường](../reference/operation.md#post-fhir-r4-conceptmap-id-import)
 
-**Vai trò:** cổng `write`; `RequireAdmin` trong handler (JWT).
+**Vai trò:** cổng `admin` (từ 2026-11-24); `RequireAdmin` trong handler là lớp thứ hai ở chế độ JWT.
 
 **Body bắt buộc là `Parameters`** với phần lặp `mapping`; mỗi `mapping` có `part`: `source` (`valueCoding`, **`code` bắt buộc**), `target` (`valueCoding`, **`system` bắt buộc**; để trống `code` cho ánh xạ rỗng), `relationship` (`valueCode`, mặc định `equivalent`; `equivalent` được lưu thành rỗng), `comment` (`valueString`) và các `property`, `dependsOn`, `product` lặp (mỗi cái có `part` `code` bắt buộc và `value[x]`). Tối đa **10000** `mapping` mỗi lần gọi.
 
@@ -685,7 +685,7 @@ Nạp ánh xạ concept vào **kho ánh xạ dẫn xuất** của một `Concept
 | M12 | Thiếu quyền route | token `read` | 403 | - | `Token không đủ quyền cho thao tác này` (đã đo) | không ghi gì |
 | M13 | Không xác thực | - | 401 | `WWW-Authenticate: Bearer realm="fhir"` | `Thiếu hoặc sai bearer token` | không ghi gì |
 | M14 | Kho không có kho ánh xạ | kho tự cắm | 501 | - | `Repository không hỗ trợ kho ánh xạ` | không ghi gì |
-| M15 | Token `write` tĩnh | chế độ token tĩnh | 200 | - | không bị chặn ở bước admin (đã đo) | như M1 |
+| M15 | Token `write` tĩnh | chế độ token tĩnh | 403 | - | `Token không đủ quyền cho thao tác này` (cổng `admin`, từ 2026-11-24; trước đó `200`) | không ghi gì |
 
 **Ví dụ**
 
@@ -762,6 +762,6 @@ Content-Type: application/fhir+json; charset=utf-8
 | `api-contract.md` (tài liệu cũ), dòng `GET /fhir/R4/job/{id}/status` | thân `200` là `fhir.Parameters` | thân là resource `AsyncJob` (`200` khi `completed`, `202` khi `accepted`); lỗi job là `500`, đã hủy là `410`. Swagger cũng chỉ liệt kê `200, 401, 403, 404` cho route này (thiếu `202`, `410`, `500`) |
 | swagger `$everything` | liệt kê `200, 401, 403, 404` | còn trả `400` (`_count`, `_since`, `_type` sai); router còn đăng ký `POST` cùng handler |
 | swagger `$import`, `$install` | `200, 400, 401, 403, 404` | còn có thể trả `501` (kho không hỗ trợ), `413`, `500` |
-| `common.md` mục 4 (bảng vai trò) | `$import`, `$install` là `write` | đúng ở cổng HTTP; hàng rào `admin` thật nằm trong handler (`RequireAdmin`) và **chỉ có hiệu lực ở chế độ JWT**; ở chế độ token tĩnh token `write` gọi được (xem [Vai trò admin](#vai-trò-admin)) |
+| `common.md` mục 4 (bảng vai trò, cũ) | `$import`, `$install` là `write` | đã sửa 2026-11-24: nay là `admin` ở cổng HTTP; mô tả cũ: đúng ở cổng HTTP, hàng rào `admin` thật nằm trong handler (`RequireAdmin`) và chỉ có hiệu lực ở chế độ JWT; token `write` tĩnh gọi được (xem [Vai trò admin](#vai-trò-admin)) |
 | brief giao việc | trạng thái job `queued/in-progress` | mã chỉ có `accepted`, `completed`, `error`, `cancelled`; `queued` và `in-progress` đều là `accepted`, phân biệt bằng lease ở `transactionTime` |
 | `reference/operation.md` (sinh), `$reindex` cả loại | mô tả 202 + lỗi 401/403 | thêm `501` (kho không có `Reindexer`) và `500` (không ký được, không nộp được) |
