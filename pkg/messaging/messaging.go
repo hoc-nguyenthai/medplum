@@ -63,6 +63,8 @@ type Config struct {
 	// ClaimIdle (redis) là thời gian một message nằm trong PEL không được ACK thì instance khác nhận lại; mặc định 30s. Phải LỚN HƠN thời gian xử lý lâu nhất của
 	// một handler, nếu không message đang xử lý bị xử lý trùng ở instance khác.
 	ClaimIdle time.Duration
+	// ClaimInterval (redis) là chu kỳ instance này quét PEL để nhận lại message idle; mặc định 10s.
+	ClaimInterval time.Duration
 }
 
 // New tạo broker theo Config.
@@ -74,7 +76,7 @@ func New(cfg Config) (Broker, error) {
 		if cfg.RedisURL == "" {
 			return nil, errors.New("messaging: RedisURL là bắt buộc khi driver=redis")
 		}
-		return NewRedis(cfg.RedisURL, RedisOptions{Group: cfg.Group, Concurrency: cfg.Concurrency, ClaimIdle: cfg.ClaimIdle})
+		return NewRedis(cfg.RedisURL, RedisOptions{Group: cfg.Group, Concurrency: cfg.Concurrency, ClaimIdle: cfg.ClaimIdle, ClaimInterval: cfg.ClaimInterval})
 	default:
 		return nil, fmt.Errorf("messaging: driver không được hỗ trợ: %q", cfg.Driver)
 	}

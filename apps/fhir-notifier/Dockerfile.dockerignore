@@ -1,0 +1,19 @@
+# Chỉ để lại thứ cần cho `go build ./apps/fhir-notifier/cmd/fhir-notifier`: go.mod, go.sum, pkg/ (thư viện dùng chung) và apps/fhir-notifier. Mọi app khác, test hạ tầng,
+# tài liệu, manifest và dữ liệu cục bộ đều ra ngoài để context nhỏ và cache lớp `COPY . ./` ổn định khi chỉ đổi thứ không liên quan.
+*
+!go.mod
+!go.sum
+!pkg
+!apps/fhir-notifier
+
+# trong phần được giữ lại
+**/*_test.go
+apps/fhir-notifier/tests
+**/.env
+**/.env.*
+**/*.db
+**/*.db-shm
+**/*.db-wal
+**/storage
+**/.git
+**/.DS_Store

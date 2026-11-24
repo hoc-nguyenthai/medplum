@@ -77,6 +77,13 @@ var rules = []rule{
 	{dir: "apps/fhir-downloader/internal/config", allow: []string{mod + "/apps/fhir-downloader/internal/config", mod + "/pkg/envconfig"}},
 	{dir: "apps/fhir-downloader/internal/bootstrap", anyThird: true, allow: []string{mod + "/apps/fhir-downloader/", mod + "/pkg/"}},
 
+	// ---- fhir-notifier ----
+	// Như fhir-downloader: không có domain/application riêng. Nghiệp vụ khớp và giao nằm ở pkg/fhirsub; presentation chỉ có probe (net/http);
+	// bootstrap là composition root (DB, broker Redis, Manager).
+	{dir: "apps/fhir-notifier/internal/presentation", allow: []string{mod + "/apps/fhir-notifier/internal/presentation", mod + "/pkg/httpsec"}},
+	{dir: "apps/fhir-notifier/internal/config", allow: []string{mod + "/apps/fhir-notifier/internal/config", mod + "/pkg/envconfig"}},
+	{dir: "apps/fhir-notifier/internal/bootstrap", anyThird: true, allow: []string{mod + "/apps/fhir-notifier/", mod + "/pkg/"}},
+
 	// ---- fhir-cli ----
 	// Client độc lập: chỉ stdlib + chính nó. Không kéo thư viện server (pkg/*) vào binary CLI.
 	{dir: "apps/fhir-cli", allow: []string{mod + "/apps/fhir-cli"}},

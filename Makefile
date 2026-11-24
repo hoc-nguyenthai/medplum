@@ -11,10 +11,11 @@ AUTH_PORT ?= :8006
 WS_GATEWAY_PORT ?= :8007
 DICOMWEB_PORT ?= :8008
 FHIR_DOWNLOADER_PORT ?= :8009
+FHIR_NOTIFIER_PORT ?= :8010
 comma := ,
 
 .DEFAULT_GOAL := help
-.PHONY: help swagger tidy build run run-fhir-server run-auth run-ws-gateway run-dicomweb run-fhir-downloader test-unit test-db test-integration test-service test-app test-e2e test-load-dicomweb bench-ws bench-export test-auth-pg migrate test test-race test-pg bench cover lint fmt ci docker up down
+.PHONY: help swagger tidy build run run-fhir-server run-auth run-ws-gateway run-dicomweb run-fhir-downloader run-fhir-notifier test-unit test-db test-integration test-service test-app test-e2e test-load-dicomweb bench-ws bench-export test-auth-pg migrate test test-race test-pg bench cover lint fmt ci docker up down
 
 help: ## Liệt kê các lệnh
 	@grep -E '^[a-zA-Z0-9_-]+:.*##' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}'
@@ -53,6 +54,9 @@ run-dicomweb: ## dicomweb :8008 (cần schema đã migrate bởi fhir-server, FH
 	cd apps/dicomweb && HTTP_ADDR=$(DICOMWEB_PORT) go run ./cmd/dicomweb
 run-fhir-downloader: ## fhir-downloader :8009 (cần schema đã migrate bởi fhir-server, Redis và FHIR_BINARY_STORAGE trùng fhir-server; đọc apps/fhir-downloader/.env nếu có)
 	cd apps/fhir-downloader && HTTP_ADDR=$(FHIR_DOWNLOADER_PORT) go run ./cmd/fhir-downloader
+
+run-fhir-notifier: ## fhir-notifier :8010 (cần schema đã migrate bởi fhir-server và Redis mà fhir-server phát sự kiện lên; đọc apps/fhir-notifier/.env nếu có)
+	cd apps/fhir-notifier && HTTP_ADDR=$(FHIR_NOTIFIER_PORT) go run ./cmd/fhir-notifier
 
 migrate: ## Chạy migration của APP có DB: make migrate APP=fhir-server MIGRATE=up|down|status
 	cd $(APP_DIR) && go run ./cmd/$(APP) migrate $(MIGRATE)
