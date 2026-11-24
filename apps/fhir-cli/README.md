@@ -37,3 +37,5 @@ fhir-cli reindex Observation [id]                  # cần quyền admin
 - `import` giữ nguyên `id` của dữ liệu nguồn chỉ khi máy chủ đích bật `FHIR_UPDATE_AS_CREATE=true`. Mặc định (tắt), resource có `id` chưa tồn tại trên máy chủ đích báo 404 theo mục, còn resource không có `id` được cấp id mới (tham chiếu giữa các resource không tự được ánh xạ lại). Chuyển dữ liệu giữa hai máy chủ nên bật tùy chọn này ở máy chủ đích.
 - Link phân trang và `Content-Location` chỉ được đi theo trên chính máy chủ trong `-base` (chỉ lấy path và query, không bao giờ gửi token tới host khác).
 - Chưa có lệnh cho websocket subscription, `$validate`, terminology và quản trị project.
+
+**Tài liệu nghiệp vụ (góc nhìn BA kỹ thuật):** [docs/business/](docs/business/README.md): luồng nghiệp vụ và người dùng, danh mục chức năng F-01..F-10, luật BR-xx, kịch bản chấp nhận. Nêu cả vài điểm README này chưa đúng (chế độ `transaction` chia lô, cờ `-wait`, giới hạn `-timeout`, cắt phản hồi ở 1 GiB).
