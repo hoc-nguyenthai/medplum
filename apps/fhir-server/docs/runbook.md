@@ -115,6 +115,7 @@ Danh sách đầy đủ và điều bị cấm ở [config.md](config.md) (mục
 | `FHIR_JWT_ISSUER` | `= AUTH_BASE_URL` (hoặc `AUTH_ISSUER`) của `auth`, **đúng từng ký tự** |
 | `FHIR_JWT_AUDIENCE` | `= AUTH_AUDIENCE` (mặc định chính issuer) |
 | `FHIR_JWKS_URL` | URL JWKS của `auth` mà `fhir-server` với tới được (có thể là địa chỉ nội bộ `http://auth:8000/.well-known/jwks.json`, khác địa chỉ công khai; https ở staging/production) |
+| `FHIR_RATE_LIMIT_SHARED` | Mặc định `false`: mỗi replica đếm riêng nên N replica cho tổng hạn mức gấp N lần `FHIR_RATE_LIMIT`. Đặt `true` (cần `REDIS_URL`) để mọi replica chung một bộ đếm trên Redis (mỗi IP một khóa `fhir:rl:*`, TTL ngắn). Redis lỗi hoặc chậm quá 200ms: replica đó tạm đếm riêng 5 giây rồi thử lại Redis (ghi log WARN), không chặn hết cũng không bỏ giới hạn |
 | `FHIR_JOB_SIGNING_KEY` | >= 32 ký tự, mọi replica dùng chung (`openssl rand -hex 24`) |
 | `FHIR_READ_TOKENS`, `FHIR_WRITE_TOKENS`, `FHIR_ADMIN_TOKENS` | Đặt rỗng khi dùng JWT; `FHIR_AUTH_DISABLED=false` |
 | `FHIR_JWT_HMAC_SECRET` | **Không dùng** ở production, chỉ `FHIR_JWKS_URL` |

@@ -5,6 +5,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/alicebob/miniredis/v2"
+
 	"trivita-fhir/apps/fhir-server/internal/config"
 )
 
@@ -102,5 +104,29 @@ func TestRateLimitUsesForwardedForFromTrustedProxy(t *testing.T) {
 	}
 	if r := do("GET", "/fhir/R4/Patient", readSecret, "X-Forwarded-For", "1.1.1.1"); r.status != 429 {
 		t.Fatalf("cùng IP phải bị chặn: %d", r.status)
+	}
+}
+
+// Hai replica (hai server riêng) cùng REDIS_URL và FHIR_RATE_LIMIT_SHARED chia một hạn mức; không bật thì mỗi replica một hạn mức.
+func TestRateLimitSharedAcrossReplicas(t *testing.T) {
+	mr := miniredis.RunT(t)
+	shared := func(s *config.Settings) {
+		s.RateLimit, s.RateBurst, s.RateLimitShared, s.RedisURL = 0.001, 3, true, "redis://"+mr.Addr()+"/0"
+	}
+	_, a := newServer(t, settings(shared))
+	_, b := newServer(t, settings(shared))
+	da, db := doer(t, a), doer(t, b)
+	ok, denied := 0, 0
+	for i := 0; i < 3; i++ {
+		for _, do := range []func(string, string, string, ...string) resp{da, db} {
+			if r := do("GET", "/fhir/R4/Patient", readSecret); r.status == 200 {
+				ok++
+			} else if r.status == 429 {
+				denied++
+			}
+		}
+	}
+	if ok != 3 || denied != 3 {
+		t.Fatalf("chia sẻ: qua %d, bị chặn %d; muốn 3 và 3", ok, denied)
 	}
 }

@@ -50,6 +50,7 @@ import (
 	"trivita-fhir/pkg/httpserve"
 	pkgmailer "trivita-fhir/pkg/mailer"
 	"trivita-fhir/pkg/mailer/smtp"
+	"trivita-fhir/pkg/ratelimit"
 )
 
 // Container giữ mọi adapter đã lắp và vòng đời của chúng.
@@ -306,6 +307,16 @@ func (c *Container) Handler(instrument func(*echo.Echo) error) (*echo.Echo, erro
 		ExternalEnabled: c.Auth.External.Enabled(), AdminEnabled: c.Settings.AdminEnabled,
 		ScimEnabled: c.Settings.ScimEnabled, EmailEnabled: c.Settings.EmailEnabled, ScimAllowedNets: scimNets, ScimMaxBodyBytes: int64(c.Settings.ScimMaxBodyBytes),
 		LoginRateLimit: c.Settings.LoginRateLimit, LoginRateBurst: c.Settings.LoginRateBurst,
+	}
+	if c.Settings.RateLimitShared {
+		cli, err := ratelimit.NewRedisClient(c.Settings.RedisURL)
+		if err != nil {
+			return nil, fmt.Errorf("AUTH_REDIS_URL: %w", err)
+		}
+		c.onStop(func(context.Context) error { return cli.Close() })
+		dep.NewRateStore = func(name string, rps float64, burst int) ratelimit.Store {
+			return ratelimit.NewRedis(cli, "auth:rl:"+name+":", rps, burst)
+		}
 	}
 	if len(nets) > 0 {
 		opts := []echo.TrustOption{echo.TrustLoopback(false), echo.TrustLinkLocal(false), echo.TrustPrivateNet(false)}

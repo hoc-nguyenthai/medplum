@@ -8,16 +8,15 @@ import (
 	"errors"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	echoswagger "github.com/swaggo/echo-swagger"
-	"golang.org/x/time/rate"
 
 	_ "trivita-fhir/apps/fhir-server/docs" // đăng ký spec OpenAPI do `make swagger` sinh
 	"trivita-fhir/pkg/fhirrouter"
 	"trivita-fhir/pkg/httpsec"
+	"trivita-fhir/pkg/ratelimit"
 )
 
 // Prefix là gốc của API FHIR R4.
@@ -61,6 +60,9 @@ type Deps struct {
 	// RateLimit là số yêu cầu mỗi giây mỗi IP dưới Prefix (0: tắt), RateBurst là cỡ đợt (<=0: gấp đôi RateLimit, tối thiểu 1).
 	RateLimit float64
 	RateBurst int
+	// NewRateStore tạo kho đếm cho hạn mức (name phân biệt các bộ); nil: bộ nhớ trong từng replica.
+	// Truyền kho Redis để hạn mức dùng chung mọi replica.
+	NewRateStore func(name string, rps float64, burst int) ratelimit.Store
 }
 
 // New dựng Echo với route, middleware và error handler.
@@ -111,7 +113,7 @@ func New(dep Deps) (*echo.Echo, error) {
 		// Công khai (chữ ký trong URL thay cho Bearer) nên có hạn mức theo IP nhưng không qua Guard.
 		var smw []echo.MiddlewareFunc
 		if dep.RateLimit > 0 {
-			smw = append(smw, rateLimiter(dep.RateLimit, dep.RateBurst))
+			smw = append(smw, rateLimiter(dep.rateStore("storage", dep.RateLimit, dep.RateBurst)))
 		}
 		sh := echo.WrapHandler(dep.Storage)
 		e.GET(StoragePath+"/*", sh, smw...)
@@ -124,7 +126,7 @@ func New(dep Deps) (*echo.Echo, error) {
 	// Hạn mức đứng TRƯỚC xác thực để cả việc dò token cũng bị chặn; không áp cho health, swagger, websocket.
 	mws := []echo.MiddlewareFunc{dep.Auth.Guard()}
 	if dep.RateLimit > 0 {
-		mws = append([]echo.MiddlewareFunc{rateLimiter(dep.RateLimit, dep.RateBurst)}, mws...)
+		mws = append([]echo.MiddlewareFunc{rateLimiter(dep.rateStore("api", dep.RateLimit, dep.RateBurst))}, mws...)
 	}
 	g := e.Group(Prefix, mws...)
 	g.Any("", fhir)
@@ -132,17 +134,15 @@ func New(dep Deps) (*echo.Echo, error) {
 	return e, nil
 }
 
-// rateLimiter giới hạn theo IP (bộ nhớ trong một instance: nhiều replica thì mỗi replica đếm riêng).
-func rateLimiter(rps float64, burst int) echo.MiddlewareFunc {
-	if burst <= 0 {
-		burst = int(2 * rps)
+func (d Deps) rateStore(name string, rps float64, burst int) ratelimit.Store {
+	if d.NewRateStore != nil {
+		return d.NewRateStore(name, rps, burst)
 	}
-	if burst < 1 {
-		burst = 1
-	}
-	store := middleware.NewRateLimiterMemoryStoreWithConfig(middleware.RateLimiterMemoryStoreConfig{
-		Rate: rate.Limit(rps), Burst: burst, ExpiresIn: 3 * time.Minute,
-	})
+	return ratelimit.NewMemory(rps, burst)
+}
+
+// rateLimiter giới hạn theo IP bằng store (bộ nhớ: mỗi replica đếm riêng; Redis: dùng chung).
+func rateLimiter(store ratelimit.Store) echo.MiddlewareFunc {
 	return middleware.RateLimiterWithConfig(middleware.RateLimiterConfig{
 		Store:               store,
 		IdentifierExtractor: func(c echo.Context) (string, error) { return c.RealIP(), nil },

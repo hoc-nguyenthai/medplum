@@ -18,6 +18,7 @@ Cập nhật 2026-11-23. Dành cho người trực vận hành riêng `auth`; t�
 - **Khởi động sai cấu hình:** service từ chối chạy và in **mọi** lỗi một lượt, nêu tên biến ([config.md](config.md), mục "Ràng buộc ở staging/production"). Sửa theo thông báo; **không hạ `ENVIRONMENT`** để né.
 - **Còn biến `AUTHEN_*`:** từ chối khởi động và liệt kê tên `AUTH_*` mới cần đổi (service đã đổi tên 2026-11-22).
 - **Rolling update:** đặt `DATABASE_AUTO_MIGRATE=false`, đặt `DATABASE_MIGRATE_URL` (role `identity_migrate`) và chạy `auth migrate up` ở một bước riêng **trước** khi cuốn chiếu app (role `identity_app` chỉ có DML). Instance khởi động trên schema chưa migrate **từ chối chạy** (`schema chưa được migrate`): đó là cơ chế an toàn, không phải lỗi.
+- **Hạn mức nhiều replica:** mặc định mỗi replica đếm riêng (N replica cho tổng hạn mức gấp N lần `AUTH_RATE_LIMIT` và `AUTH_LOGIN_RATE_LIMIT`, nên hạn mức đăng nhập thực tế lỏng hơn). Đặt `AUTH_RATE_LIMIT_SHARED=true` kèm `AUTH_REDIS_URL` để mọi replica chung một bộ đếm trên Redis (khóa `auth:rl:*`). Redis lỗi hoặc chậm quá 200ms: replica đó tạm đếm riêng 5 giây rồi thử lại Redis (log WARN `ratelimit: Redis lỗi`).
 - **Thứ tự khi nâng cấp cả cụm:** `auth` trước, rồi `fhir-server`, rồi `ws-gateway` (migration luôn chạy trước khi cuốn chiếu app).
 
 ```bash

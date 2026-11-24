@@ -63,7 +63,7 @@ Nguồn: [coverage-matrix.md](coverage-matrix.md) mục 5. Thứ tự thực hi�
 | # | Việc | Trạng thái | Ghi chú | Chi tiết |
 |---|---|---|---|---|
 | 13 | **Khóa tài khoản theo số lần đăng nhập sai** | [ ] | Xem mục dưới | dưới |
-| 14 | Hạn mức dùng chung nhiều replica (Redis) thay cho bộ đếm trong bộ nhớ; tách limiter dùng chung ra `pkg` | [ ] | Hiện N replica thì tổng hạn mức gấp N lần, ở cả `fhir-server` và `auth` | |
+| 14 | Hạn mức dùng chung nhiều replica (Redis) thay cho bộ đếm trong bộ nhớ; tách limiter dùng chung ra `pkg` | [x] 2026-11-24 | `pkg/ratelimit` (Memory + Redis token bucket Lua, Redis lỗi thì rơi về bộ nhớ replica, ngắt mạch 5 giây). Bật bằng `FHIR_RATE_LIMIT_SHARED` (fhir-server, `REDIS_URL`) và `AUTH_RATE_LIMIT_SHARED` (auth, `AUTH_REDIS_URL`); mặc định tắt. `dicomweb` và `ws-gateway` vẫn dùng bộ đếm riêng từng replica (chưa chuyển) | |
 | 15 | Cấm tiền tố `fhir.*` trong scope client khai ở `auth` (client `client_credentials` xin được `fhir.admin`) | [x] | Xong cùng B2 (2026-11-21): `domain.ValidateRequestedScope`, có test đột biến | [auth/p3-oauth2-tokens.md](../../apps/auth/docs/plans/p3-oauth2-tokens.md) |
 | 16 | Compartment (`patient/` scope, AccessPolicy `%patient`) ở `pkg/fhirauth`, `hiddenFields` và `interaction` | [x] xong cả `hiddenFields`, `readonlyFields`, `interaction` (xem #20) | Token Patient đọc được dữ liệu trong compartment khi bật cờ (mặc định tắt: vẫn `deny`); claim chính sách mặc định ~5 KB | [auth/README.md](../../apps/auth/docs/plans/README.md) mục 5.2 |
 

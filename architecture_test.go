@@ -31,7 +31,7 @@ var rules = []rule{
 	// ---- fhir-server ----
 	// Không có domain/application/infrastructure riêng: nghiệp vụ nằm ở pkg/fhir*; presentation chỉ gắn router FHIR vào Echo.
 	{dir: "apps/fhir-server/internal/presentation",
-		allow: []string{mod + "/apps/fhir-server/internal/presentation", mod + "/apps/fhir-server/docs", mod + "/pkg/fhir", mod + "/pkg/fhirrouter", mod + "/pkg/fhirauth", mod + "/pkg/httpsec"},
+		allow: []string{mod + "/apps/fhir-server/internal/presentation", mod + "/apps/fhir-server/docs", mod + "/pkg/fhir", mod + "/pkg/fhirrouter", mod + "/pkg/fhirauth", mod + "/pkg/httpsec", mod + "/pkg/ratelimit"},
 		third: []string{"github.com/labstack/echo/v4", "github.com/swaggo/echo-swagger", "golang.org/x/time/rate"}},
 	{dir: "apps/fhir-server/internal/config", allow: []string{mod + "/apps/fhir-server/internal/config", mod + "/pkg/envconfig", mod + "/pkg/httpsec"}},
 
@@ -47,7 +47,7 @@ var rules = []rule{
 			mod + "/pkg/fhir", mod + "/pkg/fhirstore", mod + "/pkg/fhirrouter", mod + "/pkg/fhirsearch", mod + "/pkg/database", mod + "/pkg/safehttp", mod + "/pkg/fhircast", mod + "/pkg/mailer"}},
 	{dir: "apps/auth/internal/presentation",
 		allow: []string{mod + "/apps/auth/internal/presentation", mod + "/apps/auth/internal/application", mod + "/apps/auth/internal/domain",
-			mod + "/apps/auth/docs", mod + "/pkg/fhir", mod + "/pkg/httpsec", mod + "/pkg/mailer"},
+			mod + "/apps/auth/docs", mod + "/pkg/fhir", mod + "/pkg/httpsec", mod + "/pkg/ratelimit", mod + "/pkg/mailer"},
 		third: []string{"github.com/labstack/echo/v4", "github.com/swaggo/echo-swagger", "golang.org/x/time/rate"}},
 	{dir: "apps/auth/internal/config", allow: []string{mod + "/apps/auth/internal/config", mod + "/pkg/envconfig", mod + "/pkg/httpsec"}},
 	{dir: "apps/auth/internal/bootstrap", anyThird: true, allow: []string{mod + "/apps/auth/", mod + "/pkg/"}},
@@ -87,6 +87,7 @@ var pkgRules = map[string][]string{
 	"pkg/binarystore":   {},                                                                                                                                          // kho nhị phân + bộ ký URL: chỉ stdlib; gói con storetest chỉ cho test
 	"pkg/fhirdownload":  {mod + "/pkg/binarystore", mod + "/pkg/fhir", mod + "/pkg/fhirrouter", mod + "/pkg/fhirsub", mod + "/pkg/messaging", mod + "/pkg/safehttp"}, // tự tải attachment ngoài về Binary khi nhận sự kiện ghi resource
 	"pkg/fhirbinary":    {mod + "/pkg/fhir", mod + "/pkg/fhirrouter", mod + "/pkg/binarystore"},                                                                      // decorator Binary, /storage và Binary thô; không import fhirauth hay fhirstore
+	"pkg/ratelimit":     {},                                                                                                                                          // token bucket theo khóa: bộ nhớ hoặc Redis dùng chung nhiều replica
 	"pkg/httpsec":       {},                                                                                                                                          // middleware net/http thuần (header bảo mật, CORS); không biết framework hay app
 	"pkg/database":      {mod + "/pkg/core"},
 	"pkg/fhir":          {},                                                                                                                                                                                   // kiểu FHIR R4 (phần lớn là mã sinh bởi tools/fhirgen); chỉ stdlib

@@ -19,7 +19,7 @@ func registerAdmin(e *echo.Echo, dep Deps) {
 	bearer := requireBearer(dep.Authenticator)
 	var slow []echo.MiddlewareFunc
 	if dep.LoginRateLimit > 0 {
-		slow = append(slow, rateLimiter(dep.LoginRateLimit, dep.LoginRateBurst, nil))
+		slow = append(slow, rateLimiter(dep.rateStore("login:admin", dep.LoginRateLimit, dep.LoginRateBurst), nil))
 	}
 	g := e.Group("/admin/projects")
 	g.POST("/setpassword", h.adminSetPassword, append([]echo.MiddlewareFunc{bearer}, slow...)...)

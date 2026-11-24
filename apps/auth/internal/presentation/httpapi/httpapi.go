@@ -7,16 +7,15 @@ import (
 	"net"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	echoswagger "github.com/swaggo/echo-swagger"
-	"golang.org/x/time/rate"
 
 	_ "trivita-fhir/apps/auth/docs" // đăng ký spec OpenAPI do `make swagger APP=auth` sinh
 	"trivita-fhir/apps/auth/internal/application"
 	"trivita-fhir/pkg/httpsec"
+	"trivita-fhir/pkg/ratelimit"
 )
 
 // Deps là mọi thứ presentation cần; được lắp ở bootstrap.
@@ -59,6 +58,16 @@ type Deps struct {
 	// LoginRateLimit áp thêm, chặt hơn, cho các bước nhập thông tin đăng nhập (xem loginRoutes); 0: tắt.
 	LoginRateLimit float64
 	LoginRateBurst int
+	// NewRateStore tạo kho đếm cho một bộ giới hạn (name phân biệt các bộ); nil: bộ nhớ trong từng replica.
+	// Truyền kho Redis để hạn mức dùng chung mọi replica.
+	NewRateStore func(name string, rps float64, burst int) ratelimit.Store
+}
+
+func (d Deps) rateStore(name string, rps float64, burst int) ratelimit.Store {
+	if d.NewRateStore != nil {
+		return d.NewRateStore(name, rps, burst)
+	}
+	return ratelimit.NewMemory(rps, burst)
 }
 
 // corsPrefixes là các đường dẫn của auth được gọi từ trình duyệt (như danh sách của Medplum, cors.ts).
@@ -88,7 +97,7 @@ func New(dep Deps) (*echo.Echo, error) {
 	e.Use(echo.WrapMiddleware(httpsec.CORS(httpsec.CORSOptions{AllowedOrigins: dep.AllowedOrigins, PathPrefixes: corsPrefixes})))
 	e.Use(middleware.BodyLimit("1M"))
 	if dep.RateLimit > 0 {
-		e.Use(rateLimiter(dep.RateLimit, dep.RateBurst, func(c echo.Context) bool { return !hasPrefix(c.Request().URL.Path, corsPrefixes) }))
+		e.Use(rateLimiter(dep.rateStore("global", dep.RateLimit, dep.RateBurst), func(c echo.Context) bool { return !hasPrefix(c.Request().URL.Path, corsPrefixes) }))
 	}
 
 	registerHealth(e, dep)
@@ -123,17 +132,8 @@ func hasPrefix(path string, prefixes []string) bool {
 	return false
 }
 
-// rateLimiter giới hạn theo IP (bộ nhớ trong một instance: nhiều replica thì mỗi replica đếm riêng). Mỗi middleware có bộ đếm riêng.
-func rateLimiter(rps float64, burst int, skip func(echo.Context) bool) echo.MiddlewareFunc {
-	if burst <= 0 {
-		burst = int(2 * rps)
-	}
-	if burst < 1 {
-		burst = 1
-	}
-	store := middleware.NewRateLimiterMemoryStoreWithConfig(middleware.RateLimiterMemoryStoreConfig{
-		Rate: rate.Limit(rps), Burst: burst, ExpiresIn: 3 * time.Minute,
-	})
+// rateLimiter giới hạn theo IP bằng store (bộ nhớ: mỗi replica đếm riêng; Redis: dùng chung). Mỗi middleware có store riêng.
+func rateLimiter(store ratelimit.Store, skip func(echo.Context) bool) echo.MiddlewareFunc {
 	return middleware.RateLimiterWithConfig(middleware.RateLimiterConfig{
 		Skipper:             skip,
 		Store:               store,

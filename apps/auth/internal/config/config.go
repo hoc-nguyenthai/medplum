@@ -178,6 +178,8 @@ type Settings struct {
 	// mật khẩu. Không đặt thì staging/production dùng DefaultRateLimit và DefaultLoginRateLimit; ngoài đó tắt. Đặt 0 để tắt hẳn.
 	RateLimit, LoginRateLimit float64
 	RateBurst, LoginRateBurst int
+	// RateLimitShared: đếm hạn mức (chung và đăng nhập) trên Redis (AUTH_REDIS_URL) để N replica dùng chung một hạn mức. Redis lỗi: tạm rơi về bộ đếm riêng của replica.
+	RateLimitShared bool
 
 	// DefaultProjectFeatures là danh sách tính năng (cách nhau bằng dấu phẩy) bật sẵn cho project mới.
 	DefaultProjectFeatures string
@@ -374,6 +376,7 @@ func FromEnv(get func(string) string) (Settings, error) {
 	r.Int(&s.RateBurst, "AUTH_RATE_BURST")
 	r.Float(&s.LoginRateLimit, "AUTH_LOGIN_RATE_LIMIT")
 	r.Int(&s.LoginRateBurst, "AUTH_LOGIN_RATE_BURST")
+	r.Bool(&s.RateLimitShared, "AUTH_RATE_LIMIT_SHARED")
 	if s.IsProd() {
 		if get("AUTH_RATE_LIMIT") == "" {
 			s.RateLimit = DefaultRateLimit
@@ -414,6 +417,9 @@ func (s Settings) validate() error {
 	}
 	if s.DatabaseRequireSchema && !strings.HasPrefix(s.DatabaseURL, "postgres:") && !strings.HasPrefix(s.DatabaseURL, "postgresql:") {
 		errs = append(errs, errors.New("DATABASE_REQUIRE_SCHEMA: chỉ áp dụng cho PostgreSQL (SQLite và MySQL không có schema riêng cho service)"))
+	}
+	if s.RateLimitShared && s.RedisURL == "" {
+		errs = append(errs, errors.New("AUTH_REDIS_URL: bắt buộc khi AUTH_RATE_LIMIT_SHARED=true"))
 	}
 	if s.RateLimit < 0 || s.RateBurst < 0 || s.LoginRateLimit < 0 || s.LoginRateBurst < 0 {
 		errs = append(errs, errors.New("AUTH_RATE_LIMIT, AUTH_RATE_BURST, AUTH_LOGIN_RATE_LIMIT, AUTH_LOGIN_RATE_BURST: không được âm"))

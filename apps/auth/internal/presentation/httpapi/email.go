@@ -17,7 +17,7 @@ func registerEmail(e *echo.Echo, dep Deps) {
 	h := &authHandlers{svc: dep.Auth, cookieSecure: dep.CookieSecure}
 	mw := []echo.MiddlewareFunc{requireBearer(dep.Authenticator)}
 	if dep.LoginRateLimit > 0 {
-		mw = append(mw, rateLimiter(dep.LoginRateLimit, dep.LoginRateBurst, nil))
+		mw = append(mw, rateLimiter(dep.rateStore("login:email", dep.LoginRateLimit, dep.LoginRateBurst), nil))
 	}
 	e.POST("/email/v1/send", h.sendEmail, mw...)
 }

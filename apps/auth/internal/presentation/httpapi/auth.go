@@ -21,7 +21,7 @@ func registerAuth(e *echo.Echo, dep Deps) {
 	// Các bước nhập thông tin đăng nhập có hạn mức riêng, chặt hơn (chậm việc dò mật khẩu). Gắn theo từng route (xem ghi chú dưới).
 	var slow []echo.MiddlewareFunc
 	if dep.LoginRateLimit > 0 {
-		slow = append(slow, rateLimiter(dep.LoginRateLimit, dep.LoginRateBurst, nil))
+		slow = append(slow, rateLimiter(dep.rateStore("login:auth", dep.LoginRateLimit, dep.LoginRateBurst), nil))
 	}
 	g.POST("/login", h.login, slow...)
 	g.POST("/profile", h.profile, slow...)

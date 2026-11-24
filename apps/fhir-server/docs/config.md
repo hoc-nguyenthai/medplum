@@ -45,6 +45,7 @@ Tệp này **được sinh từ `internal/config/config.go`** (xem `docs_test.go
 | `FHIR_JWT_SUPER_ADMIN` | `false` | bật scope fhir.super (super-admin xuyên project, có nhật ký kiểm toán) |
 | `FHIR_RATE_BURST` | `0` | Cỡ đợt của hạn mức mỗi IP (mặc định gấp đôi FHIR_RATE_LIMIT, tối thiểu 1; không được âm). |
 | `FHIR_RATE_LIMIT` | `tắt ở local; staging/production: 20` | là số yêu cầu mỗi giây cho mỗi IP trên /fhir/R4 (0: tắt; không đặt thì ở staging/production là DefaultProdRateLimit); RateBurst là cỡ đợt (mặc định gấp đôi RateLimit, tối thiểu 1). |
+| `FHIR_RATE_LIMIT_SHARED` | `false` | RateLimitShared: đếm hạn mức trên Redis (REDIS_URL) để N replica dùng chung một hạn mức thay vì mỗi replica một hạn mức. Redis lỗi: tạm rơi về bộ đếm riêng của replica. |
 | `FHIR_READ_TOKENS` | `(rỗng)` | Token dạng `tên:secret`, phân tách bằng dấu phẩy (nhiều token để xoay vòng khóa). chỉ đọc và tìm kiếm |
 | `FHIR_S3_ACCESS_KEY_ID` | `(rỗng)` | Khóa truy cập S3, bắt buộc khi FHIR_BINARY_STORAGE dạng `s3:`; chỉ qua biến môi trường, không bao giờ vào log (chưa hỗ trợ khóa tạm từ IMDS/STS). |
 | `FHIR_S3_ENDPOINT` | `(rỗng)` | kho tương thích S3 (MinIO...), http(s)://host[:port]; trống: AWS |

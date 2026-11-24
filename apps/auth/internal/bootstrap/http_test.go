@@ -3,6 +3,7 @@ package bootstrap
 import (
 	"context"
 	"encoding/json"
+	"github.com/alicebob/miniredis/v2"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -584,5 +585,28 @@ func TestHTTPRateLimitOffByDefaultInDev(t *testing.T) {
 		if r := a.login(loginBody(""), nil); r.status == 429 {
 			t.Fatalf("dev không giới hạn: lần %d", i)
 		}
+	}
+}
+
+// Hai replica cùng AUTH_REDIS_URL và AUTH_RATE_LIMIT_SHARED chia một hạn mức đăng nhập (không bật thì mỗi replica có đợt riêng).
+func TestHTTPLoginRateLimitSharedAcrossReplicas(t *testing.T) {
+	mr := miniredis.RunT(t)
+	shared := func(s *config.Settings) {
+		s.LoginRateLimit, s.LoginRateBurst, s.RateLimitShared, s.RedisURL = 0.001, 2, true, "redis://"+mr.Addr()+"/0"
+	}
+	a, b := newAPI(t, shared, nil), newAPI(t, shared, nil)
+	ok, denied := 0, 0
+	for i := 0; i < 2; i++ {
+		for _, x := range []*api{a, b} {
+			switch r := x.login(loginBody(""), nil); r.status {
+			case 200:
+				ok++
+			case 429:
+				denied++
+			}
+		}
+	}
+	if ok != 2 || denied != 2 {
+		t.Fatalf("chia sẻ: qua %d, bị chặn %d; muốn 2 và 2", ok, denied)
 	}
 }

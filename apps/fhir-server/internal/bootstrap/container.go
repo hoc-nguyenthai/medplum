@@ -10,6 +10,7 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net"
 	"net/http"
@@ -31,6 +32,7 @@ import (
 	"trivita-fhir/pkg/fhirsub"
 	"trivita-fhir/pkg/httpserve"
 	"trivita-fhir/pkg/messaging"
+	"trivita-fhir/pkg/ratelimit"
 	"trivita-fhir/pkg/workflow"
 )
 
@@ -343,6 +345,16 @@ func (c *Container) Handler(instrument func(*echo.Echo) error) (*echo.Echo, erro
 	dep := httpapi.Deps{
 		FHIR: fhirHandler, Storage: storageHandler, Auth: c.Auth, Ready: c.Readiness, Instrument: instrument, Debug: c.Settings.Debug,
 		BaseURL: c.Settings.BaseURL, AllowedOrigins: origins, RateLimit: c.Settings.RateLimit, RateBurst: c.Settings.RateBurst,
+	}
+	if c.Settings.RateLimitShared {
+		cli, err := ratelimit.NewRedisClient(c.Settings.RedisURL)
+		if err != nil {
+			return nil, fmt.Errorf("REDIS_URL: %w", err)
+		}
+		c.onStop(func(context.Context) error { return cli.Close() })
+		dep.NewRateStore = func(name string, rps float64, burst int) ratelimit.Store {
+			return ratelimit.NewRedis(cli, "fhir:rl:"+name+":", rps, burst)
+		}
 	}
 	if len(nets) > 0 {
 		opts := []echo.TrustOption{echo.TrustLoopback(false), echo.TrustLinkLocal(false), echo.TrustPrivateNet(false)}

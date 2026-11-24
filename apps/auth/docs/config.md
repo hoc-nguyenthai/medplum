@@ -60,6 +60,7 @@ Tệp này **được sinh từ `internal/config/config.go`** (xem `docs_test.go
 | `AUTH_PWNED_URL` | `(rỗng)` | rỗng = API chính thức |
 | `AUTH_RATE_BURST` | `0` | Cỡ đợt của hạn mức chung (<= 0: gấp đôi AUTH_RATE_LIMIT). |
 | `AUTH_RATE_LIMIT` | `tắt ở local; staging/production: 20` | là số yêu cầu mỗi giây mỗi IP trên /auth, /oauth2, /.well-known, /admin (0: tắt); RateBurst là cỡ đợt (<=0: gấp đôi). LoginRateLimit chặt hơn, riêng các bước nhập thông tin đăng nhập (POST /auth/login, profile, scope, method), để chậm việc dò mật khẩu. Không đặt thì staging/production dùng DefaultRateLimit và DefaultLoginRateLimit; ngoài đó tắt. Đặt 0 để tắt hẳn. |
+| `AUTH_RATE_LIMIT_SHARED` | `false` | RateLimitShared: đếm hạn mức (chung và đăng nhập) trên Redis (AUTH_REDIS_URL) để N replica dùng chung một hạn mức. Redis lỗi: tạm rơi về bộ đếm riêng của replica. |
 | `AUTH_RECAPTCHA_SECRET_KEY` | `(rỗng)` | RecaptchaSiteKey/RecaptchaSecretKey là reCAPTCHA mức máy chủ cho newuser và resetpassword; SecretKey rỗng thì không kiểm (project vẫn có thể đặt khóa riêng trong Project.site). RequireVerifiedEmailForProjectCreation: newuser với projectId=new gửi thư xác minh. |
 | `AUTH_RECAPTCHA_SITE_KEY` | `(rỗng)` | RecaptchaSiteKey/RecaptchaSecretKey là reCAPTCHA mức máy chủ cho newuser và resetpassword; SecretKey rỗng thì không kiểm (project vẫn có thể đặt khóa riêng trong Project.site). RequireVerifiedEmailForProjectCreation: newuser với projectId=new gửi thư xác minh. |
 | `AUTH_RECAPTCHA_TIMEOUT` | `3s` | Thời gian chờ khi gọi dịch vụ reCAPTCHA (phải > 0). |

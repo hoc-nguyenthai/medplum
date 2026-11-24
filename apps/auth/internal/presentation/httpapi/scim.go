@@ -26,7 +26,7 @@ func registerScim(e *echo.Echo, dep Deps) {
 	var chain []echo.MiddlewareFunc
 	chain = append(chain, h.ipGuard)
 	if dep.LoginRateLimit > 0 {
-		chain = append(chain, rateLimiter(dep.LoginRateLimit, dep.LoginRateBurst, nil))
+		chain = append(chain, rateLimiter(dep.rateStore("login:scim", dep.LoginRateLimit, dep.LoginRateBurst), nil))
 	}
 	chain = append(chain, h.authenticate)
 	write := append(append([]echo.MiddlewareFunc{}, chain...), h.contentType)

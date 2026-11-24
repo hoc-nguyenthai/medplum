@@ -116,8 +116,10 @@ type Settings struct {
 	// IP kết nối trực tiếp, nên đứng sau proxy mà không khai thì mọi người gọi dùng chung một IP (và một hạn mức).
 	TrustedProxies string
 	// RateLimit là số yêu cầu mỗi giây cho mỗi IP trên /fhir/R4 (0: tắt; không đặt thì ở staging/production là DefaultProdRateLimit); RateBurst là cỡ đợt (mặc định gấp đôi RateLimit, tối thiểu 1).
-	RateLimit           float64
-	RateBurst           int
+	RateLimit float64
+	RateBurst int
+	// RateLimitShared: đếm hạn mức trên Redis (REDIS_URL) để N replica dùng chung một hạn mức thay vì mỗi replica một hạn mức. Redis lỗi: tạm rơi về bộ đếm riêng của replica.
+	RateLimitShared     bool
 	BrokerDriver        string
 	RedisURL            string
 	WebhookWorkers      int
@@ -317,6 +319,7 @@ func FromEnv(get func(string) string) (Settings, error) {
 		s.RateLimit = DefaultProdRateLimit // không đặt thì bật ở staging/production; đặt rõ 0 mới tắt
 	}
 	r.Int(&s.RateBurst, "FHIR_RATE_BURST")
+	r.Bool(&s.RateLimitShared, "FHIR_RATE_LIMIT_SHARED")
 	r.String(&s.BrokerDriver, "BROKER_DRIVER")
 	r.String(&s.RedisURL, "REDIS_URL")
 	r.Int(&s.WebhookWorkers, "FHIR_WEBHOOK_WORKERS")
@@ -519,6 +522,9 @@ func (s Settings) validate() error {
 	}
 	if err := envconfig.OneOf("BROKER_DRIVER", s.BrokerDriver, "memory", "redis"); err != nil {
 		errs = append(errs, err)
+	}
+	if s.RateLimitShared && s.RedisURL == "" {
+		errs = append(errs, errors.New("REDIS_URL: bắt buộc khi FHIR_RATE_LIMIT_SHARED=true"))
 	}
 	if (s.Subscriptions || s.AutoDownload) && s.BrokerDriver == "redis" && s.RedisURL == "" {
 		errs = append(errs, errors.New("REDIS_URL: bắt buộc khi BROKER_DRIVER=redis"))
