@@ -2,10 +2,14 @@ package bootstrap_test
 
 import (
 	"context"
+	"crypto/rand"
+	"database/sql"
+	"encoding/hex"
 	"io"
 	"net"
 	"net/http"
 	"net/http/httptest"
+	neturl "net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -13,6 +17,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	_ "github.com/jackc/pgx/v5/stdlib"
 
 	"trivita-fhir/apps/dicomweb/internal/bootstrap"
 	"trivita-fhir/apps/dicomweb/internal/config"
@@ -28,11 +33,42 @@ const (
 	issuer = "https://id.test"
 )
 
+// postgresSchema tạo một schema riêng trên máy chủ PostgreSQL của DICOMWEB_TEST_POSTGRES_URL và trả URL có search_path trỏ vào nó (xóa khi test xong).
+func postgresSchema(t *testing.T, base string) string {
+	t.Helper()
+	ctx := context.Background()
+	admin, err := sql.Open("pgx", base)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var rnd [6]byte
+	_, _ = rand.Read(rnd[:])
+	schema := "dicomweb_test_" + hex.EncodeToString(rnd[:])
+	if _, err := admin.ExecContext(ctx, "CREATE SCHEMA "+schema); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_, _ = admin.ExecContext(ctx, "DROP SCHEMA "+schema+" CASCADE")
+		_ = admin.Close()
+	})
+	u, err := neturl.Parse(base)
+	if err != nil {
+		t.Fatal(err)
+	}
+	q := u.Query()
+	q.Set("search_path", schema)
+	u.RawQuery = q.Encode()
+	return u.String()
+}
+
 // settings dựng cấu hình thật trong thư mục tạm: SQLite đã migrate (do "fhir-server", dicomweb không tự migrate) và kho tệp.
 func settings(t *testing.T, migrate bool, mut ...func(*config.Settings)) config.Settings {
 	t.Helper()
 	dir := t.TempDir()
 	url := "sqlite://" + filepath.Join(dir, "fhir.db")
+	if pg := os.Getenv("DICOMWEB_TEST_POSTGRES_URL"); pg != "" {
+		url = postgresSchema(t, pg) // chạy cùng bộ test trên PostgreSQL thật: mỗi test một schema riêng
+	}
 	if migrate {
 		db, err := database.Open(context.Background(), database.Config{URL: url})
 		if err != nil {
@@ -51,6 +87,14 @@ func settings(t *testing.T, migrate bool, mut ...func(*config.Settings)) config.
 	s.DatabaseURL = url
 	s.JWTIssuer, s.JWTAudience, s.JWTHMACSecret = issuer, "fhir", secret
 	s.BinaryStorage = "file:" + filepath.Join(dir, "blobs")
+	if ep := os.Getenv("DICOMWEB_TEST_S3_ENDPOINT"); ep != "" {
+		// chạy cùng bộ test trên S3 thật (MinIO, RustFS, AWS...): mỗi test một tiền tố riêng
+		var rnd [6]byte
+		_, _ = rand.Read(rnd[:])
+		s.BinaryStorage = "s3:" + os.Getenv("DICOMWEB_TEST_S3_BUCKET") + "/dicomweb-test-" + hex.EncodeToString(rnd[:])
+		s.S3Endpoint, s.S3Region = ep, "us-east-1"
+		s.S3AccessKeyID, s.S3SecretAccessKey = os.Getenv("DICOMWEB_TEST_S3_ACCESS_KEY_ID"), os.Getenv("DICOMWEB_TEST_S3_SECRET_ACCESS_KEY")
+	}
 	s.Addr, s.ShutdownDrainDelay = "127.0.0.1:0", 200*time.Millisecond
 	for _, m := range mut {
 		m(&s)

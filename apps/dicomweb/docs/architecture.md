@@ -80,5 +80,5 @@ Hai đường: (1) `DICOMWEB_PIXELDATA_FRAMES=true`: sau khi STOW lưu instance 
 ## Chưa có hoặc chưa kiểm
 
 - Chưa có: `rendered` cấp series và study, `viewport` và `annotation`, xóa instance, dựng ảnh cho JPEG 2000, JPEG-LS, RLE, JPEG mở rộng 12 bit, YBR, bảng màu và 32 bit (`rendered` trả `406`), bulkdata ngoài PixelData, STOW dạng metadata với PixelData đứng trước phần tử khác hoặc bulkdata trong SQ. Manifest K8s mẫu chưa có (dự án hiện bỏ qua K8s).
-- Chưa kiểm: `tests/integration` (PostgreSQL và S3 thật bằng testcontainers) và e2e dựng từ image Docker (máy phát triển không có Docker), tải trên PostgreSQL, chạy thử `docker-compose.dicomweb.yml`.
+- Đã kiểm trên PostgreSQL 16 và S3 thật (RustFS), cả bộ test, e2e và đo tải (D12, xem [runbook](runbook.md)), và chạy thử `docker-compose.dicomweb.yml` với bốn container. Chưa kiểm: AWS S3 thật (kiểu virtual-hosted, SSE-KMS), PostgreSQL nhiều bản sao hoặc qua pgbouncer, e2e dựng từ image Docker trong CI, compose với kho S3.
 - Đã xong từng bước: D3 STOW-RS, D4 QIDO-RS và WADO-RS, D5 chỉ mục frame, D6 compose, e2e đa tiến trình và đo tải, D7 vượt parity, D8 reindex, D9 bulkdata và WADO-URI, D10 STOW dạng metadata, D11 pixelData tùy chọn.

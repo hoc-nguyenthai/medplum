@@ -5,13 +5,17 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
+	"database/sql"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
 	"mime"
 	"mime/multipart"
 	"net/textproto"
+	"net/url"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -19,6 +23,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	_ "github.com/jackc/pgx/v5/stdlib"
 
 	"trivita-fhir/pkg/dicomtest"
 )
@@ -38,19 +43,74 @@ type dicomStack struct {
 	dicomEnv  map[string]string
 }
 
+// backendEnv trả cấu hình cơ sở dữ liệu và kho nội dung cho fhir-server và dicomweb. Mặc định SQLite và thư mục tệp; đặt E2E_POSTGRES_URL (ví dụ
+// postgres://postgres:pw@127.0.0.1:55432/fhir?sslmode=disable) để chạy cả hai tiến trình trên PostgreSQL thật (một schema riêng mỗi test), và E2E_S3_ENDPOINT, E2E_S3_BUCKET,
+// E2E_S3_ACCESS_KEY_ID, E2E_S3_SECRET_ACCESS_KEY để dùng S3 thật (tiền tố riêng mỗi test). Giá trị rỗng nghĩa là dùng mặc định (SQLite, thư mục tệp trong thư mục tạm của stack).
+func backendEnv(t *testing.T) (db string, storage string, s3 map[string]string) {
+	t.Helper()
+	var rnd [6]byte
+	_, _ = rand.Read(rnd[:])
+	tag := hex.EncodeToString(rnd[:])
+	if base := os.Getenv("E2E_POSTGRES_URL"); base != "" {
+		admin, err := sql.Open("pgx", base)
+		if err != nil {
+			t.Fatal(err)
+		}
+		schema := "e2e_dicomweb_" + tag
+		if _, err := admin.Exec("CREATE SCHEMA " + schema); err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() { _, _ = admin.Exec("DROP SCHEMA " + schema + " CASCADE"); _ = admin.Close() })
+		u, err := url.Parse(base)
+		if err != nil {
+			t.Fatal(err)
+		}
+		q := u.Query()
+		q.Set("search_path", schema)
+		u.RawQuery = q.Encode()
+		db = u.String()
+	}
+	if ep := os.Getenv("E2E_S3_ENDPOINT"); ep != "" {
+		storage = "s3:" + os.Getenv("E2E_S3_BUCKET") + "/e2e-dicomweb-" + tag
+		s3 = map[string]string{"FHIR_S3_ENDPOINT": ep, "FHIR_S3_REGION": "us-east-1", "FHIR_S3_ACCESS_KEY_ID": os.Getenv("E2E_S3_ACCESS_KEY_ID"), "FHIR_S3_SECRET_ACCESS_KEY": os.Getenv("E2E_S3_SECRET_ACCESS_KEY")}
+	}
+	return db, storage, s3
+}
+
 func newDicomStack(t *testing.T) *dicomStack {
 	t.Helper()
-	blobs := "file:{DIR}/blobs"
-	s := newStackFull(t, false, nil, map[string]string{"FHIR_BINARY_STORAGE": blobs}, nil)
+	db, storage, s3 := backendEnv(t)
+	fhirExtra := map[string]string{}
+	if db != "" {
+		fhirExtra["DATABASE_URL"] = db
+	}
+	if storage != "" {
+		fhirExtra["FHIR_BINARY_STORAGE"] = storage
+	} else {
+		fhirExtra["FHIR_BINARY_STORAGE"] = "file:{DIR}/blobs"
+	}
+	for k, v := range s3 {
+		fhirExtra[k] = v
+	}
+	s := newStackFull(t, false, nil, fhirExtra, nil)
+	if db == "" {
+		db = "sqlite://" + filepath.Join(s.dir, "fhir.db")
+	}
+	if storage == "" {
+		storage = "file:" + filepath.Join(s.dir, "blobs")
+	}
 	d := &dicomStack{stack: s}
 	port := freePort(t)
 	d.dicom = fmt.Sprintf("http://127.0.0.1:%d", port)
 	d.dicomBin = build(t, repoRoot(t), s.dir, "dicomweb")
 	d.dicomEnv = map[string]string{
 		"HTTP_ADDR": fmt.Sprintf("127.0.0.1:%d", port), "ENVIRONMENT": "local", "LOG_JSON": "false", "SHUTDOWN_DRAIN_DELAY": "0s",
-		"DATABASE_URL":    "sqlite://" + filepath.Join(s.dir, "fhir.db"), // CÙNG cơ sở dữ liệu với fhir-server (đã được fhir-server migrate)
+		"DATABASE_URL":    db, // CÙNG cơ sở dữ liệu với fhir-server (đã được fhir-server migrate)
 		"FHIR_JWT_ISSUER": s.auth, "FHIR_JWT_AUDIENCE": s.auth, "FHIR_JWKS_URL": s.auth + "/.well-known/jwks.json",
-		"FHIR_BINARY_STORAGE": "file:" + filepath.Join(s.dir, "blobs"), "DICOMWEB_BASE_URL": d.dicom,
+		"FHIR_BINARY_STORAGE": storage, "DICOMWEB_BASE_URL": d.dicom,
+	}
+	for k, v := range s3 {
+		d.dicomEnv[k] = v
 	}
 	d.dicomProc = start(t, d.dicomBin, d.dicomEnv)
 	waitReady(t, d.dicom+"/health/ready")

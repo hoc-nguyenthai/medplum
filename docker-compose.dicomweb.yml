@@ -3,8 +3,9 @@
 #   FHIR_JOB_SIGNING_KEY=$(openssl rand -hex 24) \
 #   docker compose -f docker-compose.yml -f docker-compose.auth.yml -f docker-compose.dicomweb.yml --env-file apps/fhir-server/.env \
 #     up --build fhir-server auth dicomweb postgres
-# CHƯA chạy thử bằng Docker (máy phát triển không có Docker): cấu hình này được suy ra từ docker-compose.auth.yml và từ e2e/dicomweb_test.go (đã chạy với tiến trình thật,
-# SQLite và kho tệp dùng chung). Lần đầu chạy nên kiểm: `docker compose ... ps` thấy dicomweb healthy, rồi chạy lại các bước của e2e/dicomweb_test.go bằng curl.
+# Đã chạy thử bằng Docker (OrbStack, 2026-11-24): bốn container fhir-server, auth, dicomweb, postgres đều healthy (dicomweb trong image distroless nonroot, schema `fhir` với role fhir_app
+# và DATABASE_REQUIRE_SCHEMA=true); client_credentials của auth -> STOW -> QIDO, WADO-RS, rendered, WADO-URI -> fhir-server đọc Binary do dicomweb ghi vào volume dùng chung đúng từng byte;
+# `docker exec <dicomweb> /app reindex --dry-run` và `/app pixeldata --dry-run` chạy được; `docker restart` thoát êm trong 6 giây và dữ liệu còn nguyên. Chưa chạy với kho S3 trong compose.
 #
 # Điểm cần đúng:
 #  - issuer/audience là địa chỉ CÔNG KHAI của auth (như docker-compose.auth.yml), JWKS tải qua mạng compose (http://auth:8000); issuer phải khớp từng ký tự giữa các bên.

@@ -392,6 +392,14 @@ func (s *Store) Copy(ctx context.Context, srcKey, dstKey string) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
+	if srcKey == dstKey {
+		// S3 thật (AWS, MinIO, RustFS) từ chối COPY lên chính nó khi không đổi metadata (400 InvalidRequest). Kết quả mong muốn (đích có nội dung của nguồn) đã đúng nếu khóa tồn tại.
+		rc, err := s.Open(ctx, srcKey)
+		if err != nil {
+			return err
+		}
+		return rc.Close()
+	}
 	req, err := s.newRequest(ctx, http.MethodPut, dstKey, nil, 0)
 	if err != nil {
 		return err

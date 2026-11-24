@@ -116,6 +116,10 @@ func (f *fakeS3) serve(w http.ResponseWriter, r *http.Request) {
 				s3Err(w, 404, "NoSuchKey", "src")
 				return
 			}
+			if strings.TrimPrefix(p, "/"+testBucket+"/") == rest { // như S3 thật (AWS, MinIO, RustFS): COPY lên chính nó không đổi metadata là lỗi
+				s3Err(w, 400, "InvalidRequest", "Cannot copy an object to itself.")
+				return
+			}
 			f.objects[rest] = append([]byte(nil), b...)
 			f.sse = append(f.sse, r.Header.Get("X-Amz-Server-Side-Encryption"))
 			fmt.Fprint(w, `<CopyObjectResult><ETag>x</ETag></CopyObjectResult>`)

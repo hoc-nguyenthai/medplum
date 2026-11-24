@@ -1,13 +1,18 @@
 // Package load đo tải của dicomweb: STOW song song, rồi WADO-RS (frame, metadata) và QIDO-RS song song, báo thông lượng, độ trễ p50/p95/p99 và đỉnh bộ nhớ. Không phải kiểm đúng sai
 // (đã có ở test đơn vị và e2e) mà là số đo để định cỡ và phát hiện hồi quy; chỉ chạy khi đặt DICOMWEB_LOAD=1 (`make test-load-dicomweb`).
 //
-// Chạy trong tiến trình test trên SQLite tạm và kho tệp tạm (cùng đường mã với production, khác ở cơ sở dữ liệu và kho): số đo là của máy phát triển, dùng để so sánh với
-// chính nó, không phải để suy ra production. Muốn đo PostgreSQL và S3 thì đổi DATABASE_URL và FHIR_BINARY_STORAGE trong settings() (chưa có ở đây vì máy phát triển không có Docker).
+// Mặc định chạy trong tiến trình test trên SQLite tạm và kho tệp tạm: số đo là của máy phát triển, dùng để so sánh với chính nó, không phải để suy ra production. Đặt
+// DICOMWEB_TEST_POSTGRES_URL để đo trên PostgreSQL thật (một schema riêng), và DICOMWEB_TEST_S3_ENDPOINT, DICOMWEB_TEST_S3_BUCKET, DICOMWEB_TEST_S3_ACCESS_KEY_ID,
+// DICOMWEB_TEST_S3_SECRET_ACCESS_KEY để đo trên S3 thật (tiền tố riêng). Với máy chủ chạy trong Docker trên cùng máy thì độ trễ mạng gần bằng 0: số đo cho thấy chi phí giao thức và
+// truy vấn chứ không phải độ trễ của dịch vụ đám mây.
 package load
 
 import (
 	"bytes"
 	"context"
+	crand "crypto/rand"
+	"database/sql"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"math/rand"
@@ -16,6 +21,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/textproto"
+	neturl "net/url"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -27,6 +33,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	_ "github.com/jackc/pgx/v5/stdlib"
 
 	"trivita-fhir/apps/dicomweb/internal/bootstrap"
 	"trivita-fhir/apps/dicomweb/internal/config"
@@ -47,10 +54,37 @@ func envInt(name string, def int) int {
 	return def
 }
 
+// postgresSchema tạo một schema riêng trên máy chủ PostgreSQL và trả URL có search_path trỏ vào nó (xóa khi test xong).
+func postgresSchema(t *testing.T, base string) string {
+	t.Helper()
+	admin, err := sql.Open("pgx", base)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var rnd [6]byte
+	_, _ = crand.Read(rnd[:])
+	schema := "dicomweb_load_" + hex.EncodeToString(rnd[:])
+	if _, err := admin.Exec("CREATE SCHEMA " + schema); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _, _ = admin.Exec("DROP SCHEMA " + schema + " CASCADE"); _ = admin.Close() })
+	u, err := neturl.Parse(base)
+	if err != nil {
+		t.Fatal(err)
+	}
+	q := u.Query()
+	q.Set("search_path", schema)
+	u.RawQuery = q.Encode()
+	return u.String()
+}
+
 func settings(t *testing.T) config.Settings {
 	t.Helper()
 	dir := t.TempDir()
 	url := "sqlite://" + filepath.Join(dir, "fhir.db")
+	if pg := os.Getenv("DICOMWEB_TEST_POSTGRES_URL"); pg != "" {
+		url = postgresSchema(t, pg)
+	}
 	db, err := database.Open(context.Background(), database.Config{URL: url})
 	if err != nil {
 		t.Fatal(err)
@@ -68,6 +102,13 @@ func settings(t *testing.T) config.Settings {
 	s.DatabaseMaxOpenConns = 20
 	s.JWTIssuer, s.JWTAudience, s.JWTHMACSecret = issuer, "fhir", secret
 	s.BinaryStorage = "file:" + filepath.Join(dir, "blobs")
+	if ep := os.Getenv("DICOMWEB_TEST_S3_ENDPOINT"); ep != "" {
+		var rnd [6]byte
+		_, _ = crand.Read(rnd[:])
+		s.BinaryStorage = "s3:" + os.Getenv("DICOMWEB_TEST_S3_BUCKET") + "/dicomweb-load-" + hex.EncodeToString(rnd[:])
+		s.S3Endpoint, s.S3Region = ep, "us-east-1"
+		s.S3AccessKeyID, s.S3SecretAccessKey = os.Getenv("DICOMWEB_TEST_S3_ACCESS_KEY_ID"), os.Getenv("DICOMWEB_TEST_S3_SECRET_ACCESS_KEY")
+	}
 	s.MaxRequestBytes, s.MaxInstanceBytes = 1<<30, 1<<30
 	return s
 }
