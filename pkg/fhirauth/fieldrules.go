@@ -18,8 +18,9 @@ import (
 //   - readonlyFields: trường không ghi được (create: bỏ khỏi input; update: khôi phục từ bản đang lưu);
 //   - interaction: tập con của read, vread, history, search, create, update, delete mà rule cho phép (không đặt: mọi interaction; `readonly` loại create/update/delete).
 //
-// Đường dẫn trường: tên thuộc tính, có thể lồng bằng dấu chấm (`name.family`, đi qua mảng) và hậu tố `[x]` (`value[x]` gỡ valueString, valueQuantity...). Chỉ trường cấp cao nhất mới
-// khôi phục được từ bản cũ (như Medplum). Tìm kiếm theo một trường ẩn vẫn dùng được (như Medplum): chính sách không chặn việc suy ra giá trị bằng truy vấn.
+// Đường dẫn trường: tên thuộc tính, có thể lồng bằng dấu chấm (`name.family`, đi qua mảng) và hậu tố `[x]` (`value[x]` gỡ valueString, valueQuantity...). Khi update, trường ẩn và chỉ-đọc được khôi phục từ
+// bản cũ ở mọi độ sâu (xem restoreField). Tìm kiếm, sắp xếp, _filter, _include và _revinclude theo trường ẩn bị từ chối 403 (hiddensearch.go): nếu cho phép thì người gọi suy ra
+// được giá trị bằng truy vấn.
 
 var interactionNames = map[string]bool{"read": true, "vread": true, "history": true, "search": true, "create": true, "update": true, "delete": true}
 
@@ -246,8 +247,8 @@ func (p *Policy) redactAll(in []fhir.Resource) ([]fhir.Resource, error) {
 	return out, nil
 }
 
-// protectWrite áp quy tắc ghi lên input: gỡ trường readonly và hidden; khi update (original khác nil) khôi phục các trường CẤP CAO NHẤT đó từ bản đang lưu, nên người gọi không thể
-// sửa trường chỉ-đọc cũng không thể xóa trường ẩn họ không thấy.
+// protectWrite áp quy tắc ghi lên input: gỡ trường readonly và hidden; khi update (original khác nil) khôi phục các trường đó từ bản đang lưu ở MỌI độ sâu
+// (kể cả đường dẫn lồng qua mảng như `name.family` và `[x]`), nên người gọi không thể sửa trường chỉ-đọc cũng không thể xóa trường ẩn họ không thấy.
 func (p *Policy) protectWrite(res, original fhir.Resource) (fhir.Resource, error) {
 	r := p.fieldRule(res.GetResourceType())
 	if r == nil {
@@ -257,20 +258,115 @@ func (p *Policy) protectWrite(res, original fhir.Resource) (fhir.Resource, error
 	if err != nil {
 		return nil, err
 	}
-	var orig map[string]any
-	if original != nil {
-		if orig, err = toDoc(original); err != nil {
-			return nil, err
-		}
-	}
 	fields := append(append([]string(nil), r.readonlyFields...), r.hidden...)
 	for _, f := range fields {
 		removeField(doc, f)
-		if orig != nil && !strings.Contains(f, ".") && !strings.HasSuffix(f, "[x]") {
-			if v, ok := orig[f]; ok {
-				doc[f] = v
-			}
+	}
+	if original != nil {
+		orig, err := toDoc(original)
+		if err != nil {
+			return nil, err
+		}
+		vis, err := toDoc(original) // bản đã gỡ mọi trường bảo vệ: dùng để ghép phần tử mảng giữa input và bản cũ theo phần người gọi nhìn thấy
+		if err != nil {
+			return nil, err
+		}
+		for _, f := range fields {
+			removeField(vis, f)
+		}
+		snap, err := cloneDoc(doc) // ảnh chụp phần nhìn thấy của input trước mọi khôi phục: việc ghép phần tử mảng dựa vào nó, không bị đổi bởi các trường đã khôi phục
+		if err != nil {
+			return nil, err
+		}
+		for _, f := range fields {
+			restoreField(doc, snap, orig, vis, strings.Split(f, "."))
 		}
 	}
 	return fromDoc(doc)
+}
+
+// cloneDoc sao chép sâu một tài liệu JSON đã giải mã.
+func cloneDoc(doc map[string]any) (map[string]any, error) {
+	raw, err := json.Marshal(doc)
+	if err != nil {
+		return nil, fhirrouter.Internal(err.Error())
+	}
+	d := json.NewDecoder(bytes.NewReader(raw))
+	d.UseNumber()
+	var out map[string]any
+	if err := d.Decode(&out); err != nil {
+		return nil, fhirrouter.Internal(err.Error())
+	}
+	return out, nil
+}
+
+// restoreField chép lại từ orig vào doc giá trị của trường theo đường dẫn parts. snap là bản chụp của doc trước mọi khôi phục (cùng cấu trúc với doc);
+// orig và vis (orig đã gỡ mọi trường bảo vệ) cùng cấu trúc trừ chỗ doc đã bị người gọi sửa. Với mảng, phần tử của doc được ghép với phần tử của orig có phần nhìn thấy GIỐNG HỆT (nên đổi thứ tự không
+// làm trường ẩn đi nhầm phần tử); phần tử còn lại ghép theo vị trí nếu phần tử cùng vị trí của orig chưa được dùng. Phần tử mới thêm không có gì để
+// khôi phục; phần tử bị xóa mang trường ẩn của nó đi (người gọi xóa phần tử họ thấy).
+func restoreField(doc, snap, orig, vis map[string]any, parts []string) {
+	last := len(parts) == 1
+	keys := resolveKeys(orig, parts[0])
+	for _, key := range keys {
+		ov, ok := orig[key]
+		if !ok {
+			continue
+		}
+		if last {
+			doc[key] = ov
+			continue
+		}
+		switch o := ov.(type) {
+		case map[string]any:
+			d, dok := doc[key].(map[string]any)
+			s, _ := snap[key].(map[string]any)
+			v, _ := vis[key].(map[string]any)
+			if dok && s != nil && v != nil {
+				restoreField(d, s, o, v, parts[1:])
+			}
+		case []any:
+			d, dok := doc[key].([]any)
+			s, sok := snap[key].([]any)
+			v, _ := vis[key].([]any)
+			if !dok || !sok || len(s) != len(d) || len(v) != len(o) {
+				continue
+			}
+			for di, oi := range pairElements(s, o, v) {
+				dm, ok1 := d[di].(map[string]any)
+				sm, ok2 := s[di].(map[string]any)
+				om, ok3 := o[oi].(map[string]any)
+				vm, ok4 := v[oi].(map[string]any)
+				if ok1 && ok2 && ok3 && ok4 {
+					restoreField(dm, sm, om, vm, parts[1:])
+				}
+			}
+		}
+	}
+}
+
+// pairElements ghép phần tử của d (input) với phần tử của o (bản cũ): trước hết theo nội dung nhìn thấy giống hệt (vis[j] bằng d[i]), sau đó theo
+// vị trí cho phần tử chưa ghép nếu o[i] chưa được dùng. Trả bảng chỉ số d -> chỉ số o.
+func pairElements(d, o, vis []any) map[int]int {
+	out := map[int]int{}
+	used := map[int]bool{}
+	enc := func(v any) string { b, _ := json.Marshal(v); return string(b) }
+	visEnc := make([]string, len(vis))
+	for j, v := range vis {
+		visEnc[j] = enc(v)
+	}
+	for i, dv := range d {
+		de := enc(dv)
+		for j := range vis {
+			if !used[j] && visEnc[j] == de {
+				out[i], used[j] = j, true
+				break
+			}
+		}
+	}
+	for i := range d {
+		if _, ok := out[i]; !ok && i < len(o) && !used[i] {
+			out[i], used[i] = i, true
+		}
+	}
+	return out
 }

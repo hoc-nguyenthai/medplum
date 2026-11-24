@@ -375,6 +375,9 @@ func (r *Repo) Search(ctx context.Context, req *fhirsearch.Request) (*fhirrouter
 		scoped.Types = g.Searchable() // search hệ thống: chỉ các loại được tìm kiếm
 	}
 	pol := policyOf(ctx)
+	if err := pol.checkSearch(req); err != nil { // tìm theo/sắp xếp theo/include qua trường ẩn là đường suy ra giá trị: 403
+		return nil, err
+	}
 	if pol != nil {
 		if req.ResourceType != "" {
 			scoped.Filters = append(append([]fhirsearch.Filter(nil), scoped.Filters...), pol.filters(req.ResourceType)...)

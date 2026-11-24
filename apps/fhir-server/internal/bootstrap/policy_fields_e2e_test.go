@@ -52,11 +52,21 @@ func TestAccessPolicyFieldRulesEndToEnd(t *testing.T) {
 	if stored["gender"] != "female" || stored["birthDate"] != "1990-01-01" || name0["given"].([]any)[0] != "Bình" || stored["telecom"].([]any)[0].(map[string]any)["value"] != "0999" {
 		t.Errorf("sau PUT: %v", stored)
 	}
-	// GIỚI HẠN ĐÃ BIẾT (như Medplum): chỉ trường cấp cao nhất mới khôi phục được từ bản cũ. `name.family` là trường lồng nên khi người gọi (không thấy nó) ghi lại tên, họ bị mất.
-	// Dùng hiddenFields cấp cao nhất (ví dụ `birthDate`, `address`) cho dữ liệu không được phép mất; test này ghi lại hành vi để không đổi ngầm.
-	if _, has := name0["family"]; has {
-		t.Errorf("hành vi đã ghi nhận: trường ẩn lồng không được khôi phục, nhưng name.family còn: %v", name0)
+	// trường ẩn lồng (`name.family`) cũng được khôi phục từ bản cũ dù người gọi không thấy nó (trước đây bị mất khi họ ghi lại tên)
+	if name0["family"] != "Nguyễn" {
+		t.Errorf("trường ẩn lồng name.family bị mất sau PUT: %v", name0)
 	}
+
+	// tìm kiếm, sắp xếp, _filter theo trường ẩn bị từ chối: nếu không thì suy ra được giá trị bằng truy vấn
+	for name, q := range map[string]string{
+		"lọc": "birthdate=1990-01-01", "sắp xếp": "_sort=-birthdate", "họ": "family=Nguy%E1%BB%85n", "_filter": "_filter=birthdate%20eq%201990-01-01", "_content": "_content=Nguy%E1%BB%85n",
+	} {
+		if r := call(t, srv, "GET", "/fhir/R4/Patient?"+q, fields, nil); r.status != 403 {
+			t.Errorf("%s theo trường ẩn: %d, muốn 403 (%s)", name, r.status, r.body)
+		}
+	}
+	want(t, call(t, srv, "GET", "/fhir/R4/Patient?given=An&_sort=gender", fields, nil), 200) // tham số không dính trường ẩn vẫn dùng được
+	want(t, call(t, srv, "GET", "/fhir/R4/Patient?birthdate=1990-01-01", full, nil), 200)    // token không có quy tắc ẩn tìm bình thường
 
 	// PATCH đi qua đọc-sửa-ghi: không đổi được readonly, không làm mất trường ẩn cấp cao nhất
 	patch := []any{map[string]any{"op": "replace", "path": "/gender", "value": "other"}, map[string]any{"op": "replace", "path": "/telecom/0/value", "value": "0888"}}
