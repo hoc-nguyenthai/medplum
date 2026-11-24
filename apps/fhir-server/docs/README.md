@@ -3,6 +3,7 @@
 | Tài liệu | Nội dung |
 |---|---|
 | [business/](business/README.md) | **Tài liệu nghiệp vụ (góc nhìn BA kỹ thuật)**: 10 tác nhân, 14 luồng nghiệp vụ, luồng người dùng, danh mục chức năng F-01..F-28, 71 luật BR-xx, ma trận phân quyền, 73 kịch bản chấp nhận, truy vết test, rủi ro đã kiểm |
+| [erd/](erd/README.md) | **ERD và từ điển dữ liệu**: schema `fhir`, role, migration, resource lưu trong kho tài liệu, quan hệ logic, Redis (stream, khóa thất bại, kênh), kho Binary, khóa ký, bí mật lưu thế nào |
 | [api-contract.md](api-contract.md) | **Hợp đồng API**: xác thực, định dạng, bảng route (sinh từ swagger, có test chống lệch) |
 | [api-contract/](api-contract/) | Tài liệu chi tiết của hợp đồng: `fhir-rest.md` (CRUD, search, history, batch, GraphQL), `fhir-operations.md` (113 operation), `fhir-server-go.md` (DTO và ví dụ JSON phần đã cài) |
 | [architecture.md](architecture.md) | Làm gì, không làm gì, vì sao tách, cấu trúc và thư viện, dữ liệu, xác thực, luồng chính, hành vi khi lỗi |

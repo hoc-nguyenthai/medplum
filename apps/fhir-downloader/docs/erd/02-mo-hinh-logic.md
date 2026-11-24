@@ -9,7 +9,7 @@ erDiagram
     SOURCE_RESOURCE ||--o{ ATTACHMENT : "chứa (theo KIỂU Attachment, mọi độ sâu)"
     ATTACHMENT }o--o| BINARY : "url = Binary/id sau khi tải"
     BINARY ||--o| SOURCE_RESOURCE : "securityContext = Loai/id"
-    BINARY }o--|| PROJECT : "meta.project (chuỗi, không chỉ mục)"
+    BINARY }o--|| PROJECT : "meta.project (chuỗi, chỉ mục token _project)"
     SOURCE_RESOURCE }o--|| PROJECT : "meta.project"
     BINARY }o--o| BLOB : "khóa binary/id/versionId"
     CHANGE_EVENT ||--|| SOURCE_RESOURCE : "resource_type và id, kèm nội dung"

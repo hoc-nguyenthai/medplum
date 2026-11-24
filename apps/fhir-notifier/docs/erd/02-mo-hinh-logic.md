@@ -6,7 +6,7 @@
 
 ```mermaid
 erDiagram
-    SUBSCRIPTION }o--|| PROJECT : "meta.project (chuỗi id, không chỉ mục)"
+    SUBSCRIPTION }o--|| PROJECT : "meta.project (chuỗi id, chỉ mục token _project)"
     SUBSCRIPTION ||--o| SECRET_EXT : "extension subscription-secret"
     SUBSCRIPTION ||--o{ CHANNEL_HEADER : "channel.header (Tên: giá trị)"
     SUBSCRIPTION ||--o{ CHANGE_EVENT : "khớp: loại resource, interaction, project, criteria"
