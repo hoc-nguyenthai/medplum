@@ -2,6 +2,8 @@
 
 Cập nhật 2026-11-23. **Chỉ mô tả phần `auth` đang phục vụ.** Route của Medplum chưa port không có ở đây. Tài liệu chi tiết của chính auth (đăng ký, DTO, OAuth2, admin, SCIM, email) nằm ở thư mục [api-contract/](api-contract/) cạnh tệp này.
 
+> **Chi tiết từng route (request, response, header, từng trường hợp)** ở [api-contract/common.md](api-contract/common.md), [api-contract/reference/](api-contract/reference/README.md) (bảng từng trường, sinh từ swagger) và [api-contract/cases/](api-contract/cases/README.md) (từng trường hợp phản hồi). Tệp này giữ bảng route tổng hợp và quy ước.
+
 | Nguồn | Vai trò |
 |---|---|
 | `swagger.json` / `swagger.yaml` (cùng thư mục) | **Nguồn chuẩn** của route, tham số, DTO (`definitions`). Sinh từ annotation: `make swagger APP=auth` |
