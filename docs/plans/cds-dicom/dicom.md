@@ -85,7 +85,10 @@ Nguồn: `dicom/routes.test.ts` (32 ca: studies, tiền tố `/api` và theo pro
 
 WADO-URI; `rendered`; bộ lọc QIDO; bulkdata; tích hợp OHIF phía server ngoài các route đã nêu (Medplum README chỉ nhắc tới).
 
-## 9. Câu hỏi mở
+## 9. Quyết định đã chốt và câu hỏi mở
+
+Chốt 2026-11-24: H2 = app riêng `apps/dicomweb`; H4 = `pkg/binarystore` (tệp + S3, đã có); H5 = sửa các lỗi của Medplum ở mục 3 (kéo theo Q-D6 = theo chuẩn). Q-D2 coi như xong (tệp và S3). Bước tiếp theo: D0 (spike thư viện DICOM, chốt Q-D3).
+
 
 | # | Câu hỏi | Khuyến nghị |
 |---|---|---|

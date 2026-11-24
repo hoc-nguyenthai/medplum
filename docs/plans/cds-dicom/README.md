@@ -29,15 +29,19 @@ Trạng thái: **bản nháp chờ duyệt, chưa có code.** Nguồn: Medplum v
 3. DICOM: D0 (spike, quyết định then chốt) rồi D1 đến D6.
 Hai module độc lập nhau; có thể làm song song nếu có người. Cả hai cần **`auth` P3** (token) để chạy e2e thật; trước đó dùng token JWT dev (`FHIR_JWT_HMAC_SECRET`) như `fhir-server`.
 
-## 4. Quyết định cần bạn chốt
+## 4. Quyết định H1 đến H5 (chốt 2026-11-24)
+
+Chốt theo khuyến nghị; H1 và H3 trở thành vô hiệu vì CDS ngoài phạm vi (M1: không chạy Bot).
+
+## 4.1 Bảng gốc (khuyến nghị)
 
 | # | Quyết định | Khuyến nghị |
 |---|---|---|
-| H1 | CDS đặt trong `fhir-server` hay app riêng | Trong `fhir-server` (cần `pkg/cds`, thêm luật vào `pkgRules`) |
-| H2 | DICOMweb là app riêng hay trong `fhir-server` | App riêng `apps/dicomweb` |
-| H3 | Chạy Bot cho CDS: A (HTTP), B (JS nhúng), C (sidecar Node), D (port module Bot) | A trước |
-| H4 | Kho đối tượng cho Binary DICOM | Giao diện + hệ thống tệp trước, S3 sau |
-| H5 | Có sửa các lỗi của Medplum (route stub trả 501, `ReferringPhysicianName`, `RetrieveURL`...) hay giữ nguyên hành vi | Sửa (đã liệt kê ở dicom.md mục 3) |
+| H1 | **Vô hiệu**: CDS ngoài phạm vi theo M1 (CDS chỉ là lớp vỏ trên chạy Bot). Mở lại cùng M1 thì dùng khuyến nghị cũ: trong `fhir-server` (`pkg/cds`, thêm luật vào `pkgRules`) |
+| H2 | **Chốt: app riêng `apps/dicomweb`** |
+| H3 | **Vô hiệu** theo M1; mở lại thì phương án A (executor HTTP) trước |
+| H4 | **Chốt: dùng `pkg/binarystore` (hệ thống tệp cho dev, S3 cho prod)**, đã có S1 đến S7, không thêm adapter |
+| H5 | **Chốt: sửa các lỗi của Medplum** theo `dicom.md` mục 3 |
 
 ## 5. Rủi ro chung
 

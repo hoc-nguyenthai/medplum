@@ -51,7 +51,9 @@ Tổng khoảng 69,5 nghìn dòng (chưa tính `migrations`). Phần có kế ho
 | M4 | `ai` **ngoài phạm vi** | `$ai`, `$aws-textract`, `ws/ai-realtime` không làm. |
 | M5 | **Chỉ hệ thống tệp và S3** | Giữ S1 đến S7. Azure Blob, GCP Storage, SES ngoài phạm vi. |
 
-Còn mở: H1 đến H5 (`dicom`), Q-F1 và các Q khác ở bảng 5.
+H1 đến H5 (chốt 2026-11-24, [cds-dicom/README.md](cds-dicom/README.md) mục 4): H1 và H3 vô hiệu vì CDS ngoài phạm vi theo M1; H2 DICOMweb là app riêng `apps/dicomweb`; H4 dùng `pkg/binarystore` (tệp + S3); H5 sửa các lỗi của Medplum.
+
+Còn mở: Q-F1 và các Q khác ở bảng 5.
 
 ### 3.1 Bản gốc (trước khi chốt)
 

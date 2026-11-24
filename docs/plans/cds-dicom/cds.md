@@ -1,5 +1,7 @@
 # Kế hoạch port CDS Hooks
 
+> **Ngoài phạm vi (2026-11-24):** CDS phụ thuộc chạy Bot mà M1 đã chốt không làm (xem [coverage-matrix.md](../coverage-matrix.md) mục 3); H1 và H3 vô hiệu. Giữ tài liệu này để mở lại cùng M1.
+
 Nguồn Medplum (v5.2.18, `~/Downloads/medplum/packages/server/src`): `cds/routes.ts` (82 dòng), `cds/README.md`, `cds/routes.test.ts` (5 test); phần thực thi nằm ở `bots/` (`execute.ts` 87 dòng, `utils.ts` 552, `vmcontext.ts` 175). Tổng quan và quyết định chung: [README.md](README.md).
 
 ## 1. Điều quan trọng nhất
