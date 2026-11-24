@@ -4,8 +4,12 @@ import (
 	"encoding/base64"
 	"fmt"
 	"net/url"
+	"os"
+	"sort"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 )
 
 // Nạp định nghĩa (#18): PackageRelease/$install, CodeSystem/$import, ConceptMap/$import qua auth + fhir-server thật (SQLite).
@@ -199,5 +203,75 @@ func TestConceptMapImportThroughRealProcesses(t *testing.T) {
 	s.restartFhirServer()
 	if got := tr(adminA, "system="+url.QueryEscape(a)+"&code=3"); !strings.Contains(got, "code:Z") {
 		t.Errorf("sau restart: %s", got)
+	}
+}
+
+// Đo quy mô nạp định nghĩa (đường cho SNOMED/LOINC): chỉ chạy khi đặt DEFINITIONS_SCALE=<số concept> (ví dụ 100000). Nạp theo lô 10 000 concept kèm quan hệ cha (cây ba tầng) và một designation
+// mỗi concept, rồi đo `$lookup`, `$validate-code`, `$expand` (is-a, lọc văn bản, count) trên bảng đã lớn. Dùng E2E_POSTGRES_URL để đo trên PostgreSQL thật. In số đo và kiểm đúng sai ở vài điểm.
+func TestCodeSystemImportScale(t *testing.T) {
+	n, _ := strconv.Atoi(os.Getenv("DEFINITIONS_SCALE"))
+	if n <= 0 {
+		t.Skip("đặt DEFINITIONS_SCALE=<số concept> để đo")
+	}
+	s := newStack(t)
+	admin := s.adminToken("a@example.org", s.clientA)
+	const sys = "http://example.org/cs/scale"
+	cs := s.createResource(admin, `{"resourceType":"CodeSystem","url":"`+sys+`","status":"active","content":"not-present","name":"Scale"}`)
+	imp := "/CodeSystem/" + cs + "/$import"
+	code := func(i int) string { return fmt.Sprintf("C%07d", i) }
+	// cây: concept 0 là gốc; concept i (i >= 1) có cha là (i-1)/10 (mỗi nút tối đa 10 con)
+	const batch = 10000
+	start := time.Now()
+	for from := 0; from < n; from += batch {
+		to := min(from+batch, n)
+		var ps []string
+		for i := from; i < to; i++ {
+			ps = append(ps, param("concept", coding(sys, code(i), fmt.Sprintf("Concept số %d", i))))
+		}
+		s.mustStatus(s.fhirPost(admin, imp, parameters(ps...)), 200, "nạp concept")
+		ps = ps[:0]
+		for i := max(from, 1); i < to; i++ {
+			ps = append(ps, partParam("property", `{"name":"code","valueCode":"`+code(i)+`"}`, `{"name":"property","valueCode":"parent"}`, `{"name":"value","valueString":"`+code((i-1)/10)+`"}`))
+		}
+		for from2 := 0; from2 < len(ps); from2 += batch {
+			s.mustStatus(s.fhirPost(admin, imp, parameters(ps[from2:min(from2+batch, len(ps))]...)), 200, "nạp quan hệ cha")
+		}
+	}
+	elapsed := time.Since(start)
+	t.Logf("nạp %d concept và quan hệ cha: %v (%.0f concept/s)", n, elapsed.Round(time.Millisecond), float64(n)/elapsed.Seconds())
+
+	timeit := func(name string, runs int, f func(i int) resp, want int) {
+		var d []time.Duration
+		for i := 0; i < runs; i++ {
+			t0 := time.Now()
+			r := f(i)
+			d = append(d, time.Since(t0))
+			if r.status != want {
+				t.Fatalf("%s: %d %s", name, r.status, r.body)
+			}
+		}
+		sort.Slice(d, func(a, b int) bool { return d[a] < d[b] })
+		t.Logf("%-34s %d lần: p50 %v p95 %v max %v", name, runs, d[len(d)/2].Round(time.Microsecond), d[len(d)*95/100].Round(time.Microsecond), d[len(d)-1].Round(time.Microsecond))
+	}
+	pick := func(i int) int { return (i*7919 + 13) % n }
+	timeit("$lookup", 200, func(i int) resp {
+		return s.fhirGet(admin, "/CodeSystem/$lookup?system="+url.QueryEscape(sys)+"&code="+code(pick(i)))
+	}, 200)
+	timeit("$validate-code (CodeSystem)", 200, func(i int) resp {
+		return s.fhirGet(admin, "/CodeSystem/$validate-code?url="+url.QueryEscape(sys)+"&code="+code(pick(i)))
+	}, 200)
+	vsAll := s.createResource(admin, `{"resourceType":"ValueSet","url":"http://example.org/vs/scale-all","status":"active","compose":{"include":[{"system":"`+sys+`"}]}}`)
+	timeit("$expand cả bảng count=100", 20, func(int) resp { return s.fhirGet(admin, "/ValueSet/"+vsAll+"/$expand?count=100") }, 200)
+	timeit("$expand lọc văn bản filter=số 5", 20, func(int) resp { return s.fhirGet(admin, "/ValueSet/"+vsAll+"/$expand?filter=s%E1%BB%91+5&count=50") }, 200)
+	vsSub := s.createResource(admin, `{"resourceType":"ValueSet","url":"http://example.org/vs/scale-sub","status":"active","compose":{"include":[{"system":"`+sys+`","filter":[{"property":"concept","op":"is-a","value":"`+code(1)+`"}]}]}}`)
+	// concept 1 có cây con: 10 con (11..20), mỗi con 10 cháu (...): kích thước phụ thuộc n
+	timeit("$expand is-a (cây con của C0000001)", 10, func(int) resp { return s.fhirGet(admin, "/ValueSet/"+vsSub+"/$expand?count=100") }, 200)
+	timeit("ValueSet/$validate-code is-a", 100, func(i int) resp {
+		return s.fhirGet(admin, "/ValueSet/"+vsSub+"/$validate-code?system="+url.QueryEscape(sys)+"&code="+code(pick(i)))
+	}, 200)
+	// đúng sai: lookup trả cha và số con
+	lk := s.mustStatus(s.fhirGet(admin, "/CodeSystem/$lookup?system="+url.QueryEscape(sys)+"&code="+code(1)), 200, "$lookup C1").json(t)
+	if txt := fmt.Sprint(lk); !strings.Contains(txt, code(0)) || !strings.Contains(txt, code(11)) {
+		t.Errorf("$lookup C1 thiếu cha hoặc con: %v", lk)
 	}
 }

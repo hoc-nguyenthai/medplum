@@ -14,6 +14,7 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -275,6 +276,13 @@ func newStackFull(t *testing.T, withWS bool, extraAuthEnv, extraFhirEnv map[stri
 	}
 	for k, v := range extraFhirEnv {
 		fhirEnv[k] = v
+	}
+	if _, set := extraFhirEnv["DATABASE_URL"]; !set {
+		var rnd [6]byte
+		_, _ = rand.Read(rnd[:])
+		if u := pgSchemaURL(t, "e2e_fhir_"+hex.EncodeToString(rnd[:])); u != "" { // E2E_POSTGRES_URL: chạy fhir-server trên PostgreSQL thật thay cho SQLite
+			fhirEnv["DATABASE_URL"] = u
+		}
 	}
 	s.fhirEnv = fhirEnv
 	s.fhirProc = start(t, fhirBin, fhirEnv)

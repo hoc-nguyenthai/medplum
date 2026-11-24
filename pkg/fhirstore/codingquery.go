@@ -30,15 +30,27 @@ func (s *Store) QueryConcepts(ctx context.Context, sid string, q fhirrouter.Conc
 				return nil, 0, fhirrouter.Unprocessable("CodeSystem không có thuộc tính phân cấp cho filter " + f.Op)
 			}
 			root, sys, prop := b.arg(f.Value), b.arg(sid), b.arg(q.HierarchyProperty)
-			b.w(" AND c.code IN (WITH RECURSIVE d(code) AS (SELECT CAST(" + root + " AS text) UNION SELECT p.code FROM d, fhir_coding_property p" +
-				" WHERE p.value = d.code AND p.system_id = " + sys + " AND p.property = " + prop + ") SELECT code FROM d)")
+			// Bước đệ quy phải DUYỆT TỪ d RỒI tra chỉ mục (system_id, property, value) cho từng nút. Không ép thứ tự thì khi bảng chưa có thống kê (vừa nạp xong, trước khi autovacuum chạy)
+			// PostgreSQL chọn quét cả tập thuộc tính cho mỗi vòng (đo: 13 giây cho 20 000 concept), và SQLite cũng quét toàn bộ: LATERAL kèm OFFSET 0 (PostgreSQL: không có OFFSET 0 thì planner kéo subquery lên và vẫn chọn sai, đã đo) ép đúng thứ tự; SQLite cần cả CROSS JOIN (giữ thứ tự) lẫn INDEXED BY (nếu không nó dùng chỉ mục khóa chính chỉ theo system_id và quét cả tập: 18 giây cho 20 000 concept, đo bằng sqlite3).
+			var step string
+			if s.d.pg {
+				step = "SELECT p.code FROM d, LATERAL (SELECT x.code FROM fhir_coding_property x WHERE x.system_id = " + sys + " AND x.property = " + prop + " AND x.value = d.code OFFSET 0) p"
+			} else {
+				step = "SELECT p.code FROM d CROSS JOIN fhir_coding_property p INDEXED BY fhir_coding_property_target WHERE p.system_id = " + sys + " AND p.property = " + prop + " AND p.value = d.code"
+			}
+			b.w(" AND c.code IN (WITH RECURSIVE d(code) AS (SELECT CAST(" + root + " AS text) UNION " + step + ") SELECT code FROM d)")
 			if f.Op == "descendent-of" {
 				b.w(" AND c.code <> " + b.arg(f.Value))
 			}
 		case f.Op == "=" && (f.Property == "code" || f.Property == "concept"):
 			b.w(" AND c.code = " + b.arg(f.Value))
 		case f.Op == "=":
-			b.w(" AND EXISTS (SELECT 1 FROM fhir_coding_property p WHERE p.system_id = c.system_id AND p.code = c.code AND p.property = " +
+			// IN (subquery không tương quan) thay cho EXISTS tương quan: SQLite không đảo được EXISTS để đi từ chỉ mục (system_id, property, value) nên quét cả bảng concept cho mỗi lần tra
+			idx := ""
+			if !s.d.pg {
+				idx = " INDEXED BY fhir_coding_property_target" // như trên: SQLite chọn nhầm chỉ mục khóa chính
+			}
+			b.w(" AND c.code IN (SELECT p.code FROM fhir_coding_property p" + idx + " WHERE p.system_id = " + b.arg(sid) + " AND p.property = " +
 				b.arg(f.Property) + " AND p.value = " + b.arg(f.Value) + ")")
 		default:
 			return nil, 0, fhirrouter.Unprocessable("filter không hỗ trợ trên kho concept: " + f.Property + " " + f.Op)

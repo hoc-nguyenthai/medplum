@@ -51,30 +51,39 @@ func backendEnv(t *testing.T) (db string, storage string, s3 map[string]string) 
 	var rnd [6]byte
 	_, _ = rand.Read(rnd[:])
 	tag := hex.EncodeToString(rnd[:])
-	if base := os.Getenv("E2E_POSTGRES_URL"); base != "" {
-		admin, err := sql.Open("pgx", base)
-		if err != nil {
-			t.Fatal(err)
-		}
-		schema := "e2e_dicomweb_" + tag
-		if _, err := admin.Exec("CREATE SCHEMA " + schema); err != nil {
-			t.Fatal(err)
-		}
-		t.Cleanup(func() { _, _ = admin.Exec("DROP SCHEMA " + schema + " CASCADE"); _ = admin.Close() })
-		u, err := url.Parse(base)
-		if err != nil {
-			t.Fatal(err)
-		}
-		q := u.Query()
-		q.Set("search_path", schema)
-		u.RawQuery = q.Encode()
-		db = u.String()
+	if u := pgSchemaURL(t, "e2e_dicomweb_"+tag); u != "" {
+		db = u
 	}
 	if ep := os.Getenv("E2E_S3_ENDPOINT"); ep != "" {
 		storage = "s3:" + os.Getenv("E2E_S3_BUCKET") + "/e2e-dicomweb-" + tag
 		s3 = map[string]string{"FHIR_S3_ENDPOINT": ep, "FHIR_S3_REGION": "us-east-1", "FHIR_S3_ACCESS_KEY_ID": os.Getenv("E2E_S3_ACCESS_KEY_ID"), "FHIR_S3_SECRET_ACCESS_KEY": os.Getenv("E2E_S3_SECRET_ACCESS_KEY")}
 	}
 	return db, storage, s3
+}
+
+// pgSchemaURL tạo một schema riêng (tên bắt đầu bằng prefix) trên máy chủ E2E_POSTGRES_URL và trả URL có search_path trỏ vào nó, xóa khi test xong; rỗng nếu không đặt E2E_POSTGRES_URL.
+func pgSchemaURL(t *testing.T, schema string) string {
+	t.Helper()
+	base := os.Getenv("E2E_POSTGRES_URL")
+	if base == "" {
+		return ""
+	}
+	admin, err := sql.Open("pgx", base)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := admin.Exec("CREATE SCHEMA " + schema); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _, _ = admin.Exec("DROP SCHEMA " + schema + " CASCADE"); _ = admin.Close() })
+	u, err := url.Parse(base)
+	if err != nil {
+		t.Fatal(err)
+	}
+	q := u.Query()
+	q.Set("search_path", schema)
+	u.RawQuery = q.Encode()
+	return u.String()
 }
 
 func newDicomStack(t *testing.T) *dicomStack {

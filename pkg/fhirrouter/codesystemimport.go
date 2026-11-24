@@ -65,20 +65,7 @@ func (r *Router) codeSystemImport(ctx context.Context, req *Request) (*Response,
 		if err := st.PutConcepts(ctx, cs.ID, concepts); err != nil {
 			return err
 		}
-		for _, p := range props {
-			if c, err := st.GetConcept(ctx, cs.ID, p.Code); err != nil {
-				return err
-			} else if c == nil {
-				return BadRequest("Code không xác định: " + cs.URL + "|" + p.Code)
-			}
-		}
-		for _, d := range desigs {
-			if c, err := st.GetConcept(ctx, cs.ID, d.Code); err != nil {
-				return err
-			} else if c == nil {
-				return BadRequest("Code không xác định: " + cs.URL + "|" + d.Code)
-			}
-		}
+		// PutConceptProperties và PutConceptDesignations tự kiểm mọi mã đã có (theo lô, báo mã thiếu đầu tiên): không tra từng mã ở đây (3 truy vấn mỗi mã, ở PostgreSQL 100 000 concept mất hàng chục giây vì độ trễ từng truy vấn).
 		if err := st.PutConceptProperties(ctx, cs.ID, props); err != nil {
 			return err
 		}
