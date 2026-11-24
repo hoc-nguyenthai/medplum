@@ -73,3 +73,58 @@ func TestPanicBecomesPlain500(t *testing.T) {
 		t.Fatalf("panic phải thành 500 không lộ chi tiết: %d %s", w.Code, w.Body)
 	}
 }
+
+// Ghim hợp đồng probe (docs/api-contract.md): thân JSON đúng từng byte, Content-Type và đủ header bảo mật ở MỌI phản hồi (kể cả 404), 404 JSON cho mọi thứ khác.
+func TestProbeContractIsPinned(t *testing.T) {
+	wantHeaders := map[string]string{
+		"Content-Type":            "application/json",
+		"Cache-Control":           "no-store, no-cache, must-revalidate",
+		"Pragma":                  "no-cache",
+		"Content-Security-Policy": "default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none';",
+		"Referrer-Policy":         "no-referrer",
+		"X-Content-Type-Options":  "nosniff",
+		"X-Frame-Options":         "DENY",
+		"X-Xss-Protection":        "1; mode=block",
+	}
+	ready := true
+	checks := map[string]bool{"database": true}
+	h := httpapi.New(httpapi.Deps{Ready: func(context.Context) (bool, map[string]bool) { return ready, checks }})
+	cases := []struct {
+		method, path string
+		code         int
+		body         string
+	}{
+		{"GET", "/healthz", 200, `{"status":"ok"}` + "\n"},
+		{"GET", "/health/live", 200, `{"status":"ok"}` + "\n"},
+		{"GET", "/health/startup", 200, `{"status":"ok"}` + "\n"},
+		{"GET", "/health/ready", 200, `{"ready":true,"checks":{"database":true}}` + "\n"},
+		{"POST", "/healthz", 404, `{"error":"Not Found"}` + "\n"},
+		{"OPTIONS", "/health/ready", 404, `{"error":"Not Found"}` + "\n"},
+		{"GET", "/fhir/R4/Patient", 404, `{"error":"Not Found"}` + "\n"},
+	}
+	for _, c := range cases {
+		w := get(t, h, c.method, c.path)
+		if w.Code != c.code || w.Body.String() != c.body {
+			t.Errorf("%s %s: %d %q, muốn %d %q", c.method, c.path, w.Code, w.Body.String(), c.code, c.body)
+		}
+		for k, v := range wantHeaders {
+			if got := w.Header().Get(k); got != v {
+				t.Errorf("%s %s: header %s = %q, muốn %q", c.method, c.path, k, got, v)
+			}
+		}
+		if w.Header().Get("Permissions-Policy") == "" {
+			t.Errorf("%s %s: thiếu Permissions-Policy", c.method, c.path)
+		}
+	}
+	ready, checks = false, map[string]bool{"database": false}
+	if w := get(t, h, "GET", "/health/ready"); w.Code != 503 || w.Body.String() != `{"ready":false,"checks":{"database":false}}`+"\n" {
+		t.Errorf("database hỏng: %d %q", w.Code, w.Body.String())
+	}
+	ready, checks = false, map[string]bool{"draining": true}
+	if w := get(t, h, "GET", "/health/ready"); w.Code != 503 || w.Body.String() != `{"ready":false,"checks":{"draining":true}}`+"\n" {
+		t.Errorf("đang tắt: %d %q", w.Code, w.Body.String())
+	}
+	if w := get(t, httpapi.New(httpapi.Deps{}), "GET", "/health/ready"); w.Code != 200 || w.Body.String() != `{"ready":true,"checks":{}}`+"\n" {
+		t.Errorf("không có Ready: %d %q", w.Code, w.Body.String())
+	}
+}

@@ -3,6 +3,7 @@
 | Tệp | Nội dung |
 |---|---|
 | [architecture.md](architecture.md) | Vì sao tách (kể cả điều chưa chứng minh), luồng nhận và chạy job, quyền của job, kết quả ra kho đối tượng, đánh đổi |
+| [api-contract.md](api-contract.md) | Hợp đồng API: không có route nghiệp vụ; 4 probe (thân, header, mã), lệnh `healthcheck`, hợp đồng dây với `fhir-server` (AsyncJob, job-seal, sự kiện); ghim bằng `TestProbeContractIsPinned` |
 | [config.md](config.md) | Biến môi trường, sinh từ `internal/config/config.go` (test `TestConfigDocIsUpToDate` giữ cho khớp) |
 | [testing.md](testing.md) | Bốn tầng test, lệnh chạy, đột biến đã chạy |
 | [runbook.md](runbook.md) | Bật service thay cho bộ chạy job trong API, sự cố thường gặp, định cỡ |
