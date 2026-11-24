@@ -340,6 +340,10 @@ func (r clients) Get(ctx context.Context, id string) (*fhir.ClientApplication, e
 	return get[*fhir.ClientApplication](ctx, r.s, "ClientApplication", id)
 }
 
+func (r clients) Mutate(ctx context.Context, id string, fn func(*fhir.ClientApplication) error) (*fhir.ClientApplication, error) {
+	return mutate(ctx, r.s, "ClientApplication", id, fn)
+}
+
 type launches struct{ s *Store }
 
 func (r launches) Get(ctx context.Context, id string) (*fhir.SmartAppLaunch, error) {

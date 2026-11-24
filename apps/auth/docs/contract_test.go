@@ -29,6 +29,7 @@ func specOptions() apicontract.Options {
 			"httpapi.EmailAttachmentBody":  "mỗi tệp cần content hoặc path (một trong hai), không trường nào luôn bắt buộc",
 			"httpapi.InviteMembershipBody": "toàn bộ là ghi đè tùy chọn lên membership được tạo",
 			"httpapi.MFAResetBody":         "body tùy chọn; bỏ trống là gỡ mọi yếu tố",
+			"httpapi.RotateSecretBody":     "body tùy chọn; bỏ trống là xoay với secret server sinh",
 			"scim.Name":                    "SCIM name: mọi thành phần đều tùy chọn",
 		},
 		ContentType: func(def string) string {

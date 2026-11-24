@@ -109,6 +109,8 @@ type ProjectRepository interface {
 // ClientRepository là kho ClientApplication (client dựng sẵn được tra trước ở Service).
 type ClientRepository interface {
 	Get(ctx context.Context, id string) (*fhir.ClientApplication, error)
+	// Mutate đọc bản mới nhất, áp fn rồi ghi kèm IfMatch (thử lại khi xung đột); fn trả ErrNoChange để không ghi.
+	Mutate(ctx context.Context, id string, fn func(*fhir.ClientApplication) error) (*fhir.ClientApplication, error)
 }
 
 // LaunchRepository là kho SmartAppLaunch.

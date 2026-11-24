@@ -26,6 +26,7 @@ func registerAdmin(e *echo.Echo, dep Deps) {
 	g.GET("/:projectId", h.adminGetProject, bearer)
 	g.POST("/:projectId/settings", h.adminSettings, bearer)
 	g.POST("/:projectId/client", h.adminClient, bearer)
+	g.POST("/:projectId/client/:clientId/rotate-secret", h.adminRotateClientSecret, append([]echo.MiddlewareFunc{bearer}, slow...)...)
 	g.POST("/:projectId/sites", h.adminSites, bearer)
 	g.POST("/:projectId/invite", h.adminInvite, append([]echo.MiddlewareFunc{bearer}, slow...)...)
 	g.GET("/:projectId/members/:membershipId", h.adminGetMember, bearer)
@@ -143,6 +144,68 @@ func (h *authHandlers) adminClient(c echo.Context) error {
 	}
 	c.Response().Header().Set("Cache-Control", "no-store")
 	return c.JSON(http.StatusCreated, client)
+}
+
+// RotateSecretBody là body tùy chọn của POST /admin/projects/{projectId}/client/{clientId}/rotate-secret (có thể không gửi body).
+type RotateSecretBody struct {
+	Secret     string `json:"secret,omitempty" minLength:"32" maxLength:"256" example:"7d1e5b9a3c6f2e4a8b0d9c1f3e5a7b2d4c6e8f0a1b3d5f7e9c2a4b6d8e0f1a3c"` // secret mới do người gọi đặt (32-256 ký tự); bỏ trống thì server sinh 64 ký tự hex; phải khác secret hiện tại
+	RetireOnly bool   `json:"retireOnly,omitempty" example:"false"`                                                                                       // true: chỉ bỏ secret cũ đang chờ hết hạn (retiringSecret), không đổi secret hiện tại; loại trừ với secret
+}
+
+// RotateSecretResponse là body của POST /admin/projects/{projectId}/client/{clientId}/rotate-secret.
+type RotateSecretResponse struct {
+	ClientID     string `json:"clientId" binding:"required"` // id client
+	ClientSecret string `json:"clientSecret,omitempty"`      // secret MỚI, chỉ hiện trong phản hồi này; không có khi retireOnly
+	Retiring     bool   `json:"retiring" binding:"required"` // true: secret cũ vẫn dùng được song song (retiringSecret) cho tới lần xoay kế tiếp hoặc retireOnly
+}
+
+var rotateSecretFields = map[string]bool{"secret": true, "retireOnly": true}
+
+// adminRotateClientSecret godoc
+//
+//	@Summary		Xoay secret của client (ClientApplication/$rotate-secret)
+//	@Description	Secret hiện tại thành `retiringSecret` (vẫn dùng được để các nơi triển khai kịp đổi), secret mới (do người gọi đặt hoặc server sinh) là `secret`; `retiringSecret` cũ hơn bị bỏ. `retireOnly=true` chỉ bỏ `retiringSecret` (idempotent). Body tùy chọn; trường lạ là 400. Client ngoài project, không tồn tại hoặc dựng sẵn đều là 403 chung. Client không có secret là 400. Không thu hồi token đã cấp. `clientSecret` chỉ hiện một lần.
+//	@Tags			admin
+//	@Security		BearerAuth
+//	@Accept			json
+//	@Produce		application/json,application/fhir+json
+//	@Param			projectId	path		string				true	"id project"
+//	@Param			clientId	path		string				true	"id client"
+//	@Param			body		body		RotateSecretBody	false	"Tùy chọn xoay"
+//	@Success		200			{object}	RotateSecretResponse
+//	@Failure		400			{object}	fhir.OperationOutcome
+//	@Failure		401			{object}	fhir.OperationOutcome
+//	@Failure		403			{object}	fhir.OperationOutcome
+//	@Failure		429			{object}	fhir.OperationOutcome
+//	@Router			/admin/projects/{projectId}/client/{clientId}/rotate-secret [post]
+func (h *authHandlers) adminRotateClientSecret(c echo.Context) error {
+	var in RotateSecretBody
+	if c.Request().ContentLength != 0 {
+		b, err := readBody(c)
+		if err != nil {
+			return writeError(c, err)
+		}
+		var unknown []string
+		for k := range b {
+			if !rotateSecretFields[k] {
+				unknown = append(unknown, k)
+			}
+		}
+		if len(unknown) > 0 {
+			sort.Strings(unknown)
+			return writeError(c, domain.BadRequestAt("Unsupported field: "+strings.Join(unknown, ", "), unknown[0]))
+		}
+		raw, _ := json.Marshal(b)
+		if err := json.Unmarshal(raw, &in); err != nil {
+			return writeError(c, domain.BadRequest("Invalid rotate-secret body"))
+		}
+	}
+	res, err := h.svc.AdminRotateClientSecret(c.Request().Context(), authState(c), c.Param("projectId"), c.Param("clientId"), application.RotateSecretRequest{Secret: in.Secret, RetireOnly: in.RetireOnly})
+	if err != nil {
+		return writeError(c, err)
+	}
+	c.Response().Header().Set("Cache-Control", "no-store")
+	return c.JSON(http.StatusOK, RotateSecretResponse{ClientID: res.ClientID, ClientSecret: res.Secret, Retiring: res.Retiring})
 }
 
 // adminGetMember godoc

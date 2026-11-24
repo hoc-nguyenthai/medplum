@@ -2763,6 +2763,37 @@ definitions:
     required:
     - loginId
     type: object
+  httpapi.RotateSecretBody:
+    properties:
+      retireOnly:
+        description: 'true: chỉ bỏ secret cũ đang chờ hết hạn (retiringSecret), không
+          đổi secret hiện tại; loại trừ với secret'
+        example: false
+        type: boolean
+      secret:
+        description: secret mới do người gọi đặt (32-256 ký tự); bỏ trống thì server
+          sinh 64 ký tự hex; phải khác secret hiện tại
+        example: 7d1e5b9a3c6f2e4a8b0d9c1f3e5a7b2d4c6e8f0a1b3d5f7e9c2a4b6d8e0f1a3c
+        maxLength: 256
+        minLength: 32
+        type: string
+    type: object
+  httpapi.RotateSecretResponse:
+    properties:
+      clientId:
+        description: id client
+        type: string
+      clientSecret:
+        description: secret MỚI, chỉ hiện trong phản hồi này; không có khi retireOnly
+        type: string
+      retiring:
+        description: 'true: secret cũ vẫn dùng được song song (retiringSecret) cho
+          tới lần xoay kế tiếp hoặc retireOnly'
+        type: boolean
+    required:
+    - clientId
+    - retiring
+    type: object
   httpapi.ScopeBody:
     properties:
       login:
@@ -3304,6 +3335,61 @@ paths:
       security:
       - BearerAuth: []
       summary: Tạo ClientApplication trong project
+      tags:
+      - admin
+  /admin/projects/{projectId}/client/{clientId}/rotate-secret:
+    post:
+      consumes:
+      - application/json
+      description: Secret hiện tại thành `retiringSecret` (vẫn dùng được để các nơi
+        triển khai kịp đổi), secret mới (do người gọi đặt hoặc server sinh) là `secret`;
+        `retiringSecret` cũ hơn bị bỏ. `retireOnly=true` chỉ bỏ `retiringSecret` (idempotent).
+        Body tùy chọn; trường lạ là 400. Client ngoài project, không tồn tại hoặc
+        dựng sẵn đều là 403 chung. Client không có secret là 400. Không thu hồi token
+        đã cấp. `clientSecret` chỉ hiện một lần.
+      parameters:
+      - description: id project
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: id client
+        in: path
+        name: clientId
+        required: true
+        type: string
+      - description: Tùy chọn xoay
+        in: body
+        name: body
+        schema:
+          $ref: '#/definitions/httpapi.RotateSecretBody'
+      produces:
+      - application/json
+      - application/fhir+json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpapi.RotateSecretResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+      security:
+      - BearerAuth: []
+      summary: Xoay secret của client (ClientApplication/$rotate-secret)
       tags:
       - admin
   /admin/projects/{projectId}/invite:

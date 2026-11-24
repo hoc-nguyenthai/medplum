@@ -11,6 +11,7 @@ Quản trị project qua HTTP (tắt mặc định, AUTH_ADMIN_ENABLED): project
 | [`POST /admin/projects/setpassword`](#post-admin-projects-setpassword) | Đặt mật khẩu cho user của project |
 | [`GET /admin/projects/{projectId}`](#get-admin-projects-projectid) | Đọc project của chính mình (admin) |
 | [`POST /admin/projects/{projectId}/client`](#post-admin-projects-projectid-client) | Tạo ClientApplication trong project |
+| [`POST /admin/projects/{projectId}/client/{clientId}/rotate-secret`](#post-admin-projects-projectid-client-clientid-rotate-secret) | Xoay secret của client (ClientApplication/$rotate-secret) |
 | [`POST /admin/projects/{projectId}/invite`](#post-admin-projects-projectid-invite) | Mời user vào project |
 | [`GET /admin/projects/{projectId}/members/{membershipId}`](#get-admin-projects-projectid-members-membershipid) | Đọc một membership của project |
 | [`POST /admin/projects/{projectId}/members/{membershipId}`](#post-admin-projects-projectid-members-membershipid) | Sửa membership |
@@ -264,6 +265,82 @@ Schema: `fhir.OperationOutcome` (cấu trúc dùng chung, xem [common.md mục 3
 Schema: `fhir.OperationOutcome` (cấu trúc dùng chung, xem [common.md mục 3](../common.md#3-operationoutcome)).
 
 **`403`** Forbidden
+
+Schema: `fhir.OperationOutcome` (cấu trúc dùng chung, xem [common.md mục 3](../common.md#3-operationoutcome)).
+
+---
+
+<a id="post-admin-projects-projectid-client-clientid-rotate-secret"></a>
+## `POST /admin/projects/{projectId}/client/{clientId}/rotate-secret`
+
+**Xoay secret của client (ClientApplication/$rotate-secret)**
+
+Secret hiện tại thành `retiringSecret` (vẫn dùng được để các nơi triển khai kịp đổi), secret mới (do người gọi đặt hoặc server sinh) là `secret`; `retiringSecret` cũ hơn bị bỏ. `retireOnly=true` chỉ bỏ `retiringSecret` (idempotent). Body tùy chọn; trường lạ là 400. Client ngoài project, không tồn tại hoặc dựng sẵn đều là 403 chung. Client không có secret là 400. Không thu hồi token đã cấp. `clientSecret` chỉ hiện một lần.
+
+Các trường hợp phản hồi: [../cases/admin.md#post-admin-projects-projectid-client-clientid-rotate-secret](../cases/admin.md#post-admin-projects-projectid-client-clientid-rotate-secret)
+
+| Thuộc tính | Giá trị |
+|---|---|
+| Xác thực | bắt buộc: header `Authorization: Bearer <access_token>` (BearerAuth) |
+| Content-Type yêu cầu | `application/json` |
+| Content-Type phản hồi | `application/json`, `application/fhir+json` |
+
+**Header yêu cầu**
+
+| Header | Bắt buộc | Mô tả |
+|---|---|---|
+| `Authorization` | có | `Bearer <access_token>` |
+| `Content-Type` | có | `application/json` |
+| `Accept` | không | nên khớp Content-Type phản hồi |
+
+**Tham số**
+
+| Tên | Vị trí | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|---|
+| `projectId` | đường dẫn | string | có | id project |
+| `clientId` | đường dẫn | string | có | id client |
+
+**Body yêu cầu** (Tùy chọn xoay)
+
+Schema: `httpapi.RotateSecretBody`
+
+| Trường | Kiểu | Bắt buộc | Ràng buộc | Mô tả | Ví dụ |
+|---|---|---|---|---|---|
+| `retireOnly` | boolean | không |  | true: chỉ bỏ secret cũ đang chờ hết hạn (retiringSecret), không đổi secret hiện tại; loại trừ với secret | `false` |
+| `secret` | string | không | độ dài tối thiểu 32; độ dài tối đa 256 | secret mới do người gọi đặt (32-256 ký tự); bỏ trống thì server sinh 64 ký tự hex; phải khác secret hiện tại | `"7d1e5b9a3c6f2e4a8b0d9c1f3e5a7b2d4c6e8f0a1b3d5f7e9c2a4b6d8e0f1a3c"` |
+
+```json
+{
+  "retireOnly": false,
+  "secret": "7d1e5b9a3c6f2e4a8b0d9c1f3e5a7b2d4c6e8f0a1b3d5f7e9c2a4b6d8e0f1a3c"
+}
+```
+
+**Phản hồi**
+
+**`200`** OK
+
+Schema: `httpapi.RotateSecretResponse`
+
+| Trường | Kiểu | Bắt buộc | Ràng buộc | Mô tả | Ví dụ |
+|---|---|---|---|---|---|
+| `clientId` | string | có |  | id client |  |
+| `retiring` | boolean | có |  | true: secret cũ vẫn dùng được song song (retiringSecret) cho tới lần xoay kế tiếp hoặc retireOnly |  |
+| `clientSecret` | string | không |  | secret MỚI, chỉ hiện trong phản hồi này; không có khi retireOnly |  |
+
+**`400`** Bad Request
+
+Schema: `fhir.OperationOutcome` (cấu trúc dùng chung, xem [common.md mục 3](../common.md#3-operationoutcome)).
+
+**`401`** Unauthorized
+
+Schema: `fhir.OperationOutcome` (cấu trúc dùng chung, xem [common.md mục 3](../common.md#3-operationoutcome)).
+
+**`403`** Forbidden
+
+Schema: `fhir.OperationOutcome` (cấu trúc dùng chung, xem [common.md mục 3](../common.md#3-operationoutcome)).
+
+**`429`** Too Many Requests
 
 Schema: `fhir.OperationOutcome` (cấu trúc dùng chung, xem [common.md mục 3](../common.md#3-operationoutcome)).
 

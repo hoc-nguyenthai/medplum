@@ -1,6 +1,6 @@
 # auth: các trường hợp phản hồi của nhóm `admin`
 
-Nhóm `/admin/projects/*` (11 route) cho **admin của một project** quản trị chính project đó: đọc project, đặt setting và site, tạo client, mời user, quản lý membership, đặt/gửi lại mật khẩu, gỡ MFA. Header, envelope OperationOutcome, hạn mức và mã HTTP dùng chung: [../common.md](../common.md). Bảng trường từng route: [../reference/admin.md](../reference/admin.md). Tệp này chỉ ghi **điều kiện nào ra phản hồi nào**.
+Nhóm `/admin/projects/*` (12 route, thêm xoay secret client) cho **admin của một project** quản trị chính project đó: đọc project, đặt setting và site, tạo client, mời user, quản lý membership, đặt/gửi lại mật khẩu, gỡ MFA. Header, envelope OperationOutcome, hạn mức và mã HTTP dùng chung: [../common.md](../common.md). Bảng trường từng route: [../reference/admin.md](../reference/admin.md). Tệp này chỉ ghi **điều kiện nào ra phản hồi nào**.
 
 **Cờ bật nhóm:** `AUTH_ADMIN_ENABLED=true` (mặc định tắt). Tắt thì mọi route `404` (OperationOutcome `Not Found`, không phân biệt với route không tồn tại). Không có `bot`, `secrets`. `/admin/super/projects` (mục cuối) có cờ riêng `AUTH_SUPER_ADMIN_ENABLED` và chỉ dành cho super-admin.
 
@@ -24,7 +24,7 @@ Các route `/admin/projects/*` không có đường nào xuyên project (super-a
 
 1. Route có hay không (`AUTH_ADMIN_ENABLED`): `404`.
 2. Middleware toàn cục: body tối đa 1 MiB (`413`, thông điệp `Request body too large`), hạn mức IP `AUTH_RATE_LIMIT` (`429`).
-3. Bearer (`401`). Sau bước này mới tới hạn mức bước đăng nhập `AUTH_LOGIN_RATE_LIMIT` (`429`) ở **bốn route**: `setpassword`, `invite`, `resetpassword`, `mfa/reset` (các route admin khác không có hạn mức này).
+3. Bearer (`401`). Sau bước này mới tới hạn mức bước đăng nhập `AUTH_LOGIN_RATE_LIMIT` (`429`) ở **năm route**: `setpassword`, `invite`, `resetpassword`, `mfa/reset`, `client/{clientId}/rotate-secret` (các route admin khác không có hạn mức này).
 4. **Handler đọc/parse body và validator của route** (`400`): xảy ra **trước** kiểm quyền admin ở bước 5. Nghĩa là người không phải admin gửi body hỏng vẫn nhận `400`, không phải `403`.
 5. Use case: kiểm admin hoạt động của project và `:projectId` (`403`), rồi nghiệp vụ, rồi ghi.
 
@@ -264,6 +264,50 @@ Cache-Control: no-store
 (Rút gọn: phản hồi thật còn `meta` và các trường khác của ClientApplication.)
 
 **Lưu ý tích hợp:** lưu `secret` ngay, không đọc lại được. Trường lạ bị báo **trước** kiểm quyền. Để client gọi được `/admin` hay SCIM, nâng membership của nó lên `admin=true` bằng `POST .../members/{id}` (tìm id membership qua `GET /auth/me` của token client).
+
+---
+
+<a id="post-admin-projects-projectid-client-clientid-rotate-secret"></a>
+
+## `POST /admin/projects/{projectId}/client/{clientId}/rotate-secret`
+
+Xoay secret của một client (ClientApplication/$rotate-secret): secret hiện tại thành `retiringSecret` (vẫn dùng được để các nơi triển khai kịp đổi), secret mới là `secret`. [Tham chiếu trường](../reference/admin.md#post-admin-projects-projectid-client-clientid-rotate-secret)
+
+**Cờ bật:** `AUTH_ADMIN_ENABLED`. **Hạn mức:** thêm hạn mức bước đăng nhập `AUTH_LOGIN_RATE_LIMIT` (route thứ năm có hạn mức này).
+
+**Thứ tự kiểm tra:** Bearer (401) → hạn mức bước đăng nhập (429) → body (tùy chọn: không body hoặc `Content-Length: 0` là `{}`; JSON hỏng 400; trường lạ 400, liệt kê theo thứ tự chữ cái; sai kiểu 400 `Invalid rotate-secret body`) → admin và `projectId` (403) → `secret` và `retireOnly` loại trừ nhau (400) → độ dài `secret` (400) → client thuộc project (403 chung, kể cả không tồn tại) → client có secret (400) → secret mới khác secret hiện tại (400) → ghi (IfMatch, thử lại khi xung đột).
+
+| # | Trường hợp | Điều kiện | HTTP | Header phản hồi riêng | Body | Tác dụng phụ |
+|---|---|---|---|---|---|---|
+| R1 | Xoay | không `retireOnly` | 200 | `Cache-Control: no-store` | `clientId`, `clientSecret` (secret MỚI, 64 ký tự hex nếu server sinh; **chỉ hiện một lần**), `retiring: true` | `retiringSecret` := secret cũ (retiringSecret cũ hơn bị bỏ), `secret` := mới; log WARN `audit=true` (không có giá trị secret); KHÔNG thu hồi token đã cấp |
+| R2 | Retire | `retireOnly: true` | 200 | `Cache-Control: no-store` | `clientId`, `retiring: false` (không có `clientSecret`) | xóa `retiringSecret`; gọi lại khi không còn gì để bỏ vẫn 200 |
+| R3 | Body không đọc được | JSON hỏng hoặc không phải object | 400 | - | `Content could not be parsed` | không |
+| R4 | Trường lạ | khác `secret`, `retireOnly` (ví dụ `retiringSecret`) | 400 | - | `Unsupported field: <các tên>` | không |
+| R5 | Sai kiểu | ví dụ `retireOnly` là chuỗi | 400 | - | `Invalid rotate-secret body` | không |
+| R6 | Loại trừ | cả `secret` và `retireOnly: true` | 400 | - | `secret and retireOnly are mutually exclusive`, `expression` `retireOnly` | không |
+| R7 | Secret sai độ dài | ngoài 32 đến 256 ký tự | 400 | - | `secret must be between 32 and 256 characters`, `expression` `secret` | không |
+| R8 | Secret trùng | bằng secret hiện tại | 400 | - | `New secret must differ from the current secret`, `expression` `secret` | không |
+| R9 | Client không có secret | client công khai | 400 | - | `Client has no secret to rotate`, `expression` `clientId` | không (không tạo secret) |
+| R10 | Chưa xác thực | | 401 | `WWW-Authenticate` | `Unauthorized` | không |
+| R11 | Không được phép | không phải admin; `projectId` khác project của người gọi; client không tồn tại, thuộc project khác hoặc là client dựng sẵn | 403 | - | `Forbidden` (**403 chung**, không cho dò id) | không |
+| R12 | Quá hạn mức | IP hoặc bước đăng nhập | 429 | `Retry-After` | `Too many requests` | không |
+
+**Ví dụ**
+
+```http
+POST /admin/projects/0192f3a4-7b1c-7d2e-9a10-3c5e8f1b2a44/client/0192f3b0-1111-7000-8000-00000000c1ie/rotate-secret HTTP/1.1
+Authorization: Bearer eyJhbGciOi...
+```
+
+```http
+HTTP/1.1 200 OK
+Content-Type: application/json
+Cache-Control: no-store
+
+{ "clientId": "0192f3b0-1111-7000-8000-00000000c1ie", "clientSecret": "7d1e5b9a3c6f2e4a8b0d9c1f3e5a7b2d4c6e8f0a1b3d5f7e9c2a4b6d8e0f1a3c", "retiring": true }
+```
+
+**Quy trình xoay không gián đoạn:** gọi route (R1) → cập nhật nơi dùng sang secret mới (secret cũ vẫn dùng được) → gọi `{"retireOnly": true}` (R2) để vô hiệu secret cũ. Xoay lần nữa trước khi retire thì secret cũ nhất mất hiệu lực ngay. Khác Medplum: đường dẫn là `/admin/projects/{projectId}/client/{clientId}/rotate-secret`, không phải `/fhir/R4/ClientApplication/{id}/$rotate-secret`; tên tham số `secret` và `retireOnly` là thiết kế của port này (chưa đối chiếu với `$rotate-secret` của Medplum).
 
 ---
 
