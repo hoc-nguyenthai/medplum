@@ -251,10 +251,10 @@ Mỗi dòng một tính năng hoặc operation. Cột: ID, tên và vị trí Me
 | ID | Tính năng (Medplum) | Go | Bằng chứng Go | Phụ thuộc | Giá trị | Cỡ |
 |---|---|---|---|---|---|---|
 | P-01 | `Patient/{id}/$everything` (`patienteverything.ts:68-434`, `routes.ts:394-395`) | MỘT PHẦN | `operation.go:163-273`; `suite.go:746`. Có `_type`, `_since`, `_count` (mặc định 1000, trần 10000, vượt thì cắt và thêm entry cảnh báo). Thiếu `start`/`end` (ngày chăm sóc, `utils/caredate.ts`), `_offset`, `_cursor`, `_inlineAttachments` | — | cao | M |
-| P-02 | `Patient/{id}/$summary` (International Patient Summary) (`patientsummary.ts:79-872`) | CHƯA | grep `$summary`: 0 | — | vừa | L |
-| P-03 | `Patient/$match` chấm điểm ứng viên (`patientmatch.ts:75-365`, `utils/cms-patient-match.ts:1-425`) | CHƯA | grep `$match`: 0 | — | vừa | M |
+| P-02 | `Patient/{id}/$summary` (International Patient Summary) (`patientsummary.ts:79-872`) | **XONG 2026-11-24 (thiếu start/end/profile/identifier, mức loại)** | `pkg/fhirrouter/patientsummary.go`; `author` bắt buộc | — | vừa | L |
+| P-03 | `Patient/$match` chấm điểm ứng viên (`patientmatch.ts:75-365`, `utils/cms-patient-match.ts:1-425`) | **XONG 2026-11-24, khác Medplum có chủ ý (không port bảng CMS Mỹ)** | `pkg/fhirrouter/patientmatch.go` | — | vừa | M |
 | P-04 | `Patient/{id}/$ccda-export` (`ccdaexport.ts:39-62`, gọi `@medplum/ccda`, `packages/ccda/src` khoảng 4000 dòng) | CHƯA | grep `ccda`: 0 | thư viện C-CDA (TS, chưa có bản Go) | thấp | L |
-| P-05 | `QuestionnaireResponse/$extract` (`extract.ts:131-562`) | CHƯA | grep `$extract`: 0 | — | vừa | L |
+| P-05 | `QuestionnaireResponse/$extract` (`extract.ts:131-562`) | **XONG 2026-11-24 (templateExtract; context application/x-fhir-query chưa hỗ trợ)** | `pkg/fhirrouter/extract.go` | — | vừa | L |
 | P-06 | `Measure/{id}/$evaluate-measure` (`evaluatemeasure.ts:45-160`) | CHƯA | grep `evaluate-measure`: 0 | — | thấp | M |
 | P-07 | `PlanDefinition/{id}/$apply` (`plandefinitionapply.ts:97-548`) | CHƯA | grep `$apply`: 0; `pkg/fhirpath` đã có engine để tính biểu thức động | — | vừa | L |
 | P-08 | `$generate-smart-health-card` (`smarthealthcards.ts:62-438`) | CHƯA | grep `smart-health`: 0 | khóa ký JWS, QR | thấp | M |
@@ -538,3 +538,18 @@ Tất cả là **đề xuất của người kiểm kê**, chờ duyệt (27 m�
 - Ứng dụng Medplum (`packages/app`) gọi những endpoint nào (Q-F2): chưa kiểm.
 - Mô tả hành vi của đa số operation ở nhóm P, L, F, G, Q chỉ dựa vào tên, chú thích đầu hàm, `import` và số dòng; chưa đọc thân hàm. Cỡ của các gói này là ước lượng thô.
 - Số 94 route "operation" nêu trong yêu cầu không khớp trực tiếp với cách đếm của tôi (113 `router.add`, 9 lời gọi `protectedRoutes`, 4 route công khai, 115 cặp method-đường dẫn trong `fhir-operations.md`); bản kiểm kê này đếm theo operation (mục 3.1), không theo route.
+
+## Tiến độ #19 (2026-11-24): operation lâm sàng
+
+Tám operation của #19 đã port sang `pkg/fhirrouter` (đăng ký ở `clinical_ops.go`, `registerClinical`), mỗi cái có test đơn vị và đã chạy đột biến (mọi nhánh quan trọng đảo đi thì test đỏ):
+
+| Operation | Tệp | Khác Medplum / giới hạn đã biết |
+|---|---|---|
+| `GET {type}/$csv?_fields=...` | `clinical_ops.go` | Cột là mã search parameter hoặc FHIRPath; tối đa 1000 dòng; chống CSV injection; BOM UTF-8. Loại không tồn tại: 404 (không có route) thay vì 400 |
+| `POST {type}/{id}/$refresh-reference-display` | `clinical_ops.go`, `display.go` | getDisplayString port theo JSON; đi qua `fhir.Reference` theo kiểu; ghi bằng If-Match (412 khi ghi song song); Reference không đọc được giữ nguyên |
+| `StructureDefinition/$expand-profile?url=` | `clinical_ops.go` | Bundle searchset, đệ quy 10 tầng, mỗi URL một lần, lấy `version` mới nhất; chấp nhận cả POST Parameters |
+| `POST {type}/{id}[/_history/{vid}]/$resend` | `clinical_ops.go`, `fhirsub/repo.go`, `fhirauth/scope.go` | Chỉ admin project, đúng project; cần broker (`FHIR_SUBSCRIPTIONS` hoặc `FHIR_AUTO_DOWNLOAD`) nếu không 501; hỗ trợ create/update/delete |
+| `{type}/{id}/$graph?graph=<name>` | `graph.go` | Link `path` (Reference, canonical) và tìm kiếm `{ref}`; chặn vòng và quá sâu (5 tầng, 1000 resource) |
+| `POST Patient/$match` | `patientmatch.go` | **Không port bảng CMS Patient Match** (SSN, ITIN, MBI của Mỹ, 22 tổ hợp, nhật ký kiểm toán công bố). Quy tắc chung: ứng viên theo identifier, telecom, ngày sinh ±1 ngày với họ hoặc tên đầu; so khớp exact/fuzzy (bỏ dấu tiếng Việt, cách 1 ký tự), điểm `min((exact+0,5·fuzzy)/6, 0,9)`; certain khi identifier trùng hoặc tên+họ+ngày sinh exact cùng một trong điện thoại/email/địa chỉ; chống nhầm sinh đôi; `onlyCertainMatches`. **Ngưỡng và trọng số là quyết định của tôi, cần người có chuyên môn kiểm trước khi dùng thật** |
+| `POST QuestionnaireResponse/{id}/$extract` | `extract.go` | SDC `templateExtract`, `templateExtractContext`, `templateExtractValue`, `extractAllocateId` viết trên JSON (không bộ duyệt kiểu + JSON Patch như Medplum); context `application/x-fhir-query` trả 400 rõ ràng; trần 1000 entry |
+| `GET\|POST Patient/{id}/$summary` | `patientsummary.go` | IPS Bundle document theo cách chia mục của Medplum; `author` bắt buộc (router không biết hồ sơ người gọi); thiếu `start`, `end`, `profile`, `identifier`, mức loại. Độ đúng lâm sàng của cách chia mục cần người có chuyên môn rà |

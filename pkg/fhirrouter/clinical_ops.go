@@ -24,6 +24,9 @@ func (r *Router) registerClinical() {
 	r.Add("POST", ":resourceType/:id/$resend", r.resend)
 	r.Add("POST", ":resourceType/:id/_history/:vid/$resend", r.resend)
 	r.registerGraph()
+	r.registerPatientMatch()
+	r.registerExtract()
+	r.registerPatientSummary()
 }
 
 func knownType(rt string) bool {
