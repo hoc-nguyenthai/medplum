@@ -11,6 +11,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -53,9 +54,33 @@ type StatusError struct {
 
 func (e *StatusError) Error() string { return e.Msg }
 
+// QueryPage là một trang kết quả QIDO-RS: Items được mã hóa thành mảng JSON (DICOM JSON).
+type QueryPage struct {
+	Items any
+	More  bool // còn kết quả sau trang này
+}
+
+// FrameStream là phản hồi frame WADO-RS đã kiểm hợp lệ, sẵn sàng ghi theo luồng.
+type FrameStream struct {
+	ContentType string // multipart/related kèm boundary
+	Length      int64  // tổng số byte (biết trước)
+	Write       func(io.Writer) error
+}
+
+// Retriever thực hiện QIDO-RS và WADO-RS (cài ở bootstrap, bằng pkg/dicomretrieve). limit, offset và frames là chuỗi thô trên URL: bên cài đặt đọc và báo lỗi 400.
+// Mọi lỗi 4xx và 5xx phải xảy ra trước khi trả hàm ghi, vì sau khi bắt đầu ghi thì không đổi được mã trạng thái.
+type Retriever interface {
+	SearchStudies(ctx context.Context, limit, offset string) (QueryPage, error)
+	SearchSeries(ctx context.Context, studyUID, limit, offset string) (QueryPage, error)
+	SeriesMetadata(ctx context.Context, studyUID, seriesUID string) (func(io.Writer) error, error)
+	Frames(ctx context.Context, studyUID, seriesUID, instanceUID, frames string) (FrameStream, error)
+}
+
 // Deps là mọi thứ presentation cần; được lắp ở bootstrap.
 type Deps struct {
 	Verifier TokenVerifier
+	// Retrieve xử lý QIDO-RS và WADO-RS; nil thì các route đó trả 501.
+	Retrieve Retriever
 	// Stow xử lý STOW-RS; nil thì các route STOW trả 501.
 	Stow  Stower
 	Ready func(ctx context.Context) (ready bool, checks map[string]bool)
@@ -124,15 +149,103 @@ func New(dep Deps) (*echo.Echo, error) {
 		stow := handler(dep.Stow, stowHandler(dep.Stow, dep.BaseURL))
 		g.POST("/studies", stow)
 		g.POST("/studies/:studyUid", stow)
-		g.GET("/studies", notImplemented)
-		g.GET("/studies/:studyUid/series", notImplemented)
-		g.GET("/studies/:studyUid/series/:seriesUid/metadata", notImplemented)
-		g.GET("/studies/:studyUid/series/:seriesUid/instances/:instanceUid/frames/:frame", notImplemented)
+		g.GET("/studies", retrieve(dep.Retrieve, searchStudiesHandler(dep.Retrieve)))
+		g.GET("/studies/:studyUid/series", retrieve(dep.Retrieve, searchSeriesHandler(dep.Retrieve)))
+		g.GET("/studies/:studyUid/series/:seriesUid/metadata", retrieve(dep.Retrieve, seriesMetadataHandler(dep.Retrieve)))
+		g.GET("/studies/:studyUid/series/:seriesUid/instances/:instanceUid/frames/:frame", retrieve(dep.Retrieve, framesHandler(dep.Retrieve)))
 		// Mọi route DICOMweb khác (instances, rendered, bulkdata, delete...): 501 sau xác thực, không phải 200 rỗng.
 		g.Any("", notImplemented)
 		g.Any("/*", notImplemented)
 	}
 	return e, nil
+}
+
+func retrieve(svc Retriever, h echo.HandlerFunc) echo.HandlerFunc {
+	if svc == nil {
+		return notImplemented
+	}
+	return h
+}
+
+// retrieveError đổi lỗi của dịch vụ thành lỗi HTTP: StatusError giữ mã và thông điệp, lỗi khác là 500 không lộ chi tiết (ghi log).
+func retrieveError(c echo.Context, err error) error {
+	var se *StatusError
+	if errors.As(err, &se) {
+		return echo.NewHTTPError(se.Status, se.Msg)
+	}
+	slog.ErrorContext(c.Request().Context(), "DICOMweb lỗi", "error", err.Error())
+	return err
+}
+
+const dicomJSON = "application/dicom+json"
+
+// writePage trả một trang QIDO-RS: mảng DICOM JSON, kèm Warning 299 khi còn kết quả (PS3.18 8.3.4). Không có kết quả thì 200 với [] (như Medplum; chuẩn cho phép cả 204).
+func writePage(c echo.Context, p QueryPage) error {
+	raw, err := json.Marshal(p.Items)
+	if err != nil {
+		return err
+	}
+	if p.More {
+		c.Response().Header().Set("Warning", `299 dicomweb: There are additional results that can be requested`)
+	}
+	return c.Blob(http.StatusOK, dicomJSON, raw)
+}
+
+func searchStudiesHandler(svc Retriever) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		p, err := svc.SearchStudies(c.Request().Context(), c.QueryParam("limit"), c.QueryParam("offset"))
+		if err != nil {
+			return retrieveError(c, err)
+		}
+		return writePage(c, p)
+	}
+}
+
+func searchSeriesHandler(svc Retriever) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		p, err := svc.SearchSeries(c.Request().Context(), c.Param("studyUid"), c.QueryParam("limit"), c.QueryParam("offset"))
+		if err != nil {
+			return retrieveError(c, err)
+		}
+		return writePage(c, p)
+	}
+}
+
+// seriesMetadataHandler ghi mảng metadata theo luồng. Study hay series không có thì 404 trước khi ghi byte nào; lỗi giữa chừng thì ngắt kết nối (panic ErrAbortHandler)
+// để client thấy phản hồi bị cắt thay vì một JSON dở dang trông như hợp lệ.
+func seriesMetadataHandler(svc Retriever) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		write, err := svc.SeriesMetadata(c.Request().Context(), c.Param("studyUid"), c.Param("seriesUid"))
+		if err != nil {
+			return retrieveError(c, err)
+		}
+		c.Response().Header().Set(echo.HeaderContentType, dicomJSON)
+		c.Response().WriteHeader(http.StatusOK)
+		if err := write(c.Response()); err != nil {
+			slog.ErrorContext(c.Request().Context(), "DICOMweb: lỗi khi ghi metadata", "error", err.Error())
+			panic(http.ErrAbortHandler)
+		}
+		return nil
+	}
+}
+
+// framesHandler trả frame dạng multipart/related (PS3.18 8.7.3), có Content-Length vì độ dài biết trước; lỗi sau khi đã ghi thì ngắt kết nối.
+func framesHandler(svc Retriever) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		f, err := svc.Frames(c.Request().Context(), c.Param("studyUid"), c.Param("seriesUid"), c.Param("instanceUid"), c.Param("frame"))
+		if err != nil {
+			return retrieveError(c, err)
+		}
+		h := c.Response().Header()
+		h.Set(echo.HeaderContentType, f.ContentType)
+		h.Set(echo.HeaderContentLength, strconv.FormatInt(f.Length, 10))
+		c.Response().WriteHeader(http.StatusOK)
+		if err := f.Write(c.Response()); err != nil {
+			slog.ErrorContext(c.Request().Context(), "DICOMweb: lỗi khi ghi frame", "error", err.Error())
+			panic(http.ErrAbortHandler)
+		}
+		return nil
+	}
 }
 
 func handler(svc Stower, h echo.HandlerFunc) echo.HandlerFunc {
@@ -232,7 +345,7 @@ func errorHandler(err error, c echo.Context) {
 	case errors.As(err, &he):
 		code = he.Code
 		switch s, _ := he.Message.(string); {
-		case code == http.StatusNotFound:
+		case code == http.StatusNotFound && (s == "" || s == http.StatusText(http.StatusNotFound)): // route không tồn tại (mặc định của Echo)
 			msg = "Không có route cho " + c.Request().Method + " " + c.Request().URL.Path
 		case code < 500 || code == http.StatusNotImplemented:
 			if s != "" {

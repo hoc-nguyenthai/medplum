@@ -116,8 +116,20 @@ func TestScanEncapsulatedFrames(t *testing.T) {
 	one := dicomtest.Build(with(uids, func(m *dicomtest.Meta) {
 		m.TransferSyntax, m.Bits, m.Frames, m.Fragments = dicomtest.JPEGBaseline, 8, 1, frames
 	}))
-	if r, err := scan(t, one, dicomweb.ScanOptions{}); err != nil || len(r.Frames) != 1 || r.Frames[0].Length < int64(len(frames[0])+len(frames[1])+len(frames[2])) {
-		t.Errorf("một frame nhiều fragment: %+v %v", r, err)
+	r1, err := scan(t, one, dicomweb.ScanOptions{})
+	if err != nil || len(r1.Frames) != 1 || len(r1.Frames[0].Parts) != 3 {
+		t.Fatalf("một frame nhiều fragment: %+v %v", r1, err)
+	}
+	var want []byte
+	for _, f := range frames {
+		want = append(want, f...)
+		if len(f)%2 == 1 {
+			want = append(want, 0) // fragment đệm cho chẵn
+		}
+	}
+	var got bytes.Buffer
+	if n, err := dicomweb.CopyFrame(bytes.NewReader(one), r1.Frames[0], &got); err != nil || n != int64(len(want)) || !bytes.Equal(got.Bytes(), want) || r1.Frames[0].Size() != int64(len(want)) {
+		t.Errorf("CopyFrame nhiều fragment: %d byte (muốn %d) %v", n, len(want), err)
 	}
 }
 

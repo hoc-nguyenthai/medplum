@@ -22,17 +22,44 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Sẽ trả danh sách study dạng DICOM JSON (D4). Cần quyền đọc.",
+                "description": "Trả các study của project (mới cập nhật trước) dạng DICOM JSON. Hiện chỉ hỗ trợ phân trang (limit, offset); bộ lọc theo thuộc tính (PatientID, StudyDate...) chưa có và các tham số khác bị bỏ qua. Khi còn kết quả có header ` + "`" + `Warning: 299` + "`" + `. Không có kết quả thì 200 với []. Cần quyền đọc.",
                 "produces": [
+                    "application/dicom+json",
                     "application/json"
                 ],
                 "tags": [
                     "dicomweb"
                 ],
-                "summary": "QIDO-RS: tìm study (chưa cài)",
+                "summary": "QIDO-RS: tìm study",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Cỡ trang (mặc định 100, tối đa 1000); giá trị hỏng dùng mặc định",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Số kết quả bỏ qua; giá trị hỏng coi là 0",
+                        "name": "offset",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "Chưa dùng: route này hiện luôn trả 501",
+                        "description": "Mảng DICOM JSON",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "additionalProperties": {
+                                    "$ref": "#/definitions/httpapi.DicomJSONElement"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Tham số không hợp lệ",
                         "schema": {
                             "$ref": "#/definitions/httpapi.ErrorBody"
                         }
@@ -44,13 +71,13 @@ const docTemplate = `{
                         }
                     },
                     "403": {
-                        "description": "Token không đủ quyền (cần quyền đọc) hoặc chọn project khác",
+                        "description": "Token không đủ quyền hoặc chọn project khác",
                         "schema": {
                             "$ref": "#/definitions/httpapi.ErrorBody"
                         }
                     },
-                    "501": {
-                        "description": "Chưa cài đặt",
+                    "500": {
+                        "description": "Lỗi xử lý (không lộ chi tiết nội bộ)",
                         "schema": {
                             "$ref": "#/definitions/httpapi.ErrorBody"
                         }
@@ -214,26 +241,51 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Sẽ trả danh sách series của một study dạng DICOM JSON (D4). Cần quyền đọc.",
+                "description": "Trả các series của study dạng DICOM JSON, mỗi phần tử gồm cả thuộc tính của study. Cần quyền đọc.",
                 "produces": [
+                    "application/dicom+json",
                     "application/json"
                 ],
                 "tags": [
                     "dicomweb"
                 ],
-                "summary": "QIDO-RS: tìm series của study (chưa cài)",
+                "summary": "QIDO-RS: tìm series của study",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "UID của study (DICOM StudyInstanceUID)",
+                        "description": "UID của study (StudyInstanceUID)",
                         "name": "studyUid",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Cỡ trang (mặc định 100, tối đa 1000); giá trị hỏng dùng mặc định",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Số kết quả bỏ qua; giá trị hỏng coi là 0",
+                        "name": "offset",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Chưa dùng: route này hiện luôn trả 501",
+                        "description": "Mảng DICOM JSON",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "additionalProperties": {
+                                    "$ref": "#/definitions/httpapi.DicomJSONElement"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Tham số không hợp lệ",
                         "schema": {
                             "$ref": "#/definitions/httpapi.ErrorBody"
                         }
@@ -245,13 +297,19 @@ const docTemplate = `{
                         }
                     },
                     "403": {
-                        "description": "Token không đủ quyền (cần quyền đọc) hoặc chọn project khác",
+                        "description": "Token không đủ quyền hoặc chọn project khác",
                         "schema": {
                             "$ref": "#/definitions/httpapi.ErrorBody"
                         }
                     },
-                    "501": {
-                        "description": "Chưa cài đặt",
+                    "404": {
+                        "description": "Study hoặc series không có",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.ErrorBody"
+                        }
+                    },
+                    "500": {
+                        "description": "Lỗi xử lý (không lộ chi tiết nội bộ)",
                         "schema": {
                             "$ref": "#/definitions/httpapi.ErrorBody"
                         }
@@ -266,18 +324,19 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Sẽ trả một frame dạng multipart/related, truyền luồng từ kho (D4). Cần quyền đọc.",
+                "description": "Trả một hoặc nhiều frame dạng multipart/related (có Content-Length), chép theo luồng từ nội dung đã lưu (bộ nhớ hằng số). Content-Type của phần: application/octet-stream với dữ liệu không nén, image/jpeg, image/jls, image/jp2, image/jpx, image/jphc kèm transfer-syntax với dữ liệu nén. Frame đóng gói nhiều fragment được nối lại. Chi phí mỗi yêu cầu tỉ lệ với vị trí frame trong tệp (và cả tệp với ảnh nén) cho tới khi worker D5 tách sẵn frame. Cần quyền đọc, gồm cả quyền đọc Binary.",
                 "produces": [
+                    "multipart/related",
                     "application/json"
                 ],
                 "tags": [
                     "dicomweb"
                 ],
-                "summary": "WADO-RS: lấy frame (chưa cài)",
+                "summary": "WADO-RS: lấy frame",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "UID của study (DICOM StudyInstanceUID)",
+                        "description": "UID của study (StudyInstanceUID)",
                         "name": "studyUid",
                         "in": "path",
                         "required": true
@@ -298,7 +357,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Số thứ tự frame, bắt đầu từ 1",
+                        "description": "Số thứ tự frame bắt đầu từ 1, hoặc danh sách cách nhau bằng dấu phẩy (1,2,3; tối đa 50)",
                         "name": "frame",
                         "in": "path",
                         "required": true
@@ -306,7 +365,13 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Chưa dùng: route này hiện luôn trả 501",
+                        "description": "multipart/related: mỗi phần là một frame",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "400": {
+                        "description": "Tham số không hợp lệ",
                         "schema": {
                             "$ref": "#/definitions/httpapi.ErrorBody"
                         }
@@ -318,13 +383,25 @@ const docTemplate = `{
                         }
                     },
                     "403": {
-                        "description": "Token không đủ quyền (cần quyền đọc) hoặc chọn project khác",
+                        "description": "Token không đủ quyền hoặc chọn project khác",
                         "schema": {
                             "$ref": "#/definitions/httpapi.ErrorBody"
                         }
                     },
-                    "501": {
-                        "description": "Chưa cài đặt",
+                    "404": {
+                        "description": "Study, series, instance không có, hoặc instance không có ảnh",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.ErrorBody"
+                        }
+                    },
+                    "416": {
+                        "description": "Số frame vượt tổng số frame của instance",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.ErrorBody"
+                        }
+                    },
+                    "500": {
+                        "description": "Lỗi xử lý (không lộ chi tiết nội bộ)",
                         "schema": {
                             "$ref": "#/definitions/httpapi.ErrorBody"
                         }
@@ -339,18 +416,19 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Sẽ trả metadata mọi instance của series dạng DICOM JSON (D4). Cần quyền đọc.",
+                "description": "Trả mảng metadata DICOM JSON của mọi instance trong series, theo luồng (không bị cắt ở 1000 instance như Medplum). Study hoặc series không có thì 404 trước khi ghi byte nào; lỗi giữa chừng thì ngắt kết nối. Cần quyền đọc.",
                 "produces": [
+                    "application/dicom+json",
                     "application/json"
                 ],
                 "tags": [
                     "dicomweb"
                 ],
-                "summary": "WADO-RS: metadata của series (chưa cài)",
+                "summary": "WADO-RS: metadata của series",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "UID của study (DICOM StudyInstanceUID)",
+                        "description": "UID của study (StudyInstanceUID)",
                         "name": "studyUid",
                         "in": "path",
                         "required": true
@@ -365,7 +443,19 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Chưa dùng: route này hiện luôn trả 501",
+                        "description": "Mảng DICOM JSON",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "additionalProperties": {
+                                    "$ref": "#/definitions/httpapi.DicomJSONElement"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Tham số không hợp lệ",
                         "schema": {
                             "$ref": "#/definitions/httpapi.ErrorBody"
                         }
@@ -377,13 +467,19 @@ const docTemplate = `{
                         }
                     },
                     "403": {
-                        "description": "Token không đủ quyền (cần quyền đọc) hoặc chọn project khác",
+                        "description": "Token không đủ quyền hoặc chọn project khác",
                         "schema": {
                             "$ref": "#/definitions/httpapi.ErrorBody"
                         }
                     },
-                    "501": {
-                        "description": "Chưa cài đặt",
+                    "404": {
+                        "description": "Study hoặc series không có",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.ErrorBody"
+                        }
+                    },
+                    "500": {
+                        "description": "Lỗi xử lý (không lộ chi tiết nội bộ)",
                         "schema": {
                             "$ref": "#/definitions/httpapi.ErrorBody"
                         }
@@ -623,7 +719,7 @@ var SwaggerInfo = &swag.Spec{
 	BasePath:         "/",
 	Schemes:          []string{},
 	Title:            "Trivita DICOMweb API",
-	Description:      "DICOMweb (STOW-RS, QIDO-RS, WADO-RS) cho kho hình ảnh DICOM, dùng chung schema và kho Binary với fhir-server. Lỗi trả {\"error\": \"...\"}. STOW-RS đã cài (D3); QIDO-RS và WADO-RS (D4) mới là khung và trả 501.",
+	Description:      "DICOMweb (STOW-RS, QIDO-RS, WADO-RS) cho kho hình ảnh DICOM, dùng chung schema và kho Binary với fhir-server. Lỗi trả {\"error\": \"...\"}. STOW-RS (D3), QIDO-RS (tìm study, series) và WADO-RS (metadata series, frame) (D4) đã cài; các route DICOMweb còn lại trả 501.",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

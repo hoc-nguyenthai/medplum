@@ -27,12 +27,12 @@ Cập nhật 2026-11-24. `dicomweb` phục vụ DICOMweb (STOW-RS, QIDO-RS, WADO
 
 | Route | Mô tả | Xác thực | Yêu cầu | Phản hồi thành công | Mã lỗi |
 |---|---|---|---|---|---|
-| `GET /dicomweb/studies` | QIDO-RS: tìm study (chưa cài) | Bearer | - | 200 `httpapi.ErrorBody` | 401, 403, 501 |
+| `GET /dicomweb/studies` | QIDO-RS: tìm study | Bearer | query: limit, offset | 200 `[]object` | 400, 401, 403, 500 |
 | `POST /dicomweb/studies` | STOW-RS: lưu instance | Bearer | - | 200 `httpapi.StowResponse`, 202 `httpapi.StowResponse` | 400, 401, 403, 409, 413, 415 |
 | `POST /dicomweb/studies/{studyUid}` | STOW-RS: lưu instance vào một study | Bearer | - | 200 `httpapi.StowResponse`, 202 `httpapi.StowResponse` | 400, 401, 403, 409, 413, 415 |
-| `GET /dicomweb/studies/{studyUid}/series` | QIDO-RS: tìm series của study (chưa cài) | Bearer | - | 200 `httpapi.ErrorBody` | 401, 403, 501 |
-| `GET /dicomweb/studies/{studyUid}/series/{seriesUid}/instances/{instanceUid}/frames/{frame}` | WADO-RS: lấy frame (chưa cài) | Bearer | - | 200 `httpapi.ErrorBody` | 401, 403, 501 |
-| `GET /dicomweb/studies/{studyUid}/series/{seriesUid}/metadata` | WADO-RS: metadata của series (chưa cài) | Bearer | - | 200 `httpapi.ErrorBody` | 401, 403, 501 |
+| `GET /dicomweb/studies/{studyUid}/series` | QIDO-RS: tìm series của study | Bearer | query: limit, offset | 200 `[]object` | 400, 401, 403, 404, 500 |
+| `GET /dicomweb/studies/{studyUid}/series/{seriesUid}/instances/{instanceUid}/frames/{frame}` | WADO-RS: lấy frame | Bearer | - | 200 `file` | 400, 401, 403, 404, 416, 500 |
+| `GET /dicomweb/studies/{studyUid}/series/{seriesUid}/metadata` | WADO-RS: metadata của series | Bearer | - | 200 `[]object` | 400, 401, 403, 404, 500 |
 
 ### Nhóm `health` (4 route)
 

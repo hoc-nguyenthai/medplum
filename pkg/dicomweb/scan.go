@@ -63,8 +63,24 @@ type ScanResult struct {
 	Rows, Cols, Bits, Samples, NumberOfFrames int
 }
 
-// FrameRange là một khoảng byte trong luồng.
-type FrameRange struct{ Offset, Length int64 }
+// FrameRange là một khoảng byte trong luồng. Với frame đóng gói gồm nhiều fragment, Parts liệt kê từng fragment (không gồm tiêu đề item xen giữa) theo thứ tự;
+// nội dung frame là phần nối của chúng, còn Offset và Length là khoảng bao ngoài (gồm cả tiêu đề item). Parts rỗng nghĩa là frame liền một khối.
+type FrameRange struct {
+	Offset, Length int64
+	Parts          []FrameRange
+}
+
+// Size là số byte nội dung của frame (tổng các Parts, hoặc Length nếu liền một khối).
+func (f FrameRange) Size() int64 {
+	if len(f.Parts) == 0 {
+		return f.Length
+	}
+	var n int64
+	for _, p := range f.Parts {
+		n += p.Length
+	}
+	return n
+}
 
 type scanner struct {
 	r    *bufio.Reader
@@ -366,7 +382,7 @@ func (s *scanner) pixelData(tagStart int64, length uint32) (*ScanResult, error) 
 		return r, fmt.Errorf("%w: kích thước frame %d x %d khác độ dài PixelData %d", ErrMalformed, fs, n, length)
 	}
 	for i := 0; i < n; i++ {
-		r.Frames = append(r.Frames, FrameRange{r.PixelOffset + int64(i)*fs, fs})
+		r.Frames = append(r.Frames, FrameRange{Offset: r.PixelOffset + int64(i)*fs, Length: fs})
 	}
 	r.End = r.PixelOffset + int64(length)
 	return r, nil
@@ -413,7 +429,7 @@ func (s *scanner) encapsulated() error {
 			return fmt.Errorf("%w: fragment không hợp lệ", ErrMalformed)
 		}
 		starts = append(starts, s.pos-8-base)
-		frags = append(frags, FrameRange{s.pos, l})
+		frags = append(frags, FrameRange{Offset: s.pos, Length: l})
 		if err := s.skip(l); err != nil {
 			return err
 		}
@@ -424,8 +440,11 @@ func (s *scanner) encapsulated() error {
 		n = 1
 	}
 	span := func(f []FrameRange) FrameRange {
+		if len(f) == 1 {
+			return f[0]
+		}
 		last := f[len(f)-1]
-		return FrameRange{f[0].Offset, last.Offset + last.Length - f[0].Offset}
+		return FrameRange{Offset: f[0].Offset, Length: last.Offset + last.Length - f[0].Offset, Parts: append([]FrameRange(nil), f...)}
 	}
 	switch {
 	case len(frags) == 0:

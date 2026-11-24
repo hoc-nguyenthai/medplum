@@ -156,7 +156,7 @@ func (c *Container) Handler(instrument func(*echo.Echo) error) (*echo.Echo, erro
 		ipx = echo.ExtractIPFromXFFHeader(opts...)
 	}
 	return httpapi.New(httpapi.Deps{
-		Verifier: c.Verifier, Stow: stower{c}, Ready: c.ready, Instrument: instrument, Debug: s.Debug, BaseURL: s.BaseURL,
+		Verifier: c.Verifier, Stow: stower{c}, Retrieve: retriever{c}, Ready: c.ready, Instrument: instrument, Debug: s.Debug, BaseURL: s.BaseURL,
 		AllowedOrigins: origins, IPExtractor: ipx, RateLimit: s.RateLimit, RateBurst: s.RateBurst, MaxRequestBytes: int64(s.MaxRequestBytes),
 	})
 }

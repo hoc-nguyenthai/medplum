@@ -5,7 +5,7 @@ package httpapi
 
 // @title						Trivita DICOMweb API
 // @version					1.0
-// @description				DICOMweb (STOW-RS, QIDO-RS, WADO-RS) cho kho hình ảnh DICOM, dùng chung schema và kho Binary với fhir-server. Lỗi trả {"error": "..."}. STOW-RS đã cài (D3); QIDO-RS và WADO-RS (D4) mới là khung và trả 501.
+// @description				DICOMweb (STOW-RS, QIDO-RS, WADO-RS) cho kho hình ảnh DICOM, dùng chung schema và kho Binary với fhir-server. Lỗi trả {"error": "..."}. STOW-RS (D3), QIDO-RS (tìm study, series) và WADO-RS (metadata series, frame) (D4) đã cài; các route DICOMweb còn lại trả 501.
 // @BasePath					/
 // @tag.name					dicomweb
 // @tag.description			DICOMweb. Bốn tiền tố tương đương: /dicomweb, /api/dicomweb, /projects/{projectId}/dicomweb, /api/projects/{projectId}/dicomweb; với hai tiền tố có project, projectId phải khớp project của token (token thường), không thì 403. Spec này liệt kê tiền tố /dicomweb.
@@ -33,6 +33,10 @@ type DicomJSONElement struct {
 // ReferencedSOPSequence (mỗi instance đã lưu: 00081150 ReferencedSOPClassUID, 00081155 ReferencedSOPInstanceUID, 00081190 RetrieveURL), 00081198 là FailedSOPSequence (mỗi instance thất bại, kèm
 // 00081197 FailureReason: 272 = 0x0110 lỗi xử lý, 42752 = 0xA700 hết tài nguyên (quá lớn), 43264 = 0xA900 không thuộc study của yêu cầu, 49152 = 0xC000 không hiểu được tệp).
 type StowResponse map[string]DicomJSONElement
+
+// QueryResponse là phản hồi QIDO-RS và metadata series: mảng DICOM JSON, mỗi phần tử là một dataset (study, series kèm thuộc tính study, hoặc metadata của một instance:
+// không có file meta, PixelData, overlay; nhị phân nhỏ là InlineBinary).
+type QueryResponse []map[string]DicomJSONElement
 
 // HealthResponse là phản hồi của probe liveness và startup.
 type HealthResponse struct {
@@ -127,63 +131,75 @@ func stowStudy() {}
 
 // qidoStudies godoc
 //
-//	@Summary		QIDO-RS: tìm study (chưa cài)
-//	@Description	Sẽ trả danh sách study dạng DICOM JSON (D4). Cần quyền đọc.
+//	@Summary		QIDO-RS: tìm study
+//	@Description	Trả các study của project (mới cập nhật trước) dạng DICOM JSON. Hiện chỉ hỗ trợ phân trang (limit, offset); bộ lọc theo thuộc tính (PatientID, StudyDate...) chưa có và các tham số khác bị bỏ qua. Khi còn kết quả có header `Warning: 299`. Không có kết quả thì 200 với []. Cần quyền đọc.
 //	@Tags			dicomweb
 //	@Security		BearerAuth
-//	@Produce		json
-//	@Success		200	{object}	ErrorBody	"Chưa dùng: route này hiện luôn trả 501"
+//	@Produce		application/dicom+json,json
+//	@Param			limit	query		string	false	"Cỡ trang (mặc định 100, tối đa 1000); giá trị hỏng dùng mặc định"
+//	@Param			offset	query		string	false	"Số kết quả bỏ qua; giá trị hỏng coi là 0"
+//	@Success		200	{object}	QueryResponse	"Mảng DICOM JSON"
+//	@Failure		400	{object}	ErrorBody	"Tham số không hợp lệ"
 //	@Failure		401	{object}	ErrorBody	"Thiếu hoặc sai Bearer token"
-//	@Failure		403	{object}	ErrorBody	"Token không đủ quyền (cần quyền đọc) hoặc chọn project khác"
-//	@Failure		501	{object}	ErrorBody	"Chưa cài đặt"
+//	@Failure		403	{object}	ErrorBody	"Token không đủ quyền hoặc chọn project khác"
+//	@Failure		500	{object}	ErrorBody	"Lỗi xử lý (không lộ chi tiết nội bộ)"
 //	@Router			/dicomweb/studies [get]
 func qidoStudies() {}
 
 // qidoSeries godoc
 //
-//	@Summary		QIDO-RS: tìm series của study (chưa cài)
-//	@Description	Sẽ trả danh sách series của một study dạng DICOM JSON (D4). Cần quyền đọc.
+//	@Summary		QIDO-RS: tìm series của study
+//	@Description	Trả các series của study dạng DICOM JSON, mỗi phần tử gồm cả thuộc tính của study. Cần quyền đọc.
 //	@Tags			dicomweb
 //	@Security		BearerAuth
-//	@Produce		json
-//	@Param			studyUid	path		string	true	"UID của study (DICOM StudyInstanceUID)"
-//	@Success		200	{object}	ErrorBody	"Chưa dùng: route này hiện luôn trả 501"
+//	@Produce		application/dicom+json,json
+//	@Param			studyUid	path		string	true	"UID của study (StudyInstanceUID)"
+//	@Param			limit	query		string	false	"Cỡ trang (mặc định 100, tối đa 1000); giá trị hỏng dùng mặc định"
+//	@Param			offset	query		string	false	"Số kết quả bỏ qua; giá trị hỏng coi là 0"
+//	@Success		200	{object}	QueryResponse	"Mảng DICOM JSON"
+//	@Failure		400	{object}	ErrorBody	"Tham số không hợp lệ"
 //	@Failure		401	{object}	ErrorBody	"Thiếu hoặc sai Bearer token"
-//	@Failure		403	{object}	ErrorBody	"Token không đủ quyền (cần quyền đọc) hoặc chọn project khác"
-//	@Failure		501	{object}	ErrorBody	"Chưa cài đặt"
+//	@Failure		403	{object}	ErrorBody	"Token không đủ quyền hoặc chọn project khác"
+//	@Failure		404	{object}	ErrorBody	"Study hoặc series không có"
+//	@Failure		500	{object}	ErrorBody	"Lỗi xử lý (không lộ chi tiết nội bộ)"
 //	@Router			/dicomweb/studies/{studyUid}/series [get]
 func qidoSeries() {}
 
 // wadoSeriesMetadata godoc
 //
-//	@Summary		WADO-RS: metadata của series (chưa cài)
-//	@Description	Sẽ trả metadata mọi instance của series dạng DICOM JSON (D4). Cần quyền đọc.
+//	@Summary		WADO-RS: metadata của series
+//	@Description	Trả mảng metadata DICOM JSON của mọi instance trong series, theo luồng (không bị cắt ở 1000 instance như Medplum). Study hoặc series không có thì 404 trước khi ghi byte nào; lỗi giữa chừng thì ngắt kết nối. Cần quyền đọc.
 //	@Tags			dicomweb
 //	@Security		BearerAuth
-//	@Produce		json
-//	@Param			studyUid	path		string	true	"UID của study (DICOM StudyInstanceUID)"
+//	@Produce		application/dicom+json,json
+//	@Param			studyUid	path		string	true	"UID của study (StudyInstanceUID)"
 //	@Param			seriesUid	path		string	true	"UID của series (SeriesInstanceUID)"
-//	@Success		200	{object}	ErrorBody	"Chưa dùng: route này hiện luôn trả 501"
+//	@Success		200	{object}	QueryResponse	"Mảng DICOM JSON"
+//	@Failure		400	{object}	ErrorBody	"Tham số không hợp lệ"
 //	@Failure		401	{object}	ErrorBody	"Thiếu hoặc sai Bearer token"
-//	@Failure		403	{object}	ErrorBody	"Token không đủ quyền (cần quyền đọc) hoặc chọn project khác"
-//	@Failure		501	{object}	ErrorBody	"Chưa cài đặt"
+//	@Failure		403	{object}	ErrorBody	"Token không đủ quyền hoặc chọn project khác"
+//	@Failure		404	{object}	ErrorBody	"Study hoặc series không có"
+//	@Failure		500	{object}	ErrorBody	"Lỗi xử lý (không lộ chi tiết nội bộ)"
 //	@Router			/dicomweb/studies/{studyUid}/series/{seriesUid}/metadata [get]
 func wadoSeriesMetadata() {}
 
-// wadoFrame godoc
+// wadoFrames godoc
 //
-//	@Summary		WADO-RS: lấy frame (chưa cài)
-//	@Description	Sẽ trả một frame dạng multipart/related, truyền luồng từ kho (D4). Cần quyền đọc.
+//	@Summary		WADO-RS: lấy frame
+//	@Description	Trả một hoặc nhiều frame dạng multipart/related (có Content-Length), chép theo luồng từ nội dung đã lưu (bộ nhớ hằng số). Content-Type của phần: application/octet-stream với dữ liệu không nén, image/jpeg, image/jls, image/jp2, image/jpx, image/jphc kèm transfer-syntax với dữ liệu nén. Frame đóng gói nhiều fragment được nối lại. Chi phí mỗi yêu cầu tỉ lệ với vị trí frame trong tệp (và cả tệp với ảnh nén) cho tới khi worker D5 tách sẵn frame. Cần quyền đọc, gồm cả quyền đọc Binary.
 //	@Tags			dicomweb
 //	@Security		BearerAuth
-//	@Produce		json
-//	@Param			studyUid	path		string	true	"UID của study (DICOM StudyInstanceUID)"
+//	@Produce		multipart/related,json
+//	@Param			studyUid	path		string	true	"UID của study (StudyInstanceUID)"
 //	@Param			seriesUid	path		string	true	"UID của series (SeriesInstanceUID)"
 //	@Param			instanceUid	path		string	true	"UID của instance (SOPInstanceUID)"
-//	@Param			frame	path		string	true	"Số thứ tự frame, bắt đầu từ 1"
-//	@Success		200	{object}	ErrorBody	"Chưa dùng: route này hiện luôn trả 501"
+//	@Param			frame	path		string	true	"Số thứ tự frame bắt đầu từ 1, hoặc danh sách cách nhau bằng dấu phẩy (1,2,3; tối đa 50)"
+//	@Success		200	{file}	file	"multipart/related: mỗi phần là một frame"
+//	@Failure		400	{object}	ErrorBody	"Tham số không hợp lệ"
 //	@Failure		401	{object}	ErrorBody	"Thiếu hoặc sai Bearer token"
-//	@Failure		403	{object}	ErrorBody	"Token không đủ quyền (cần quyền đọc) hoặc chọn project khác"
-//	@Failure		501	{object}	ErrorBody	"Chưa cài đặt"
+//	@Failure		403	{object}	ErrorBody	"Token không đủ quyền hoặc chọn project khác"
+//	@Failure		404	{object}	ErrorBody	"Study, series, instance không có, hoặc instance không có ảnh"
+//	@Failure		416	{object}	ErrorBody	"Số frame vượt tổng số frame của instance"
+//	@Failure		500	{object}	ErrorBody	"Lỗi xử lý (không lộ chi tiết nội bộ)"
 //	@Router			/dicomweb/studies/{studyUid}/series/{seriesUid}/instances/{instanceUid}/frames/{frame} [get]
-func wadoFrame() {}
+func wadoFrames() {}

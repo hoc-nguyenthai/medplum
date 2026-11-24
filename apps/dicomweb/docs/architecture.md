@@ -1,6 +1,6 @@
 # dicomweb: kiến trúc
 
-Cập nhật 2026-11-24 (D3).
+Cập nhật 2026-11-24 (D4).
 
 ## Vì sao tách (docs/service-principles.md mục 1)
 
@@ -47,6 +47,14 @@ Handler (`httpapi.stowHandler`) chỉ chuyển luồng thân yêu cầu cho `pkg
 
 **Phản hồi và lỗi (Q-D6, theo chuẩn):** từng instance độc lập: 200 mọi instance thành công; 202 một phần; 409 không instance nào, với `FailedSOPSequence` nêu `FailureReason` (0x0110 lỗi xử lý, 0xA700 quá lớn, 0xA900 sai study, 0xC000 không hiểu được). Lỗi cả yêu cầu: 415, 400, 403 (thiếu quyền ghi kho), 413 (vượt `DICOMWEB_MAX_REQUEST_BYTES`; instance đã xong trước đó vẫn được giữ). Lỗi kho không lộ chi tiết nội bộ trong phản hồi.
 
+## QIDO-RS và WADO-RS (D4)
+
+`pkg/dicomretrieve` đọc lại những gì STOW đã ghi, qua cùng `Container.Repo` (đã tách project, nên mọi tra cứu study/series/instance chỉ thấy dữ liệu của project người gọi) và `Container.Blobs`. Lỗi 404 phân biệt study, series, instance; 416 khi số frame vượt `NumberOfFrames` (kiểm trước khi mở nội dung); instance không có `Rows`/`Columns` (báo cáo có cấu trúc) thì 404 "không có pixel data". **Mọi lỗi xảy ra trước khi ghi byte nào** (kiểm hợp lệ, quét cấu trúc tệp); lỗi sau đó (kho đứt giữa chừng) làm handler ngắt kết nối (`panic(http.ErrAbortHandler)`) để client thấy phản hồi bị cắt chứ không nhận một JSON hay multipart dở dang trông như hợp lệ.
+
+**Frame lấy thẳng từ nội dung đã lưu:** `binarystore.Store` chỉ có `Open` (không đọc theo khoảng), nên mỗi yêu cầu mở nội dung hai lần: lượt một `dicomweb.Scan` tìm vị trí frame (ảnh không nén chỉ đọc phần đầu; ảnh nén đọc cả tệp để biết các fragment), lượt hai `dicomweb.CopyFrame` bỏ qua tới frame rồi chép. Bộ nhớ hằng số; chi phí tỉ lệ với vị trí frame trong tệp. Worker D5 sẽ tách sẵn từng frame ra Binary riêng (`DicomInstance.pixelData`) để bỏ chi phí này; đó là tối ưu hóa, không phải điều kiện để WADO-RS chạy. Metadata series ghi theo luồng từng trang 500 instance, ghi nguyên văn chuỗi JSON đã làm sạch do STOW lưu.
+
+**Quyền:** đọc frame cần quyền đọc cả `DicomStudy`, `DicomSeries`, `DicomInstance` và `Binary` (Q-D1); thiếu quyền đọc `Binary` thì 403 chứ không phải 500.
+
 ## Chưa có (làm ở các bước sau)
 
-D3 STOW-RS (kèm đọc tệp DICOM thật và đọc-sửa-ghi số liệu tổng hợp trên `pkg/dicomweb` đã có từ D2) (tách luồng ghi kho và đọc metadata, chốt chặn SQ lồng sâu và tệp cắt giữa PixelData); D4 QIDO-RS, WADO-RS; D5 worker pixel data; D6 compose và e2e. Manifest K8s mẫu chưa có (dự án hiện bỏ qua K8s).
+D3 STOW-RS (kèm đọc tệp DICOM thật và đọc-sửa-ghi số liệu tổng hợp trên `pkg/dicomweb` đã có từ D2) (tách luồng ghi kho và đọc metadata, chốt chặn SQ lồng sâu và tệp cắt giữa PixelData); D5 worker tách sẵn frame (tối ưu); D6 compose và e2e. Manifest K8s mẫu chưa có (dự án hiện bỏ qua K8s).

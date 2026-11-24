@@ -114,10 +114,11 @@ func TestRealJWTAuthentication(t *testing.T) {
 		{"sai issuer", "GET", "/dicomweb/studies", tok(t, "A", "fhir.read", func(c jwt.MapClaims) { c["iss"] = "https://evil.test" }), 401},
 		{"thiếu project", "GET", "/dicomweb/studies", tok(t, "", "fhir.read"), 403},
 		{"thiếu scope fhir", "GET", "/dicomweb/studies", tok(t, "A", "openid email"), 403},
-		{"đọc", "GET", "/dicomweb/studies", rd, 501},
+		{"đọc (QIDO-RS)", "GET", "/dicomweb/studies", rd, 200},
 		{"STOW bằng token đọc", "POST", "/dicomweb/studies", rd, 403},
 		{"STOW bằng token ghi nhưng không phải multipart: qua xác thực, vào STOW", "POST", "/dicomweb/studies", wr, 415},
-		{"đúng project trong URL", "GET", "/projects/A/dicomweb/studies", rd, 501},
+		{"đúng project trong URL", "GET", "/projects/A/dicomweb/studies", rd, 200},
+		{"route chưa cài (instances) vẫn 501 sau xác thực", "GET", "/dicomweb/studies/1.2/series/3.4/instances", rd, 501},
 		{"project khác trong URL", "GET", "/projects/B/dicomweb/studies", rd, 403},
 		{"scope fhir.super bị bỏ qua khi chưa bật cờ: vẫn là token thường của project A", "GET", "/projects/B/dicomweb/studies", tok(t, "A", "fhir.read fhir.super"), 403},
 	} {
@@ -134,7 +135,7 @@ func TestSuperAdminWhenEnabled(t *testing.T) {
 	if got := call(h, "GET", "/dicomweb/studies", super); got != 400 {
 		t.Errorf("không chọn project: %d", got)
 	}
-	if got := call(h, "GET", "/projects/B/dicomweb/studies", super); got != 501 {
+	if got := call(h, "GET", "/projects/B/dicomweb/studies", super); got != 200 {
 		t.Errorf("chọn bằng URL: %d", got)
 	}
 }

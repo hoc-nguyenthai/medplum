@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -329,5 +330,155 @@ func TestStowErrorsAreJSON(t *testing.T) {
 func TestStowWithoutServiceIs501(t *testing.T) {
 	if rec := post(newHandler(t), "/dicomweb/studies", "write-a", "multipart/related; boundary=b", "x"); rec.Code != 501 {
 		t.Errorf("%d", rec.Code)
+	}
+}
+
+// ---------------------------------------------------------------- QIDO-RS và WADO-RS (D4)
+
+type fakeRetriever struct {
+	page        httpapi.QueryPage
+	err         error
+	meta        func(io.Writer) error
+	frames      httpapi.FrameStream
+	calls       []string
+	lastLimit   string
+	lastOffset  string
+	lastStudy   string
+	lastFrames  string
+	lastInstUID string
+}
+
+func (f *fakeRetriever) SearchStudies(_ context.Context, limit, offset string) (httpapi.QueryPage, error) {
+	f.calls = append(f.calls, "studies")
+	f.lastLimit, f.lastOffset = limit, offset
+	return f.page, f.err
+}
+
+func (f *fakeRetriever) SearchSeries(_ context.Context, study, limit, offset string) (httpapi.QueryPage, error) {
+	f.calls = append(f.calls, "series")
+	f.lastStudy, f.lastLimit, f.lastOffset = study, limit, offset
+	return f.page, f.err
+}
+
+func (f *fakeRetriever) SeriesMetadata(_ context.Context, study, series string) (func(io.Writer) error, error) {
+	f.calls = append(f.calls, "metadata")
+	f.lastStudy = study + "|" + series
+	return f.meta, f.err
+}
+
+func (f *fakeRetriever) Frames(_ context.Context, study, series, inst, frames string) (httpapi.FrameStream, error) {
+	f.calls = append(f.calls, "frames")
+	f.lastStudy, f.lastInstUID, f.lastFrames = study+"|"+series, inst, frames
+	return f.frames, f.err
+}
+
+func TestQidoRoutes(t *testing.T) {
+	f := &fakeRetriever{page: httpapi.QueryPage{Items: []map[string]any{{"0020000D": map[string]any{"vr": "UI", "Value": []string{"1.2"}}}}, More: true}}
+	h := newHandler(t, func(d *httpapi.Deps) { d.Retrieve = f })
+	rec := do(h, "GET", "/dicomweb/studies?limit=5&offset=10&PatientName=ignored", "read-a")
+	if rec.Code != 200 || rec.Header().Get("Content-Type") != "application/dicom+json" || !strings.Contains(rec.Body.String(), `"0020000D"`) {
+		t.Fatalf("%d %q %s", rec.Code, rec.Header().Get("Content-Type"), rec.Body.String())
+	}
+	if f.lastLimit != "5" || f.lastOffset != "10" {
+		t.Errorf("phân trang: %q %q", f.lastLimit, f.lastOffset)
+	}
+	if w := rec.Header().Get("Warning"); !strings.HasPrefix(w, "299 ") {
+		t.Errorf("Warning khi còn kết quả: %q", w)
+	}
+	f.page.More = false
+	if rec := do(h, "GET", "/api/projects/A/dicomweb/studies/1.2.3/series", "read-a"); rec.Code != 200 || rec.Header().Get("Warning") != "" || f.lastStudy != "1.2.3" {
+		t.Errorf("series: %d %q study=%q", rec.Code, rec.Header().Get("Warning"), f.lastStudy)
+	}
+	// kết quả rỗng là mảng rỗng
+	f.page = httpapi.QueryPage{Items: []map[string]any{}}
+	if rec := do(h, "GET", "/dicomweb/studies", "read-a"); rec.Code != 200 || strings.TrimSpace(rec.Body.String()) != "[]" {
+		t.Errorf("rỗng: %d %q", rec.Code, rec.Body.String())
+	}
+}
+
+func TestRetrieveErrorsAndAuth(t *testing.T) {
+	for name, c := range map[string]struct {
+		err  error
+		want int
+	}{
+		"404": {&httpapi.StatusError{Status: 404, Msg: "Study not found"}, 404}, "416": {&httpapi.StatusError{Status: 416, Msg: "Requested frame number exceeds total frames available"}, 416},
+		"400": {&httpapi.StatusError{Status: 400, Msg: "Invalid frame number"}, 400}, "500": {errors.New("chi tiết nội bộ bí mật"), 500},
+	} {
+		f := &fakeRetriever{err: c.err}
+		h := newHandler(t, func(d *httpapi.Deps) { d.Retrieve = f })
+		for _, path := range []string{"/dicomweb/studies", "/dicomweb/studies/1/series", "/dicomweb/studies/1/series/2/metadata", "/dicomweb/studies/1/series/2/instances/3/frames/1"} {
+			rec := do(h, "GET", path, "read-a")
+			if rec.Code != c.want {
+				t.Errorf("%s %s: %d", name, path, rec.Code)
+				continue
+			}
+			if msg := errorOf(t, rec); strings.Contains(msg, "bí mật") {
+				t.Errorf("%s %s: lộ chi tiết nội bộ: %q", name, path, msg)
+			}
+		}
+	}
+	// xác thực đứng trước: không token thì dịch vụ không bị gọi
+	f := &fakeRetriever{}
+	h := newHandler(t, func(d *httpapi.Deps) { d.Retrieve = f })
+	for _, tok := range []string{"", "bad", "forbidden"} {
+		do(h, "GET", "/dicomweb/studies", tok)
+		do(h, "GET", "/projects/B/dicomweb/studies", "read-a")
+	}
+	if len(f.calls) != 0 {
+		t.Errorf("dịch vụ bị gọi khi bị từ chối: %v", f.calls)
+	}
+}
+
+func TestSeriesMetadataStreaming(t *testing.T) {
+	f := &fakeRetriever{meta: func(w io.Writer) error { _, err := io.WriteString(w, `[{"a":1},{"b":2}]`); return err }}
+	h := newHandler(t, func(d *httpapi.Deps) { d.Retrieve = f })
+	rec := do(h, "GET", "/dicomweb/studies/S/series/R/metadata", "read-a")
+	if rec.Code != 200 || rec.Header().Get("Content-Type") != "application/dicom+json" || rec.Body.String() != `[{"a":1},{"b":2}]` || f.lastStudy != "S|R" {
+		t.Errorf("%d %q %q %q", rec.Code, rec.Header().Get("Content-Type"), rec.Body.String(), f.lastStudy)
+	}
+}
+
+func TestFrameResponseHeaders(t *testing.T) {
+	body := "--b\r\nContent-Type: application/octet-stream\r\n\r\nXYZ\r\n--b--\r\n"
+	f := &fakeRetriever{frames: httpapi.FrameStream{ContentType: `multipart/related; type="application/octet-stream"; boundary=b`, Length: int64(len(body)),
+		Write: func(w io.Writer) error { _, err := io.WriteString(w, body); return err }}}
+	h := newHandler(t, func(d *httpapi.Deps) { d.Retrieve = f })
+	rec := do(h, "GET", "/dicomweb/studies/S/series/R/instances/I/frames/1,2", "read-a")
+	if rec.Code != 200 || rec.Header().Get("Content-Type") != f.frames.ContentType || rec.Header().Get("Content-Length") != fmt.Sprint(len(body)) || rec.Body.String() != body {
+		t.Errorf("%d %q %q %q", rec.Code, rec.Header().Get("Content-Type"), rec.Header().Get("Content-Length"), rec.Body.String())
+	}
+	if f.lastStudy != "S|R" || f.lastInstUID != "I" || f.lastFrames != "1,2" {
+		t.Errorf("tham số: %q %q %q", f.lastStudy, f.lastInstUID, f.lastFrames)
+	}
+}
+
+// Lỗi sau khi đã ghi một phần: ngắt kết nối để client thấy phản hồi bị cắt (không để JSON dở dang trông như hợp lệ).
+func TestMidStreamFailureAbortsTheConnection(t *testing.T) {
+	f := &fakeRetriever{
+		meta:   func(w io.Writer) error { io.WriteString(w, `[{"a":1},`); return errors.New("kho lỗi") },
+		frames: httpapi.FrameStream{ContentType: "multipart/related; boundary=b", Length: 1000, Write: func(w io.Writer) error { io.WriteString(w, "--b\r\n"); return errors.New("kho lỗi") }},
+	}
+	srv := httptest.NewServer(newHandler(t, func(d *httpapi.Deps) { d.Retrieve = f }))
+	defer srv.Close()
+	for _, path := range []string{"/dicomweb/studies/S/series/R/metadata", "/dicomweb/studies/S/series/R/instances/I/frames/1"} {
+		req, _ := http.NewRequest("GET", srv.URL+path, nil)
+		req.Header.Set("Authorization", "Bearer read-a")
+		res, err := srv.Client().Do(req)
+		if err != nil {
+			continue // ngắt trước cả tiêu đề cũng là cắt đúng nghĩa
+		}
+		if _, err := io.ReadAll(res.Body); err == nil {
+			t.Errorf("%s: client đọc hết mà không biết bị cắt", path)
+		}
+		res.Body.Close()
+	}
+}
+
+func TestRetrieveWithoutServiceIs501(t *testing.T) {
+	h := newHandler(t)
+	for _, path := range []string{"/dicomweb/studies", "/dicomweb/studies/1/series", "/dicomweb/studies/1/series/2/metadata", "/dicomweb/studies/1/series/2/instances/3/frames/1"} {
+		if rec := do(h, "GET", path, "read-a"); rec.Code != 501 {
+			t.Errorf("%s: %d", path, rec.Code)
+		}
 	}
 }

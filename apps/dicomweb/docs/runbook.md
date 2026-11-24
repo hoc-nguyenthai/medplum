@@ -1,6 +1,6 @@
 # dicomweb: vận hành
 
-Cập nhật 2026-11-24 (D3: STOW-RS). Cấu hình: [config.md](config.md).
+Cập nhật 2026-11-24 (D4: STOW-RS, QIDO-RS, WADO-RS). Cấu hình: [config.md](config.md).
 
 ## Triển khai
 
@@ -18,7 +18,12 @@ Cập nhật 2026-11-24 (D3: STOW-RS). Cấu hình: [config.md](config.md).
 | 401 với mọi token | `FHIR_JWT_ISSUER` hoặc `FHIR_JWT_AUDIENCE` khác của `auth`; JWKS không tải được (xem log "token bị từ chối") | đối chiếu với `auth` và `fhir-server` |
 | 403 "Token không có quyền truy cập FHIR" | token thiếu claim project hoặc scope `fhir.*`/SMART | kiểm token do `auth` cấp |
 | 403 "Không được dùng project khác" | URL `/projects/{id}/dicomweb` hoặc header `X-Fhir-Project` khác project của token | dùng đúng project, hoặc tiền tố không có project |
-| 501 "Chưa cài đặt" | route DICOMweb chưa cài (QIDO-RS, WADO-RS chờ D4) hoặc không thuộc tập route được hỗ trợ | xem api-contract.md |
+| 501 "Chưa cài đặt" | route DICOMweb chưa cài (instances lẻ, rendered, bulkdata, bộ lọc QIDO: D7) | xem api-contract.md |
+| WADO frame 404 "Pixel data not found" | instance không có ảnh (báo cáo có cấu trúc), hoặc Binary chứa nội dung đã bị xóa | kiểm instance; nếu Binary bị xóa, tải lại |
+| WADO frame 416 | số frame vượt `NumberOfFrames` của instance | frame đánh số từ 1 |
+| WADO frame 403 | token thiếu quyền đọc `Binary` (ngoài `Dicom*`) | cấp scope `system/Binary.r` |
+| WADO frame chậm với tệp nén lớn | mỗi yêu cầu đọc cả tệp để biết vị trí frame (kho chỉ có `Open`, không đọc theo khoảng) | chờ D5 (tách sẵn frame), hoặc cache ở proxy; kho `file:` nhanh hơn S3 |
+| Phản hồi metadata hoặc frame bị cắt giữa chừng | kho nội dung lỗi sau khi đã bắt đầu ghi (server cố ý ngắt kết nối) | xem log `DICOMweb: lỗi khi ghi`; kiểm kho |
 | STOW 409, `FailureReason` 49152 (0xC000) | tệp không phải DICOM, bị cắt giữa PixelData, SQ lồng quá sâu, thiếu hoặc sai UID, transfer syntax không hỗ trợ (Big Endian, Deflated) | kiểm tệp ở phía gửi; thông điệp từng instance nằm trong log (không có dữ liệu bệnh nhân) |
 | STOW 409 hoặc 202, `FailureReason` 42752 (0xA700) | instance vượt `DICOMWEB_MAX_INSTANCE_BYTES`, hoặc phần đầu DICOM vượt `DICOMWEB_MAX_HEADER_BYTES` | tăng trần có cân nhắc; phần đầu lớn bất thường thường là tệp độc |
 | STOW 403 | token thiếu quyền ghi (`fhir.write`), hoặc chính sách truy cập/SMART không cho tạo `Binary`, `DicomStudy`, `DicomSeries`, `DicomInstance` | cấp scope `system/Binary.c system/Dicom*.cru` hoặc quyền ghi |
@@ -29,4 +34,4 @@ Cập nhật 2026-11-24 (D3: STOW-RS). Cấu hình: [config.md](config.md).
 
 ## Định cỡ
 
-Số đo (máy phát triển, tệp tổng hợp, SQLite và kho tệp; chưa phải số của production): tải một tệp 104 MB qua HTTP đỉnh heap 11 MB (đo cả phía client trong cùng tiến trình, `TestStowStreamsLargeFiles`); bộ nhớ mỗi yêu cầu STOW là hằng số, gồm phần đầu DICOM (≤ `DICOMWEB_MAX_HEADER_BYTES`, mặc định 1 MiB) cộng vài bộ đệm 64 KB, không phụ thuộc kích thước tệp. Định cỡ bộ nhớ: số yêu cầu STOW đồng thời × (tối đa khoảng 1,2 MiB) cộng nền. Thời gian tải bị giới hạn bởi băng thông và kho (S3: nhân với độ trễ mỗi lần ghi), không phải CPU. Từ chối tệp độc (SQ lồng 2000 lớp, 60 KB) dưới 1 giây và cấp phát không đáng kể (đưa thẳng vào thư viện sẽ tốn 2,2 GB). Số đo tải thật trên PostgreSQL và S3 làm ở D6 với `tests/load`.
+Số đo (máy phát triển, tệp tổng hợp, SQLite và kho tệp; chưa phải số của production): tải một tệp 104 MB qua HTTP đỉnh heap 11 MB (đo cả phía client trong cùng tiến trình, `TestStowStreamsLargeFiles`); bộ nhớ mỗi yêu cầu STOW là hằng số, gồm phần đầu DICOM (≤ `DICOMWEB_MAX_HEADER_BYTES`, mặc định 1 MiB) cộng vài bộ đệm 64 KB, không phụ thuộc kích thước tệp. Định cỡ bộ nhớ: số yêu cầu STOW đồng thời × (tối đa khoảng 1,2 MiB) cộng nền. Thời gian tải bị giới hạn bởi băng thông và kho (S3: nhân với độ trễ mỗi lần ghi), không phải CPU. Từ chối tệp độc (SQ lồng 2000 lớp, 60 KB) dưới 1 giây và cấp phát không đáng kể (đưa thẳng vào thư viện sẽ tốn 2,2 GB). Lấy một frame 8 MB từ tệp 104 MB đỉnh heap 8 MB (`TestWadoFrameOfLargeFileStreams`), cũng hằng số theo kích thước tệp; thời gian tỉ lệ với vị trí frame vì mỗi yêu cầu đọc từ đầu tệp tới frame (nén: cả tệp). Số đo tải thật trên PostgreSQL và S3 làm ở D6 với `tests/load`.
