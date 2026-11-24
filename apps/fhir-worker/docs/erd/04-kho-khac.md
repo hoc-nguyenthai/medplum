@@ -14,7 +14,7 @@
 
 | Khóa | Giá trị | TTL | Ghi bởi | Đọc bởi | Khi mất |
 |---|---|---|---|---|---|
-| stream `trivita:events:fhir.resource.changed` (tiền tố `trivita:events` + `:` + topic) | mỗi entry một trường `data` = JSON envelope (id, loại, thời điểm, payload là `ChangeEvent`: `interaction`, `resourceType`, `id`, **nội dung JSON của resource**) | **không có** (không `MAXLEN`, không hết hạn) | `fhir-worker` (`XADD`, sau commit, cho resource do batch async ghi); `fhir-server` cho resource nó ghi | `fhir-notifier`, `fhir-downloader`, `fhir-server` (mỗi bên một consumer group) | sự kiện của batch không tới service nghe; **dữ liệu không mất** (resource đã ở CSDL) |
+| stream `trivita:events:fhir.resource.changed` (tiền tố `trivita:events` + `:` + topic) | mỗi entry một trường `data` = JSON envelope (id, loại, thời điểm, payload là `ChangeEvent`: `interaction`, `resource_type`, `id`, `version_id`, **nội dung JSON của resource**) | **không có** (không `MAXLEN`, không hết hạn) | `fhir-worker` (`XADD`, sau commit, cho resource do batch async ghi); `fhir-server` cho resource nó ghi | `fhir-notifier`, `fhir-downloader`, `fhir-server` (mỗi bên một consumer group) | sự kiện của batch không tới service nghe; **dữ liệu không mất** (resource đã ở CSDL) |
 
 - Worker **chỉ `XADD`**: không tạo consumer group, không đọc, không dùng Pub/Sub; mất Redis lúc ghi không làm lần ghi resource thất bại (lỗi phát chỉ được log).
 - **Dữ liệu lâm sàng (S3) nằm trong Redis dạng rõ**, không giới hạn độ dài và thời gian; Binary được bọc **dưới** lớp phát sự kiện nên sự kiện của Binary không mang `data`. Cần quy định `MAXLEN`/retention và mã hóa Redis ở hạ tầng (chưa có).
