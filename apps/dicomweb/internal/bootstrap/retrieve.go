@@ -4,10 +4,10 @@ import (
 	"context"
 	"errors"
 	"io"
+	"net/url"
 
 	"trivita-fhir/apps/dicomweb/internal/presentation/httpapi"
 	"trivita-fhir/pkg/dicomretrieve"
-	"trivita-fhir/pkg/dicomweb"
 )
 
 // retriever nối presentation với pkg/dicomretrieve (QIDO-RS, WADO-RS).
@@ -26,29 +26,54 @@ func status(err error) error {
 	return err
 }
 
-func (r retriever) SearchStudies(ctx context.Context, limit, offset string) (httpapi.QueryPage, error) {
-	l, _ := dicomweb.ParseQueryInt(limit)
-	o, _ := dicomweb.ParseQueryInt(offset)
-	p, err := dicomretrieve.SearchStudies(ctx, r.cfg(), l, o)
+func (r retriever) Search(ctx context.Context, level, studyUID, seriesUID string, params url.Values) (httpapi.QueryPage, error) {
+	q, err := dicomretrieve.ParseQIDO(params)
 	if err != nil {
 		return httpapi.QueryPage{}, status(err)
 	}
-	return httpapi.QueryPage{Items: p.Items, More: p.More}, nil
-}
-
-func (r retriever) SearchSeries(ctx context.Context, studyUID, limit, offset string) (httpapi.QueryPage, error) {
-	l, _ := dicomweb.ParseQueryInt(limit)
-	o, _ := dicomweb.ParseQueryInt(offset)
-	p, err := dicomretrieve.SearchSeries(ctx, r.cfg(), studyUID, l, o)
+	lv := dicomretrieve.LevelStudy
+	switch level {
+	case "series":
+		lv = dicomretrieve.LevelSeries
+	case "instance":
+		lv = dicomretrieve.LevelInstance
+	}
+	p, err := dicomretrieve.Search(ctx, r.cfg(), lv, dicomretrieve.Scope{StudyUID: studyUID, SeriesUID: seriesUID}, q)
 	if err != nil {
 		return httpapi.QueryPage{}, status(err)
 	}
-	return httpapi.QueryPage{Items: p.Items, More: p.More}, nil
+	out := httpapi.QueryPage{Items: p.Items, More: p.More, Ignored: p.Ignored}
+	if lv == dicomretrieve.LevelInstance {
+		out.Items = p.Raw
+	}
+	return out, nil
 }
 
-func (r retriever) SeriesMetadata(ctx context.Context, studyUID, seriesUID string) (func(io.Writer) error, error) {
-	w, err := dicomretrieve.SeriesMetadata(ctx, r.cfg(), studyUID, seriesUID)
-	return w, status(err)
+func (r retriever) Metadata(ctx context.Context, studyUID, seriesUID, instanceUID string) (func(io.Writer) error, error) {
+	var (
+		w   func(io.Writer) error
+		err error
+	)
+	switch {
+	case instanceUID != "":
+		w, err = dicomretrieve.InstanceMetadata(ctx, r.cfg(), studyUID, seriesUID, instanceUID)
+	case seriesUID != "":
+		w, err = dicomretrieve.SeriesMetadata(ctx, r.cfg(), studyUID, seriesUID)
+	default:
+		w, err = dicomretrieve.StudyMetadata(ctx, r.cfg(), studyUID)
+	}
+	if err != nil {
+		return nil, status(err)
+	}
+	return w, nil
+}
+
+func (r retriever) Download(ctx context.Context, studyUID, seriesUID, instanceUID string) (httpapi.Download, error) {
+	d, err := dicomretrieve.OpenInstances(ctx, r.cfg(), studyUID, seriesUID, instanceUID)
+	if err != nil {
+		return httpapi.Download{}, status(err)
+	}
+	return httpapi.Download{ContentType: d.ContentType, Write: d.Write}, nil
 }
 
 func (r retriever) Frames(ctx context.Context, studyUID, seriesUID, instanceUID, frames string) (httpapi.FrameStream, error) {
@@ -61,4 +86,24 @@ func (r retriever) Frames(ctx context.Context, studyUID, seriesUID, instanceUID,
 		return httpapi.FrameStream{}, status(err)
 	}
 	return httpapi.FrameStream{ContentType: f.ContentType, Length: f.Length, Write: f.Write}, nil
+}
+
+func (r retriever) Rendered(ctx context.Context, studyUID, seriesUID, instanceUID, frame, accept string, params url.Values) (httpapi.Rendered, error) {
+	n := 1
+	if frame != "" {
+		nums, err := dicomretrieve.ParseFrames(frame)
+		if err != nil || len(nums) != 1 {
+			return httpapi.Rendered{}, &httpapi.StatusError{Status: 400, Msg: "Invalid frame number"}
+		}
+		n = nums[0]
+	}
+	o, err := dicomretrieve.RenderOptions(accept, params)
+	if err != nil {
+		return httpapi.Rendered{}, status(err)
+	}
+	out, err := dicomretrieve.RenderFrame(ctx, r.cfg(), studyUID, seriesUID, instanceUID, n, o)
+	if err != nil {
+		return httpapi.Rendered{}, status(err)
+	}
+	return httpapi.Rendered{ContentType: out.ContentType, Body: out.Body}, nil
 }

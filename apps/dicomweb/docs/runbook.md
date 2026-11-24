@@ -1,6 +1,6 @@
 # dicomweb: vận hành
 
-Cập nhật 2026-11-24 (D4: STOW-RS, QIDO-RS, WADO-RS). Cấu hình: [config.md](config.md).
+Cập nhật 2026-11-24 (D7: bộ lọc QIDO, instance, tải tệp, rendered). Cấu hình: [config.md](config.md).
 
 ## Triển khai
 
@@ -18,7 +18,7 @@ Cập nhật 2026-11-24 (D4: STOW-RS, QIDO-RS, WADO-RS). Cấu hình: [config.md
 | 401 với mọi token | `FHIR_JWT_ISSUER` hoặc `FHIR_JWT_AUDIENCE` khác của `auth`; JWKS không tải được (xem log "token bị từ chối") | đối chiếu với `auth` và `fhir-server` |
 | 403 "Token không có quyền truy cập FHIR" | token thiếu claim project hoặc scope `fhir.*`/SMART | kiểm token do `auth` cấp |
 | 403 "Không được dùng project khác" | URL `/projects/{id}/dicomweb` hoặc header `X-Fhir-Project` khác project của token | dùng đúng project, hoặc tiền tố không có project |
-| 501 "Chưa cài đặt" | route DICOMweb chưa cài (instances lẻ, rendered, bulkdata, bộ lọc QIDO: D7) | xem api-contract.md |
+| 501 "Chưa cài đặt" | route DICOMweb chưa cài (bulkdata, WADO-URI, rendered cấp series và study) | xem api-contract.md |
 | WADO frame 404 "Pixel data not found" | instance không có ảnh (báo cáo có cấu trúc), hoặc Binary chứa nội dung đã bị xóa | kiểm instance; nếu Binary bị xóa, tải lại |
 | WADO frame 416 | số frame vượt `NumberOfFrames` của instance | frame đánh số từ 1 |
 | WADO frame 403 | token thiếu quyền đọc `Binary` (ngoài `Dicom*`) | cấp scope `system/Binary.r` |

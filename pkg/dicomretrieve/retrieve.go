@@ -112,10 +112,12 @@ func (c Config) series(ctx context.Context, studyUID, seriesUID string) (*fhir.D
 
 // ---------------------------------------------------------------- QIDO-RS
 
-// Page là một trang kết quả QIDO-RS.
+// Page là một trang kết quả QIDO-RS: Items (study, series) là DICOM JSON dựng từ resource; Raw (instance) là metadata JSON đã làm sạch do STOW lưu, ghi nguyên văn.
 type Page struct {
-	Items []dicomweb.Dataset
-	More  bool // còn kết quả sau trang này
+	Items   []dicomweb.Dataset
+	Raw     []json.RawMessage
+	More    bool     // còn kết quả sau trang này
+	Ignored []string // tham số truy vấn không hỗ trợ (đã bỏ qua)
 }
 
 func clamp(limit int) int {
@@ -125,59 +127,27 @@ func clamp(limit int) int {
 	return min(limit, MaxLimit)
 }
 
-// SearchStudies trả các study (mới cập nhật trước). Hiện chỉ hỗ trợ phân trang (limit, offset), như Medplum; bộ lọc theo thuộc tính để D7.
+// SearchStudies trả các study (mới cập nhật trước), chỉ phân trang; xem Search để lọc theo thuộc tính.
 func SearchStudies(ctx context.Context, c Config, limit, offset int) (*Page, error) {
-	limit = clamp(limit)
-	res, err := search(ctx, c.Repo, "DicomStudy", url.Values{"_sort": {"-_lastUpdated"}}, limit, max(offset, 0))
-	if err != nil {
-		return nil, internalErr(ctx, "tìm study", err)
-	}
-	p := &Page{More: res.More, Items: []dicomweb.Dataset{}}
-	for _, m := range res.Matches {
-		if s, ok := m.(*fhir.DicomStudy); ok {
-			p.Items = append(p.Items, dicomweb.StudyToDataset(s))
-		}
-	}
-	return p, nil
+	return Search(ctx, c, LevelStudy, Scope{}, &Query{Limit: limit, Offset: offset})
 }
 
 // SearchSeries trả các series của một study (kèm thuộc tính cấp study); 404 nếu study không có.
 func SearchSeries(ctx context.Context, c Config, studyUID string, limit, offset int) (*Page, error) {
-	study, e := c.study(ctx, studyUID)
-	if e != nil {
-		return nil, e
-	}
-	limit = clamp(limit)
-	res, err := search(ctx, c.Repo, "DicomSeries", url.Values{"study": {"DicomStudy/" + study.ID}}, limit, max(offset, 0))
-	if err != nil {
-		return nil, internalErr(ctx, "tìm series", err)
-	}
-	p := &Page{More: res.More, Items: []dicomweb.Dataset{}}
-	for _, m := range res.Matches {
-		if s, ok := m.(*fhir.DicomSeries); ok {
-			p.Items = append(p.Items, dicomweb.SeriesToDataset(study, s))
-		}
-	}
-	return p, nil
+	return Search(ctx, c, LevelSeries, Scope{StudyUID: studyUID}, &Query{Limit: limit, Offset: offset})
 }
 
 // ---------------------------------------------------------------- WADO-RS: metadata
 
-// SeriesMetadata kiểm study và series có thật (lỗi 404 trước khi ghi gì), rồi trả hàm ghi mảng JSON metadata của mọi instance trong series theo luồng, từng
-// trang 500 instance (Medplum cắt ở 1000 instance mà không báo; ở đây trả đủ). Metadata là chuỗi JSON đã làm sạch do STOW lưu, ghi nguyên văn.
-func SeriesMetadata(ctx context.Context, c Config, studyUID, seriesUID string) (func(io.Writer) error, error) {
-	_, series, e := c.series(ctx, studyUID, seriesUID)
-	if e != nil {
-		return nil, e
-	}
-	ref := "DicomSeries/" + series.ID
+// streamMetadata ghi mảng JSON metadata của mọi instance khớp params, theo luồng từng trang 500 instance, ghi nguyên văn chuỗi JSON đã làm sạch do STOW lưu.
+func streamMetadata(ctx context.Context, c Config, params url.Values) func(io.Writer) error {
 	return func(w io.Writer) error {
 		if _, err := io.WriteString(w, "["); err != nil {
 			return err
 		}
 		first := true
 		for offset := 0; ; offset += metadataPage {
-			res, err := search(ctx, c.Repo, "DicomInstance", url.Values{"series": {ref}}, metadataPage, offset)
+			res, err := search(ctx, c.Repo, "DicomInstance", params, metadataPage, offset)
 			if err != nil {
 				return err
 			}
@@ -205,7 +175,55 @@ func SeriesMetadata(ctx context.Context, c Config, studyUID, seriesUID string) (
 		}
 		_, err := io.WriteString(w, "]")
 		return err
-	}, nil
+	}
+}
+
+// SeriesMetadata kiểm study và series có thật (lỗi 404 trước khi ghi gì), rồi trả hàm ghi mảng JSON metadata của mọi instance trong series theo luồng (không bị cắt ở 1000
+// instance như Medplum).
+func SeriesMetadata(ctx context.Context, c Config, studyUID, seriesUID string) (func(io.Writer) error, error) {
+	_, series, e := c.series(ctx, studyUID, seriesUID)
+	if e != nil {
+		return nil, e
+	}
+	return streamMetadata(ctx, c, url.Values{"series": {"DicomSeries/" + series.ID}}), nil
+}
+
+// StudyMetadata như SeriesMetadata cho mọi instance của một study.
+func StudyMetadata(ctx context.Context, c Config, studyUID string) (func(io.Writer) error, error) {
+	study, e := c.study(ctx, studyUID)
+	if e != nil {
+		return nil, e
+	}
+	return streamMetadata(ctx, c, url.Values{"study": {"DicomStudy/" + study.ID}}), nil
+}
+
+// instance tìm một instance theo chuỗi study, series, SOPInstanceUID; 404 nếu thiếu mắt xích nào.
+func (c Config) instance(ctx context.Context, studyUID, seriesUID, instanceUID string) (*fhir.DicomSeries, *fhir.DicomInstance, *Error) {
+	_, series, e := c.series(ctx, studyUID, seriesUID)
+	if e != nil {
+		return nil, nil, e
+	}
+	r, err := findOne(ctx, c.Repo, "DicomInstance", url.Values{"series": {"DicomSeries/" + series.ID}, "sop-instance-uid:exact": {instanceUID}})
+	if err != nil {
+		return nil, nil, internalErr(ctx, "tìm instance", err)
+	}
+	inst, ok := r.(*fhir.DicomInstance)
+	if !ok {
+		return nil, nil, notFound("Instance not found")
+	}
+	return series, inst, nil
+}
+
+// InstanceMetadata trả hàm ghi mảng một phần tử: metadata của một instance.
+func InstanceMetadata(ctx context.Context, c Config, studyUID, seriesUID, instanceUID string) (func(io.Writer) error, error) {
+	_, inst, e := c.instance(ctx, studyUID, seriesUID, instanceUID)
+	if e != nil {
+		return nil, e
+	}
+	if inst.Metadata == "" || !json.Valid([]byte(inst.Metadata)) {
+		return nil, internalErr(ctx, "metadata instance", errors.New(inst.ID))
+	}
+	return func(w io.Writer) error { _, err := io.WriteString(w, "["+inst.Metadata+"]"); return err }, nil
 }
 
 // ---------------------------------------------------------------- WADO-RS: frame

@@ -5,7 +5,7 @@ package httpapi
 
 // @title						Trivita DICOMweb API
 // @version					1.0
-// @description				DICOMweb (STOW-RS, QIDO-RS, WADO-RS) cho kho hình ảnh DICOM, dùng chung schema và kho Binary với fhir-server. Lỗi trả {"error": "..."}. STOW-RS (D3), QIDO-RS (tìm study, series) và WADO-RS (metadata series, frame) (D4) đã cài; các route DICOMweb còn lại trả 501.
+// @description				DICOMweb (STOW-RS, QIDO-RS, WADO-RS) cho kho hình ảnh DICOM, dùng chung schema và kho Binary với fhir-server. Lỗi trả {"error": "..."}. STOW-RS, QIDO-RS (study, series, instance, có bộ lọc thuộc tính), WADO-RS (tải instance, series, study; metadata; frame) đã cài; bulkdata và WADO-URI không có (501).
 // @BasePath					/
 // @tag.name					dicomweb
 // @tag.description			DICOMweb. Bốn tiền tố tương đương: /dicomweb, /api/dicomweb, /projects/{projectId}/dicomweb, /api/projects/{projectId}/dicomweb; với hai tiền tố có project, projectId phải khớp project của token (token thường), không thì 403. Spec này liệt kê tiền tố /dicomweb.
@@ -132,7 +132,7 @@ func stowStudy() {}
 // qidoStudies godoc
 //
 //	@Summary		QIDO-RS: tìm study
-//	@Description	Trả các study của project (mới cập nhật trước) dạng DICOM JSON. Hiện chỉ hỗ trợ phân trang (limit, offset); bộ lọc theo thuộc tính (PatientID, StudyDate...) chưa có và các tham số khác bị bỏ qua. Khi còn kết quả có header `Warning: 299`. Không có kết quả thì 200 với []. Cần quyền đọc.
+//	@Description	Trả các study của project (mới cập nhật trước) dạng DICOM JSON. Bộ lọc theo thuộc tính cấp study: PatientID, PatientName (khớp đầu chuỗi, dấu * ở cuối), StudyDate (ngày hoặc khoảng YYYYMMDD-YYYYMMDD), StudyInstanceUID, AccessionNumber, ModalitiesInStudy, StudyDescription..., theo từ khóa hoặc tag 8 chữ số hex; nhiều giá trị ngăn bằng dấu \ hoặc dấu phẩy là OR. Tham số không hỗ trợ bị bỏ qua và báo bằng `Warning: 299`, giá trị sai (ngày hỏng, ký tự đại diện ở giữa) là 400. Khi còn kết quả có header `Warning: 299`. Không có kết quả thì 200 với []. Cần quyền đọc.
 //	@Tags			dicomweb
 //	@Security		BearerAuth
 //	@Produce		application/dicom+json,json
@@ -203,3 +203,220 @@ func wadoSeriesMetadata() {}
 //	@Failure		500	{object}	ErrorBody	"Lỗi xử lý (không lộ chi tiết nội bộ)"
 //	@Router			/dicomweb/studies/{studyUid}/series/{seriesUid}/instances/{instanceUid}/frames/{frame} [get]
 func wadoFrames() {}
+
+// qidoAllSeries godoc
+//
+//	@Summary		QIDO-RS: tìm series (cả project)
+//	@Description	Như tìm series của một study nhưng không giới hạn study; lọc được theo thuộc tính cấp study và series (Modality, SeriesInstanceUID, SeriesNumber...). Cần quyền đọc.
+//	@Tags			dicomweb
+//	@Security		BearerAuth
+//	@Produce		application/dicom+json,json
+//	@Param			limit	query		string	false	"Cỡ trang (mặc định 100, tối đa 1000)"
+//	@Param			offset	query		string	false	"Số kết quả bỏ qua"
+//	@Param			attributes	query		string	false	"Thuộc tính cần lọc, theo từ khóa hoặc tag hex (ví dụ Modality=CT, PatientID=P1, 00080060=CT)"
+//	@Success		200	{object}	QueryResponse	"Mảng DICOM JSON"
+//	@Failure		400	{object}	ErrorBody	"Tham số không hợp lệ"
+//	@Failure		401	{object}	ErrorBody	"Thiếu hoặc sai Bearer token"
+//	@Failure		403	{object}	ErrorBody	"Token không đủ quyền hoặc chọn project khác"
+//	@Failure		404	{object}	ErrorBody	"Không có"
+//	@Failure		500	{object}	ErrorBody	"Lỗi xử lý (không lộ chi tiết nội bộ)"
+//	@Router			/dicomweb/series [get]
+func qidoAllSeries() {}
+
+// qidoAllInstances godoc
+//
+//	@Summary		QIDO-RS: tìm instance (cả project)
+//	@Description	Trả metadata đã lưu của các instance khớp (kèm thuộc tính study, series và instance); lọc theo thuộc tính cấp study, series và instance (SOPInstanceUID, SOPClassUID, InstanceNumber). Cần quyền đọc.
+//	@Tags			dicomweb
+//	@Security		BearerAuth
+//	@Produce		application/dicom+json,json
+//	@Param			limit	query		string	false	"Cỡ trang (mặc định 100, tối đa 1000)"
+//	@Param			offset	query		string	false	"Số kết quả bỏ qua"
+//	@Param			attributes	query		string	false	"Thuộc tính cần lọc, theo từ khóa hoặc tag hex (ví dụ Modality=CT, PatientID=P1, 00080060=CT)"
+//	@Success		200	{object}	QueryResponse	"Mảng DICOM JSON"
+//	@Failure		400	{object}	ErrorBody	"Tham số không hợp lệ"
+//	@Failure		401	{object}	ErrorBody	"Thiếu hoặc sai Bearer token"
+//	@Failure		403	{object}	ErrorBody	"Token không đủ quyền hoặc chọn project khác"
+//	@Failure		404	{object}	ErrorBody	"Không có"
+//	@Failure		500	{object}	ErrorBody	"Lỗi xử lý (không lộ chi tiết nội bộ)"
+//	@Router			/dicomweb/instances [get]
+func qidoAllInstances() {}
+
+// qidoStudyInstances godoc
+//
+//	@Summary		QIDO-RS: tìm instance của study
+//	@Description	Như tìm instance, giới hạn trong một study. Cần quyền đọc.
+//	@Tags			dicomweb
+//	@Security		BearerAuth
+//	@Produce		application/dicom+json,json
+//	@Param			studyUid	path		string	true	"UID của study (StudyInstanceUID)"
+//	@Param			limit	query		string	false	"Cỡ trang (mặc định 100, tối đa 1000)"
+//	@Param			offset	query		string	false	"Số kết quả bỏ qua"
+//	@Param			attributes	query		string	false	"Thuộc tính cần lọc, theo từ khóa hoặc tag hex (ví dụ Modality=CT, PatientID=P1, 00080060=CT)"
+//	@Success		200	{object}	QueryResponse	"Mảng DICOM JSON"
+//	@Failure		400	{object}	ErrorBody	"Tham số không hợp lệ"
+//	@Failure		401	{object}	ErrorBody	"Thiếu hoặc sai Bearer token"
+//	@Failure		403	{object}	ErrorBody	"Token không đủ quyền hoặc chọn project khác"
+//	@Failure		404	{object}	ErrorBody	"Không có"
+//	@Failure		500	{object}	ErrorBody	"Lỗi xử lý (không lộ chi tiết nội bộ)"
+//	@Router			/dicomweb/studies/{studyUid}/instances [get]
+func qidoStudyInstances() {}
+
+// qidoSeriesInstances godoc
+//
+//	@Summary		QIDO-RS: tìm instance của series
+//	@Description	Như tìm instance, giới hạn trong một series. Cần quyền đọc.
+//	@Tags			dicomweb
+//	@Security		BearerAuth
+//	@Produce		application/dicom+json,json
+//	@Param			studyUid	path		string	true	"UID của study (StudyInstanceUID)"
+//	@Param			seriesUid	path		string	true	"UID của series (SeriesInstanceUID)"
+//	@Param			limit	query		string	false	"Cỡ trang (mặc định 100, tối đa 1000)"
+//	@Param			offset	query		string	false	"Số kết quả bỏ qua"
+//	@Param			attributes	query		string	false	"Thuộc tính cần lọc, theo từ khóa hoặc tag hex (ví dụ Modality=CT, PatientID=P1, 00080060=CT)"
+//	@Success		200	{object}	QueryResponse	"Mảng DICOM JSON"
+//	@Failure		400	{object}	ErrorBody	"Tham số không hợp lệ"
+//	@Failure		401	{object}	ErrorBody	"Thiếu hoặc sai Bearer token"
+//	@Failure		403	{object}	ErrorBody	"Token không đủ quyền hoặc chọn project khác"
+//	@Failure		404	{object}	ErrorBody	"Không có"
+//	@Failure		500	{object}	ErrorBody	"Lỗi xử lý (không lộ chi tiết nội bộ)"
+//	@Router			/dicomweb/studies/{studyUid}/series/{seriesUid}/instances [get]
+func qidoSeriesInstances() {}
+
+// wadoStudyMetadata godoc
+//
+//	@Summary		WADO-RS: metadata của study
+//	@Description	Mảng metadata DICOM JSON của mọi instance trong study, theo luồng. Study không có thì 404 trước khi ghi byte nào; lỗi giữa chừng thì ngắt kết nối. Cần quyền đọc.
+//	@Tags			dicomweb
+//	@Security		BearerAuth
+//	@Produce		application/dicom+json,json
+//	@Param			studyUid	path		string	true	"UID của study (StudyInstanceUID)"
+//	@Success		200	{object}	QueryResponse	"Mảng DICOM JSON"
+//	@Failure		400	{object}	ErrorBody	"Tham số không hợp lệ"
+//	@Failure		401	{object}	ErrorBody	"Thiếu hoặc sai Bearer token"
+//	@Failure		403	{object}	ErrorBody	"Token không đủ quyền hoặc chọn project khác"
+//	@Failure		404	{object}	ErrorBody	"Không có"
+//	@Failure		500	{object}	ErrorBody	"Lỗi xử lý (không lộ chi tiết nội bộ)"
+//	@Router			/dicomweb/studies/{studyUid}/metadata [get]
+func wadoStudyMetadata() {}
+
+// wadoInstanceMetadata godoc
+//
+//	@Summary		WADO-RS: metadata của instance
+//	@Description	Mảng một phần tử: metadata DICOM JSON của instance. Cần quyền đọc.
+//	@Tags			dicomweb
+//	@Security		BearerAuth
+//	@Produce		application/dicom+json,json
+//	@Param			studyUid	path		string	true	"UID của study (StudyInstanceUID)"
+//	@Param			seriesUid	path		string	true	"UID của series (SeriesInstanceUID)"
+//	@Param			instanceUid	path		string	true	"UID của instance (SOPInstanceUID)"
+//	@Success		200	{object}	QueryResponse	"Mảng DICOM JSON"
+//	@Failure		400	{object}	ErrorBody	"Tham số không hợp lệ"
+//	@Failure		401	{object}	ErrorBody	"Thiếu hoặc sai Bearer token"
+//	@Failure		403	{object}	ErrorBody	"Token không đủ quyền hoặc chọn project khác"
+//	@Failure		404	{object}	ErrorBody	"Không có"
+//	@Failure		500	{object}	ErrorBody	"Lỗi xử lý (không lộ chi tiết nội bộ)"
+//	@Router			/dicomweb/studies/{studyUid}/series/{seriesUid}/instances/{instanceUid}/metadata [get]
+func wadoInstanceMetadata() {}
+
+// wadoStudy godoc
+//
+//	@Summary		WADO-RS: tải study
+//	@Description	Trả mọi instance của study dạng multipart/related; type="application/dicom", mỗi phần là tệp DICOM Part 10 nguyên văn như lúc STOW, theo luồng (chunked, bộ nhớ hằng số). Không có thì 404 trước khi ghi byte nào; lỗi giữa chừng thì ngắt kết nối. Cần quyền đọc, gồm Binary.
+//	@Tags			dicomweb
+//	@Security		BearerAuth
+//	@Produce		multipart/related,json
+//	@Param			studyUid	path		string	true	"UID của study (StudyInstanceUID)"
+//	@Success		200	{file}	file	"multipart/related: mỗi phần là một tệp DICOM"
+//	@Failure		400	{object}	ErrorBody	"Tham số không hợp lệ"
+//	@Failure		401	{object}	ErrorBody	"Thiếu hoặc sai Bearer token"
+//	@Failure		403	{object}	ErrorBody	"Token không đủ quyền hoặc chọn project khác"
+//	@Failure		404	{object}	ErrorBody	"Không có"
+//	@Failure		500	{object}	ErrorBody	"Lỗi xử lý (không lộ chi tiết nội bộ)"
+//	@Router			/dicomweb/studies/{studyUid} [get]
+func wadoStudy() {}
+
+// wadoSeries godoc
+//
+//	@Summary		WADO-RS: tải series
+//	@Description	Như tải study, cho các instance của một series.
+//	@Tags			dicomweb
+//	@Security		BearerAuth
+//	@Produce		multipart/related,json
+//	@Param			studyUid	path		string	true	"UID của study (StudyInstanceUID)"
+//	@Param			seriesUid	path		string	true	"UID của series (SeriesInstanceUID)"
+//	@Success		200	{file}	file	"multipart/related: mỗi phần là một tệp DICOM"
+//	@Failure		400	{object}	ErrorBody	"Tham số không hợp lệ"
+//	@Failure		401	{object}	ErrorBody	"Thiếu hoặc sai Bearer token"
+//	@Failure		403	{object}	ErrorBody	"Token không đủ quyền hoặc chọn project khác"
+//	@Failure		404	{object}	ErrorBody	"Không có"
+//	@Failure		500	{object}	ErrorBody	"Lỗi xử lý (không lộ chi tiết nội bộ)"
+//	@Router			/dicomweb/studies/{studyUid}/series/{seriesUid} [get]
+func wadoSeries() {}
+
+// wadoInstance godoc
+//
+//	@Summary		WADO-RS: tải instance
+//	@Description	Như tải study, cho một instance (một phần duy nhất).
+//	@Tags			dicomweb
+//	@Security		BearerAuth
+//	@Produce		multipart/related,json
+//	@Param			studyUid	path		string	true	"UID của study (StudyInstanceUID)"
+//	@Param			seriesUid	path		string	true	"UID của series (SeriesInstanceUID)"
+//	@Param			instanceUid	path		string	true	"UID của instance (SOPInstanceUID)"
+//	@Success		200	{file}	file	"multipart/related: một tệp DICOM"
+//	@Failure		400	{object}	ErrorBody	"Tham số không hợp lệ"
+//	@Failure		401	{object}	ErrorBody	"Thiếu hoặc sai Bearer token"
+//	@Failure		403	{object}	ErrorBody	"Token không đủ quyền hoặc chọn project khác"
+//	@Failure		404	{object}	ErrorBody	"Không có"
+//	@Failure		500	{object}	ErrorBody	"Lỗi xử lý (không lộ chi tiết nội bộ)"
+//	@Router			/dicomweb/studies/{studyUid}/series/{seriesUid}/instances/{instanceUid} [get]
+func wadoInstance() {}
+
+// wadoInstanceRendered godoc
+//
+//	@Summary		WADO-RS: ảnh dựng của instance
+//	@Description	Trả frame đầu tiên của instance dưới dạng ảnh image/jpeg (mặc định) hoặc image/png theo header Accept. Dựng được: JPEG baseline (trả nguyên khi cần JPEG, giải mã và mã hóa PNG khi cần PNG), dữ liệu không nén xám 8 hoặc 16 bit (window/level từ metadata, hoặc từ tham số `window`; MONOCHROME1 được đảo) và RGB 8 bit. Mọi định dạng khác (JPEG 2000, JPEG-LS, RLE, YBR, bảng màu...) trả 406. Bộ nhớ một frame tối đa 64 MiB (vượt thì 413). Tham số viewport, annotation, iccprofile bị bỏ qua. Cần quyền đọc, gồm Binary.
+//	@Tags			dicomweb
+//	@Security		BearerAuth
+//	@Produce		image/jpeg,image/png,json
+//	@Param			studyUid	path		string	true	"UID của study (StudyInstanceUID)"
+//	@Param			seriesUid	path		string	true	"UID của series (SeriesInstanceUID)"
+//	@Param			instanceUid	path		string	true	"UID của instance (SOPInstanceUID)"
+//	@Param			window	query		string	false	"center,width[,linear]: cửa sổ ghi đè (width > 0)"
+//	@Param			quality	query		int		false	"Chất lượng JPEG 1..100 (mặc định 90)"
+//	@Success		200	{file}	file	"Ảnh JPEG hoặc PNG"
+//	@Failure		400	{object}	ErrorBody	"Tham số không hợp lệ"
+//	@Failure		401	{object}	ErrorBody	"Thiếu hoặc sai Bearer token"
+//	@Failure		403	{object}	ErrorBody	"Token không đủ quyền hoặc chọn project khác"
+//	@Failure		404	{object}	ErrorBody	"Không có instance hoặc ảnh"
+//	@Failure		406	{object}	ErrorBody	"Accept không có định dạng hỗ trợ, hoặc dữ liệu điểm ảnh chưa dựng được"
+//	@Failure		413	{object}	ErrorBody	"Frame quá lớn để dựng"
+//	@Failure		500	{object}	ErrorBody	"Lỗi xử lý (không lộ chi tiết nội bộ)"
+//	@Router			/dicomweb/studies/{studyUid}/series/{seriesUid}/instances/{instanceUid}/rendered [get]
+func wadoInstanceRendered() {}
+
+// wadoFrameRendered godoc
+//
+//	@Summary		WADO-RS: ảnh dựng của một frame
+//	@Description	Như ảnh dựng của instance nhưng cho frame được chọn (một số, từ 1). Frame vượt tổng số frame là 416.
+//	@Tags			dicomweb
+//	@Security		BearerAuth
+//	@Produce		image/jpeg,image/png,json
+//	@Param			studyUid	path		string	true	"UID của study (StudyInstanceUID)"
+//	@Param			seriesUid	path		string	true	"UID của series (SeriesInstanceUID)"
+//	@Param			instanceUid	path		string	true	"UID của instance (SOPInstanceUID)"
+//	@Param			frame	path		int		true	"Số thứ tự frame bắt đầu từ 1"
+//	@Param			window	query		string	false	"center,width[,linear]: cửa sổ ghi đè (width > 0)"
+//	@Param			quality	query		int		false	"Chất lượng JPEG 1..100 (mặc định 90)"
+//	@Success		200	{file}	file	"Ảnh JPEG hoặc PNG"
+//	@Failure		400	{object}	ErrorBody	"Tham số không hợp lệ"
+//	@Failure		401	{object}	ErrorBody	"Thiếu hoặc sai Bearer token"
+//	@Failure		403	{object}	ErrorBody	"Token không đủ quyền hoặc chọn project khác"
+//	@Failure		404	{object}	ErrorBody	"Không có instance hoặc ảnh"
+//	@Failure		406	{object}	ErrorBody	"Accept không có định dạng hỗ trợ, hoặc dữ liệu điểm ảnh chưa dựng được"
+//	@Failure		413	{object}	ErrorBody	"Frame quá lớn để dựng"
+//	@Failure		416	{object}	ErrorBody	"Số frame vượt tổng số frame của instance"
+//	@Failure		500	{object}	ErrorBody	"Lỗi xử lý (không lộ chi tiết nội bộ)"
+//	@Router			/dicomweb/studies/{studyUid}/series/{seriesUid}/instances/{instanceUid}/frames/{frame}/rendered [get]
+func wadoFrameRendered() {}

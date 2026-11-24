@@ -118,7 +118,7 @@ func TestRealJWTAuthentication(t *testing.T) {
 		{"STOW bằng token đọc", "POST", "/dicomweb/studies", rd, 403},
 		{"STOW bằng token ghi nhưng không phải multipart: qua xác thực, vào STOW", "POST", "/dicomweb/studies", wr, 415},
 		{"đúng project trong URL", "GET", "/projects/A/dicomweb/studies", rd, 200},
-		{"route chưa cài (instances) vẫn 501 sau xác thực", "GET", "/dicomweb/studies/1.2/series/3.4/instances", rd, 501},
+		{"route chưa cài (bulkdata) vẫn 501 sau xác thực", "GET", "/dicomweb/studies/1.2/series/3.4/instances/5/bulkdata/x", rd, 501},
 		{"project khác trong URL", "GET", "/projects/B/dicomweb/studies", rd, 403},
 		{"scope fhir.super bị bỏ qua khi chưa bật cờ: vẫn là token thường của project A", "GET", "/projects/B/dicomweb/studies", tok(t, "A", "fhir.read fhir.super"), 403},
 	} {

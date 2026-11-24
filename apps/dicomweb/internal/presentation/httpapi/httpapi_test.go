@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 
@@ -340,6 +341,11 @@ type fakeRetriever struct {
 	err         error
 	meta        func(io.Writer) error
 	frames      httpapi.FrameStream
+	dl          httpapi.Download
+	rendered    httpapi.Rendered
+	lastLevel   string
+	lastScope   string
+	lastParams  url.Values
 	calls       []string
 	lastLimit   string
 	lastOffset  string
@@ -348,22 +354,30 @@ type fakeRetriever struct {
 	lastInstUID string
 }
 
-func (f *fakeRetriever) SearchStudies(_ context.Context, limit, offset string) (httpapi.QueryPage, error) {
-	f.calls = append(f.calls, "studies")
-	f.lastLimit, f.lastOffset = limit, offset
+func (f *fakeRetriever) Search(_ context.Context, level, study, series string, params url.Values) (httpapi.QueryPage, error) {
+	f.calls = append(f.calls, level)
+	f.lastLevel, f.lastScope, f.lastParams = level, study+"|"+series, params
+	f.lastLimit, f.lastOffset, f.lastStudy = params.Get("limit"), params.Get("offset"), study
 	return f.page, f.err
 }
 
-func (f *fakeRetriever) SearchSeries(_ context.Context, study, limit, offset string) (httpapi.QueryPage, error) {
-	f.calls = append(f.calls, "series")
-	f.lastStudy, f.lastLimit, f.lastOffset = study, limit, offset
-	return f.page, f.err
-}
-
-func (f *fakeRetriever) SeriesMetadata(_ context.Context, study, series string) (func(io.Writer) error, error) {
+func (f *fakeRetriever) Metadata(_ context.Context, study, series, inst string) (func(io.Writer) error, error) {
 	f.calls = append(f.calls, "metadata")
 	f.lastStudy = study + "|" + series
+	f.lastInstUID = inst
 	return f.meta, f.err
+}
+
+func (f *fakeRetriever) Download(_ context.Context, study, series, inst string) (httpapi.Download, error) {
+	f.calls = append(f.calls, "download")
+	f.lastScope = study + "|" + series + "|" + inst
+	return f.dl, f.err
+}
+
+func (f *fakeRetriever) Rendered(_ context.Context, study, series, inst, frame, accept string, params url.Values) (httpapi.Rendered, error) {
+	f.calls = append(f.calls, "rendered")
+	f.lastScope = study + "|" + series + "|" + inst + "|" + frame + "|" + accept + "|" + params.Get("window")
+	return f.rendered, f.err
 }
 
 func (f *fakeRetriever) Frames(_ context.Context, study, series, inst, frames string) (httpapi.FrameStream, error) {
@@ -393,6 +407,85 @@ func TestQidoRoutes(t *testing.T) {
 	f.page = httpapi.QueryPage{Items: []map[string]any{}}
 	if rec := do(h, "GET", "/dicomweb/studies", "read-a"); rec.Code != 200 || strings.TrimSpace(rec.Body.String()) != "[]" {
 		t.Errorf("rỗng: %d %q", rec.Code, rec.Body.String())
+	}
+}
+
+func TestQidoInstanceRoutesAndWarnings(t *testing.T) {
+	f := &fakeRetriever{page: httpapi.QueryPage{Items: []map[string]any{}, Ignored: []string{"Foo"}}}
+	h := newHandler(t, func(d *httpapi.Deps) { d.Retrieve = f })
+	for path, want := range map[string]string{
+		"/dicomweb/series":                          "series||",
+		"/dicomweb/instances":                       "instance||",
+		"/dicomweb/studies/S/instances":             "instance|S|",
+		"/dicomweb/studies/S/series/R/instances":    "instance|S|R",
+		"/api/projects/A/dicomweb/studies/S/series": "series|S|",
+	} {
+		rec := do(h, "GET", path+"?Foo=1&Modality=CT", "read-a")
+		if rec.Code != 200 {
+			t.Fatalf("%s: %d %s", path, rec.Code, rec.Body.String())
+		}
+		if got := f.lastLevel + "|" + f.lastScope; got != want {
+			t.Errorf("%s: %q, muốn %q", path, got, want)
+		}
+		if f.lastParams.Get("Modality") != "CT" {
+			t.Errorf("%s: tham số không chuyển xuống: %v", path, f.lastParams)
+		}
+		if w := rec.Header().Get("Warning"); !strings.Contains(w, "Foo") {
+			t.Errorf("%s: thiếu Warning cho tham số bị bỏ qua: %q", path, w)
+		}
+	}
+}
+
+func TestMetadataAndDownloadRoutes(t *testing.T) {
+	f := &fakeRetriever{
+		meta: func(w io.Writer) error { _, err := io.WriteString(w, `[{}]`); return err },
+		dl:   httpapi.Download{ContentType: `multipart/related; type="application/dicom"; boundary=b`, Write: func(w io.Writer) error { _, err := io.WriteString(w, "--b--\r\n"); return err }},
+	}
+	h := newHandler(t, func(d *httpapi.Deps) { d.Retrieve = f })
+	for path, want := range map[string]string{
+		"/dicomweb/studies/S/metadata":                      "S|",
+		"/dicomweb/studies/S/series/R/instances/I/metadata": "S|R",
+	} {
+		if rec := do(h, "GET", path, "read-a"); rec.Code != 200 || rec.Body.String() != "[{}]" || f.lastStudy != want {
+			t.Errorf("%s: %d %q %q", path, rec.Code, rec.Body.String(), f.lastStudy)
+		}
+	}
+	for path, want := range map[string]string{
+		"/dicomweb/studies/S":                      "S||",
+		"/dicomweb/studies/S/series/R":             "S|R|",
+		"/dicomweb/studies/S/series/R/instances/I": "S|R|I",
+	} {
+		rec := do(h, "GET", path, "read-a")
+		if rec.Code != 200 || rec.Header().Get("Content-Type") != f.dl.ContentType || rec.Header().Get("Content-Length") != "" || f.lastScope != want {
+			t.Errorf("%s: %d %q %q scope=%q", path, rec.Code, rec.Header().Get("Content-Type"), rec.Header().Get("Content-Length"), f.lastScope)
+		}
+	}
+	// lỗi trước khi ghi: 404 JSON
+	f.err = &httpapi.StatusError{Status: 404, Msg: "Instance not found"}
+	if rec := do(h, "GET", "/dicomweb/studies/S/series/R/instances/I", "read-a"); rec.Code != 404 {
+		t.Errorf("404: %d", rec.Code)
+	}
+}
+
+func TestRenderedRoutes(t *testing.T) {
+	f := &fakeRetriever{rendered: httpapi.Rendered{ContentType: "image/png", Body: []byte("PNG")}}
+	h := newHandler(t, func(d *httpapi.Deps) { d.Retrieve = f })
+	for path, want := range map[string]string{
+		"/dicomweb/studies/S/series/R/instances/I/rendered?window=1,2":          "S|R|I||image/png|1,2",
+		"/dicomweb/studies/S/series/R/instances/I/frames/3/rendered?window=1,2": "S|R|I|3|image/png|1,2",
+	} {
+		req := httptest.NewRequest("GET", path, nil)
+		req.Header.Set("Authorization", "Bearer read-a")
+		req.Header.Set("Accept", "image/png")
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, req)
+		if rec.Code != 200 || rec.Header().Get("Content-Type") != "image/png" || rec.Body.String() != "PNG" || f.lastScope != want {
+			t.Errorf("%s: %d %q %q scope=%q", path, rec.Code, rec.Header().Get("Content-Type"), rec.Body.String(), f.lastScope)
+		}
+	}
+	f.err = &httpapi.StatusError{Status: 406, Msg: "x"}
+	if rec := do(h, "GET", "/dicomweb/studies/S/series/R/instances/I/rendered", "read-a"); rec.Code != 406 {
+		t.Errorf("406: %d", rec.Code)
 	}
 }
 

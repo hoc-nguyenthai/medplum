@@ -96,18 +96,134 @@ definitions:
 info:
   contact: {}
   description: 'DICOMweb (STOW-RS, QIDO-RS, WADO-RS) cho kho hình ảnh DICOM, dùng
-    chung schema và kho Binary với fhir-server. Lỗi trả {"error": "..."}. STOW-RS
-    (D3), QIDO-RS (tìm study, series) và WADO-RS (metadata series, frame) (D4) đã
-    cài; các route DICOMweb còn lại trả 501.'
+    chung schema và kho Binary với fhir-server. Lỗi trả {"error": "..."}. STOW-RS,
+    QIDO-RS (study, series, instance, có bộ lọc thuộc tính), WADO-RS (tải instance,
+    series, study; metadata; frame) đã cài; bulkdata và WADO-URI không có (501).'
   title: Trivita DICOMweb API
   version: "1.0"
 paths:
+  /dicomweb/instances:
+    get:
+      description: Trả metadata đã lưu của các instance khớp (kèm thuộc tính study,
+        series và instance); lọc theo thuộc tính cấp study, series và instance (SOPInstanceUID,
+        SOPClassUID, InstanceNumber). Cần quyền đọc.
+      parameters:
+      - description: Cỡ trang (mặc định 100, tối đa 1000)
+        in: query
+        name: limit
+        type: string
+      - description: Số kết quả bỏ qua
+        in: query
+        name: offset
+        type: string
+      - description: Thuộc tính cần lọc, theo từ khóa hoặc tag hex (ví dụ Modality=CT,
+          PatientID=P1, 00080060=CT)
+        in: query
+        name: attributes
+        type: string
+      produces:
+      - application/dicom+json
+      - application/json
+      responses:
+        "200":
+          description: Mảng DICOM JSON
+          schema:
+            items:
+              additionalProperties:
+                $ref: '#/definitions/httpapi.DicomJSONElement'
+              type: object
+            type: array
+        "400":
+          description: Tham số không hợp lệ
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+        "401":
+          description: Thiếu hoặc sai Bearer token
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+        "403":
+          description: Token không đủ quyền hoặc chọn project khác
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+        "404":
+          description: Không có
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+        "500":
+          description: Lỗi xử lý (không lộ chi tiết nội bộ)
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+      security:
+      - BearerAuth: []
+      summary: 'QIDO-RS: tìm instance (cả project)'
+      tags:
+      - dicomweb
+  /dicomweb/series:
+    get:
+      description: Như tìm series của một study nhưng không giới hạn study; lọc được
+        theo thuộc tính cấp study và series (Modality, SeriesInstanceUID, SeriesNumber...).
+        Cần quyền đọc.
+      parameters:
+      - description: Cỡ trang (mặc định 100, tối đa 1000)
+        in: query
+        name: limit
+        type: string
+      - description: Số kết quả bỏ qua
+        in: query
+        name: offset
+        type: string
+      - description: Thuộc tính cần lọc, theo từ khóa hoặc tag hex (ví dụ Modality=CT,
+          PatientID=P1, 00080060=CT)
+        in: query
+        name: attributes
+        type: string
+      produces:
+      - application/dicom+json
+      - application/json
+      responses:
+        "200":
+          description: Mảng DICOM JSON
+          schema:
+            items:
+              additionalProperties:
+                $ref: '#/definitions/httpapi.DicomJSONElement'
+              type: object
+            type: array
+        "400":
+          description: Tham số không hợp lệ
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+        "401":
+          description: Thiếu hoặc sai Bearer token
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+        "403":
+          description: Token không đủ quyền hoặc chọn project khác
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+        "404":
+          description: Không có
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+        "500":
+          description: Lỗi xử lý (không lộ chi tiết nội bộ)
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+      security:
+      - BearerAuth: []
+      summary: 'QIDO-RS: tìm series (cả project)'
+      tags:
+      - dicomweb
   /dicomweb/studies:
     get:
       description: 'Trả các study của project (mới cập nhật trước) dạng DICOM JSON.
-        Hiện chỉ hỗ trợ phân trang (limit, offset); bộ lọc theo thuộc tính (PatientID,
-        StudyDate...) chưa có và các tham số khác bị bỏ qua. Khi còn kết quả có header
-        `Warning: 299`. Không có kết quả thì 200 với []. Cần quyền đọc.'
+        Bộ lọc theo thuộc tính cấp study: PatientID, PatientName (khớp đầu chuỗi,
+        dấu * ở cuối), StudyDate (ngày hoặc khoảng YYYYMMDD-YYYYMMDD), StudyInstanceUID,
+        AccessionNumber, ModalitiesInStudy, StudyDescription..., theo từ khóa hoặc
+        tag 8 chữ số hex; nhiều giá trị ngăn bằng dấu \ hoặc dấu phẩy là OR. Tham
+        số không hỗ trợ bị bỏ qua và báo bằng `Warning: 299`, giá trị sai (ngày hỏng,
+        ký tự đại diện ở giữa) là 400. Khi còn kết quả có header `Warning: 299`. Không
+        có kết quả thì 200 với []. Cần quyền đọc.'
       parameters:
       - description: Cỡ trang (mặc định 100, tối đa 1000); giá trị hỏng dùng mặc định
         in: query
@@ -205,6 +321,50 @@ paths:
       tags:
       - dicomweb
   /dicomweb/studies/{studyUid}:
+    get:
+      description: Trả mọi instance của study dạng multipart/related; type="application/dicom",
+        mỗi phần là tệp DICOM Part 10 nguyên văn như lúc STOW, theo luồng (chunked,
+        bộ nhớ hằng số). Không có thì 404 trước khi ghi byte nào; lỗi giữa chừng thì
+        ngắt kết nối. Cần quyền đọc, gồm Binary.
+      parameters:
+      - description: UID của study (StudyInstanceUID)
+        in: path
+        name: studyUid
+        required: true
+        type: string
+      produces:
+      - multipart/related
+      - application/json
+      responses:
+        "200":
+          description: 'multipart/related: mỗi phần là một tệp DICOM'
+          schema:
+            type: file
+        "400":
+          description: Tham số không hợp lệ
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+        "401":
+          description: Thiếu hoặc sai Bearer token
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+        "403":
+          description: Token không đủ quyền hoặc chọn project khác
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+        "404":
+          description: Không có
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+        "500":
+          description: Lỗi xử lý (không lộ chi tiết nội bộ)
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+      security:
+      - BearerAuth: []
+      summary: 'WADO-RS: tải study'
+      tags:
+      - dicomweb
     post:
       consumes:
       - multipart/related
@@ -256,6 +416,113 @@ paths:
       security:
       - BearerAuth: []
       summary: 'STOW-RS: lưu instance vào một study'
+      tags:
+      - dicomweb
+  /dicomweb/studies/{studyUid}/instances:
+    get:
+      description: Như tìm instance, giới hạn trong một study. Cần quyền đọc.
+      parameters:
+      - description: UID của study (StudyInstanceUID)
+        in: path
+        name: studyUid
+        required: true
+        type: string
+      - description: Cỡ trang (mặc định 100, tối đa 1000)
+        in: query
+        name: limit
+        type: string
+      - description: Số kết quả bỏ qua
+        in: query
+        name: offset
+        type: string
+      - description: Thuộc tính cần lọc, theo từ khóa hoặc tag hex (ví dụ Modality=CT,
+          PatientID=P1, 00080060=CT)
+        in: query
+        name: attributes
+        type: string
+      produces:
+      - application/dicom+json
+      - application/json
+      responses:
+        "200":
+          description: Mảng DICOM JSON
+          schema:
+            items:
+              additionalProperties:
+                $ref: '#/definitions/httpapi.DicomJSONElement'
+              type: object
+            type: array
+        "400":
+          description: Tham số không hợp lệ
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+        "401":
+          description: Thiếu hoặc sai Bearer token
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+        "403":
+          description: Token không đủ quyền hoặc chọn project khác
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+        "404":
+          description: Không có
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+        "500":
+          description: Lỗi xử lý (không lộ chi tiết nội bộ)
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+      security:
+      - BearerAuth: []
+      summary: 'QIDO-RS: tìm instance của study'
+      tags:
+      - dicomweb
+  /dicomweb/studies/{studyUid}/metadata:
+    get:
+      description: Mảng metadata DICOM JSON của mọi instance trong study, theo luồng.
+        Study không có thì 404 trước khi ghi byte nào; lỗi giữa chừng thì ngắt kết
+        nối. Cần quyền đọc.
+      parameters:
+      - description: UID của study (StudyInstanceUID)
+        in: path
+        name: studyUid
+        required: true
+        type: string
+      produces:
+      - application/dicom+json
+      - application/json
+      responses:
+        "200":
+          description: Mảng DICOM JSON
+          schema:
+            items:
+              additionalProperties:
+                $ref: '#/definitions/httpapi.DicomJSONElement'
+              type: object
+            type: array
+        "400":
+          description: Tham số không hợp lệ
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+        "401":
+          description: Thiếu hoặc sai Bearer token
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+        "403":
+          description: Token không đủ quyền hoặc chọn project khác
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+        "404":
+          description: Không có
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+        "500":
+          description: Lỗi xử lý (không lộ chi tiết nội bộ)
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+      security:
+      - BearerAuth: []
+      summary: 'WADO-RS: metadata của study'
       tags:
       - dicomweb
   /dicomweb/studies/{studyUid}/series:
@@ -311,6 +578,169 @@ paths:
       security:
       - BearerAuth: []
       summary: 'QIDO-RS: tìm series của study'
+      tags:
+      - dicomweb
+  /dicomweb/studies/{studyUid}/series/{seriesUid}:
+    get:
+      description: Như tải study, cho các instance của một series.
+      parameters:
+      - description: UID của study (StudyInstanceUID)
+        in: path
+        name: studyUid
+        required: true
+        type: string
+      - description: UID của series (SeriesInstanceUID)
+        in: path
+        name: seriesUid
+        required: true
+        type: string
+      produces:
+      - multipart/related
+      - application/json
+      responses:
+        "200":
+          description: 'multipart/related: mỗi phần là một tệp DICOM'
+          schema:
+            type: file
+        "400":
+          description: Tham số không hợp lệ
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+        "401":
+          description: Thiếu hoặc sai Bearer token
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+        "403":
+          description: Token không đủ quyền hoặc chọn project khác
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+        "404":
+          description: Không có
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+        "500":
+          description: Lỗi xử lý (không lộ chi tiết nội bộ)
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+      security:
+      - BearerAuth: []
+      summary: 'WADO-RS: tải series'
+      tags:
+      - dicomweb
+  /dicomweb/studies/{studyUid}/series/{seriesUid}/instances:
+    get:
+      description: Như tìm instance, giới hạn trong một series. Cần quyền đọc.
+      parameters:
+      - description: UID của study (StudyInstanceUID)
+        in: path
+        name: studyUid
+        required: true
+        type: string
+      - description: UID của series (SeriesInstanceUID)
+        in: path
+        name: seriesUid
+        required: true
+        type: string
+      - description: Cỡ trang (mặc định 100, tối đa 1000)
+        in: query
+        name: limit
+        type: string
+      - description: Số kết quả bỏ qua
+        in: query
+        name: offset
+        type: string
+      - description: Thuộc tính cần lọc, theo từ khóa hoặc tag hex (ví dụ Modality=CT,
+          PatientID=P1, 00080060=CT)
+        in: query
+        name: attributes
+        type: string
+      produces:
+      - application/dicom+json
+      - application/json
+      responses:
+        "200":
+          description: Mảng DICOM JSON
+          schema:
+            items:
+              additionalProperties:
+                $ref: '#/definitions/httpapi.DicomJSONElement'
+              type: object
+            type: array
+        "400":
+          description: Tham số không hợp lệ
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+        "401":
+          description: Thiếu hoặc sai Bearer token
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+        "403":
+          description: Token không đủ quyền hoặc chọn project khác
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+        "404":
+          description: Không có
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+        "500":
+          description: Lỗi xử lý (không lộ chi tiết nội bộ)
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+      security:
+      - BearerAuth: []
+      summary: 'QIDO-RS: tìm instance của series'
+      tags:
+      - dicomweb
+  /dicomweb/studies/{studyUid}/series/{seriesUid}/instances/{instanceUid}:
+    get:
+      description: Như tải study, cho một instance (một phần duy nhất).
+      parameters:
+      - description: UID của study (StudyInstanceUID)
+        in: path
+        name: studyUid
+        required: true
+        type: string
+      - description: UID của series (SeriesInstanceUID)
+        in: path
+        name: seriesUid
+        required: true
+        type: string
+      - description: UID của instance (SOPInstanceUID)
+        in: path
+        name: instanceUid
+        required: true
+        type: string
+      produces:
+      - multipart/related
+      - application/json
+      responses:
+        "200":
+          description: 'multipart/related: một tệp DICOM'
+          schema:
+            type: file
+        "400":
+          description: Tham số không hợp lệ
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+        "401":
+          description: Thiếu hoặc sai Bearer token
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+        "403":
+          description: Token không đủ quyền hoặc chọn project khác
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+        "404":
+          description: Không có
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+        "500":
+          description: Lỗi xử lý (không lộ chi tiết nội bộ)
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+      security:
+      - BearerAuth: []
+      summary: 'WADO-RS: tải instance'
       tags:
       - dicomweb
   /dicomweb/studies/{studyUid}/series/{seriesUid}/instances/{instanceUid}/frames/{frame}:
@@ -380,6 +810,219 @@ paths:
       security:
       - BearerAuth: []
       summary: 'WADO-RS: lấy frame'
+      tags:
+      - dicomweb
+  /dicomweb/studies/{studyUid}/series/{seriesUid}/instances/{instanceUid}/frames/{frame}/rendered:
+    get:
+      description: Như ảnh dựng của instance nhưng cho frame được chọn (một số, từ
+        1). Frame vượt tổng số frame là 416.
+      parameters:
+      - description: UID của study (StudyInstanceUID)
+        in: path
+        name: studyUid
+        required: true
+        type: string
+      - description: UID của series (SeriesInstanceUID)
+        in: path
+        name: seriesUid
+        required: true
+        type: string
+      - description: UID của instance (SOPInstanceUID)
+        in: path
+        name: instanceUid
+        required: true
+        type: string
+      - description: Số thứ tự frame bắt đầu từ 1
+        in: path
+        name: frame
+        required: true
+        type: integer
+      - description: 'center,width[,linear]: cửa sổ ghi đè (width > 0)'
+        in: query
+        name: window
+        type: string
+      - description: Chất lượng JPEG 1..100 (mặc định 90)
+        in: query
+        name: quality
+        type: integer
+      produces:
+      - image/jpeg
+      - image/png
+      - application/json
+      responses:
+        "200":
+          description: Ảnh JPEG hoặc PNG
+          schema:
+            type: file
+        "400":
+          description: Tham số không hợp lệ
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+        "401":
+          description: Thiếu hoặc sai Bearer token
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+        "403":
+          description: Token không đủ quyền hoặc chọn project khác
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+        "404":
+          description: Không có instance hoặc ảnh
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+        "406":
+          description: Accept không có định dạng hỗ trợ, hoặc dữ liệu điểm ảnh chưa
+            dựng được
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+        "413":
+          description: Frame quá lớn để dựng
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+        "416":
+          description: Số frame vượt tổng số frame của instance
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+        "500":
+          description: Lỗi xử lý (không lộ chi tiết nội bộ)
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+      security:
+      - BearerAuth: []
+      summary: 'WADO-RS: ảnh dựng của một frame'
+      tags:
+      - dicomweb
+  /dicomweb/studies/{studyUid}/series/{seriesUid}/instances/{instanceUid}/metadata:
+    get:
+      description: 'Mảng một phần tử: metadata DICOM JSON của instance. Cần quyền
+        đọc.'
+      parameters:
+      - description: UID của study (StudyInstanceUID)
+        in: path
+        name: studyUid
+        required: true
+        type: string
+      - description: UID của series (SeriesInstanceUID)
+        in: path
+        name: seriesUid
+        required: true
+        type: string
+      - description: UID của instance (SOPInstanceUID)
+        in: path
+        name: instanceUid
+        required: true
+        type: string
+      produces:
+      - application/dicom+json
+      - application/json
+      responses:
+        "200":
+          description: Mảng DICOM JSON
+          schema:
+            items:
+              additionalProperties:
+                $ref: '#/definitions/httpapi.DicomJSONElement'
+              type: object
+            type: array
+        "400":
+          description: Tham số không hợp lệ
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+        "401":
+          description: Thiếu hoặc sai Bearer token
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+        "403":
+          description: Token không đủ quyền hoặc chọn project khác
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+        "404":
+          description: Không có
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+        "500":
+          description: Lỗi xử lý (không lộ chi tiết nội bộ)
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+      security:
+      - BearerAuth: []
+      summary: 'WADO-RS: metadata của instance'
+      tags:
+      - dicomweb
+  /dicomweb/studies/{studyUid}/series/{seriesUid}/instances/{instanceUid}/rendered:
+    get:
+      description: 'Trả frame đầu tiên của instance dưới dạng ảnh image/jpeg (mặc
+        định) hoặc image/png theo header Accept. Dựng được: JPEG baseline (trả nguyên
+        khi cần JPEG, giải mã và mã hóa PNG khi cần PNG), dữ liệu không nén xám 8
+        hoặc 16 bit (window/level từ metadata, hoặc từ tham số `window`; MONOCHROME1
+        được đảo) và RGB 8 bit. Mọi định dạng khác (JPEG 2000, JPEG-LS, RLE, YBR,
+        bảng màu...) trả 406. Bộ nhớ một frame tối đa 64 MiB (vượt thì 413). Tham
+        số viewport, annotation, iccprofile bị bỏ qua. Cần quyền đọc, gồm Binary.'
+      parameters:
+      - description: UID của study (StudyInstanceUID)
+        in: path
+        name: studyUid
+        required: true
+        type: string
+      - description: UID của series (SeriesInstanceUID)
+        in: path
+        name: seriesUid
+        required: true
+        type: string
+      - description: UID của instance (SOPInstanceUID)
+        in: path
+        name: instanceUid
+        required: true
+        type: string
+      - description: 'center,width[,linear]: cửa sổ ghi đè (width > 0)'
+        in: query
+        name: window
+        type: string
+      - description: Chất lượng JPEG 1..100 (mặc định 90)
+        in: query
+        name: quality
+        type: integer
+      produces:
+      - image/jpeg
+      - image/png
+      - application/json
+      responses:
+        "200":
+          description: Ảnh JPEG hoặc PNG
+          schema:
+            type: file
+        "400":
+          description: Tham số không hợp lệ
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+        "401":
+          description: Thiếu hoặc sai Bearer token
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+        "403":
+          description: Token không đủ quyền hoặc chọn project khác
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+        "404":
+          description: Không có instance hoặc ảnh
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+        "406":
+          description: Accept không có định dạng hỗ trợ, hoặc dữ liệu điểm ảnh chưa
+            dựng được
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+        "413":
+          description: Frame quá lớn để dựng
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+        "500":
+          description: Lỗi xử lý (không lộ chi tiết nội bộ)
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+      security:
+      - BearerAuth: []
+      summary: 'WADO-RS: ảnh dựng của instance'
       tags:
       - dicomweb
   /dicomweb/studies/{studyUid}/series/{seriesUid}/metadata:

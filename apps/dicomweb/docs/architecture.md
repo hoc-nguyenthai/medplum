@@ -55,6 +55,14 @@ Handler (`httpapi.stowHandler`) chỉ chuyển luồng thân yêu cầu cho `pkg
 
 **Quyền:** đọc frame cần quyền đọc cả `DicomStudy`, `DicomSeries`, `DicomInstance` và `Binary` (Q-D1); thiếu quyền đọc `Binary` thì 403 chứ không phải 500.
 
+## Vượt parity (D7)
+
+**QIDO-RS có bộ lọc và cấp instance** (`pkg/dicomretrieve/query.go`, `search.go`): `GET /studies`, `/series`, `/instances` và các dạng lồng trong study, series. Thuộc tính viết theo từ khóa (`PatientID`) hoặc tag 8 chữ số hex (`00100020`), ánh xạ sang tham số tìm kiếm FHIR của `DicomStudy`, `DicomSeries`, `DicomInstance`: UID và mã khớp nguyên chuỗi, `PatientName` khớp đầu chuỗi không phân biệt hoa thường (dấu `*` ở cuối được bỏ, ở giữa là 400), ngày `YYYYMMDD` hoặc khoảng `a-b`, `-b`, `a-` (ngày hỏng là 400), nhiều giá trị ngăn bằng `\` hoặc dấu phẩy là OR, nhiều thuộc tính là AND. Truy vấn ở một cấp có thể kèm thuộc tính của cấp trên (series theo `PatientID`): trước hết tìm study khớp (tối đa 1000, nhiều hơn thì 400 vì bộ lọc quá rộng) rồi thu hẹp series. `Modality` của series không có tham số tìm kiếm ở kho nên lọc sau khi đọc (tối đa 10000 series). Cấp instance trả nguyên metadata đã lưu. Tham số không hỗ trợ bị bỏ qua và báo bằng `Warning: 299` (không im lặng). Study ở đường dẫn không có thì 404.
+
+**Tải tệp** (`download.go`): `GET /studies/{s}`, `/series/{r}`, `/instances/{i}` trả `multipart/related; type="application/dicom"`, mỗi instance một phần là tệp Part 10 nguyên văn từ kho, theo luồng từng trang 100 instance (bộ nhớ hằng số, chunked, không `Content-Length`). Kiểm study, series, instance và mở thử nội dung của instance đầu trước khi ghi byte nào; lỗi sau đó ngắt kết nối. Metadata cấp study và instance dùng cùng bộ ghi theo luồng với metadata series.
+
+**`rendered`** (`pkg/dicomrender`, chỉ thư viện chuẩn): instance (frame 1) và `frames/{n}/rendered` ra `image/jpeg` (mặc định) hoặc `image/png` theo `Accept` (có `q`). Dựng được: JPEG baseline (trả nguyên, hoặc giải mã rồi mã hóa PNG), không nén xám 8 hoặc 16 bit (RescaleSlope/Intercept, window từ metadata hoặc `window=center,width`, MONOCHROME1 đảo) và RGB 8 bit (xen kẽ hoặc tách mặt phẳng). Mọi định dạng khác (JPEG 2000, JPEG-LS, RLE, JPEG mở rộng 12 bit, YBR, bảng màu, 32 bit) là 406 chứ không trả ảnh sai. Dữ liệu một frame được đọc hết vào bộ nhớ nên có trần 64 MiB (413) và `MaxPixels`. Không làm: bulkdata, WADO-URI, `viewport`, `annotation`, rendered cấp series và study (đều 501 hoặc bị bỏ qua).
+
 ## Chưa có (làm ở các bước sau)
 
 D3 STOW-RS (kèm đọc tệp DICOM thật và đọc-sửa-ghi số liệu tổng hợp trên `pkg/dicomweb` đã có từ D2) (tách luồng ghi kho và đọc metadata, chốt chặn SQ lồng sâu và tệp cắt giữa PixelData);  D6 compose và e2e. Manifest K8s mẫu chưa có (dự án hiện bỏ qua K8s).

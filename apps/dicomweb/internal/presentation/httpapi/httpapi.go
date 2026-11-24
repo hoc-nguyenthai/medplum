@@ -11,6 +11,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -58,6 +59,20 @@ func (e *StatusError) Error() string { return e.Msg }
 type QueryPage struct {
 	Items any
 	More  bool // còn kết quả sau trang này
+	// Ignored là các tham số truy vấn không hỗ trợ, đã bị bỏ qua (báo bằng header Warning).
+	Ignored []string
+}
+
+// Rendered là ảnh đã dựng (image/jpeg hoặc image/png) của một frame.
+type Rendered struct {
+	ContentType string
+	Body        []byte
+}
+
+// Download là phản hồi tải tệp DICOM (multipart/related; type="application/dicom") ghi theo luồng, độ dài không biết trước (chunked).
+type Download struct {
+	ContentType string
+	Write       func(io.Writer) error
 }
 
 // FrameStream là phản hồi frame WADO-RS đã kiểm hợp lệ, sẵn sàng ghi theo luồng.
@@ -70,10 +85,15 @@ type FrameStream struct {
 // Retriever thực hiện QIDO-RS và WADO-RS (cài ở bootstrap, bằng pkg/dicomretrieve). limit, offset và frames là chuỗi thô trên URL: bên cài đặt đọc và báo lỗi 400.
 // Mọi lỗi 4xx và 5xx phải xảy ra trước khi trả hàm ghi, vì sau khi bắt đầu ghi thì không đổi được mã trạng thái.
 type Retriever interface {
-	SearchStudies(ctx context.Context, limit, offset string) (QueryPage, error)
-	SearchSeries(ctx context.Context, studyUID, limit, offset string) (QueryPage, error)
-	SeriesMetadata(ctx context.Context, studyUID, seriesUID string) (func(io.Writer) error, error)
+	// Search là QIDO-RS ở cấp "study", "series" hoặc "instance"; studyUID và seriesUID giới hạn phạm vi (rỗng: cả project); params là toàn bộ query của URL.
+	Search(ctx context.Context, level, studyUID, seriesUID string, params url.Values) (QueryPage, error)
+	// Metadata trả metadata của một instance (instanceUID), một series (seriesUID) hoặc cả study.
+	Metadata(ctx context.Context, studyUID, seriesUID, instanceUID string) (func(io.Writer) error, error)
+	// Download trả tệp DICOM của một instance, một series hoặc cả study.
+	Download(ctx context.Context, studyUID, seriesUID, instanceUID string) (Download, error)
 	Frames(ctx context.Context, studyUID, seriesUID, instanceUID, frames string) (FrameStream, error)
+	// Rendered dựng ảnh của frame (rỗng: frame 1) theo header Accept và tham số truy vấn (window, quality); 406 khi không dựng được.
+	Rendered(ctx context.Context, studyUID, seriesUID, instanceUID, frame, accept string, params url.Values) (Rendered, error)
 }
 
 // Deps là mọi thứ presentation cần; được lắp ở bootstrap.
@@ -149,11 +169,26 @@ func New(dep Deps) (*echo.Echo, error) {
 		stow := handler(dep.Stow, stowHandler(dep.Stow, dep.BaseURL))
 		g.POST("/studies", stow)
 		g.POST("/studies/:studyUid", stow)
-		g.GET("/studies", retrieve(dep.Retrieve, searchStudiesHandler(dep.Retrieve)))
-		g.GET("/studies/:studyUid/series", retrieve(dep.Retrieve, searchSeriesHandler(dep.Retrieve)))
-		g.GET("/studies/:studyUid/series/:seriesUid/metadata", retrieve(dep.Retrieve, seriesMetadataHandler(dep.Retrieve)))
-		g.GET("/studies/:studyUid/series/:seriesUid/instances/:instanceUid/frames/:frame", retrieve(dep.Retrieve, framesHandler(dep.Retrieve)))
-		// Mọi route DICOMweb khác (instances, rendered, bulkdata, delete...): 501 sau xác thực, không phải 200 rỗng.
+		r := dep.Retrieve
+		search := func(level string) echo.HandlerFunc { return retrieve(r, searchHandler(r, level)) }
+		meta := retrieve(r, metadataHandler(r))
+		dl := retrieve(r, downloadHandler(r))
+		g.GET("/studies", search("study"))
+		g.GET("/series", search("series"))
+		g.GET("/instances", search("instance"))
+		g.GET("/studies/:studyUid", dl)
+		g.GET("/studies/:studyUid/series", search("series"))
+		g.GET("/studies/:studyUid/instances", search("instance"))
+		g.GET("/studies/:studyUid/metadata", meta)
+		g.GET("/studies/:studyUid/series/:seriesUid", dl)
+		g.GET("/studies/:studyUid/series/:seriesUid/instances", search("instance"))
+		g.GET("/studies/:studyUid/series/:seriesUid/metadata", meta)
+		g.GET("/studies/:studyUid/series/:seriesUid/instances/:instanceUid", dl)
+		g.GET("/studies/:studyUid/series/:seriesUid/instances/:instanceUid/metadata", meta)
+		g.GET("/studies/:studyUid/series/:seriesUid/instances/:instanceUid/frames/:frame", retrieve(r, framesHandler(r)))
+		g.GET("/studies/:studyUid/series/:seriesUid/instances/:instanceUid/rendered", retrieve(r, renderedHandler(r)))
+		g.GET("/studies/:studyUid/series/:seriesUid/instances/:instanceUid/frames/:frame/rendered", retrieve(r, renderedHandler(r)))
+		// Mọi route DICOMweb khác (bulkdata, rendered cấp series và study, delete...): 501 sau xác thực, không phải 200 rỗng.
 		g.Any("", notImplemented)
 		g.Any("/*", notImplemented)
 	}
@@ -186,14 +221,18 @@ func writePage(c echo.Context, p QueryPage) error {
 		return err
 	}
 	if p.More {
-		c.Response().Header().Set("Warning", `299 dicomweb: There are additional results that can be requested`)
+		c.Response().Header().Add("Warning", `299 dicomweb: There are additional results that can be requested`)
+	}
+	if len(p.Ignored) > 0 {
+		c.Response().Header().Add("Warning", `299 dicomweb: Ignored unsupported query parameters: `+strings.Join(p.Ignored, ", "))
 	}
 	return c.Blob(http.StatusOK, dicomJSON, raw)
 }
 
-func searchStudiesHandler(svc Retriever) echo.HandlerFunc {
+// searchHandler là QIDO-RS ở một cấp. Ba cấp dùng chung vì chỉ khác phạm vi lấy từ đường dẫn.
+func searchHandler(svc Retriever, level string) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		p, err := svc.SearchStudies(c.Request().Context(), c.QueryParam("limit"), c.QueryParam("offset"))
+		p, err := svc.Search(c.Request().Context(), level, c.Param("studyUid"), c.Param("seriesUid"), c.QueryParams())
 		if err != nil {
 			return retrieveError(c, err)
 		}
@@ -201,21 +240,11 @@ func searchStudiesHandler(svc Retriever) echo.HandlerFunc {
 	}
 }
 
-func searchSeriesHandler(svc Retriever) echo.HandlerFunc {
+// metadataHandler ghi mảng metadata (study, series hoặc instance tùy tham số đường dẫn) theo luồng. Không có thì 404 trước khi ghi byte nào; lỗi giữa chừng thì ngắt kết nối
+// (panic ErrAbortHandler) để client thấy phản hồi bị cắt thay vì một JSON dở dang trông như hợp lệ.
+func metadataHandler(svc Retriever) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		p, err := svc.SearchSeries(c.Request().Context(), c.Param("studyUid"), c.QueryParam("limit"), c.QueryParam("offset"))
-		if err != nil {
-			return retrieveError(c, err)
-		}
-		return writePage(c, p)
-	}
-}
-
-// seriesMetadataHandler ghi mảng metadata theo luồng. Study hay series không có thì 404 trước khi ghi byte nào; lỗi giữa chừng thì ngắt kết nối (panic ErrAbortHandler)
-// để client thấy phản hồi bị cắt thay vì một JSON dở dang trông như hợp lệ.
-func seriesMetadataHandler(svc Retriever) echo.HandlerFunc {
-	return func(c echo.Context) error {
-		write, err := svc.SeriesMetadata(c.Request().Context(), c.Param("studyUid"), c.Param("seriesUid"))
+		write, err := svc.Metadata(c.Request().Context(), c.Param("studyUid"), c.Param("seriesUid"), c.Param("instanceUid"))
 		if err != nil {
 			return retrieveError(c, err)
 		}
@@ -226,6 +255,34 @@ func seriesMetadataHandler(svc Retriever) echo.HandlerFunc {
 			panic(http.ErrAbortHandler)
 		}
 		return nil
+	}
+}
+
+// downloadHandler trả tệp DICOM Part 10 của instance, series hoặc study (PS3.18 10.4.1.1.1) dạng multipart/related, chunked, mỗi instance một phần.
+func downloadHandler(svc Retriever) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		d, err := svc.Download(c.Request().Context(), c.Param("studyUid"), c.Param("seriesUid"), c.Param("instanceUid"))
+		if err != nil {
+			return retrieveError(c, err)
+		}
+		c.Response().Header().Set(echo.HeaderContentType, d.ContentType)
+		c.Response().WriteHeader(http.StatusOK)
+		if err := d.Write(c.Response()); err != nil {
+			slog.ErrorContext(c.Request().Context(), "DICOMweb: lỗi khi ghi tệp DICOM", "error", err.Error())
+			panic(http.ErrAbortHandler)
+		}
+		return nil
+	}
+}
+
+// renderedHandler trả ảnh JPEG hoặc PNG của một frame (instance không kèm frame là frame 1). Ảnh dựng trong bộ nhớ nên có Content-Length.
+func renderedHandler(svc Retriever) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		r, err := svc.Rendered(c.Request().Context(), c.Param("studyUid"), c.Param("seriesUid"), c.Param("instanceUid"), c.Param("frame"), c.Request().Header.Get("Accept"), c.QueryParams())
+		if err != nil {
+			return retrieveError(c, err)
+		}
+		return c.Blob(http.StatusOK, r.ContentType, r.Body)
 	}
 }
 
