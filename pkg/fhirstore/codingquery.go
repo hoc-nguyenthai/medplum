@@ -30,8 +30,8 @@ func (s *Store) QueryConcepts(ctx context.Context, sid string, q fhirrouter.Conc
 				return nil, 0, fhirrouter.Unprocessable("CodeSystem không có thuộc tính phân cấp cho filter " + f.Op)
 			}
 			root, sys, prop := b.arg(f.Value), b.arg(sid), b.arg(q.HierarchyProperty)
-			b.w(" AND c.code IN (WITH RECURSIVE d(code) AS (SELECT CAST(" + root + " AS text) UNION SELECT p.code FROM fhir_coding_property p JOIN d ON p.value = d.code" +
-				" WHERE p.system_id = " + sys + " AND p.property = " + prop + ") SELECT code FROM d)")
+			b.w(" AND c.code IN (WITH RECURSIVE d(code) AS (SELECT CAST(" + root + " AS text) UNION SELECT p.code FROM d, fhir_coding_property p" +
+				" WHERE p.value = d.code AND p.system_id = " + sys + " AND p.property = " + prop + ") SELECT code FROM d)")
 			if f.Op == "descendent-of" {
 				b.w(" AND c.code <> " + b.arg(f.Value))
 			}

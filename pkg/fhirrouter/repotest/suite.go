@@ -2074,8 +2074,12 @@ func testStoredTerminology(t *testing.T, mk Factory) {
 		"status": "active", "content": "not-present",
 		"property": []any{map[string]any{"code": "kind", "type": "string"}}}).body, "id")
 	// R > A > B, R > C; kind: A=x, B=x, C=y
-	par := func(c, p string) map[string]any { return impPart("property", map[string]string{"code": c, "property": "parent", "value": p}) }
-	kind := func(c, v string) map[string]any { return impPart("property", map[string]string{"code": c, "property": "kind", "value": v}) }
+	par := func(c, p string) map[string]any {
+		return impPart("property", map[string]string{"code": c, "property": "parent", "value": p})
+	}
+	kind := func(c, v string) map[string]any {
+		return impPart("property", map[string]string{"code": c, "property": "kind", "value": v})
+	}
 	e.mustDo(200, "POST", "CodeSystem/"+csID+"/$import", importParams("", impConcept("R", "Root"), impConcept("A", "Alpha thing"),
 		impConcept("B", "Beta thing"), impConcept("C", "Gamma_1 100%"),
 		par("A", "R"), par("B", "A"), par("C", "R"), kind("A", "x"), kind("B", "x"), kind("C", "y"),
