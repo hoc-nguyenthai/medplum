@@ -40,13 +40,9 @@ func newSQLite(t *testing.T) *fhirstore.Store {
 type asProject struct {
 	fhirrouter.Repository
 	project string
-	base    fhirrouter.Repository // không tách: job reindex cả loại chạy xuyên project
 }
 
 func (a asProject) Reindex(ctx context.Context, t, id string, p func(int)) (int, error) {
-	if id == "" {
-		return a.base.(fhirrouter.Reindexer).Reindex(ctx, t, id, p)
-	}
 	return a.Repository.(fhirrouter.Reindexer).Reindex(a.ctx(ctx), t, id, p)
 }
 func (a asProject) Expunge(ctx context.Context, t, id string) error {
@@ -83,7 +79,7 @@ func (a asProject) LockKey(ctx context.Context, key string) error {
 
 func (a asProject) RunInTransaction(ctx context.Context, fn func(fhirrouter.Repository) error) error {
 	return a.Repository.(fhirrouter.Transactional).RunInTransaction(a.ctx(ctx), func(rp fhirrouter.Repository) error {
-		return fn(asProject{rp, a.project, a.base})
+		return fn(asProject{rp, a.project})
 	})
 }
 
@@ -100,7 +96,7 @@ func TestScopedParity(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			repotest.Run(t, func(t *testing.T) fhirrouter.Repository {
 				base := mk(t)
-				return asProject{Repository: fhirauth.Scope(base), project: "p1", base: base}
+				return asProject{Repository: fhirauth.Scope(base), project: "p1"}
 			})
 		})
 	}
@@ -303,4 +299,62 @@ func mustJSON(t *testing.T, v any) []byte {
 		t.Fatal(err)
 	}
 	return b
+}
+
+// recordingReindexer ghi lại mọi lần reindex để kiểm Reindex cả loại chỉ chạm resource của project người gọi.
+type recordingReindexer struct {
+	fhirrouter.Repository
+	calls []string
+}
+
+func (r *recordingReindexer) Reindex(_ context.Context, rt, id string, _ func(int)) (int, error) {
+	r.calls = append(r.calls, rt+"/"+id)
+	return 1, nil
+}
+
+// $reindex cả loại (id rỗng) không được chạm resource của project khác: kho bên dưới chỉ biết reindex theo loại trên mọi project, nên lớp tách project
+// phải liệt kê id của project rồi reindex từng resource.
+func TestReindexTypeStaysInsideCallerProject(t *testing.T) {
+	rec := &recordingReindexer{Repository: fhirrouter.NewMemoryRepository()}
+	repo := fhirauth.Scope(rec)
+	as := func(project string) context.Context {
+		return fhirauth.WithPrincipal(context.Background(), &fhirauth.Principal{Subject: "u", Project: project, Role: fhirauth.RoleAdmin})
+	}
+	var idsA []string
+	for i := 0; i < 3; i++ {
+		r, err := repo.CreateResource(as("A"), &fhir.Patient{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		idsA = append(idsA, r.GetID())
+	}
+	rb, err := repo.CreateResource(as("B"), &fhir.Patient{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	n, err := repo.Reindex(as("A"), "Patient", "", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n != 3 || len(rec.calls) != 3 {
+		t.Fatalf("project A có 3 Patient, reindex %d (gọi %v)", n, rec.calls)
+	}
+	for _, c := range rec.calls {
+		if c == "Patient/"+rb.GetID() {
+			t.Fatalf("reindex chạm resource của project B: %v", rec.calls)
+		}
+	}
+	if _, err := repo.Reindex(as("B"), "Patient", "", nil); err != nil || len(rec.calls) != 4 || rec.calls[3] != "Patient/"+rb.GetID() {
+		t.Fatalf("project B chỉ reindex Patient của B: %v %v", err, rec.calls)
+	}
+	// token có chính sách truy cập vẫn bị chặn
+	policy, err := fhirauth.ParsePolicy([]any{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	pol := fhirauth.WithPrincipal(context.Background(), &fhirauth.Principal{Subject: "u", Project: "A", Role: fhirauth.RoleAdmin, Policy: policy})
+	if _, err := repo.Reindex(pol, "Patient", "", nil); err == nil {
+		t.Fatal("token có chính sách phải bị chặn reindex")
+	}
 }

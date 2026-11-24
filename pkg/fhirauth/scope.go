@@ -18,8 +18,8 @@ import (
 //   - Search: thêm điều kiện _project; kết quả _include/_revinclude bị lọc theo project.
 //
 // Giới hạn: resource đã xóa không còn nội dung để kiểm project nên đọc id đã xóa của project khác trả 410 thay vì 404
-// (id là UUID ngẫu nhiên nên không đoán được). Reindex cả loại (id rỗng) bị từ chối vì chạy xuyên project;
-// job $reindex chạy bằng Options.JobRepository không tách.
+// (id là UUID ngẫu nhiên nên không đoán được). Reindex cả loại (id rỗng) chỉ chạm resource của project người gọi (liệt kê rồi reindex từng resource);
+// job $reindex là job có phạm vi (RegisterScopedJob): chạy bằng ScopedJobRepository với quyền của người gọi.
 // Dữ liệu ghi trước khi bật tách project không có Meta.project nên sẽ không ai thấy cho tới khi được gán project.
 type Repo struct{ inner fhirrouter.Repository }
 
@@ -499,15 +499,41 @@ func (r *Repo) Reindex(ctx context.Context, rt, id string, progress func(int)) (
 	if !ok {
 		return 0, fhirrouter.NotImplemented("Repository không hỗ trợ reindex")
 	}
-	if id == "" && !grantsSuper(ctx) {
-		return 0, fhirrouter.Forbidden("Reindex cả loại chạy xuyên project; dùng job quản trị")
+	if id == "" {
+		return r.reindexProject(ctx, ri, project, rt, progress)
 	}
-	if id != "" {
-		if err := r.owned(ctx, project, rt, id); err != nil {
-			return 0, err
-		}
+	if err := r.owned(ctx, project, rt, id); err != nil {
+		return 0, err
 	}
 	return ri.Reindex(ctx, rt, id, progress)
+}
+
+// reindexBatch là số resource lấy mỗi lần khi lập lại chỉ mục cả loại của một project.
+const reindexBatch = 200
+
+// reindexProject lập lại chỉ mục mọi resource của MỘT project (kể cả super-admin: project đã chọn bằng X-Fhir-Project). Kho bên dưới chỉ
+// reindex theo loại trên mọi project nên ở đây liệt kê id của project rồi reindex từng resource: chậm hơn nhưng không chạm project khác.
+func (r *Repo) reindexProject(ctx context.Context, ri fhirrouter.Reindexer, project, rt string, progress func(int)) (int, error) {
+	pf := fhirsearch.Filter{Code: fhir.ProjectParam.Code, Def: fhir.ProjectParam, Values: []string{project}}
+	done := 0
+	for offset := 0; ; offset += reindexBatch {
+		res, err := r.inner.Search(ctx, &fhirsearch.Request{ResourceType: rt, Filters: []fhirsearch.Filter{pf}, Count: reindexBatch, Offset: offset, Total: "none"})
+		if err != nil {
+			return done, err
+		}
+		for _, m := range res.Matches {
+			if _, err := ri.Reindex(ctx, rt, m.GetID(), nil); err != nil {
+				return done, err
+			}
+			done++
+		}
+		if progress != nil {
+			progress(done)
+		}
+		if !res.More || len(res.Matches) == 0 {
+			return done, nil
+		}
+	}
 }
 
 // ResendSubscriptions chỉ cho quản trị project (hoặc super-admin) và chỉ với resource thuộc project của người gọi; phát lại do repository bên trong thực hiện.

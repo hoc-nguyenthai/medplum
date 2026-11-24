@@ -348,7 +348,7 @@ func (r *Router) registerOperations() {
 	r.registerConceptMapImport()
 	r.registerGraphQL()
 	r.registerClinical()
-	r.RegisterJob("reindex", func(ctx context.Context, repo Repository, in *Input) (*fhir.Parameters, error) {
+	r.RegisterScopedJob("reindex", func(ctx context.Context, repo Repository, in *Input) (*fhir.Parameters, error) {
 		ri, ok := repo.(Reindexer)
 		if !ok {
 			return nil, fmt.Errorf("repository không hỗ trợ reindex")

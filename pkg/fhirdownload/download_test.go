@@ -434,3 +434,29 @@ func TestNewValidatesConfig(t *testing.T) {
 		}
 	}
 }
+
+// Broker giao lại ít nhất một lần (consumer chết trước khi ACK, ClaimInterval): nhận lại CÙNG sự kiện cũ (còn URL ngoài) sau khi đã tải xong
+// không được tải thêm, không tạo Binary thứ hai và không đổi lại resource.
+func TestRedeliveredEventDoesNotDownloadTwice(t *testing.T) {
+	site := newSite(t, map[string]http.HandlerFunc{"/doc.pdf": serve("application/pdf", []byte("%PDF-1.7 một"))})
+	e := newEnv(t, nil)
+	d := e.create(docRef("projA", site.URL+"/doc.pdf"))
+	before := e.read(d.ID)
+	if !strings.HasPrefix(before.Content[0].Attachment.URL, "Binary/") {
+		t.Fatalf("chưa tải xong: %q", before.Content[0].Attachment.URL)
+	}
+	stale := []byte(`{"resourceType":"DocumentReference","id":"` + d.ID + `","status":"current","content":[{"attachment":{"url":"` + site.URL + `/doc.pdf"}}]}`)
+	env, _ := messaging.NewEnvelope(fhirsub.ChangeEvent{Interaction: "create", ResourceType: "DocumentReference", ID: d.ID, Resource: stale})
+	for i := 0; i < 3; i++ {
+		if err := e.w.Handle(context.Background(), env); err != nil {
+			t.Fatalf("giao lại lần %d: %v", i+1, err)
+		}
+	}
+	after := e.read(d.ID)
+	if site.hits["/doc.pdf"].Load() != 1 || len(e.binaries()) != 1 || e.blobCount() != 1 {
+		t.Errorf("gọi ngoài %d lần, %d Binary, %d nội dung (muốn 1, 1, 1)", site.hits["/doc.pdf"].Load(), len(e.binaries()), e.blobCount())
+	}
+	if after.Meta.VersionId != before.Meta.VersionId || after.Content[0].Attachment.URL != before.Content[0].Attachment.URL {
+		t.Errorf("resource bị đổi khi nhận lại sự kiện: %s %q -> %s %q", before.Meta.VersionId, before.Content[0].Attachment.URL, after.Meta.VersionId, after.Content[0].Attachment.URL)
+	}
+}

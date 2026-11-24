@@ -603,7 +603,7 @@ Khuôn mỗi chức năng: **Mục đích · Tác nhân · Tiền điều kiện
 1. Guard HTTP: đường dẫn kết thúc `/$reindex` đòi RoleAdmin với mọi method (thiếu thì 403 `Token không đủ quyền cho thao tác này`).
 2. Router kiểm repository có Reindexer, không thì 501 `Repository không hỗ trợ reindex`.
 3. Tạo AsyncJob (kind `reindex`, `resourceType` = loại), trả 202 + `Content-Location: <base>/job/{id}/status`.
-4. Job chạy trên repository không tách project (JobRepository): với mọi resource chưa xóa của loại đó, theo thứ tự id, mỗi lô 200 resource một transaction, tính lại chỉ mục.
+4. Job là job có phạm vi: chạy bằng kho đã tách project với quyền của người gọi (khôi phục từ chữ ký job). Liệt kê id resource của ĐÚNG project (lô 200), reindex từng resource (kiểm sở hữu theo project). Token có AccessPolicy: job lỗi `403 Reindex không dùng được với chính sách truy cập`. Chế độ token tĩnh (không tách project): chạy trên cả kho như trước.
 5. Xong ghi Parameters `count` (số resource đã xử lý), AsyncJob `completed`. Poll bằng `GET job/{id}/status`: 202 kèm AsyncJob khi chưa xong, 200 AsyncJob khi xong, 500 OperationOutcome khi lỗi.
 
 **Luồng chính (một resource, đồng bộ):**
@@ -962,7 +962,6 @@ Mỗi chữ SMART v2 chỉ cấp đúng thao tác của nó: `c` tạo (POST); `
 | Thiếu chữ SMART | `403` `Token thiếu quyền <chữ> (SMART) trên <Loại>` (ví dụ `cu`, `rs`) |
 | Resource ghi ra không thỏa `criteria` của policy | `403` `Resource không thỏa tiêu chí của chính sách truy cập` |
 | Resource của project khác, hoặc ngoài tiêu chí policy, khi đọc, vread, history, sửa, xóa | `404` (như thể không tồn tại) |
-| `$reindex` cả loại bằng đường đồng bộ qua lớp phân quyền, không phải super-admin | `403` `Reindex cả loại chạy xuyên project; dùng job quản trị` |
 | Yêu cầu bị giới hạn tần suất (trước xác thực) | `429` (F-27) |
 
 Mọi lỗi dưới `/fhir/R4` trả `OperationOutcome` (kể cả 401, 403) với `Content-Type: application/fhir+json; charset=utf-8`.
@@ -1021,7 +1020,7 @@ flowchart TD
 | Resource project khác (còn tồn tại) | `404` |
 | Đọc id đã bị xóa của project khác | `410` thay vì `404` (resource đã xóa không còn nội dung để kiểm project; id là UUID khó đoán) |
 | Dữ liệu ghi trước khi bật tách project (không có `meta.project`) | Không ai thấy, cho tới khi `assign-project` |
-| `$reindex` cả loại bằng token admin thường | Chạy như job nền trên kho không tách, xuyên project (chỉ dựng lại chỉ mục, không lộ dữ liệu) |
+| `$reindex` cả loại bằng token admin | Job nền chạy trong project của người gọi, không chạm project khác; token có AccessPolicy: job kết thúc lỗi (`403` trong AsyncJob) |
 
 **Tác dụng phụ:** log `audit=true`; mỗi resource được gán bởi `assign-project` thêm một phiên bản.
 

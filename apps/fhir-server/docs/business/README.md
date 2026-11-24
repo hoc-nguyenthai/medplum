@@ -20,7 +20,7 @@ Chi tiết đầy đủ (kèm mục chưa kiểm) ở [05-luat-va-phan-quyen.md 
 
 **Bảo mật**
 1. **`CodeSystem/$import`, `ConceptMap/$import`, `PackageRelease/$install` chỉ đòi admin khi bật JWT.** Route `POST` này rơi vào `RoleWrite` ở cổng (`httpapi/auth.go`), còn kiểm admin nằm ở `AdminChecker` chỉ có ở kho bọc `fhirauth` (`conceptmapimport.go:27`); chế độ token tĩnh thì token ghi gọi được, trái với swagger.
-2. **`$reindex` cả loại chạy xuyên project:** `reindexType` dùng `r.repo` (kho thô), trong khi `reindexOne` dùng `repoOf(ctx)` (kho đã tách project). Admin của một project khởi động được reindex mọi project (tải, không lộ dữ liệu).
+2. **`$reindex` cả loại (đã sửa, bước S0 của kế hoạch tách):** job `reindex` là job có phạm vi (chạy bằng kho đã tách project với quyền của người gọi), liệt kê id của đúng project rồi reindex từng resource; trước đây chạy trên kho thô nên admin một project reindex được mọi project.
 3. **Search hệ thống (không `_type`) với token không có chữ `s`:** `Searchable()` rỗng làm `Types` rỗng, kho hiểu là "mọi loại", rồi chỉ lọc theo chữ `r` (`fhirauth/scope.go:315`): token chỉ có `r` liệt kê được. Chưa có test.
 4. **Secret của Subscription** (extension `subscription-secret`) và `channel.header` lưu bản rõ trong resource.
 

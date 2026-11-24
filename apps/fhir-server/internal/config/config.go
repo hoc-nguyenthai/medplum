@@ -137,8 +137,9 @@ type Settings struct {
 	AutoDownloadMaxBytes int
 	// AutoDownloadTimeout là hạn của mỗi lần tải.
 	AutoDownloadTimeout time.Duration
-	// AutoDownloadAllowedPrefixes (cách nhau bằng dấu phẩy, không rỗng) chỉ cho tải URL bắt đầu bằng một tiền tố trong danh sách; AutoDownloadIgnoredPrefixes là danh sách bỏ qua (thắng danh sách cho phép).
+	// AutoDownloadAllowedPrefixes (cách nhau bằng dấu phẩy, không rỗng) chỉ cho tải URL bắt đầu bằng một tiền tố trong danh sách; rỗng: mọi URL ngoài.
 	AutoDownloadAllowedPrefixes string
+	// AutoDownloadIgnoredPrefixes (cách nhau bằng dấu phẩy) là các tiền tố URL KHÔNG bao giờ tải; thắng danh sách cho phép. Địa chỉ API và /storage của chính server luôn bị bỏ qua, không cần khai.
 	AutoDownloadIgnoredPrefixes string
 	// AutoDownloadAllowPrivate CHỈ cho dev: cho phép tải từ địa chỉ nội bộ (chống SSRF bị tắt).
 	AutoDownloadAllowPrivate bool

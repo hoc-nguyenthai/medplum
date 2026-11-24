@@ -21,9 +21,9 @@ Tệp này **được sinh từ `internal/config/config.go`** (xem `docs_test.go
 | `FHIR_ASYNC_BATCH` | `false` | AsyncBatch: POST Bundle batch kèm `Prefer: respond-async` chạy thành job nền (tắt: header bị bỏ qua, chạy đồng bộ). BatchCheckpointEntries: số entry giữa hai lần lưu checkpoint của batch async (ngoài ra lưu ít nhất mỗi 5 giây). |
 | `FHIR_AUTH_DISABLED` | `false` | CHỈ cho dev: tắt xác thực |
 | `FHIR_AUTO_DOWNLOAD` | `false` | bật tự tải attachment có URL NGOÀI về kho Binary sau khi resource được ghi (như worker `download` của Medplum, nhưng mặc định TẮT: gọi URL do người dùng cung cấp là bề mặt SSRF và chi phí). Cần FHIR_BINARY_STORAGE; việc tải chạy nền, thử lại 3 lần với broker bộ nhớ (broker Redis: thử lại và dead-letter theo broker). |
-| `FHIR_AUTO_DOWNLOAD_ALLOWED_PREFIXES` | `(rỗng)` | (cách nhau bằng dấu phẩy, không rỗng) chỉ cho tải URL bắt đầu bằng một tiền tố trong danh sách; AutoDownloadIgnoredPrefixes là danh sách bỏ qua (thắng danh sách cho phép). |
+| `FHIR_AUTO_DOWNLOAD_ALLOWED_PREFIXES` | `(rỗng)` | (cách nhau bằng dấu phẩy, không rỗng) chỉ cho tải URL bắt đầu bằng một tiền tố trong danh sách; rỗng: mọi URL ngoài. |
 | `FHIR_AUTO_DOWNLOAD_ALLOW_PRIVATE` | `false` | CHỈ cho dev: cho phép tải từ địa chỉ nội bộ (chống SSRF bị tắt). |
-| `FHIR_AUTO_DOWNLOAD_IGNORED_PREFIXES` | `(rỗng)` | (chưa có mô tả trong mã) |
+| `FHIR_AUTO_DOWNLOAD_IGNORED_PREFIXES` | `(rỗng)` | (cách nhau bằng dấu phẩy) là các tiền tố URL KHÔNG bao giờ tải; thắng danh sách cho phép. Địa chỉ API và /storage của chính server luôn bị bỏ qua, không cần khai. |
 | `FHIR_AUTO_DOWNLOAD_MAX_BYTES` | `0` | là trần kích thước một tệp tải về; 0: dùng FHIR_STORAGE_MAX_UPLOAD_BYTES. |
 | `FHIR_AUTO_DOWNLOAD_TIMEOUT` | `30s` | là hạn của mỗi lần tải. |
 | `FHIR_BASE64_BINARY_MAX_BYTES` | `1048576` | là trần `data` base64 (đã giải mã) khi ghi resource Binary (mặc định 1 MiB; âm: không trần). |

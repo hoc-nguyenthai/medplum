@@ -63,7 +63,7 @@ FHIRSTORE_TEST_POSTGRES_URL="postgres://user:pass@host:5432/db?sslmode=disable" 
 - Đã có scope SMART theo loại resource (giai đoạn 11a, xem dưới). Chưa có scope `patient/` (compartment), membership/role theo người dùng trong server.
 - Project lấy từ claim của identity provider; chưa có resource `Project`/`ProjectMembership`, chưa có đăng nhập, `$token`, `/oauth2/*` trong server này (dùng identity service riêng của Trivita).
 - `meta.project` được tìm bằng search parameter `_project` (token, thêm vào `fhir.SearchParams`); dữ liệu ghi trước đó cần `$reindex` và được gán project mới thấy.
-- `$reindex` cả loại và `$expunge` của job chạy trên repository không tách (xuyên project).
+- `$reindex` cả loại nay là job có phạm vi, chỉ chạm project của người gọi (S0, 2026-11-24). `$expunge` chạy qua kho đã tách project.
 - Đọc id đã xóa của project khác trả `410` (không đủ nội dung để kiểm project).
 
 ## Giới hạn của giai đoạn 8a
