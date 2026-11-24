@@ -5,3 +5,5 @@
 **Tài liệu nghiệp vụ (góc nhìn BA kỹ thuật):** [business/](business/README.md): tác nhân, luồng nghiệp vụ và người dùng, danh mục chức năng F-01..F-13, luật BR-xx, kịch bản chấp nhận.
 
 **Hợp đồng API chi tiết từng route (header, request, response từng trường hợp):** [api-contract/common.md](api-contract/common.md) (quy ước chung), [api-contract/reference/](api-contract/reference/README.md) (bảng từng trường, **sinh từ swagger**, có test) và [api-contract/cases/](api-contract/cases/README.md) (từng trường hợp phản hồi, có test phủ route).
+
+**ERD và từ điển dữ liệu:** [erd/](erd/README.md): schema `fhir` dùng chung, `DicomStudy`/`DicomSeries`/`DicomInstance`/`Binary` từng trường, quan hệ, xóa mềm so với Expunge và ảnh còn lại ở kho Binary, nơi PHI nằm, bí mật.

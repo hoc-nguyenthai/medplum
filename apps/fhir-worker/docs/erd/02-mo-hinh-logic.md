@@ -9,7 +9,7 @@ erDiagram
     ASYNC_JOB ||--o{ BINARY : "output: url hoặc valueReference"
     ASYNC_JOB ||--o| BINARY : "request: tham số input (batch)"
     ASYNC_JOB ||--o{ BINARY : "job_state: danh sách chunks (batch, tạm)"
-    ASYNC_JOB }o--|| PROJECT : "meta.project (chuỗi id, không chỉ mục)"
+    ASYNC_JOB }o--|| PROJECT : "meta.project (chuỗi id, chỉ mục token _project)"
     ASYNC_JOB ||--o| JOB_SEAL : "extension job-seal"
     BINARY }o--|| PROJECT : "meta.project"
     BINARY }o--o| BLOB : "khóa binary/id/versionId"

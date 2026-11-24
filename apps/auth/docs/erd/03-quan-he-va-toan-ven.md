@@ -27,7 +27,7 @@ erDiagram
     DomainConfiguration }o--o| ClientApplication : "khop theo mien email"
 ```
 
-`Profile` là một trong `Patient`, `Practitioner`, `RelatedPerson`, `Bot`, `ClientApplication`. Quan hệ nào là `Reference` (có thể truy vấn) và quan hệ nào là `meta.project` (chuỗi id, **không có chỉ mục**) khác nhau về cách giữ toàn vẹn: xem bảng dưới và mục 3.2.
+`Profile` là một trong `Patient`, `Practitioner`, `RelatedPerson`, `Bot`, `ClientApplication`. Quan hệ nào là `Reference` (có thể truy vấn) và quan hệ nào là `meta.project` (chuỗi id, có chỉ mục token `_project` ở `fhir_idx_token`, không phải `Reference`) khác nhau về cách giữ toàn vẹn: xem bảng dưới và mục 3.2.
 
 ## 3.2 Bảng quan hệ
 
@@ -51,15 +51,15 @@ Cột **Toàn vẹn** nêu *ai kiểm và ở đâu*; "không ai" nghĩa là kh�
 | `ProjectMembership.invitedBy` | `User` | n-1 | `Reference` | không | `invite` đặt theo người gọi | — | `admin_invite.go` |
 | `Project.owner` | `User` | n-1 | `Reference`, chỉ mục `owner` | không | đặt lúc tạo project (CLI seed, newproject) | `AdminDeleteMember` **chặn xóa chủ project** (`Cannot delete the owner of the project`); SCIM chặn tắt chủ | `admin_project.go:316` |
 | `Project.defaultPatientAccessPolicy`, `defaultAccessPolicies[]` | `AccessPolicy` | n-1 | `Reference` | không | đặt lúc tạo project (6 chính sách mặc định) | Xóa policy mặc định: `invite`/`newpatient` báo `Missing default ... access policy` (`400`) | `admin.go:134`, `accesspolicy_defaults.go` |
-| `ClientApplication` | `Project` | n-1 | **`meta.project` (chuỗi id), không phải Reference, không chỉ mục** | có | `CreateClient` đặt; kiểm khi đăng nhập (client phải thuộc project của request) | Client còn khi project "bị xóa" (auth không có lệnh xóa project) | `application/lookup.go:37`, `token.go:248` |
-| `AccessPolicy` | `Project` | n-1 | **`meta.project`**, không chỉ mục | có | `SeedProject`/newproject đặt `Meta.Project`; kiểm ở `AdminUpdateMember` và `accessPolicies()` (policy của project khác bị bỏ qua khi cấp token) | — | `admin.go:134`, `token.go:37` |
+| `ClientApplication` | `Project` | n-1 | **`meta.project` (chuỗi id), không phải Reference; có chỉ mục token `_project` (`fhir_idx_token`)** | có | `CreateClient` đặt; kiểm khi đăng nhập (client phải thuộc project của request) | Client còn khi project "bị xóa" (auth không có lệnh xóa project) | `application/lookup.go:37`, `token.go:248` |
+| `AccessPolicy` | `Project` | n-1 | **`meta.project`**, có chỉ mục token `_project` | có | `SeedProject`/newproject đặt `Meta.Project`; kiểm ở `AdminUpdateMember` và `accessPolicies()` (policy của project khác bị bỏ qua khi cấp token) | — | `admin.go:134`, `token.go:37` |
 | `Patient`/`Practitioner`/`RelatedPerson` (hồ sơ do auth ghi) | `Project` | n-1 | **`meta.project`** | có | đặt khi tạo | Còn lại khi membership xóa (mục trên) | `admin.go:162`, `newpatient.go` |
 | `DomainConfiguration` | (không tham chiếu) | — | khớp theo **miền email** (`domain`) | — | `AddDomainConfiguration`: tìm theo miền rồi tạo (`Domain already configured` nếu có), **không trong transaction, không khóa** nên hai lệnh song song có thể tạo hai bản | — | `application/domainconfig.go:56` |
 | `SmartAppLaunch.patient`, `encounter`, `fhirContext[]` | dữ liệu lâm sàng ở `fhir-server` | n-1 | `Reference` | không | **không kiểm**: auth không đọc schema `fhir`, nên không biết Patient có tồn tại | — | `p8-compartment.md` ("D-2") |
 
 ## 3.3 Ràng buộc "thuộc project" qua `meta.project`
 
-`ClientApplication`, `AccessPolicy`, các hồ sơ `Patient`/`Practitioner`/`RelatedPerson`, và `UserSecurityRequest` thuộc một project qua chuỗi `meta.project`, **không** qua `Reference`. Hệ quả: (1) **không có chỉ mục** theo `meta.project` (không có search parameter `_project` trong `searchparams_gen.go`), nên truy vấn kiểu "mọi client của project X" không dùng chỉ mục (auth tránh truy vấn đó và tra theo id); (2) việc cách ly giữa project hoàn toàn do mã so sánh `Meta.Project` với project của người gọi; (3) sửa hay ghi bằng SQL tay bỏ qua kiểm này.
+`ClientApplication`, `AccessPolicy`, các hồ sơ `Patient`/`Practitioner`/`RelatedPerson`, và `UserSecurityRequest` thuộc một project qua chuỗi `meta.project`, **không** qua `Reference`. Hệ quả: (1) `meta.project` **có** chỉ mục token `_project` (khai ở `pkg/fhir/fhir.go`, không nằm trong `searchparams_gen.go`; agent đã đo một dòng `fhir_idx_token` mỗi resource trên `DicomStudy`, loại của auth chưa đo) nên truy vấn theo project dùng được chỉ mục, nhưng nó không phải `Reference`; trước đây tài liệu này ghi nhầm là không có chỉ mục. Tuy vậy truy vấn kiểu "mọi client của project X" không dùng chỉ mục (auth tránh truy vấn đó và tra theo id); (2) việc cách ly giữa project hoàn toàn do mã so sánh `Meta.Project` với project của người gọi; (3) sửa hay ghi bằng SQL tay bỏ qua kiểm này.
 
 ## 3.4 Giữ lại dữ liệu nhạy cảm trong lịch sử và hành vi xóa
 
