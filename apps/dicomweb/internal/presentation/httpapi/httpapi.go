@@ -12,6 +12,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/url"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -92,6 +93,10 @@ type Retriever interface {
 	// Download trả tệp DICOM của một instance, một series hoặc cả study.
 	Download(ctx context.Context, studyUID, seriesUID, instanceUID string) (Download, error)
 	Frames(ctx context.Context, studyUID, seriesUID, instanceUID, frames string) (FrameStream, error)
+	// InstanceFile mở tệp DICOM nguyên văn của một instance (WADO-URI); người gọi đóng reader.
+	InstanceFile(ctx context.Context, studyUID, seriesUID, instanceUID string) (io.ReadCloser, error)
+	// Bulkdata trả bulkdata của instance theo tag (chỉ PixelData); 404 với tag khác.
+	Bulkdata(ctx context.Context, studyUID, seriesUID, instanceUID, tag string) (FrameStream, error)
 	// Rendered dựng ảnh của frame (rỗng: frame 1) theo header Accept và tham số truy vấn (window, quality); 406 khi không dựng được.
 	Rendered(ctx context.Context, studyUID, seriesUID, instanceUID, frame, accept string, params url.Values) (Rendered, error)
 }
@@ -187,8 +192,10 @@ func New(dep Deps) (*echo.Echo, error) {
 		g.GET("/studies/:studyUid/series/:seriesUid/instances/:instanceUid/metadata", meta)
 		g.GET("/studies/:studyUid/series/:seriesUid/instances/:instanceUid/frames/:frame", retrieve(r, framesHandler(r)))
 		g.GET("/studies/:studyUid/series/:seriesUid/instances/:instanceUid/rendered", retrieve(r, renderedHandler(r)))
+		g.GET("/studies/:studyUid/series/:seriesUid/instances/:instanceUid/bulkdata/:tag", retrieve(r, bulkdataHandler(r)))
+		g.GET("/wado", retrieve(r, wadoURIHandler(r)))
 		g.GET("/studies/:studyUid/series/:seriesUid/instances/:instanceUid/frames/:frame/rendered", retrieve(r, renderedHandler(r)))
-		// Mọi route DICOMweb khác (bulkdata, rendered cấp series và study, delete...): 501 sau xác thực, không phải 200 rỗng.
+		// Mọi route DICOMweb khác (rendered cấp series và study, delete...): 501 sau xác thực, không phải 200 rỗng.
 		g.Any("", notImplemented)
 		g.Any("/*", notImplemented)
 	}
@@ -286,6 +293,109 @@ func renderedHandler(svc Retriever) echo.HandlerFunc {
 	}
 }
 
+// bulkdataHandler trả bulkdata PixelData (PS3.18 8.7.2) dạng multipart/related, có Content-Length; tag khác 404.
+func bulkdataHandler(svc Retriever) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		f, err := svc.Bulkdata(c.Request().Context(), c.Param("studyUid"), c.Param("seriesUid"), c.Param("instanceUid"), c.Param("tag"))
+		if err != nil {
+			return retrieveError(c, err)
+		}
+		return writeFrameStream(c, f, "bulkdata")
+	}
+}
+
+// wadoURIHandler là WADO-URI (PS3.18 8.1, một instance trên một URL): requestType=WADO, studyUID, seriesUID, objectUID bắt buộc. contentType chọn `application/dicom` (tệp nguyên văn)
+// hoặc `image/jpeg` (mặc định) và `image/png` (frame frameNumber, mặc định 1; windowCenter, windowWidth, imageQuality). Các tham số khác của chuẩn (rows, columns, region, annotation,
+// presentation*, transferSyntax, charset) bị bỏ qua; anonymize khác "no" là 400 vì không hỗ trợ ẩn danh hóa.
+func wadoURIHandler(svc Retriever) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		q := c.QueryParams()
+		if !strings.EqualFold(q.Get("requestType"), "WADO") {
+			return echo.NewHTTPError(http.StatusBadRequest, "requestType phải là WADO")
+		}
+		study, series, object := q.Get("studyUID"), q.Get("seriesUID"), q.Get("objectUID")
+		if study == "" || series == "" || object == "" {
+			return echo.NewHTTPError(http.StatusBadRequest, "Thiếu studyUID, seriesUID hoặc objectUID")
+		}
+		if a := q.Get("anonymize"); a != "" && !strings.EqualFold(a, "no") {
+			return echo.NewHTTPError(http.StatusBadRequest, "Không hỗ trợ anonymize")
+		}
+		kind, accept, ok := pickWadoType(q.Get("contentType"), c.Request().Header.Get("Accept"))
+		if !ok {
+			return echo.NewHTTPError(http.StatusNotAcceptable, "Chỉ hỗ trợ application/dicom, image/jpeg và image/png")
+		}
+		ctx := c.Request().Context()
+		if kind == "dicom" {
+			rc, err := svc.InstanceFile(ctx, study, series, object)
+			if err != nil {
+				return retrieveError(c, err)
+			}
+			defer rc.Close()
+			c.Response().Header().Set(echo.HeaderContentType, "application/dicom")
+			c.Response().WriteHeader(http.StatusOK)
+			if _, err := io.Copy(c.Response(), rc); err != nil {
+				slog.ErrorContext(ctx, "DICOMweb: lỗi khi ghi tệp DICOM (WADO-URI)", "error", err.Error())
+				panic(http.ErrAbortHandler)
+			}
+			return nil
+		}
+		params := url.Values{}
+		if cw, ww := q.Get("windowCenter"), q.Get("windowWidth"); cw != "" || ww != "" {
+			params.Set("window", cw+","+ww)
+		}
+		if iq := q.Get("imageQuality"); iq != "" {
+			params.Set("quality", iq)
+		}
+		r, err := svc.Rendered(ctx, study, series, object, q.Get("frameNumber"), accept, params)
+		if err != nil {
+			return retrieveError(c, err)
+		}
+		return c.Blob(http.StatusOK, r.ContentType, r.Body)
+	}
+}
+
+// pickWadoType chọn kiểu trả về cho WADO-URI từ tham số contentType (danh sách, có q) rồi header Accept; rỗng là image/jpeg. kind là "dicom" hoặc "image"; accept là kiểu ảnh đã chọn.
+func pickWadoType(contentType, accept string) (kind, img string, ok bool) {
+	list := contentType
+	if list == "" {
+		list = accept
+	}
+	if strings.TrimSpace(list) == "" {
+		return "image", "image/jpeg", true
+	}
+	type cand struct {
+		typ string
+		q   float64
+	}
+	var cs []cand
+	for _, part := range strings.Split(list, ",") {
+		fields := strings.Split(part, ";")
+		cd := cand{typ: strings.ToLower(strings.TrimSpace(fields[0])), q: 1}
+		for _, f := range fields[1:] {
+			if k, v, found := strings.Cut(strings.TrimSpace(f), "="); found && strings.EqualFold(k, "q") {
+				if x, err := strconv.ParseFloat(v, 64); err == nil {
+					cd.q = x
+				}
+			}
+		}
+		if cd.q > 0 {
+			cs = append(cs, cd)
+		}
+	}
+	sort.SliceStable(cs, func(i, j int) bool { return cs[i].q > cs[j].q })
+	for _, cd := range cs {
+		switch cd.typ {
+		case "application/dicom":
+			return "dicom", "", true
+		case "image/jpeg", "image/png":
+			return "image", cd.typ, true
+		case "*/*", "image/*":
+			return "image", "image/jpeg", true
+		}
+	}
+	return "", "", false
+}
+
 // framesHandler trả frame dạng multipart/related (PS3.18 8.7.3), có Content-Length vì độ dài biết trước; lỗi sau khi đã ghi thì ngắt kết nối.
 func framesHandler(svc Retriever) echo.HandlerFunc {
 	return func(c echo.Context) error {
@@ -293,15 +403,7 @@ func framesHandler(svc Retriever) echo.HandlerFunc {
 		if err != nil {
 			return retrieveError(c, err)
 		}
-		h := c.Response().Header()
-		h.Set(echo.HeaderContentType, f.ContentType)
-		h.Set(echo.HeaderContentLength, strconv.FormatInt(f.Length, 10))
-		c.Response().WriteHeader(http.StatusOK)
-		if err := f.Write(c.Response()); err != nil {
-			slog.ErrorContext(c.Request().Context(), "DICOMweb: lỗi khi ghi frame", "error", err.Error())
-			panic(http.ErrAbortHandler)
-		}
-		return nil
+		return writeFrameStream(c, f, "frame")
 	}
 }
 
@@ -417,4 +519,17 @@ func errorHandler(err error, c echo.Context) {
 		code, msg = http.StatusRequestEntityTooLarge, "Body quá lớn"
 	}
 	_ = c.JSON(code, ErrorBody{Error: msg})
+}
+
+// writeFrameStream ghi phản hồi multipart có Content-Length (frame, bulkdata); lỗi sau khi đã ghi thì ngắt kết nối.
+func writeFrameStream(c echo.Context, f FrameStream, what string) error {
+	h := c.Response().Header()
+	h.Set(echo.HeaderContentType, f.ContentType)
+	h.Set(echo.HeaderContentLength, strconv.FormatInt(f.Length, 10))
+	c.Response().WriteHeader(http.StatusOK)
+	if err := f.Write(c.Response()); err != nil {
+		slog.ErrorContext(c.Request().Context(), "DICOMweb: lỗi khi ghi "+what, "error", err.Error())
+		panic(http.ErrAbortHandler)
+	}
+	return nil
 }

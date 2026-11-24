@@ -380,6 +380,18 @@ func (f *fakeRetriever) Rendered(_ context.Context, study, series, inst, frame, 
 	return f.rendered, f.err
 }
 
+func (f *fakeRetriever) InstanceFile(_ context.Context, study, series, inst string) (io.ReadCloser, error) {
+	f.calls = append(f.calls, "file")
+	f.lastScope = study + "|" + series + "|" + inst
+	return io.NopCloser(strings.NewReader("DICMDATA")), f.err
+}
+
+func (f *fakeRetriever) Bulkdata(_ context.Context, study, series, inst, tag string) (httpapi.FrameStream, error) {
+	f.calls = append(f.calls, "bulkdata")
+	f.lastScope = study + "|" + series + "|" + inst + "|" + tag
+	return f.frames, f.err
+}
+
 func (f *fakeRetriever) Frames(_ context.Context, study, series, inst, frames string) (httpapi.FrameStream, error) {
 	f.calls = append(f.calls, "frames")
 	f.lastStudy, f.lastInstUID, f.lastFrames = study+"|"+series, inst, frames
@@ -486,6 +498,75 @@ func TestRenderedRoutes(t *testing.T) {
 	f.err = &httpapi.StatusError{Status: 406, Msg: "x"}
 	if rec := do(h, "GET", "/dicomweb/studies/S/series/R/instances/I/rendered", "read-a"); rec.Code != 406 {
 		t.Errorf("406: %d", rec.Code)
+	}
+}
+
+func TestWadoURIAndBulkdataRoutes(t *testing.T) {
+	f := &fakeRetriever{rendered: httpapi.Rendered{ContentType: "image/jpeg", Body: []byte("JPG")},
+		frames: httpapi.FrameStream{ContentType: "multipart/related; type=\"application/octet-stream\"; boundary=b", Length: 5, Write: func(w io.Writer) error { _, err := io.WriteString(w, "12345"); return err }}}
+	h := newHandler(t, func(d *httpapi.Deps) { d.Retrieve = f })
+	base := "/dicomweb/wado?requestType=WADO&studyUID=S&seriesUID=R&objectUID=I"
+	for _, c := range []struct {
+		name, query, accept string
+		want                int
+		wantType, wantBody  string
+		wantScope           string
+	}{
+		{"mặc định là JPEG", "", "", 200, "image/jpeg", "JPG", "S|R|I||image/jpeg|"},
+		{"PNG kèm frame và window", "&contentType=image/png&frameNumber=2&windowCenter=40&windowWidth=80", "", 200, "image/jpeg", "JPG", "S|R|I|2|image/png|40,80"},
+		{"tệp DICOM", "&contentType=application/dicom", "", 200, "application/dicom", "DICMDATA", "S|R|I"},
+		{"danh sách có q: dicom thắng", "&contentType=image/jpeg%3Bq=0.3,application/dicom", "", 200, "application/dicom", "DICMDATA", "S|R|I"},
+		{"Accept khi không có contentType", "", "application/dicom", 200, "application/dicom", "DICMDATA", "S|R|I"},
+		{"ký tự đại diện", "&contentType=*/*", "", 200, "image/jpeg", "JPG", "S|R|I||image/jpeg|"},
+		{"contentType không hỗ trợ", "&contentType=application/pdf", "", 406, "", "", ""},
+		{"anonymize", "&anonymize=yes", "", 400, "", "", ""},
+		{"anonymize=no được", "&anonymize=no", "", 200, "image/jpeg", "JPG", ""},
+	} {
+		req := httptest.NewRequest("GET", base+c.query, nil)
+		req.Header.Set("Authorization", "Bearer read-a")
+		if c.accept != "" {
+			req.Header.Set("Accept", c.accept)
+		}
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, req)
+		if rec.Code != c.want || (c.want == 200 && (rec.Header().Get("Content-Type") != c.wantType || rec.Body.String() != c.wantBody)) {
+			t.Errorf("%s: %d %q %q", c.name, rec.Code, rec.Header().Get("Content-Type"), rec.Body.String())
+			continue
+		}
+		if c.wantScope != "" && f.lastScope != c.wantScope {
+			t.Errorf("%s: scope %q, muốn %q", c.name, f.lastScope, c.wantScope)
+		}
+	}
+	for name, path := range map[string]string{
+		"thiếu requestType": "/dicomweb/wado?studyUID=S&seriesUID=R&objectUID=I",
+		"requestType sai":   "/dicomweb/wado?requestType=X&studyUID=S&seriesUID=R&objectUID=I",
+		"thiếu objectUID":   "/dicomweb/wado?requestType=WADO&studyUID=S&seriesUID=R",
+	} {
+		if rec := do(h, "GET", path, "read-a"); rec.Code != 400 {
+			t.Errorf("%s: %d", name, rec.Code)
+		}
+	}
+	if rec := do(h, "GET", "/dicomweb/wado?requestType=wado&studyUID=S&seriesUID=R&objectUID=I", "read-a"); rec.Code != 200 {
+		t.Errorf("requestType không phân biệt hoa thường: %d", rec.Code)
+	}
+	// bulkdata
+	rec := do(h, "GET", "/dicomweb/studies/S/series/R/instances/I/bulkdata/7FE00010", "read-a")
+	if rec.Code != 200 || rec.Body.String() != "12345" || rec.Header().Get("Content-Length") != "5" || f.lastScope != "S|R|I|7FE00010" {
+		t.Errorf("bulkdata: %d %q %q scope=%q", rec.Code, rec.Body.String(), rec.Header().Get("Content-Length"), f.lastScope)
+	}
+	// lỗi, 401 và project
+	f.err = &httpapi.StatusError{Status: 404, Msg: "Bulk data not found"}
+	for _, p := range []string{"/dicomweb/studies/S/series/R/instances/I/bulkdata/00091001", base} {
+		if rec := do(h, "GET", p, "read-a"); rec.Code != 404 {
+			t.Errorf("%s: %d", p, rec.Code)
+		}
+	}
+	f.calls = nil
+	if rec := do(h, "GET", base, ""); rec.Code != 401 || len(f.calls) != 0 {
+		t.Errorf("không token: %d %v", rec.Code, f.calls)
+	}
+	if rec := do(h, "GET", "/projects/B/dicomweb/wado?requestType=WADO&studyUID=S&seriesUID=R&objectUID=I", "read-a"); rec.Code != 403 {
+		t.Errorf("project khác: %d", rec.Code)
 	}
 }
 

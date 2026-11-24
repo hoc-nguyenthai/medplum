@@ -1,7 +1,7 @@
 {
     "swagger": "2.0",
     "info": {
-        "description": "DICOMweb (STOW-RS, QIDO-RS, WADO-RS) cho kho hình ảnh DICOM, dùng chung schema và kho Binary với fhir-server. Lỗi trả {\"error\": \"...\"}. STOW-RS, QIDO-RS (study, series, instance, có bộ lọc thuộc tính), WADO-RS (tải instance, series, study; metadata; frame) đã cài; bulkdata và WADO-URI không có (501).",
+        "description": "DICOMweb (STOW-RS, QIDO-RS, WADO-RS) cho kho hình ảnh DICOM, dùng chung schema và kho Binary với fhir-server. Lỗi trả {\"error\": \"...\"}. STOW-RS, QIDO-RS (study, series, instance, có bộ lọc thuộc tính), WADO-RS (tải instance, series, study; metadata; frame) đã cài; bulkdata PixelData và WADO-URI đã cài (D9).",
         "title": "Trivita DICOMweb API",
         "contact": {},
         "version": "1.0"
@@ -944,6 +944,92 @@
                 }
             }
         },
+        "/dicomweb/studies/{studyUid}/series/{seriesUid}/instances/{instanceUid}/bulkdata/{tag}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Trả toàn bộ dữ liệu điểm ảnh (tag 7FE00010) của instance dạng multipart/related, có Content-Length, đọc theo khoảng nhờ chỉ mục frame. Dữ liệu không nén: MỘT phần application/octet-stream gồm mọi frame nối nhau. Dữ liệu đóng gói (nén): mỗi frame một phần, cùng Content-Type như route frame (khác chuẩn, vốn chia theo fragment). Metadata không chứa BulkDataURI (PixelData bị bỏ khỏi metadata) nên URL này chỉ biết theo quy ước. Tag khác 7FE00010 là 404 vì các bulkdata khác bị bỏ lúc STOW. Cần quyền đọc, gồm Binary.",
+                "produces": [
+                    "multipart/related",
+                    "application/json"
+                ],
+                "tags": [
+                    "dicomweb"
+                ],
+                "summary": "WADO-RS: bulkdata PixelData",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UID của study (StudyInstanceUID)",
+                        "name": "studyUid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "UID của series (SeriesInstanceUID)",
+                        "name": "seriesUid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "UID của instance (SOPInstanceUID)",
+                        "name": "instanceUid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Tag 8 chữ số hex; chỉ 7FE00010 (PixelData)",
+                        "name": "tag",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "multipart/related",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "401": {
+                        "description": "Thiếu hoặc sai Bearer token",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Token không đủ quyền hoặc chọn project khác",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "Không có instance, ảnh hoặc bulkdata theo tag",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.ErrorBody"
+                        }
+                    },
+                    "416": {
+                        "description": "Chỉ mục hoặc metadata không khớp số frame",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.ErrorBody"
+                        }
+                    },
+                    "500": {
+                        "description": "Lỗi xử lý (không lộ chi tiết nội bộ)",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
         "/dicomweb/studies/{studyUid}/series/{seriesUid}/instances/{instanceUid}/frames/{frame}": {
             "get": {
                 "security": [
@@ -1407,6 +1493,148 @@
                     },
                     "404": {
                         "description": "Study hoặc series không có",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.ErrorBody"
+                        }
+                    },
+                    "500": {
+                        "description": "Lỗi xử lý (không lộ chi tiết nội bộ)",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
+        "/dicomweb/wado": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "WADO-URI (PS3.18 mục 8.1) cho client cũ. requestType=WADO, studyUID, seriesUID, objectUID bắt buộc. contentType (danh sách có q, hoặc header Accept khi bỏ trống): `application/dicom` trả tệp DICOM Part 10 nguyên văn (không multipart, chunked); `image/jpeg` (mặc định) hoặc `image/png` trả ảnh dựng của frame frameNumber (mặc định 1) với windowCenter, windowWidth, imageQuality, theo cùng giới hạn như `rendered` (định dạng điểm ảnh chưa dựng được: 406). Tham số khác của chuẩn (rows, columns, region, annotation, presentationUID, transferSyntax, charset) bị bỏ qua; anonymize khác \"no\" là 400. Cần quyền đọc, gồm Binary.",
+                "produces": [
+                    "application/dicom",
+                    "image/jpeg",
+                    "image/png",
+                    "application/json"
+                ],
+                "tags": [
+                    "dicomweb"
+                ],
+                "summary": "WADO-URI: lấy một instance bằng tham số truy vấn",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Luôn là WADO",
+                        "name": "requestType",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "StudyInstanceUID",
+                        "name": "studyUID",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "SeriesInstanceUID",
+                        "name": "seriesUID",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "SOPInstanceUID",
+                        "name": "objectUID",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "application/dicom, image/jpeg (mặc định) hoặc image/png; có thể là danh sách kèm q",
+                        "name": "contentType",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Số thứ tự frame bắt đầu từ 1 (chỉ với ảnh)",
+                        "name": "frameNumber",
+                        "in": "query"
+                    },
+                    {
+                        "type": "number",
+                        "description": "Tâm cửa sổ (chỉ với ảnh; cần cả windowWidth)",
+                        "name": "windowCenter",
+                        "in": "query"
+                    },
+                    {
+                        "type": "number",
+                        "description": "Độ rộng cửa sổ (\u003e 0)",
+                        "name": "windowWidth",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Chất lượng JPEG 1..100",
+                        "name": "imageQuality",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Chỉ chấp nhận no",
+                        "name": "anonymize",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Tệp DICOM hoặc ảnh",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "400": {
+                        "description": "Tham số thiếu hoặc không hợp lệ",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.ErrorBody"
+                        }
+                    },
+                    "401": {
+                        "description": "Thiếu hoặc sai Bearer token",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.ErrorBody"
+                        }
+                    },
+                    "403": {
+                        "description": "Token không đủ quyền hoặc chọn project khác",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "Không có study, series, instance hoặc ảnh",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.ErrorBody"
+                        }
+                    },
+                    "406": {
+                        "description": "contentType không hỗ trợ hoặc điểm ảnh chưa dựng được",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.ErrorBody"
+                        }
+                    },
+                    "413": {
+                        "description": "Frame quá lớn để dựng",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.ErrorBody"
+                        }
+                    },
+                    "416": {
+                        "description": "Số frame vượt tổng số frame",
                         "schema": {
                             "$ref": "#/definitions/httpapi.ErrorBody"
                         }

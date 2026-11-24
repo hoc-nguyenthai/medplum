@@ -239,7 +239,17 @@ type Frames struct {
 // OpenFrames kiểm study, series, instance, số frame và đọc cấu trúc tệp để biết vị trí frame; mọi lỗi 4xx và 5xx đều xảy ra trước khi trả Frames (chưa ghi byte
 // nào). frames là các số thứ tự bắt đầu từ 1.
 func OpenFrames(ctx context.Context, c Config, studyUID, seriesUID, instanceUID string, frames []int) (*Frames, error) {
-	if len(frames) == 0 || len(frames) > MaxFramesPerRequest {
+	return openFrames(ctx, c, studyUID, seriesUID, instanceUID, frames, false)
+}
+
+// OpenPixelData là bulkdata PixelData của WADO-RS (PS3.18 8.7.2): toàn bộ dữ liệu điểm ảnh của instance. Dữ liệu không nén là một phần application/octet-stream gồm mọi frame nối nhau;
+// dữ liệu đóng gói (nén) là mỗi frame một phần (frame đã nối các fragment), cùng Content-Type như route frame. Không có trần MaxFramesPerRequest vì chỉ đọc theo luồng.
+func OpenPixelData(ctx context.Context, c Config, studyUID, seriesUID, instanceUID string) (*Frames, error) {
+	return openFrames(ctx, c, studyUID, seriesUID, instanceUID, nil, true)
+}
+
+func openFrames(ctx context.Context, c Config, studyUID, seriesUID, instanceUID string, frames []int, whole bool) (*Frames, error) {
+	if !whole && (len(frames) == 0 || len(frames) > MaxFramesPerRequest) {
 		return nil, &Error{http.StatusBadRequest, "Invalid frame number"}
 	}
 	for _, f := range frames {
@@ -265,6 +275,12 @@ func OpenFrames(ctx context.Context, c Config, studyUID, seriesUID, instanceUID 
 	total := 1
 	if inst.NumberOfFrames != nil && *inst.NumberOfFrames > 0 {
 		total = *inst.NumberOfFrames
+	}
+	if whole {
+		frames = make([]int, total)
+		for i := range frames {
+			frames[i] = i + 1
+		}
 	}
 	for _, f := range frames {
 		if f > total {
@@ -316,10 +332,17 @@ func OpenFrames(ctx context.Context, c Config, studyUID, seriesUID, instanceUID 
 		ranges[i] = all[f-1]
 	}
 	partType := dicomweb.FrameContentType(transferSyntax)
+	merge := whole && partType == "application/octet-stream" // bulkdata không nén: một phần chứa mọi frame
 	boundary := newBoundary()
 	var length int64
 	for _, rg := range ranges {
-		length += int64(len(partHeader(boundary, partType))) + rg.Size() + 2 // CRLF sau dữ liệu
+		if !merge {
+			length += int64(len(partHeader(boundary, partType))) + 2 // tiêu đề phần và CRLF sau dữ liệu
+		}
+		length += rg.Size()
+	}
+	if merge {
+		length += int64(len(partHeader(boundary, partType))) + 2
 	}
 	length += int64(len(closing(boundary)))
 
@@ -340,9 +363,16 @@ func OpenFrames(ctx context.Context, c Config, studyUID, seriesUID, instanceUID 
 		ContentType: fmt.Sprintf(`multipart/related; type="%s"; boundary=%s`, dicomweb.FrameMediaType(transferSyntax), boundary),
 		Length:      length,
 		Write: func(w io.Writer) error {
-			for _, rg := range ranges {
+			if merge {
 				if _, err := w.Write(partHeader(boundary, partType)); err != nil {
 					return err
+				}
+			}
+			for _, rg := range ranges {
+				if !merge {
+					if _, err := w.Write(partHeader(boundary, partType)); err != nil {
+						return err
+					}
 				}
 				if ro != nil {
 					parts := rg.Parts
@@ -378,6 +408,13 @@ func OpenFrames(ctx context.Context, c Config, studyUID, seriesUID, instanceUID 
 						return err
 					}
 				}
+				if !merge {
+					if _, err := io.WriteString(w, "\r\n"); err != nil {
+						return err
+					}
+				}
+			}
+			if merge {
 				if _, err := io.WriteString(w, "\r\n"); err != nil {
 					return err
 				}

@@ -107,3 +107,19 @@ func (r retriever) Rendered(ctx context.Context, studyUID, seriesUID, instanceUI
 	}
 	return httpapi.Rendered{ContentType: out.ContentType, Body: out.Body}, nil
 }
+
+func (r retriever) InstanceFile(ctx context.Context, studyUID, seriesUID, instanceUID string) (io.ReadCloser, error) {
+	rc, err := dicomretrieve.OpenInstanceFile(ctx, r.cfg(), studyUID, seriesUID, instanceUID)
+	if err != nil {
+		return nil, status(err)
+	}
+	return rc, nil
+}
+
+func (r retriever) Bulkdata(ctx context.Context, studyUID, seriesUID, instanceUID, tag string) (httpapi.FrameStream, error) {
+	f, err := dicomretrieve.OpenBulkdata(ctx, r.cfg(), studyUID, seriesUID, instanceUID, tag)
+	if err != nil {
+		return httpapi.FrameStream{}, status(err)
+	}
+	return httpapi.FrameStream{ContentType: f.ContentType, Length: f.Length, Write: f.Write}, nil
+}

@@ -162,8 +162,8 @@ func TestQidoWadoRoundTrip(t *testing.T) {
 		}
 	}
 	// route chưa cài vẫn 501, tiền tố khác cùng phục vụ, xác thực và project
-	if code, _, _ := get(t, srv, path+"/instances/x/bulkdata/y", rd); code != 501 {
-		t.Errorf("bulkdata: %d", code)
+	if code, _, _ := get(t, srv, path+"/rendered", rd); code != 501 {
+		t.Errorf("rendered cấp series: %d", code)
 	}
 	if code, _, raw := get(t, srv, "/api/projects/A/dicomweb/studies", rd); code != 200 || bytes.Count(raw, []byte(`"0020000D"`)) != 2 {
 		t.Errorf("tiền tố /api/projects/A: %d", code)

@@ -136,3 +136,31 @@ func OpenInstances(ctx context.Context, c Config, studyUID, seriesUID, instanceU
 		},
 	}, nil
 }
+
+// OpenInstanceFile mở tệp DICOM Part 10 nguyên văn của một instance (WADO-URI `application/dicom`); 404 nếu study, series, instance hoặc nội dung không có. Người gọi đóng reader.
+func OpenInstanceFile(ctx context.Context, c Config, studyUID, seriesUID, instanceUID string) (io.ReadCloser, error) {
+	_, inst, e := c.instance(ctx, studyUID, seriesUID, instanceUID)
+	if e != nil {
+		return nil, e
+	}
+	key, e := c.rawKey(ctx, inst)
+	if e != nil {
+		return nil, e
+	}
+	rc, err := c.Blobs.Open(ctx, key)
+	if err != nil {
+		return nil, internalErr(ctx, "mở nội dung", err)
+	}
+	return rc, nil
+}
+
+// OpenBulkdata trả bulkdata của instance theo tag. Chỉ PixelData (7FE00010) được hỗ trợ: các bulkdata khác (overlay, waveform, dữ liệu lớn khác) bị bỏ khỏi metadata lúc STOW nên 404.
+func OpenBulkdata(ctx context.Context, c Config, studyUID, seriesUID, instanceUID, tag string) (*Frames, error) {
+	if !strings.EqualFold(tag, "7FE00010") {
+		if _, _, e := c.instance(ctx, studyUID, seriesUID, instanceUID); e != nil {
+			return nil, e
+		}
+		return nil, notFound("Bulk data not found")
+	}
+	return OpenPixelData(ctx, c, studyUID, seriesUID, instanceUID)
+}

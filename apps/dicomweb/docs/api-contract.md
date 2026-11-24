@@ -23,7 +23,7 @@ Cập nhật 2026-11-24. `dicomweb` phục vụ DICOMweb (STOW-RS, QIDO-RS, WADO
 
 <!-- BEGIN GENERATED ROUTES (từ swagger.json; chạy UPDATE_DOCS=1 go test để sinh lại, đừng sửa tay) -->
 
-### Nhóm `dicomweb` (17 route)
+### Nhóm `dicomweb` (19 route)
 
 | Route | Mô tả | Xác thực | Yêu cầu | Phản hồi thành công | Mã lỗi |
 |---|---|---|---|---|---|
@@ -39,11 +39,13 @@ Cập nhật 2026-11-24. `dicomweb` phục vụ DICOMweb (STOW-RS, QIDO-RS, WADO
 | `GET /dicomweb/studies/{studyUid}/series/{seriesUid}` | WADO-RS: tải series | Bearer | - | 200 `file` | 400, 401, 403, 404, 500 |
 | `GET /dicomweb/studies/{studyUid}/series/{seriesUid}/instances` | QIDO-RS: tìm instance của series | Bearer | query: limit, offset, attributes | 200 `[]object` | 400, 401, 403, 404, 500 |
 | `GET /dicomweb/studies/{studyUid}/series/{seriesUid}/instances/{instanceUid}` | WADO-RS: tải instance | Bearer | - | 200 `file` | 400, 401, 403, 404, 500 |
+| `GET /dicomweb/studies/{studyUid}/series/{seriesUid}/instances/{instanceUid}/bulkdata/{tag}` | WADO-RS: bulkdata PixelData | Bearer | - | 200 `file` | 401, 403, 404, 416, 500 |
 | `GET /dicomweb/studies/{studyUid}/series/{seriesUid}/instances/{instanceUid}/frames/{frame}` | WADO-RS: lấy frame | Bearer | - | 200 `file` | 400, 401, 403, 404, 416, 500 |
 | `GET /dicomweb/studies/{studyUid}/series/{seriesUid}/instances/{instanceUid}/frames/{frame}/rendered` | WADO-RS: ảnh dựng của một frame | Bearer | query: window, quality | 200 `file` | 400, 401, 403, 404, 406, 413, 416, 500 |
 | `GET /dicomweb/studies/{studyUid}/series/{seriesUid}/instances/{instanceUid}/metadata` | WADO-RS: metadata của instance | Bearer | - | 200 `[]object` | 400, 401, 403, 404, 500 |
 | `GET /dicomweb/studies/{studyUid}/series/{seriesUid}/instances/{instanceUid}/rendered` | WADO-RS: ảnh dựng của instance | Bearer | query: window, quality | 200 `file` | 400, 401, 403, 404, 406, 413, 500 |
 | `GET /dicomweb/studies/{studyUid}/series/{seriesUid}/metadata` | WADO-RS: metadata của series | Bearer | - | 200 `[]object` | 400, 401, 403, 404, 500 |
+| `GET /dicomweb/wado` | WADO-URI: lấy một instance bằng tham số truy vấn | Bearer | query: requestType, studyUID, seriesUID, objectUID, contentType, frameNumber, windowCenter, windowWidth, imageQuality, anonymize | 200 `file` | 400, 401, 403, 404, 406, 413, 416, 500 |
 
 ### Nhóm `health` (4 route)
 

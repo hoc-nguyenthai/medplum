@@ -5,7 +5,7 @@ package httpapi
 
 // @title						Trivita DICOMweb API
 // @version					1.0
-// @description				DICOMweb (STOW-RS, QIDO-RS, WADO-RS) cho kho hình ảnh DICOM, dùng chung schema và kho Binary với fhir-server. Lỗi trả {"error": "..."}. STOW-RS, QIDO-RS (study, series, instance, có bộ lọc thuộc tính), WADO-RS (tải instance, series, study; metadata; frame) đã cài; bulkdata và WADO-URI không có (501).
+// @description				DICOMweb (STOW-RS, QIDO-RS, WADO-RS) cho kho hình ảnh DICOM, dùng chung schema và kho Binary với fhir-server. Lỗi trả {"error": "..."}. STOW-RS, QIDO-RS (study, series, instance, có bộ lọc thuộc tính), WADO-RS (tải instance, series, study; metadata; frame) đã cài; bulkdata PixelData và WADO-URI đã cài (D9).
 // @BasePath					/
 // @tag.name					dicomweb
 // @tag.description			DICOMweb. Bốn tiền tố tương đương: /dicomweb, /api/dicomweb, /projects/{projectId}/dicomweb, /api/projects/{projectId}/dicomweb; với hai tiền tố có project, projectId phải khớp project của token (token thường), không thì 403. Spec này liệt kê tiền tố /dicomweb.
@@ -420,3 +420,52 @@ func wadoInstanceRendered() {}
 //	@Failure		500	{object}	ErrorBody	"Lỗi xử lý (không lộ chi tiết nội bộ)"
 //	@Router			/dicomweb/studies/{studyUid}/series/{seriesUid}/instances/{instanceUid}/frames/{frame}/rendered [get]
 func wadoFrameRendered() {}
+
+// wadoBulkdata godoc
+//
+//	@Summary		WADO-RS: bulkdata PixelData
+//	@Description	Trả toàn bộ dữ liệu điểm ảnh (tag 7FE00010) của instance dạng multipart/related, có Content-Length, đọc theo khoảng nhờ chỉ mục frame. Dữ liệu không nén: MỘT phần application/octet-stream gồm mọi frame nối nhau. Dữ liệu đóng gói (nén): mỗi frame một phần, cùng Content-Type như route frame (khác chuẩn, vốn chia theo fragment). Metadata không chứa BulkDataURI (PixelData bị bỏ khỏi metadata) nên URL này chỉ biết theo quy ước. Tag khác 7FE00010 là 404 vì các bulkdata khác bị bỏ lúc STOW. Cần quyền đọc, gồm Binary.
+//	@Tags			dicomweb
+//	@Security		BearerAuth
+//	@Produce		multipart/related,json
+//	@Param			studyUid	path		string	true	"UID của study (StudyInstanceUID)"
+//	@Param			seriesUid	path		string	true	"UID của series (SeriesInstanceUID)"
+//	@Param			instanceUid	path		string	true	"UID của instance (SOPInstanceUID)"
+//	@Param			tag	path		string	true	"Tag 8 chữ số hex; chỉ 7FE00010 (PixelData)"
+//	@Success		200	{file}	file	"multipart/related"
+//	@Failure		401	{object}	ErrorBody	"Thiếu hoặc sai Bearer token"
+//	@Failure		403	{object}	ErrorBody	"Token không đủ quyền hoặc chọn project khác"
+//	@Failure		404	{object}	ErrorBody	"Không có instance, ảnh hoặc bulkdata theo tag"
+//	@Failure		416	{object}	ErrorBody	"Chỉ mục hoặc metadata không khớp số frame"
+//	@Failure		500	{object}	ErrorBody	"Lỗi xử lý (không lộ chi tiết nội bộ)"
+//	@Router			/dicomweb/studies/{studyUid}/series/{seriesUid}/instances/{instanceUid}/bulkdata/{tag} [get]
+func wadoBulkdata() {}
+
+// wadoURI godoc
+//
+//	@Summary		WADO-URI: lấy một instance bằng tham số truy vấn
+//	@Description	WADO-URI (PS3.18 mục 8.1) cho client cũ. requestType=WADO, studyUID, seriesUID, objectUID bắt buộc. contentType (danh sách có q, hoặc header Accept khi bỏ trống): `application/dicom` trả tệp DICOM Part 10 nguyên văn (không multipart, chunked); `image/jpeg` (mặc định) hoặc `image/png` trả ảnh dựng của frame frameNumber (mặc định 1) với windowCenter, windowWidth, imageQuality, theo cùng giới hạn như `rendered` (định dạng điểm ảnh chưa dựng được: 406). Tham số khác của chuẩn (rows, columns, region, annotation, presentationUID, transferSyntax, charset) bị bỏ qua; anonymize khác "no" là 400. Cần quyền đọc, gồm Binary.
+//	@Tags			dicomweb
+//	@Security		BearerAuth
+//	@Produce		application/dicom,image/jpeg,image/png,json
+//	@Param			requestType	query		string	true	"Luôn là WADO"
+//	@Param			studyUID	query		string	true	"StudyInstanceUID"
+//	@Param			seriesUID	query		string	true	"SeriesInstanceUID"
+//	@Param			objectUID	query		string	true	"SOPInstanceUID"
+//	@Param			contentType	query		string	false	"application/dicom, image/jpeg (mặc định) hoặc image/png; có thể là danh sách kèm q"
+//	@Param			frameNumber	query		int		false	"Số thứ tự frame bắt đầu từ 1 (chỉ với ảnh)"
+//	@Param			windowCenter	query		number	false	"Tâm cửa sổ (chỉ với ảnh; cần cả windowWidth)"
+//	@Param			windowWidth	query		number	false	"Độ rộng cửa sổ (> 0)"
+//	@Param			imageQuality	query		int		false	"Chất lượng JPEG 1..100"
+//	@Param			anonymize	query		string	false	"Chỉ chấp nhận no"
+//	@Success		200	{file}	file	"Tệp DICOM hoặc ảnh"
+//	@Failure		400	{object}	ErrorBody	"Tham số thiếu hoặc không hợp lệ"
+//	@Failure		401	{object}	ErrorBody	"Thiếu hoặc sai Bearer token"
+//	@Failure		403	{object}	ErrorBody	"Token không đủ quyền hoặc chọn project khác"
+//	@Failure		404	{object}	ErrorBody	"Không có study, series, instance hoặc ảnh"
+//	@Failure		406	{object}	ErrorBody	"contentType không hỗ trợ hoặc điểm ảnh chưa dựng được"
+//	@Failure		413	{object}	ErrorBody	"Frame quá lớn để dựng"
+//	@Failure		416	{object}	ErrorBody	"Số frame vượt tổng số frame"
+//	@Failure		500	{object}	ErrorBody	"Lỗi xử lý (không lộ chi tiết nội bộ)"
+//	@Router			/dicomweb/wado [get]
+func wadoURI() {}

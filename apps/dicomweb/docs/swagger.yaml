@@ -98,7 +98,8 @@ info:
   description: 'DICOMweb (STOW-RS, QIDO-RS, WADO-RS) cho kho hình ảnh DICOM, dùng
     chung schema và kho Binary với fhir-server. Lỗi trả {"error": "..."}. STOW-RS,
     QIDO-RS (study, series, instance, có bộ lọc thuộc tính), WADO-RS (tải instance,
-    series, study; metadata; frame) đã cài; bulkdata và WADO-URI không có (501).'
+    series, study; metadata; frame) đã cài; bulkdata PixelData và WADO-URI đã cài
+    (D9).'
   title: Trivita DICOMweb API
   version: "1.0"
 paths:
@@ -743,6 +744,69 @@ paths:
       summary: 'WADO-RS: tải instance'
       tags:
       - dicomweb
+  /dicomweb/studies/{studyUid}/series/{seriesUid}/instances/{instanceUid}/bulkdata/{tag}:
+    get:
+      description: 'Trả toàn bộ dữ liệu điểm ảnh (tag 7FE00010) của instance dạng
+        multipart/related, có Content-Length, đọc theo khoảng nhờ chỉ mục frame. Dữ
+        liệu không nén: MỘT phần application/octet-stream gồm mọi frame nối nhau.
+        Dữ liệu đóng gói (nén): mỗi frame một phần, cùng Content-Type như route frame
+        (khác chuẩn, vốn chia theo fragment). Metadata không chứa BulkDataURI (PixelData
+        bị bỏ khỏi metadata) nên URL này chỉ biết theo quy ước. Tag khác 7FE00010
+        là 404 vì các bulkdata khác bị bỏ lúc STOW. Cần quyền đọc, gồm Binary.'
+      parameters:
+      - description: UID của study (StudyInstanceUID)
+        in: path
+        name: studyUid
+        required: true
+        type: string
+      - description: UID của series (SeriesInstanceUID)
+        in: path
+        name: seriesUid
+        required: true
+        type: string
+      - description: UID của instance (SOPInstanceUID)
+        in: path
+        name: instanceUid
+        required: true
+        type: string
+      - description: Tag 8 chữ số hex; chỉ 7FE00010 (PixelData)
+        in: path
+        name: tag
+        required: true
+        type: string
+      produces:
+      - multipart/related
+      - application/json
+      responses:
+        "200":
+          description: multipart/related
+          schema:
+            type: file
+        "401":
+          description: Thiếu hoặc sai Bearer token
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+        "403":
+          description: Token không đủ quyền hoặc chọn project khác
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+        "404":
+          description: Không có instance, ảnh hoặc bulkdata theo tag
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+        "416":
+          description: Chỉ mục hoặc metadata không khớp số frame
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+        "500":
+          description: Lỗi xử lý (không lộ chi tiết nội bộ)
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+      security:
+      - BearerAuth: []
+      summary: 'WADO-RS: bulkdata PixelData'
+      tags:
+      - dicomweb
   /dicomweb/studies/{studyUid}/series/{seriesUid}/instances/{instanceUid}/frames/{frame}:
     get:
       description: 'Trả một hoặc nhiều frame dạng multipart/related (có Content-Length),
@@ -1077,6 +1141,110 @@ paths:
       security:
       - BearerAuth: []
       summary: 'WADO-RS: metadata của series'
+      tags:
+      - dicomweb
+  /dicomweb/wado:
+    get:
+      description: 'WADO-URI (PS3.18 mục 8.1) cho client cũ. requestType=WADO, studyUID,
+        seriesUID, objectUID bắt buộc. contentType (danh sách có q, hoặc header Accept
+        khi bỏ trống): `application/dicom` trả tệp DICOM Part 10 nguyên văn (không
+        multipart, chunked); `image/jpeg` (mặc định) hoặc `image/png` trả ảnh dựng
+        của frame frameNumber (mặc định 1) với windowCenter, windowWidth, imageQuality,
+        theo cùng giới hạn như `rendered` (định dạng điểm ảnh chưa dựng được: 406).
+        Tham số khác của chuẩn (rows, columns, region, annotation, presentationUID,
+        transferSyntax, charset) bị bỏ qua; anonymize khác "no" là 400. Cần quyền
+        đọc, gồm Binary.'
+      parameters:
+      - description: Luôn là WADO
+        in: query
+        name: requestType
+        required: true
+        type: string
+      - description: StudyInstanceUID
+        in: query
+        name: studyUID
+        required: true
+        type: string
+      - description: SeriesInstanceUID
+        in: query
+        name: seriesUID
+        required: true
+        type: string
+      - description: SOPInstanceUID
+        in: query
+        name: objectUID
+        required: true
+        type: string
+      - description: application/dicom, image/jpeg (mặc định) hoặc image/png; có thể
+          là danh sách kèm q
+        in: query
+        name: contentType
+        type: string
+      - description: Số thứ tự frame bắt đầu từ 1 (chỉ với ảnh)
+        in: query
+        name: frameNumber
+        type: integer
+      - description: Tâm cửa sổ (chỉ với ảnh; cần cả windowWidth)
+        in: query
+        name: windowCenter
+        type: number
+      - description: Độ rộng cửa sổ (> 0)
+        in: query
+        name: windowWidth
+        type: number
+      - description: Chất lượng JPEG 1..100
+        in: query
+        name: imageQuality
+        type: integer
+      - description: Chỉ chấp nhận no
+        in: query
+        name: anonymize
+        type: string
+      produces:
+      - application/dicom
+      - image/jpeg
+      - image/png
+      - application/json
+      responses:
+        "200":
+          description: Tệp DICOM hoặc ảnh
+          schema:
+            type: file
+        "400":
+          description: Tham số thiếu hoặc không hợp lệ
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+        "401":
+          description: Thiếu hoặc sai Bearer token
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+        "403":
+          description: Token không đủ quyền hoặc chọn project khác
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+        "404":
+          description: Không có study, series, instance hoặc ảnh
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+        "406":
+          description: contentType không hỗ trợ hoặc điểm ảnh chưa dựng được
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+        "413":
+          description: Frame quá lớn để dựng
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+        "416":
+          description: Số frame vượt tổng số frame
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+        "500":
+          description: Lỗi xử lý (không lộ chi tiết nội bộ)
+          schema:
+            $ref: '#/definitions/httpapi.ErrorBody'
+      security:
+      - BearerAuth: []
+      summary: 'WADO-URI: lấy một instance bằng tham số truy vấn'
       tags:
       - dicomweb
   /health/live:
