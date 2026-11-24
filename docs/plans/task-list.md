@@ -72,7 +72,7 @@ Nguồn: [fhir-server-split-candidates.md](fhir-server-split-candidates.md) (m�
 | 30 | S3: P0-1 (rest-hook bền), rồi `apps/fhir-notifier` | [x] 2026-11-24: P0-1 (`fhirsub.Config.Durable`, `FHIR_WEBHOOK_DURABLE`, `messaging` Concurrency/ClaimIdle; `c10c528`), service `apps/fhir-notifier` :8010 với 4 tầng test, tài liệu | S1; D-SP-4 (chọn (a)) | mục 3.2, 7 |
 | 31 | S4: đo tải #12c cỡ lớn (200.000 resource, máy riêng, nhiều job đồng thời, resource lớn) | [x] 2026-11-24: 200.000 resource một export: p95 API x1,02; bốn export đồng thời (50.000): p95 x1,35, p99 x1,48, thông lượng x0,76; chưa đo máy riêng và resource lớn (số ở kế hoạch tách mục 3.3) | D-SP-7 đã có số đo, chờ quyết | mục 3.3, 7 |
 | 32 | S5: P0-2 (kết quả export ra kho đối tượng), rồi `apps/fhir-worker` | [x] 2026-11-24: P0-2 (kết quả job ra kho không trần base64, dọn bằng Expunge; `deleteBinaries`, `batch_async`) và service `apps/fhir-worker` :8011 (job-seal, lease, phát sự kiện) với 4 tầng test, tài liệu; làm theo yêu cầu dù điều kiện A chưa chứng minh | S1, S4 | mục 3.3, 7 |
-| 33 | S6: tài liệu, compose, Makefile `run-<tên>`, bản đồ service | [ ] | các bước trên | mục 7 |
+| 33 | S6: tài liệu, compose, Makefile `run-<tên>`, bản đồ service | [x] 2026-11-24: `docker-compose.split.yml` và `docker-compose.split-auth.yml`, `make smoke-split` (ngăn xếp thật: webhook, export, tải attachment; đã chạy PASS), Makefile `run-<tên>`, bản đồ và đối chiếu danh sách kiểm ở `service-principles.md`, `fhir-server/docs/{architecture,runbook}.md` (mục 2.1 và 14); không có đổi dữ liệu nên không cập nhật `docs/erd` | các bước trên | mục 7 |
 
 ## Ưu tiên 2: hardening, làm sau khi module đã chạy thành service
 

@@ -1,6 +1,6 @@
 # fhir-server: kiến trúc
 
-Cập nhật 2026-11-23. Mô tả `fhir-server` làm gì, không làm gì, vì sao là một service riêng, các thành phần, luồng chính và hành vi khi lỗi. Cấu hình ở [config.md](config.md), cách kiểm ở [testing.md](testing.md), vận hành ở [runbook.md](runbook.md), hợp đồng API ở [api-contract.md](api-contract.md) (chi tiết: [api-contract/](api-contract/)).
+Cập nhật 2026-11-24 (thêm chế độ tách service ở mục 2.1). Mô tả `fhir-server` làm gì, không làm gì, vì sao là một service riêng, các thành phần, luồng chính và hành vi khi lỗi. Cấu hình ở [config.md](config.md), cách kiểm ở [testing.md](testing.md), vận hành ở [runbook.md](runbook.md), hợp đồng API ở [api-contract.md](api-contract.md) (chi tiết: [api-contract/](api-contract/)).
 
 ## 1. Làm gì, không làm gì
 
@@ -18,6 +18,7 @@ Cập nhật 2026-11-23. Mô tả `fhir-server` làm gì, không làm gì, vì s
 - **Không cấp token và không giữ tài khoản.** `auth` cấp token; `fhir-server` chỉ kiểm chữ ký bằng JWKS (hoặc dùng token tĩnh cho dev/máy-với-máy).
 - **Không đọc schema `identity`** của `auth`; role `fhir_app` không có quyền gì trên schema đó.
 - **Không giữ kết nối websocket** khi `FHIR_WS_MODE=issuer`: deploy hay khởi động lại `fhir-server` không ngắt socket.
+- **Không còn làm khi các service tách được bật** (mục 2.1): giao rest-hook và khớp websocket (sang `fhir-notifier`), tự tải attachment ngoài (sang `fhir-downloader`), chạy job nền export, `$reindex` cả loại và batch async (sang `fhir-worker`). API vẫn nhận yêu cầu, phát sự kiện lên Redis và tạo `AsyncJob` rồi trả `202`; mặc định (không đặt công tắc) mọi thứ chạy trong một tiến trình như cũ.
 - **Không phục vụ giao diện** và không có CDS Hooks, DICOMweb, key-value, MCP, Agent (xem [../../../docs/api-contract/others.md](../../../docs/api-contract/others.md)).
 
 ## 2. Vì sao tách (điều kiện theo [service-principles.md](../../../docs/service-principles.md) mục 1)
@@ -31,7 +32,19 @@ Cập nhật 2026-11-23. Mô tả `fhir-server` làm gì, không làm gì, vì s
 | **C. Miền lỗi và vòng đời deploy** | Deploy `fhir-server` không còn làm rớt websocket (đã kiểm bằng container thật). `auth` sập thì token còn hạn vẫn dùng được tới hết TTL vì `fhir-server` chỉ kiểm chữ ký. |
 | D. Đội sở hữu khác | Chưa có. |
 
-Điều **chưa** tách và lý do: `fhir-worker` (export lớn chạy chung tiến trình với API) chờ số đo tải thực (task #12c); `dicomweb` chưa đóng gói.
+Điều **chưa** tách: terminology và Binary/`/storage` (D-SP-6, không tách), REST, kho, tìm kiếm, xác thực (không tách theo loại resource). `dicomweb` và `ws-gateway` đã là service riêng.
+
+### 2.1 Chế độ tách service (kế hoạch S0 đến S6, 2026-11-24)
+
+Ba việc nền có thể chạy ở service riêng, bật từng việc bằng công tắc ở `fhir-server` (mặc định `true`, hành vi cũ). Kế hoạch và bằng chứng: [../../../docs/plans/fhir-server-split-candidates.md](../../../docs/plans/fhir-server-split-candidates.md); chạy thử bằng [../../../docker-compose.split.yml](../../../docker-compose.split.yml).
+
+| Việc | Công tắc ở `fhir-server` | Service | Phụ thuộc | Tài liệu |
+|---|---|---|---|---|
+| Tự tải attachment URL ngoài | `FHIR_AUTO_DOWNLOAD=true` + `FHIR_AUTO_DOWNLOAD_WORKER=false` | `fhir-downloader` `:8009` | Redis, kho Binary dùng chung, đường ra Internet (chỉ service này) | [../../fhir-downloader/docs/architecture.md](../../fhir-downloader/docs/architecture.md) |
+| Giao rest-hook (bền) và khớp websocket | `FHIR_SUBSCRIPTIONS=true` + `FHIR_SUBSCRIPTION_DELIVERY=false` | `fhir-notifier` `:8010` | Redis, đường tới webhook của khách (chỉ service này) | [../../fhir-notifier/docs/architecture.md](../../fhir-notifier/docs/architecture.md) |
+| Job nền (export, `$reindex`, batch async) | `FHIR_JOB_EXECUTION=false` | `fhir-worker` `:8011` | kho Binary dùng chung, `FHIR_JOB_SIGNING_KEY` (khi JWT) | [../../fhir-worker/docs/architecture.md](../../fhir-worker/docs/architecture.md) |
+
+Điều kiện chung: `BROKER_DRIVER=redis` (broker bộ nhớ không đến được tiến trình khác; cấu hình từ chối tắt phía giao hoặc phía tải khi broker là `memory`), các service kia **dùng chung schema `fhir`** và không tự migrate (`fhir-server migrate up` trước), và chạy consumer group RIÊNG (`fhir-downloader`, `fhir-notifier`), khác group `trivita` của `fhir-server` để cùng nhận mọi sự kiện. Không có công tắc thì bật service mới và vẫn để API làm thì mỗi việc bị làm hai lần: phải tắt ở API ngay khi bật service mới (runbook mục 14). Lý do tách mỗi service và điều chưa chứng minh nằm ở `architecture.md` của từng service; riêng `fhir-worker`, điều kiện A (hồ sơ tải khác) chưa được số đo chứng minh (một export không ảnh hưởng API ở 200.000 resource, bốn export đồng thời p99 x1,48).
 
 ## 3. Cấu trúc
 
@@ -109,7 +122,7 @@ sequenceDiagram
 
 ### Bulk export bất đồng bộ
 
-`GET /fhir/R4/$export` với `Prefer: respond-async` tạo `AsyncJob` và trả `202` kèm `Content-Location` tới `bulkdata/{id}/status`. Một replica nhận job bằng `If-Match` (chỉ một replica chạy), giữ lease `FHIR_JOB_LEASE` và tự gia hạn. Poll cho tới khi `200` kèm manifest; mỗi `url` trong `output` là một `Binary` NDJSON. Vòng bảo trì (`FHIR_JOB_MAINTENANCE_INTERVAL`) đưa lại hàng đợi job mồ côi đã hết lease và xóa kết quả quá `FHIR_EXPORT_RETENTION`.
+`GET /fhir/R4/$export` với `Prefer: respond-async` tạo `AsyncJob` và trả `202` kèm `Content-Location` tới `bulkdata/{id}/status`. Một replica nhận job bằng `If-Match` (chỉ một replica chạy), giữ lease `FHIR_JOB_LEASE` và tự gia hạn. Khi `FHIR_JOB_EXECUTION=false` API chỉ tạo job và `fhir-worker` nhận. Khi có `FHIR_BINARY_STORAGE`, tệp kết quả đi vào kho đối tượng (không trần base64) và hết hạn thì bị Expunge (xóa cả dòng và tệp). Poll cho tới khi `200` kèm manifest; mỗi `url` trong `output` là một `Binary` NDJSON. Vòng bảo trì (`FHIR_JOB_MAINTENANCE_INTERVAL`) đưa lại hàng đợi job mồ côi đã hết lease và xóa kết quả quá `FHIR_EXPORT_RETENTION`.
 
 ### Websocket Subscription (tách riêng)
 
@@ -123,7 +136,7 @@ sequenceDiagram
 | Schema chưa migrate | Từ chối chạy (`schema chưa được migrate`); không có nguy cơ chạy trên schema cũ |
 | SIGTERM | `/readyz` 503, giữ `SHUTDOWN_DRAIN_DELAY`, chờ yêu cầu tới `SHUTDOWN_TIMEOUT`; job chưa xong **nhả lease** để instance khác chạy lại; socket nhúng đóng bằng 1001 |
 | DB hỏng | `/readyz` 503 (`database: false`); `/healthz` vẫn 200 |
-| Redis hỏng (khi dùng) | `/readyz` 503 (`broker: false`); sự kiện chưa xử lý vẫn nằm trên Redis nhưng lần giao rest-hook đang thử lại (hàng đợi ở bộ nhớ) thì mất khi restart |
+| Redis hỏng (khi dùng) | `/readyz` 503 (`broker: false`); sự kiện chưa xử lý vẫn nằm trên Redis. Giao rest-hook mặc định (hàng đợi ở bộ nhớ): lần đang thử lại mất khi restart; với `FHIR_WEBHOOK_DURABLE=true` hoặc `fhir-notifier` thì giao bền (ACK sau khi giao) nên không mất, đổi lại giao ít nhất một lần |
 | `auth`/JWKS tạm sập | Đã tải được khóa thì vẫn xác minh token (cache), khóa mới chưa nhận được cho tới khi `auth` lên lại |
 | Job `accepted` bị bỏ giữa chừng | Vòng bảo trì chạy lại từ đầu; batch async chạy tiếp từ checkpoint |
 
@@ -131,10 +144,11 @@ sequenceDiagram
 
 - **auth:** nhận token qua JWKS. `FHIR_JWT_ISSUER` phải bằng `AUTH_ISSUER` (mặc định `AUTH_BASE_URL`) **đúng từng ký tự**; `FHIR_JWT_AUDIENCE` = `AUTH_AUDIENCE`; `FHIR_JWKS_URL` = `<AUTH_BASE_URL>/.well-known/jwks.json` (có thể là địa chỉ nội bộ). `auth` còn gọi `fhir-server` để đọc tệp đính kèm `Binary/<id>` khi gửi thư (`AUTH_EMAIL_FHIR_URL`, bằng Bearer của người gọi).
 - **ws-gateway:** chung Redis và `FHIR_WS_SIGNING_KEY` (xem mục 6).
+- **fhir-downloader, fhir-notifier, fhir-worker:** chung schema `fhir`, Redis (hai service đầu), kho Binary và khóa ký job; hợp đồng dây gồm định dạng sự kiện (`fhirsub.EventType`), chữ ký job-seal và `FHIR_BASE_URL` (mục 2.1).
 - **fhir-cli:** công cụ dòng lệnh gọi API này (import, export, reindex); không phải service.
 
 ## 9. Chưa làm hoặc chưa kiểm
 
 - Số đo tải (search, bulk export, nhiều replica tranh job, websocket nhiều kết nối) chưa có; diễn tập sao lưu và khôi phục chưa làm ([runbook.md mục 13](runbook.md)).
 - Compartment Patient (P8, xong): tìm kiếm nhận `_compartment=Patient/<id>` (OR các tham số compartment, `pkg/fhirsearch/compartment.go`); policy của token cho phép nhiều rule cùng loại là OR (tối đa 16) và đẩy điều kiện xuống store qua `Request.Filters/Exprs` nên `_total`, phân trang, `_include` và `$everything` đều bị giới hạn đúng. Auth chỉ phát loại claim này khi bật `AUTH_PATIENT_COMPARTMENT_ENABLED`; vận hành ở [../../auth/docs/runbook.md §12](../../auth/docs/runbook.md#12-bật-compartment-patient). Bệnh nhân cần có `Patient` cùng id trong `fhir-server`; chi tiết ở [../../auth/docs/plans/p8-compartment.md](../../auth/docs/plans/p8-compartment.md).
-- `fhir-worker` chưa tách (mục 2); route `/fhir/R4/...` trong swagger chưa có test máy so với router thật ([api-contract.md](api-contract.md)).
+- Các service nền tách (mục 2.1): chưa có e2e tự động ghép `fhir-server` thật với từng service (test của mỗi service mô phỏng phía API); chưa mô phỏng chính sách mạng chặn đường ra Internet của API; điều kiện A của `fhir-worker` chưa chứng minh. Route `/fhir/R4/...` trong swagger chưa có test máy so với router thật ([api-contract.md](api-contract.md)).

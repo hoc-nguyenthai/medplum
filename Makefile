@@ -16,7 +16,7 @@ FHIR_WORKER_PORT ?= :8011
 comma := ,
 
 .DEFAULT_GOAL := help
-.PHONY: help swagger tidy build run run-fhir-server run-auth run-ws-gateway run-dicomweb run-fhir-downloader run-fhir-notifier run-fhir-worker test-unit test-db test-integration test-service test-app test-e2e test-load-dicomweb bench-ws bench-export test-auth-pg migrate test test-race test-pg bench cover lint fmt ci docker up down
+.PHONY: help swagger tidy build run run-fhir-server run-auth run-ws-gateway run-dicomweb run-fhir-downloader run-fhir-notifier run-fhir-worker test-unit test-db test-integration test-service test-app test-e2e test-load-dicomweb bench-ws bench-export smoke-split test-auth-pg migrate test test-race test-pg bench cover lint fmt ci docker up down
 
 help: ## Liệt kê các lệnh
 	@grep -E '^[a-zA-Z0-9_-]+:.*##' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}'
@@ -119,6 +119,9 @@ test-e2e: ## (system e2e, sẽ chuyển sang tests/e2e và image thật ở bư�
 WS_LOAD_CONNS ?= 1000
 bench-export: ## Đo ảnh hưởng của $export lớn lên API (#12c; cần Docker cho PostgreSQL): EXPORT_LOAD_RESOURCES=300000 EXPORT_LOAD_CLIENTS=32 make bench-export; thêm EXPORT_LOAD_EXPORTS=4 FHIR_JOB_CONCURRENCY=4 để đo nhiều export đồng thời
 	TRIVITA_E2E_LOAD=1 go test -count=1 -timeout 60m -run TestExportLoadVersusAPI -v ./apps/fhir-server/tests/load/
+
+smoke-split: ## Smoke test bộ service tách (docker-compose.split.yml: fhir-server + fhir-downloader + fhir-notifier + fhir-worker thật, cần Docker và host.docker.internal): make smoke-split
+	tests/split_smoke/run.sh
 
 bench-ws: ## Đo tải ws-gateway thật (cần Docker cho Redis): WS_LOAD_CONNS=4000 make bench-ws (RSS mỗi socket và độ trễ fan-out; kết quả in bằng t.Log)
 	TRIVITA_E2E_LOAD=1 WS_LOAD_CONNS=$(WS_LOAD_CONNS) go test -count=1 -timeout 20m -run TestWSLoadFanOutAndMemory -v ./apps/ws-gateway/tests/load/

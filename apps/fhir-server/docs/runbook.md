@@ -185,7 +185,8 @@ Trạng thái ở resource `AsyncJob` (`accepted`, `completed`, `error`, `cancel
 - **Job `accepted` mãi không chạy:** kiểm (a) `FHIR_JOB_MAINTENANCE_INTERVAL` có bằng 0 không; (b) job tạo trước khi bật JWT không có chữ ký quyền nên sẽ lỗi khi chạy lại, hãy hủy và tạo lại; (c) `FHIR_JOB_CONCURRENCY` (mặc định 2) có bị job dài chiếm hết không.
 - **Job `error`:** `GET [base]/job/{id}/status` trả OperationOutcome nêu nguyên nhân (cũng có trong log ERROR `job lỗi`). Sửa nguyên nhân rồi gọi lại; export lỗi tự dọn tệp đã ghi dở.
 - **Hủy hoặc xóa:** `DELETE [base]/job/{id}/status` (batch async; cần quyền ghi) hoặc `DELETE [base]/bulkdata/{id}/status` (export): hủy job đang chạy (dừng ở entry kế tiếp, dọn Binary tạm) hoặc xóa job đã xong cùng Binary kết quả. Hết `FHIR_EXPORT_RETENTION` (mặc định 24h, âm là không bao giờ xóa) thì vòng bảo trì tự xóa.
-- **Export tốn dung lượng:** tệp export là `Binary` trong DB (mỗi tệp khoảng 8 MiB). Giữ `FHIR_EXPORT_RETENTION` ngắn và đừng dùng `fhir-cli export -keep` thường xuyên.
+- **Export tốn dung lượng:** tệp export (mỗi tệp khoảng 8 MiB) ra kho `FHIR_BINARY_STORAGE` khi kho bật (và bị Expunge khi hết hạn: xóa cả dòng và tệp); không có kho thì là `Binary` base64 trong DB. Giữ `FHIR_EXPORT_RETENTION` ngắn và đừng dùng `fhir-cli export -keep` thường xuyên.
+- **Job chạy ở service riêng (`FHIR_JOB_EXECUTION=false`):** API chỉ tạo job; job `accepted` mãi nghĩa là `fhir-worker` không chạy hoặc không cùng DB: xem [../../fhir-worker/docs/runbook.md](../../fhir-worker/docs/runbook.md).
 
 ## 8. Subscription (rest-hook và websocket)
 
@@ -193,7 +194,8 @@ Trạng thái ở resource `AsyncJob` (`accepted`, `completed`, `error`, `cancel
 - **Webhook không tới:** log WARN `fhirsub: giao thất bại` (có `subscription`, `resource`, `attempts`, `status`, `error`). Lỗi "địa chỉ đích bị chặn" là chống SSRF (đích nội bộ); chỉ dev mới đặt `FHIR_WEBHOOK_ALLOW_PRIVATE=true`. Thử lại tối đa `FHIR_WEBHOOK_MAX_ATTEMPTS` (5) với backoff gấp đôi; hàng đợi giao nằm ở bộ nhớ nên **mất khi restart** (sự kiện chưa xử lý vẫn còn trên Redis, nhưng lần giao đang thử lại thì không).
 - **Tự tải attachment ngoài (`FHIR_AUTO_DOWNLOAD`, mặc định TẮT):** sau khi một resource được ghi, mọi `Attachment.url` http(s) tuyệt đối trỏ ra ngoài server được tải về kho Binary (qua chống SSRF của `pkg/safehttp`), lưu thành Binary của đúng project (`securityContext` trỏ về resource) rồi `url` được đổi thành `Binary/<id>` (đọc ra là URL ký của kho). Cần `FHIR_BINARY_STORAGE`. Việc tải chạy NỀN: với broker bộ nhớ (mặc định) là hàng đợi trong tiến trình (thử lại 3 lần lùi 1 giây, 2 giây; mất khi tiến trình tắt giữa chừng, ghi log `fhirdownload: bỏ cuộc sau 3 lần`); với `BROKER_DRIVER=redis` lỗi trả về cho broker thử lại và đưa vào dead-letter. Giới hạn: `FHIR_AUTO_DOWNLOAD_MAX_BYTES` (mặc định bằng `FHIR_STORAGE_MAX_UPLOAD_BYTES`), `FHIR_AUTO_DOWNLOAD_TIMEOUT`, danh sách cho phép và bỏ qua theo tiền tố (cấp server, không theo project). Loại nội dung bị cấm (`application/x-sh`...) và tệp quá lớn bị bỏ, không tạo Binary; xung đột phiên bản hoặc resource đổi giữa chừng thì dọn Binary vừa tạo. Log chỉ ghi host, không ghi query string của URL. **Bật có chủ ý:** gọi URL do người dùng cung cấp là bề mặt SSRF và chi phí (băng thông, dung lượng kho); `FHIR_AUTO_DOWNLOAD_ALLOW_PRIVATE` chỉ cho dev. Bật tính năng này cũng dựng broker và phát sự kiện cho mọi lần ghi resource (như khi bật Subscription).
 - **Subscription tự chuyển `off`:** khi đặt `FHIR_SUBSCRIPTION_AUTO_DISABLE`, log WARN `fhirsub: tự tắt Subscription vì giao thất bại lặp lại` (kèm `subscription`, `project`, `failureCount`, `timeWindowSeconds`) và `Subscription.error` ghi lý do. Sửa bên nhận rồi đặt lại `status=active` (PUT/PATCH); bộ đếm đã xóa lúc tắt.
-- **Hàng đợi đầy:** log ERROR `hàng đợi giao đầy, bỏ thông báo`; tăng `FHIR_WEBHOOK_WORKERS` hoặc xử lý bên nhận chậm.
+- **Hàng đợi đầy:** log ERROR `hàng đợi giao đầy, bỏ thông báo`; tăng `FHIR_WEBHOOK_WORKERS` hoặc xử lý bên nhận chậm. Muốn không mất thông báo khi restart: `FHIR_WEBHOOK_DURABLE=true` (cần Redis) hoặc chuyển giao sang `fhir-notifier` (giao bền; giao ít nhất một lần nên bên nhận phải khử trùng lặp).
+- **Giao và tải ở service riêng:** `FHIR_SUBSCRIPTION_DELIVERY=false` (giao do `fhir-notifier`) và `FHIR_AUTO_DOWNLOAD_WORKER=false` (tải do `fhir-downloader`) làm API chỉ phát sự kiện; thông báo không tới hoặc attachment không được tải thì xem runbook của service tương ứng ([notifier](../../fhir-notifier/docs/runbook.md), [downloader](../../fhir-downloader/docs/runbook.md)).
 - **Websocket tách riêng (`FHIR_WS_MODE=issuer`):** kết nối do `ws-gateway` giữ; deploy hoặc khởi động lại `fhir-server` KHÔNG ngắt socket (đã kiểm bằng container thật), chỉ ngắt khi gateway khởi động lại (client nhận 1001 và bind lại). Giới hạn kết nối, hạn mức bind và Origin đặt ở gateway, không ở `fhir-server`. Redis là điểm phụ thuộc chung.
 - **Websocket nhúng:** số kết nối tối đa mỗi instance `FHIR_WS_MAX_CONNECTIONS` (1000; vượt thì 503); hạn mức bind theo người `FHIR_WS_MAX_BINDINGS_PER_USER` (20; vượt thì đóng 1008, đếm theo instance nên cả cụm cho tối đa N x số replica); client chậm bị ngắt (1013). Cần `Upgrade` đi xuyên qua reverse proxy và timeout đọc lớn hơn `FHIR_WS_HEARTBEAT` (30s). Trình duyệt chỉ được từ cùng host trừ khi đặt `FHIR_WS_ALLOWED_ORIGINS`.
 
@@ -243,3 +245,21 @@ Quan sát qua `pkg/observability` (`OTEL_*`, `LOG_LEVEL`, `LOG_JSON`), tên tele
 5. Hàng đợi giao rest-hook ở bộ nhớ, mất khi restart; sự kiện websocket không bền (at-most-once).
 6. Token Patient/RelatedPerson chưa đọc được dữ liệu lâm sàng (compartment chưa làm, task #16).
 7. Chưa có CI trong repo; chạy `make ci` bằng tay.
+
+## 14. Tách service nền (fhir-downloader, fhir-notifier, fhir-worker)
+
+Kế hoạch: [../../../docs/plans/fhir-server-split-candidates.md](../../../docs/plans/fhir-server-split-candidates.md). Chạy thử cả bộ: `docker-compose.split.yml` ở gốc repo. Mỗi service có runbook riêng; mục này là thứ tự chung và những điều phải đúng ở `fhir-server`.
+
+**Thứ tự bật (mỗi việc độc lập, nhưng luôn bật service mới TRƯỚC rồi mới tắt phía API):**
+
+1. `fhir-server migrate up` (chỉ `fhir-server` sở hữu schema `fhir`; ba service kia từ chối khởi động nếu còn migration chưa chạy).
+2. Bảo đảm `BROKER_DRIVER=redis` và `REDIS_URL` ở `fhir-server` (cấu hình từ chối công tắc tách khi broker là `memory`).
+3. Dựng service mới (xem runbook của nó), kiểm `/health/ready` 200.
+4. Đặt công tắc ở `fhir-server` rồi rolling restart: `FHIR_AUTO_DOWNLOAD_WORKER=false` (tải), `FHIR_SUBSCRIPTION_DELIVERY=false` (giao), `FHIR_JOB_EXECUTION=false` (job). Giữ `FHIR_AUTO_DOWNLOAD=true` và `FHIR_SUBSCRIPTIONS=true` để API còn phát sự kiện.
+5. Ở hạ tầng: chặn đường ra Internet của `fhir-server`; chỉ `fhir-downloader` (tải) và `fhir-notifier` (webhook) được ra ngoài.
+
+**Phải trùng nhau giữa `fhir-server` và các service:** schema và `DATABASE_URL` (`DATABASE_REQUIRE_SCHEMA=true`), `FHIR_BASE_URL`, `FHIR_BINARY_STORAGE` (và `FHIR_S3_*`), `FHIR_JOB_SIGNING_KEY` khi JWT, các tuỳ chọn router (`FHIR_SKIP_VALIDATION`, `FHIR_SKIP_CONSTRAINTS`, `FHIR_UPDATE_AS_CREATE`, `FHIR_BASE64_BINARY_MAX_BYTES`) cho `fhir-worker`. Chưa có test phát hiện lệch giữa hai bên.
+
+**Quay lại (không tách nữa):** đặt lại công tắc về mặc định (`true`), rolling restart, rồi dừng service nền. Không để hai bên cùng làm lâu: tải và giao bị làm hai lần (rest-hook giao trùng); job thì an toàn nhờ lease.
+
+**Theo dõi:** stream sự kiện trên Redis (`trivita:events:fhir.resource.changed`) tích tụ khi service nghe ngừng chạy lâu (chưa có giới hạn độ dài và cảnh báo); độ trễ nhận job của `fhir-worker` tới vài giây; thông báo giao ít nhất một lần.

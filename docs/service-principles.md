@@ -170,6 +170,27 @@ Một service chỉ được coi là "triển khai được" khi thỏa **tất 
 
 Việc tiếp theo theo mức ưu tiên cho triển khai thật: (1) manifest K8s cho `auth` và `fhir-server`, (2) thêm `/health/*` vào `fhir-server`, (3) bố cục `tests/` cho hai app còn lại (T2), (4) CI. (Việc trước đây đứng đầu, CI phải checkout `trivita-observability-go` cạnh repo, đã hết cần từ khi thư viện được nhúng vào `pkg/observability`.)
 
+### Ba service nền tách từ `fhir-server` (2026-11-24)
+
+`fhir-downloader`, `fhir-notifier`, `fhir-worker` ([kế hoạch](plans/fhir-server-split-candidates.md), bước S2, S3, S5). Đối chiếu với danh sách kiểm mục 7 (trung thực):
+
+| Mục | `fhir-downloader` | `fhir-notifier` | `fhir-worker` |
+|---|---|---|---|
+| 7.1 "Vì sao tách" có bằng chứng | có; điều kiện C, A chưa đo | có; điều kiện C, A chưa đo | có; **A chưa chứng minh** (đo S4: một export không ảnh hưởng API, bốn export đồng thời p99 x1,48) |
+| 7.2 kiến trúc (C-1..C-5, luật trong `architecture_test.go`) | ép | ép | ép |
+| 7.3 cấu hình (từ chối sai, `.env.example`, `docs/config.md` sinh từ mã) | **ép** (có test chống lỗi thời) | **ép** | **ép** |
+| 7.4 probe `/health/*` và tắt êm có test | có, có test | có, có test | có, có test |
+| 7.5 image không root, `HEALTHCHECK`, e2e dựng image | **ép** (e2e dựng chính image, root filesystem chỉ đọc ở notifier và worker) | **ép** | **ép** |
+| 7.6 dữ liệu | dùng chung schema `fhir` (D-DW-1, D-SP-8), không tự migrate, test role hẹp quyền | như trái | như trái |
+| 7.7 hợp đồng dây ghim bằng test | sự kiện `fhirsub.EventType` (test e2e và bootstrap) | như trái, thêm kênh websocket (`WSChannel`, `WSPresenceKey`) | chữ ký job-seal (`TestJobWithAnInvalidSealIsRejected`), schema `AsyncJob` |
+| 7.8 bốn tầng test | đơn vị, tích hợp, e2e; **chưa có tải** | như trái | như trái |
+| 7.9 tài liệu (`README`, `docs/{architecture,config,testing,runbook}.md`), mục trong bản đồ mục 2 | có | có | có |
+| 7.9 manifest K8s mẫu | **không làm** (quyết định của người dùng: không đề xuất K8s) | không làm | không làm |
+| 7.10 hợp đồng API | không áp dụng (không có route nghiệp vụ) | không áp dụng | không áp dụng |
+| Compose | `docker-compose.split.yml`, chạy thử bằng `make smoke-split` | như trái | như trái (`docker-compose.split-auth.yml` khi JWT) |
+
+Điều chưa có chung cho cả ba: chính sách mạng chặn đường ra Internet của `fhir-server` (lý do chính của việc tách, chỉ mô phỏng được ở hạ tầng thật, không ở compose), số đo tải riêng của từng service, giới hạn độ dài stream Redis và cảnh báo khi service nghe ngừng lâu, kiểm lệch cấu hình dùng chung giữa `fhir-server` và các service (`FHIR_BASE_URL`, `FHIR_BINARY_STORAGE`, khóa job, tuỳ chọn router).
+
 ## 9. Điều không làm (anti-pattern đã gặp hoặc đã loại)
 
 - Hai service chung bảng hoặc chung schema; service đọc thẳng bảng của service khác.
