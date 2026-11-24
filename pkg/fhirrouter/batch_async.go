@@ -50,7 +50,7 @@ func (r *Router) startAsyncBatch(ctx context.Context, body map[string]any) (*Res
 	inputID := newID()
 	job, err := r.startJob(ctx, batchJobKind, url.Values{"input": {inputID}}, func(job *fhir.AsyncJob) error {
 		_, err := r.opts.JobRepository.CreateResource(ctx, &fhir.Binary{ID: inputID, ContentType: "application/fhir+json",
-			Meta: &fhir.Meta{Project: projectOf(job)}, Data: base64.StdEncoding.EncodeToString(data)})
+			Meta: &fhir.Meta{Project: projectOf(job)}, Data: base64.StdEncoding.EncodeToString(data), SecurityContext: ownerRef(job)})
 		return err
 	})
 	if err != nil {
@@ -143,7 +143,7 @@ func (r *Router) batchJob(ctx context.Context, _ Repository, in *Input) (out *fh
 		if len(pending) == 0 {
 			return nil
 		}
-		id, err := r.writeJSONBinary(c, project, pending)
+		id, err := r.writeJSONBinary(c, project, ownerRef(job), pending)
 		if err != nil {
 			return err
 		}
@@ -190,7 +190,7 @@ func (r *Router) batchJob(ctx context.Context, _ Repository, in *Input) (out *fh
 		}
 		result.Entry = append(result.Entry, part...)
 	}
-	resultID, err := r.writeJSONBinary(ctx, project, result)
+	resultID, err := r.writeJSONBinary(ctx, project, ownerRef(job), result)
 	if err != nil {
 		return nil, err
 	}
@@ -235,12 +235,12 @@ func (r *Router) saveBatchState(ctx context.Context, jobID string, st *batchStat
 	return r.SaveJobState(ctx, jobID, string(data))
 }
 
-func (r *Router) writeJSONBinary(ctx context.Context, project string, v any) (string, error) {
+func (r *Router) writeJSONBinary(ctx context.Context, project string, owner *fhir.Reference, v any) (string, error) {
 	data, err := json.Marshal(v)
 	if err != nil {
 		return "", err
 	}
-	b := &fhir.Binary{ID: newID(), ContentType: "application/fhir+json", Data: base64.StdEncoding.EncodeToString(data)}
+	b := &fhir.Binary{ID: newID(), ContentType: "application/fhir+json", Data: base64.StdEncoding.EncodeToString(data), SecurityContext: owner}
 	if project != "" {
 		b.Meta = &fhir.Meta{Project: project}
 	}
@@ -295,7 +295,9 @@ func (r *Router) cancelJob(ctx context.Context, id, prefix string) (*Response, e
 		}
 		return &Response{Status: 202, Resource: informational("Cancelled")}, nil
 	}
-	deleteBinaries(ctx, repo, jobBinaryIDs(job))
+	// Người gọi đã qua kiểm chủ sở hữu (jobVisible) nên được dọn kết quả của chính job này, dù token chỉ có quyền read: xóa bằng repository của job (id lấy từ
+	// output của job, không do người gọi chọn), nếu không file bị bỏ lại mà không ai dọn được.
+	deleteBinaries(ctx, r.jobRepo(), jobBinaryIDs(job))
 	if err := repo.DeleteResource(ctx, "AsyncJob", job.ID); err != nil {
 		return nil, err
 	}

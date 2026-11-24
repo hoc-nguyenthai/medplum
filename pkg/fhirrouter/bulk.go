@@ -163,6 +163,10 @@ func (r *Router) exportJob(ctx context.Context, repo Repository, in *Input) (res
 			return nil, err
 		}
 	}
+	var owner *fhir.Reference
+	if job, jerr := r.readJob(ctx, in.JobID); jerr == nil {
+		owner = ownerRef(job)
+	}
 	out := &fhir.Parameters{}
 	defer func() { // lỗi hoặc bị hủy giữa chừng: không để lại file mồ côi
 		if err != nil {
@@ -175,7 +179,7 @@ func (r *Router) exportJob(ctx context.Context, repo Repository, in *Input) (res
 		if lines == 0 {
 			return nil
 		}
-		b := &fhir.Binary{ID: newID(), ContentType: ndjsonType, Data: base64.StdEncoding.EncodeToString(buf.Bytes())}
+		b := &fhir.Binary{ID: newID(), ContentType: ndjsonType, Data: base64.StdEncoding.EncodeToString(buf.Bytes()), SecurityContext: owner}
 		if _, err := repo.CreateResource(ctx, b); err != nil {
 			return fmt.Errorf("ghi file %s: %w", rt, err)
 		}

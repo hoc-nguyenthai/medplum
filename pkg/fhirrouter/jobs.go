@@ -292,6 +292,30 @@ func jobOwner(job *fhir.AsyncJob) string {
 	return ""
 }
 
+// jobRepo là repository dành cho dọn dẹp của job (không tách theo người gọi); mặc định là repository của router (Options.JobRepository).
+func (r *Router) jobRepo() Repository {
+	if r.opts.JobRepository != nil {
+		return r.opts.JobRepository
+	}
+	return r.repo
+}
+
+// ownerRef là tham chiếu chủ sở hữu của job, đóng dấu lên mọi Binary job tạo (Binary.securityContext) để Guard giới hạn người đọc; nil nếu job không có chủ.
+func ownerRef(job *fhir.AsyncJob) *fhir.Reference {
+	if o := jobOwner(job); o != "" {
+		return &fhir.Reference{Identifier: &fhir.Identifier{System: JobOwnerSystem, Value: o}}
+	}
+	return nil
+}
+
+// BinaryOwner là chủ sở hữu ghi trên Binary kết quả của job ("" nếu không phải Binary của job có chủ).
+func BinaryOwner(b *fhir.Binary) string {
+	if b != nil && b.SecurityContext != nil && b.SecurityContext.Identifier != nil && b.SecurityContext.Identifier.System == JobOwnerSystem {
+		return b.SecurityContext.Identifier.Value
+	}
+	return ""
+}
+
 // jobVisible cho biết người gọi có được xem, hủy hoặc xóa job này không.
 func (r *Router) jobVisible(ctx context.Context, job *fhir.AsyncJob) bool {
 	return r.opts.JobAllowed == nil || r.opts.JobAllowed(ctx, jobOwner(job))

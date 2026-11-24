@@ -3,11 +3,13 @@ package fhirrouter_test
 import (
 	"context"
 	"net/http"
+	"net/url"
 	"strings"
 	"testing"
 
 	"trivita-fhir/pkg/fhir"
 	"trivita-fhir/pkg/fhirrouter"
+	"trivita-fhir/pkg/fhirsearch"
 )
 
 // Job có chủ sở hữu: chỉ người tạo hoặc quản trị xem, hủy, xóa; người khác nhận 404; AsyncJob không lọt qua tìm kiếm hệ thống hay GraphQL.
@@ -113,5 +115,62 @@ func TestJobWithoutOwnerIsAdminOnlyAndBundlesAreScrubbed(t *testing.T) {
 	}
 	if _, b := putTo(h, "POST", "$graphql", gq, "X-User", "root"); !strings.Contains(b, id) {
 		t.Errorf("GraphQL root phải thấy job: %s", b)
+	}
+}
+
+// Binary do batch async tạo (đầu vào, đoạn kết quả tạm, kết quả cuối) mang chủ sở hữu của job; Guard ẩn chúng với người khác.
+func TestAsyncBatchBinariesCarryTheJobOwner(t *testing.T) {
+	repo := fhirrouter.NewMemoryRepository()
+	o := ownerOpts()
+	o.AsyncBatch, o.BatchCheckpointEntries = true, 2
+	r := newRouter(t, repo, o)
+	h := asUser(r.HTTPHandler())
+	w := serve(h, httptestRequest("POST", "/", asyncBundle, "Prefer", "respond-async", "X-User", "alice"))
+	if w.StatusCode != 202 {
+		t.Fatalf("batch async: %d", w.StatusCode)
+	}
+	id := jobIDFrom(t, w)
+	job, _ := waitJob(t, repo, id)
+	resultRef := job.Output.Parameter[0].ValueReference.Reference
+
+	g := fhirrouter.NewGuard(repo, o.JobAllowed)
+	if _, err := g.ReadResource(as("alice"), "Binary", resultRef[len("Binary/"):]); err != nil {
+		t.Errorf("chủ job đọc kết quả: %v", err)
+	}
+	if _, err := g.ReadResource(as("bob"), "Binary", resultRef[len("Binary/"):]); !isNotFound(err) {
+		t.Errorf("người khác đọc kết quả batch async: %v, muốn 404", err)
+	}
+	sr, _ := fhirsearch.Parse("Binary", url.Values{})
+	sr.Count = 100
+	all, err := repo.Search(context.Background(), sr)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, m := range all.Matches {
+		if b, ok := m.(*fhir.Binary); ok && fhirrouter.BinaryOwner(b) != "alice" {
+			t.Errorf("Binary %s của job không mang chủ: %+v", b.ID, b.SecurityContext)
+		}
+	}
+	if len(all.Matches) == 0 {
+		t.Error("không có Binary nào để kiểm")
+	}
+}
+
+// Binary đầu vào của batch async (chứa cả Bundle gốc) có chủ ngay từ lúc job được nhận, khi job còn chờ.
+func TestAsyncBatchInputBinaryHasOwnerWhileJobWaits(t *testing.T) {
+	repo := fhirrouter.NewMemoryRepository()
+	o := ownerOpts()
+	o.AsyncBatch, o.DisableJobExecution = true, true
+	h := asUser(newRouter(t, repo, o).HTTPHandler())
+	if w := serve(h, httptestRequest("POST", "/", asyncBundle, "Prefer", "respond-async", "X-User", "alice")); w.StatusCode != 202 {
+		t.Fatalf("batch async: %d", w.StatusCode)
+	}
+	sr, _ := fhirsearch.Parse("Binary", url.Values{})
+	all, err := repo.Search(context.Background(), sr)
+	if err != nil || len(all.Matches) != 1 {
+		t.Fatalf("muốn đúng một Binary đầu vào: %v %v", all, err)
+	}
+	if got := fhirrouter.BinaryOwner(all.Matches[0].(*fhir.Binary)); got != "alice" {
+		t.Errorf("Binary đầu vào có chủ %q, muốn alice", got)
 	}
 }

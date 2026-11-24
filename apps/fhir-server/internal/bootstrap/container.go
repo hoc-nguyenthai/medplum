@@ -264,6 +264,8 @@ func (c *Container) build(ctx context.Context) (err error) {
 		}
 	}
 
+	// Binary kết quả của job (file export, dữ liệu batch async) chỉ người tạo job hoặc quản trị đọc, sửa, xóa được; lớp ngoài cùng của repository phía người gọi.
+	routerRepo = fhirrouter.NewGuard(routerRepo, httpapi.JobAllowed)
 	c.routerRepo = routerRepo
 	var responseHook func(context.Context, fhir.Resource) fhir.Resource
 	var binaryContent func(context.Context, *fhir.Binary) ([]byte, error)
