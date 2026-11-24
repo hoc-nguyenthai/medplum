@@ -128,7 +128,7 @@ func (s *Store) requireCodes(ctx context.Context, q querier, sid string, codes [
 			}
 			b.w("(CAST(" + b.arg(c) + " AS text))")
 		}
-		b.w(") SELECT c.code FROM v JOIN fhir_coding c ON c.code = v.code WHERE c.system_id = " + b.arg(sid))
+		b.w(") SELECT c.code FROM v, fhir_coding c WHERE c.code = v.code AND c.system_id = " + b.arg(sid))
 		rows, err := q.QueryContext(ctx, b.sb.String(), b.args...)
 		if err != nil {
 			return internal(err)
