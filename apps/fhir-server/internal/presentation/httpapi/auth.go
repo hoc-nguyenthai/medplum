@@ -13,6 +13,7 @@ import (
 	"github.com/labstack/echo/v4"
 
 	"trivita-fhir/pkg/fhirauth"
+	"trivita-fhir/pkg/fhirrouter"
 )
 
 // Role là mức quyền của một token.
@@ -113,6 +114,19 @@ func RequiredRole(method, path string) Role {
 		}
 	}
 	return RoleWrite
+}
+
+// AuthorizeEntry kiểm quyền cho một entry của Bundle batch/transaction bằng đúng quy tắc RequiredRole mà Guard áp cho yêu cầu ngoài
+// (nối vào fhirrouter.Options.AuthorizeEntry). Không có người gọi trong ngữ cảnh (xác thực tắt, dev) thì cho qua như Guard.
+func AuthorizeEntry(ctx context.Context, method, path string) error {
+	p, ok := fhirauth.PrincipalFrom(ctx)
+	if !ok || p == nil {
+		return nil
+	}
+	if p.Role < RequiredRole(method, Prefix+"/"+strings.TrimLeft(path, "/")) {
+		return fhirrouter.Forbidden("Token không đủ quyền cho thao tác này")
+	}
+	return nil
 }
 
 // Guard là middleware kiểm tra token theo RequiredRole. /metadata công khai (để client tự khám phá).

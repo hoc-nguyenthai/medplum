@@ -152,6 +152,12 @@ type Options struct {
 	DisableJobExecution bool
 	// ExportRetention là thời gian giữ kết quả bulk export và batch async (mặc định 24 giờ; âm = không bao giờ xóa).
 	ExportRetention time.Duration
+	// AuthorizeEntry (tùy chọn) kiểm quyền cho TỪNG entry của Bundle batch/transaction theo method và đường dẫn tương đối của entry
+	// (ví dụ "Patient/$reindex"), bằng đúng quy tắc mà tầng HTTP áp cho yêu cầu ngoài. Cần vì cổng HTTP chỉ thấy `POST /` (quyền ghi):
+	// nếu không kiểm, entry `$reindex`/`$expunge` lọt tới handler với quyền của Bundle. Lỗi trả về thành 403 của entry (batch) hoặc của
+	// cả Bundle (transaction và batch async: không entry nào chạy). Kiểm ở lúc nhận Bundle, trong ngữ cảnh của người gọi thật (job nền
+	// chạy sau với quyền thu hẹp của ảnh chụp, không có vai trò nên không kiểm lại ở đó). Nil: không kiểm (chỉ test hoặc dev).
+	AuthorizeEntry func(ctx context.Context, method, path string) error
 	// AsyncBatch cho POST Bundle batch kèm "Prefer: respond-async" chạy thành job nền (xem batch_async.go). Tắt thì header bị
 	// bỏ qua và batch chạy đồng bộ. Transaction kèm respond-async luôn bị từ chối (400) khi bật.
 	AsyncBatch bool

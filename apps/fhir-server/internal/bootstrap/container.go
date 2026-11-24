@@ -272,9 +272,10 @@ func (c *Container) build(ctx context.Context) (err error) {
 		responseHook = fhirbinary.NewRewriter(rewriteConfig(s), routerRepo, c.storage.signer).Response
 	}
 	c.Router = fhirrouter.New(routerRepo, fhirrouter.Options{
-		ResponseHook:  responseHook,
-		BinaryContent: binaryContent,
-		JobRepository: jobRepo, ScopedJobRepository: scopedJobRepo, JobContext: jobContext,
+		AuthorizeEntry: httpapi.AuthorizeEntry,
+		ResponseHook:   responseHook,
+		BinaryContent:  binaryContent,
+		JobRepository:  jobRepo, ScopedJobRepository: scopedJobRepo, JobContext: jobContext,
 		JobSeal: jobSeal(sealer), JobOpen: jobOpen(sealer),
 		DisableJobExecution: !s.JobExecution,
 		JobLease:            s.JobLease, JobMaintenanceInterval: s.JobMaintenanceInterval, ExportRetention: s.ExportRetention,

@@ -171,3 +171,41 @@ func TestStaticTokenGuardAttachesRolePrincipal(t *testing.T) {
 		t.Fatal("token đọc không được cập nhật")
 	}
 }
+
+// AuthorizeEntry dùng đúng RequiredRole của cổng HTTP cho entry của Bundle: token write không qua được $reindex/$expunge, kể cả khi viết
+// đường dẫn theo nhiều cách; không có người gọi (xác thực tắt) thì cho qua như Guard.
+func TestAuthorizeEntryAppliesRequiredRole(t *testing.T) {
+	ctxOf := func(r httpapi.Role) context.Context {
+		return fhirauth.WithPrincipal(context.Background(), &fhirauth.Principal{Subject: "u", Role: r})
+	}
+	cases := []struct {
+		role         httpapi.Role
+		method, path string
+		ok           bool
+	}{
+		{httpapi.RoleWrite, "POST", "Patient/$reindex", false},
+		{httpapi.RoleWrite, "POST", "/Patient/$reindex", false},
+		{httpapi.RoleWrite, "POST", "Patient/$reindex/", false},
+		{httpapi.RoleWrite, "POST", "Patient/p1/$reindex", false},
+		{httpapi.RoleWrite, "POST", "Patient/p1/$expunge", false},
+		{httpapi.RoleRead, "POST", "Patient", false},
+		{httpapi.RoleRead, "PUT", "Patient/p1", false},
+		{httpapi.RoleRead, "DELETE", "Patient/p1", false},
+		{httpapi.RoleRead, "GET", "Patient/p1", true},
+		{httpapi.RoleRead, "POST", "Patient/_search", true},
+		{httpapi.RoleRead, "POST", "Patient/$validate", true},
+		{httpapi.RoleWrite, "POST", "Patient", true},
+		{httpapi.RoleWrite, "PUT", "Patient/p1", true},
+		{httpapi.RoleAdmin, "POST", "Patient/$reindex", true},
+		{httpapi.RoleAdmin, "POST", "Patient/p1/$expunge", true},
+	}
+	for _, c := range cases {
+		err := httpapi.AuthorizeEntry(ctxOf(c.role), c.method, c.path)
+		if (err == nil) != c.ok {
+			t.Errorf("role=%v %s %s: err=%v, muốn ok=%v", c.role, c.method, c.path, err, c.ok)
+		}
+	}
+	if err := httpapi.AuthorizeEntry(context.Background(), "POST", "Patient/$reindex"); err != nil {
+		t.Errorf("không có người gọi (xác thực tắt) phải cho qua: %v", err)
+	}
+}

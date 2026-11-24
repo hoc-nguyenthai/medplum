@@ -69,6 +69,23 @@ func (r *Router) batch(ctx context.Context, req *Request) (*Response, error) {
 		}
 		entries[i] = er
 	}
+	// Kiểm quyền từng entry TRƯỚC khi chạy bất cứ gì. Transaction và batch async: một entry bị từ chối là từ chối cả Bundle (không entry
+	// nào chạy). Batch đồng bộ: entry bị từ chối nhận 403 riêng, các entry còn lại vẫn chạy.
+	var denied map[int]*Error
+	if authz := r.opts.AuthorizeEntry; authz != nil {
+		for _, e := range entries {
+			if err := authz(ctx, e.method, e.pathPart); err != nil {
+				er := asError(err)
+				if typ == "transaction" || (r.opts.AsyncBatch && wantsAsync(req)) {
+					return nil, &Error{Status: er.Status, Outcome: withEntryContext(er.Outcome, e.index)}
+				}
+				if denied == nil {
+					denied = map[int]*Error{}
+				}
+				denied[e.index] = er
+			}
+		}
+	}
 	if r.opts.AsyncBatch && wantsAsync(req) {
 		if typ == "transaction" {
 			return nil, BadRequest("Transaction không chạy async được (Prefer: respond-async chỉ dùng cho batch)")
@@ -78,6 +95,10 @@ func (r *Router) batch(ctx context.Context, req *Request) (*Response, error) {
 	out := &fhir.Bundle{Type: typ + "-response", Timestamp: time.Now().UTC().Format(time.RFC3339), Entry: make([]fhir.BundleEntry, len(entries))}
 	if typ == "batch" {
 		for _, e := range entries {
+			if er := denied[e.index]; er != nil {
+				out.Entry[e.index] = fhir.BundleEntry{Response: &fhir.BundleEntryResponse{Status: statusLine(er.Status), Outcome: er.Outcome}}
+				continue
+			}
 			out.Entry[e.index] = r.runEntry(ctx, req, e)
 		}
 		return &Response{Status: 200, Resource: out}, nil
