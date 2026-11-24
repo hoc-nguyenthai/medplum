@@ -194,6 +194,13 @@ func (c *Container) build(ctx context.Context) (err error) {
 			inner = fhirsub.Wrap(inner, c.Broker)
 		}
 		routerRepo = inner
+		// Kết quả job (file export, đầu vào và đoạn kết quả của batch async) cũng đi qua kho đối tượng, KHÔNG trần base64 (file export tới 8 MiB): trước đây nằm base64 trong CSDL
+		// nên CSDL phình theo FHIR_EXPORT_RETENTION. Xóa kết quả hết hạn dùng Expunge nên nội dung ở kho cũng bị xóa.
+		var jobInner fhirrouter.Repository = fhirbinary.Wrap(c.Store, c.storage.store, fhirbinary.WrapOptions{Base64MaxBytes: -1, Rewrite: fhirbinary.NewRewriter(rewriteConfig(s), nil, nil)})
+		if c.Broker != nil {
+			jobInner = fhirsub.Wrap(jobInner, c.Broker)
+		}
+		jobRepo = jobInner
 	}
 	if s.AutoDownload && !s.AutoDownloadWorker {
 		slog.Info("FHIR_AUTO_DOWNLOAD_WORKER=false: không tải attachment trong tiến trình này")
@@ -246,7 +253,7 @@ func (c *Container) build(ctx context.Context) (err error) {
 			return err
 		}
 		// job như bulk export chạy với quyền của người gọi: dựng lại Principal từ project đã gắn vào AsyncJob
-		scopedJobRepo = fhirauth.Scope(repo)
+		scopedJobRepo = fhirauth.Scope(jobRepo)
 		routerRepo = fhirauth.Scope(routerRepo)
 		jobContext = func(ctx context.Context, job *fhir.AsyncJob) context.Context {
 			project := ""

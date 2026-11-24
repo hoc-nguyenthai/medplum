@@ -26,7 +26,7 @@ Chi tiết đầy đủ (kèm mục chưa kiểm) ở [05-luat-va-phan-quyen.md 
 
 **Mất dữ liệu và toàn vẹn**
 5. **Không có kiểm tra dữ liệu kiểu Medplum:** không đọc `strictMode`, `checkReferencesOnWrite`, không kiểm profile, binding hay đích Reference (README và brief ngụ ý có). `meta.project` do client gửi được giữ nguyên ở chế độ token tĩnh.
-6. **Tệp bulk export và kết quả batch async là `Binary` base64 trong CSDL** (`bulk.go:178`, `batch_async.go:243`), không vào kho `file:`/`s3:` dù đã bật; CSDL phình theo `FHIR_EXPORT_RETENTION`.
+6. **Tệp bulk export và kết quả batch async (đã sửa ở S5, 2026-11-24):** trước đây là `Binary` base64 trong CSDL dù kho `file:`/`s3:` đã bật và xóa hết hạn chỉ là xóa mềm nên CSDL phình theo `FHIR_EXPORT_RETENTION`; nay khi có `FHIR_BINARY_STORAGE` chúng ra kho (không trần base64) và xóa hết hạn dùng Expunge. Không có kho thì vẫn base64 trong CSDL.
 7. **Không có outbox cho sự kiện Subscription:** tiến trình chết giữa commit và phát thì mất sự kiện; hàng đợi giao webhook và các lần thử lại đã hẹn nằm trong bộ nhớ; không đảm bảo thứ tự, có thể trùng; websocket không replay.
 8. **Job `reindex` không bị dọn theo retention và không có API hủy.** Binary mồ côi (chết giữa tạo Binary và ghi nội dung) không được `sweep-binary` phát hiện.
 

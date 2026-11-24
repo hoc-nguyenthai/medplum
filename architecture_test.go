@@ -84,6 +84,13 @@ var rules = []rule{
 	{dir: "apps/fhir-notifier/internal/config", allow: []string{mod + "/apps/fhir-notifier/internal/config", mod + "/pkg/envconfig"}},
 	{dir: "apps/fhir-notifier/internal/bootstrap", anyThird: true, allow: []string{mod + "/apps/fhir-notifier/", mod + "/pkg/"}},
 
+	// ---- fhir-worker ----
+	// Như fhir-downloader và fhir-notifier: không có domain/application riêng. Nghiệp vụ job nằm ở pkg/fhirrouter; presentation chỉ có probe (net/http);
+	// bootstrap là composition root (DB, kho Binary, broker phát sự kiện, Router chạy job).
+	{dir: "apps/fhir-worker/internal/presentation", allow: []string{mod + "/apps/fhir-worker/internal/presentation", mod + "/pkg/httpsec"}},
+	{dir: "apps/fhir-worker/internal/config", allow: []string{mod + "/apps/fhir-worker/internal/config", mod + "/pkg/envconfig"}},
+	{dir: "apps/fhir-worker/internal/bootstrap", anyThird: true, allow: []string{mod + "/apps/fhir-worker/", mod + "/pkg/"}},
+
 	// ---- fhir-cli ----
 	// Client độc lập: chỉ stdlib + chính nó. Không kéo thư viện server (pkg/*) vào binary CLI.
 	{dir: "apps/fhir-cli", allow: []string{mod + "/apps/fhir-cli"}},

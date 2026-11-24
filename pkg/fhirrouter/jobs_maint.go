@@ -137,8 +137,20 @@ func jobBinaryIDs(job *fhir.AsyncJob) []string {
 	return ids
 }
 
+// deleteBinaries xóa file kết quả của job. Ưu tiên Expunge (xóa hẳn dòng, lịch sử và nội dung ở kho đối tượng) vì xóa mềm giữ nguyên nội dung: kết quả export
+// nằm trong CSDL (base64) hoặc kho đối tượng sẽ không bao giờ được giải phóng. Repository không hỗ trợ hoặc người gọi không đủ quyền Expunge thì xóa mềm.
 func deleteBinaries(ctx context.Context, repo Repository, ids []string) {
+	ex, canExpunge := repo.(Expunger)
 	for _, id := range ids {
+		if canExpunge {
+			err := ex.Expunge(ctx, "Binary", id)
+			if err == nil {
+				continue
+			}
+			if e, ok := err.(*Error); ok && (e.Status == 404 || e.Status == 410) {
+				continue
+			}
+		}
 		if err := repo.DeleteResource(ctx, "Binary", id); err != nil {
 			if e, ok := err.(*Error); !ok || (e.Status != 404 && e.Status != 410) {
 				slog.WarnContext(ctx, "không xóa được file kết quả", "binary", id, "error", err)

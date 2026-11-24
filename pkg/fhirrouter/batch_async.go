@@ -259,6 +259,9 @@ func (r *Router) readJSONBinary(ctx context.Context, id string) ([]byte, error) 
 	if !ok {
 		return nil, fmt.Errorf("Binary/%s không hợp lệ", id)
 	}
+	if b.Data == "" && r.opts.BinaryContent != nil {
+		return r.opts.BinaryContent(ctx, b) // nội dung đã ra kho đối tượng (Options.BinaryContent)
+	}
 	return base64.StdEncoding.DecodeString(b.Data)
 }
 
