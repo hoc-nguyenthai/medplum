@@ -190,3 +190,15 @@ func (p *PG) ExecInContainer(t testing.TB, cmd ...string) (int, string) {
 	b, _ := io.ReadAll(rd)
 	return code, string(b)
 }
+
+// QuietExec chạy một lệnh trong container PostgreSQL và trả đầu ra; lỗi thì trả chuỗi rỗng (dùng cho số đo tùy chọn, không làm hỏng test).
+func (p *PG) QuietExec(cmd ...string) string {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	_, rd, err := p.c.Exec(ctx, cmd, tcexec.Multiplexed())
+	if err != nil {
+		return ""
+	}
+	b, _ := io.ReadAll(rd)
+	return string(b)
+}
