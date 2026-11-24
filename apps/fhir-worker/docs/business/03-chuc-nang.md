@@ -143,7 +143,7 @@ Chức năng của **chính `fhir-worker`** (không có route; kích hoạt bở
 <a id="f-07"></a>
 ### F-07. Dọn kết quả hết hạn
 
-**Mục đích:** giải phóng dung lượng kết quả export và batch async. **Cách:** vòng bảo trì (cùng chu kỳ nhận job) tìm `AsyncJob` `completed`, `error`, `cancelled` có `_lastUpdated` cũ hơn `FHIR_EXPORT_RETENTION` (mặc định 24 giờ; âm: không bao giờ xóa), chỉ loại `export?` và `batch?`; xóa các Binary của job rồi xóa job. **Tác dụng phụ:** xóa vĩnh viễn (Expunge) dòng, lịch sử và tệp ở kho khi repository cho phép. **Luật:** BR-24, BR-25.
+**Mục đích:** giải phóng dung lượng kết quả export và batch async. **Cách:** vòng bảo trì (cùng chu kỳ nhận job) tìm `AsyncJob` `completed`, `error`, `cancelled` có `_lastUpdated` cũ hơn `FHIR_EXPORT_RETENTION` (mặc định 24 giờ; âm: không bao giờ xóa), loại `export?`, `batch?` và `reindex?` (job `reindex` chỉ có dòng, không có Binary); xóa các Binary của job rồi xóa job. **Tác dụng phụ:** xóa vĩnh viễn (Expunge) dòng, lịch sử và tệp ở kho khi repository cho phép. **Luật:** BR-24, BR-25.
 
 <a id="f-08"></a>
 ### F-08. Lưu kết quả job

@@ -217,7 +217,7 @@ func (r *Router) ExpireJobs(ctx context.Context) (int, error) {
 		removed := 0
 		for _, m := range res.Matches {
 			job, ok := m.(*fhir.AsyncJob)
-			if !ok || !(strings.HasPrefix(job.Request, "export?") || strings.HasPrefix(job.Request, "batch?")) {
+			if !ok || !expirableJob(job) {
 				continue
 			}
 			deleteBinaries(ctx, repo, jobBinaryIDs(job))
@@ -231,6 +231,17 @@ func (r *Router) ExpireJobs(ctx context.Context) (int, error) {
 		}
 	}
 	return n, nil
+}
+
+// expirableJob cho biết job thuộc loại do router này tạo và dọn được khi hết hạn: export, batch async và reindex. Loại khác (không biết) không bị đụng tới.
+// Job reindex không có file kết quả nhưng vẫn là một dòng AsyncJob: không dọn thì mỗi `$reindex` cả loại để lại một dòng mãi mãi.
+func expirableJob(job *fhir.AsyncJob) bool {
+	for _, p := range []string{"export?", batchJobKind + "?", "reindex?"} {
+		if strings.HasPrefix(job.Request, p) {
+			return true
+		}
+	}
+	return false
 }
 
 // startMaintenance chạy RecoverJobs và ExpireJobs ngay khi khởi động rồi định kỳ cho tới Shutdown.

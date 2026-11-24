@@ -17,7 +17,7 @@ Mã truy vết: `F-xx` chức năng, `BR-xx` luật, `BF-x` luồng nghiệp v�
 
 > **Điểm lệch và rủi ro phát hiện khi viết (chưa sửa mã, ghi để người dùng quyết; chi tiết ở mục 4.5):**
 > 1. **Hủy job có độ trễ lên tới `FHIR_JOB_LEASE`/3 (mặc định khoảng 100 giây)** khi API và worker là hai tiến trình: API chỉ đánh dấu `cancelled`, worker chỉ biết qua nhịp heartbeat (hoặc điểm checkpoint của batch); export không có checkpoint nên chỉ dựa vào heartbeat (BR-22).
-> 2. **Job `$reindex` cả loại không bao giờ bị dọn hết hạn**: `ExpireJobs` chỉ xóa `export?` và `batch?`; dòng `AsyncJob` của reindex nằm lại mãi (BR-24).
+> 2. ~~Job `$reindex` cả loại không bao giờ bị dọn hết hạn~~ **(đã sửa 2026-11-24)**: `ExpireJobs` nay dọn cả `reindex?` (BR-24). Còn lại: không có API hủy hoặc xóa job `reindex`.
 > 3. **Mỗi chu kỳ nhận job nộp lại mọi job đang chờ chỗ** (chưa có lease vì chưa chạy) vào bộ điều phối: mỗi lần là một goroutine chờ chỗ; job nhiều hơn `FHIR_JOB_CONCURRENCY` làm số goroutine chờ tăng theo từng chu kỳ (suy từ mã `RecoverJobs` và `workflow.Inline.Submit`, chưa kiểm bằng test; xem mục 4.5).
 > 4. **Điều kiện A (hồ sơ tải khác) của việc tách chưa được chứng minh**: một export không làm chậm API ở 200.000 resource, bốn export đồng thời làm API chậm sát ngưỡng (xem [../architecture.md](../architecture.md)).
 > 5. **Kết quả batch async ở worker giữ tham chiếu `Binary/<id>`** thay vì URL ký của `/storage` như khi API tự chạy (worker không có khóa ký `/storage`).

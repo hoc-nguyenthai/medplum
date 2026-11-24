@@ -20,7 +20,7 @@ stateDiagram-v2
     DaXoa --> [*]: kèm Binary kết quả (Expunge)
 ```
 
-Điều không thấy trong hình: trạng thái `accepted` gộp ba pha (chờ, đang chạy, mồ côi), phân biệt bằng lease; job `reindex` không bao giờ vào `DaXoa` do hết hạn (BR-24); hủy khi đang chạy có độ trễ (BR-22).
+Điều không thấy trong hình: trạng thái `accepted` gộp ba pha (chờ, đang chạy, mồ côi), phân biệt bằng lease; job `reindex` cũng vào `DaXoa` khi hết hạn như export và batch (BR-24, đã sửa 2026-11-24); hủy khi đang chạy có độ trễ (BR-22).
 
 ## 4.2 Quyền của job
 
@@ -90,7 +90,7 @@ stateDiagram-v2
 |---|---|---|---|
 | BR-22 | Hủy khi job còn `accepted` chỉ đánh dấu `cancelled` ở CSDL; worker (tiến trình khác API) dừng khi heartbeat đọc thấy (tối đa `FHIR_JOB_LEASE`/3, mặc định khoảng 100 giây) hoặc, với batch, ở lần lưu checkpoint kế tiếp; kết quả của job bị hủy bị bỏ. | OPS | F-06 |
 | BR-23 | `DELETE` job đã xong, lỗi hoặc đã hủy xóa job cùng Binary kết quả (`202` `Deleted`). | DATA | F-06 |
-| BR-24 | Vòng bảo trì xóa `AsyncJob` `completed`, `error`, `cancelled` quá `FHIR_EXPORT_RETENTION` (mặc định 24 giờ; âm là không bao giờ) nhưng CHỈ loại `export?` và `batch?`: job `reindex` không bị dọn. | OPS | F-07 |
+| BR-24 | Vòng bảo trì xóa `AsyncJob` `completed`, `error`, `cancelled` quá `FHIR_EXPORT_RETENTION` (mặc định 24 giờ; âm là không bao giờ) với loại `export?`, `batch?` và `reindex?` (job `reindex` không có Binary kết quả nên chỉ xóa dòng); loại job không biết thì không bị đụng tới. | OPS | F-07 |
 | BR-25 | Xóa kết quả dùng Expunge (xóa dòng, lịch sử và tệp ở kho) khi repository và quyền cho phép; nếu không thì xóa mềm và nội dung còn lại. | DATA | F-07, F-08 |
 
 ### Lưu kết quả và sự kiện (BR-26..28)
@@ -149,7 +149,7 @@ stateDiagram-v2
 | AT-17 | Given schema chưa migrate, When khởi động, Then từ chối `schema chưa được migrate`. | BR-29 |
 | AT-18 | Given cấu hình sai (JWT thiếu khóa ký job, chu kỳ nhận job 0, broker bộ nhớ khi phải phát sự kiện), When khởi động, Then từ chối và nêu tên biến. | BR-14, BR-28, BR-30 |
 | AT-19 | Given worker chạy, When `SIGTERM`, Then `/health/ready` `503` khi đang tắt, liveness vẫn `200`, thoát mã 0. | BR-31 |
-| AT-20 | Given job `reindex` đã xong và quá `FHIR_EXPORT_RETENTION`, When vòng bảo trì chạy, Then dòng `AsyncJob` của reindex vẫn còn (chưa có kịch bản dọn: ghi nhận rủi ro). | BR-24 |
+| AT-20 | Given job `reindex` đã xong và quá `FHIR_EXPORT_RETENTION`, When vòng bảo trì chạy, Then dòng `AsyncJob` của reindex bị xóa như export; loại job không biết vẫn còn. | BR-24 |
 
 ## 4.6 Truy vết luật đến bằng chứng kiểm thử
 
@@ -169,7 +169,7 @@ stateDiagram-v2
 | BR-15..18 (export) | `pkg/fhirrouter/repotest/suite.go`: `testBulkExport`, `testGroupExport`, `testExportTypeFilter`; `pkg/fhirrouter/jobs_durable_test.go`: `TestExportCancelWhileRunningAndDelete` |
 | BR-19..21 (batch async) | `pkg/fhirrouter/batch_async_test.go`: `TestAsyncBatchMatchesSync`, `TestAsyncBatchResumesFromCheckpoint`, `TestAsyncBatchCancelWhileRunning`; `apps/fhir-worker/internal/bootstrap/bootstrap_test.go`: `TestBatchAsyncWritesResourcesAndPublishesEvents`; `apps/fhir-server/internal/bootstrap/batch_async_e2e_test.go`: `TestAsyncBatchRunsWithCallerGrants` |
 | BR-22, BR-23 (hủy, xóa) | `pkg/fhirrouter/jobs_durable_test.go`: `TestExportCancelWhileRunningAndDelete`, `TestExportDeleteRemovesCompletedFiles`; `pkg/fhirrouter/batch_async_test.go`: `TestAsyncBatchCancelWhileRunning` |
-| BR-24, BR-25 (hết hạn, Expunge) | `pkg/fhirrouter/jobs_durable_test.go`: `TestExpireJobs`; `pkg/fhirrouter/batch_async_test.go`: `TestAsyncBatchExpires`; `apps/fhir-worker/internal/bootstrap/bootstrap_test.go`: `TestResultsGoToObjectStorageAndAreExpungedWhenExpired`; `apps/fhir-server/internal/bootstrap/split_e2e_test.go`: `TestExportResultsGoToObjectStorageAndAreExpungedOnExpiry` |
+| BR-24, BR-25 (hết hạn, Expunge) | `pkg/fhirrouter/jobs_durable_test.go`: `TestExpireJobs` (export, reindex hết hạn, loại không biết còn); `pkg/fhirrouter/batch_async_test.go`: `TestAsyncBatchExpires`; `apps/fhir-worker/internal/bootstrap/bootstrap_test.go`: `TestResultsGoToObjectStorageAndAreExpungedWhenExpired`; `apps/fhir-server/internal/bootstrap/split_e2e_test.go`: `TestExportResultsGoToObjectStorageAndAreExpungedOnExpiry` |
 | BR-26, BR-27 (kho, trùng cấu hình) | `apps/fhir-worker/internal/bootstrap/bootstrap_test.go`: `TestResultsGoToObjectStorageAndAreExpungedWhenExpired`; `apps/fhir-worker/internal/config/config_test.go`: `TestSharedEnvFileWithFhirServerIsAccepted` (chỉ kiểm chấp nhận tệp dùng chung, chưa kiểm lệch giá trị) |
 | BR-28 (phát sự kiện) | `apps/fhir-worker/internal/bootstrap/bootstrap_test.go`: `TestBatchAsyncWritesResourcesAndPublishesEvents`; `apps/fhir-worker/internal/config/config_test.go`: `TestAllErrorsAreReportedTogetherAndPublishRulesFollowFhirServer` |
 | BR-29..31 (khởi động, probe, tắt êm) | `apps/fhir-worker/internal/bootstrap/bootstrap_test.go`: `TestRefusesToStartOnUnmigratedSchema`, `TestReadinessReflectsDatabaseAndDraining`, `TestServeShutsDownGracefullyOnSignal`; `apps/fhir-worker/tests/e2e/worker_test.go`: `TestRefusesBadConfigurationAndUnmigratedSchema`, `TestStopsGracefullyAndRunsJobsCreatedWhileDown` |
@@ -178,7 +178,7 @@ stateDiagram-v2
 ## 4.7 Lệch, rủi ro và điểm chưa kiểm
 
 - **Hủy job có độ trễ lớn khi API và worker tách (BR-22):** `DELETE` ở API chỉ ghi `cancelled`; `cancelRun` của tiến trình API không với tới worker. Worker dừng ở heartbeat (mỗi `FHIR_JOB_LEASE`/3, mặc định khoảng 100 giây) hoặc ở checkpoint của batch. Export không có điểm kiểm hủy nào khác ngoài heartbeat. Có thể thu ngắn bằng `FHIR_JOB_LEASE` nhỏ hơn (đổi lại ghi lease nhiều hơn). Chưa có test hủy xuyên hai tiến trình (test hiện có hủy trong cùng tiến trình).
-- **Job `$reindex` không bao giờ được dọn (BR-24):** `ExpireJobs` chỉ nhận `export?` và `batch?`. Mỗi `$reindex` cả loại để lại một dòng `AsyncJob` vĩnh viễn (nhỏ nhưng tích lũy); `GET job/{id}/status` của reindex cũ vẫn trả kết quả. (suy từ mã, không có test)
+- **Job `$reindex` từng không được dọn (đã sửa 2026-11-24, BR-24):** `ExpireJobs` trước đây chỉ nhận `export?` và `batch?` nên mỗi `$reindex` cả loại để lại một dòng `AsyncJob` vĩnh viễn; nay nhận cả `reindex?` (`TestExpireJobs`). Còn lại: không có API hủy hoặc xóa job `reindex` (`DELETE job/{id}/status` chỉ nhận job `batch?`).
 - **Nộp lại job đang chờ mỗi chu kỳ:** `RecoverJobs` nộp mọi job `accepted` chưa có lease, kể cả job đã nộp mà còn đang chờ chỗ (chưa có lease nên chưa phân biệt được); mỗi lần nộp là một goroutine chờ chỗ trong bộ điều phối. Khi số job chờ lớn hơn nhiều so với `FHIR_JOB_CONCURRENCY`, số goroutine chờ tăng theo mỗi chu kỳ (5 giây) cho tới khi job được chạy; các bản nộp trùng thoát ngay khi tới lượt (job đã có lease hoặc đã xong). (suy từ mã, chưa kiểm bằng test hay đo)
 - **Mồ côi khi worker chết đột ngột:** job export chạy lại tạo bộ file mới; các Binary của lần chạy dở (ghi trước khi chết) không thuộc `output` của job nên không bao giờ bị dọn bằng đường hết hạn. `sweep-binary` dọn tệp ở kho nhưng không dọn dòng Binary. (suy từ mã)
 - **Dữ liệu ghi trong lúc export lặp hoặc sót (BR-15):** phân trang theo offset (giới hạn đã biết của `fhir-server`).

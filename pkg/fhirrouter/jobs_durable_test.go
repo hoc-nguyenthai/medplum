@@ -298,15 +298,19 @@ func TestExpireJobs(t *testing.T) {
 	acc := do(h, "GET", "$export", "Prefer", "respond-async")
 	status := strings.TrimPrefix(acc.Header().Get("Content-Location"), "http://test/fhir/R4/")
 	waitFor(t, "export xong", func() bool { return do(h, "GET", status).Code == 200 })
-	// job không phải export không bị xóa
-	_, _ = repo.CreateResource(context.Background(), &fhir.AsyncJob{ID: "other", Status: "completed", Request: "reindex?"})
+	// reindex hết hạn như export (không có file kết quả nhưng là một dòng AsyncJob); loại job không biết thì KHÔNG bị xóa
+	_, _ = repo.CreateResource(context.Background(), &fhir.AsyncJob{ID: "reindexed", Status: "completed", Request: "reindex?resourceType=Patient"})
+	_, _ = repo.CreateResource(context.Background(), &fhir.AsyncJob{ID: "other", Status: "completed", Request: "something-else?x=1"})
 
 	if n, _ := r.ExpireJobs(context.Background()); n != 0 {
 		t.Fatalf("chưa hết hạn mà đã xóa %d", n)
 	}
 	time.Sleep(120 * time.Millisecond)
-	if n, err := r.ExpireJobs(context.Background()); err != nil || n != 1 {
-		t.Fatalf("ExpireJobs = %d, %v; muốn 1", n, err)
+	if n, err := r.ExpireJobs(context.Background()); err != nil || n != 2 {
+		t.Fatalf("ExpireJobs = %d, %v; muốn 2 (export và reindex)", n, err)
+	}
+	if _, err := repo.ReadResource(context.Background(), "AsyncJob", "reindexed"); err == nil {
+		t.Error("job reindex hết hạn phải bị xóa")
 	}
 	if w := do(h, "GET", status); w.Code != 410 {
 		t.Errorf("export hết hạn: %d, muốn 410", w.Code)
