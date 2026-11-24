@@ -1,6 +1,6 @@
 # Checklist: phần Go chưa có so với Medplum
 
-Cập nhật 2026-11-23. Mỗi dòng là một việc cụ thể còn thiếu, đánh dấu `[x]` khi xong. Nguồn đối chiếu và chi tiết ở [coverage-matrix.md](coverage-matrix.md) mục 5 (bản Medplum dùng để so: `v5.2.17-5-ge7e7e4019`, cũ hơn tag `v5.2.18`). Cột "#" trỏ tới việc trong [task-list.md](task-list.md).
+Cập nhật 2026-11-24 (đối chiếu lại từng dòng với mã trong `apps/` và `pkg/`, trừ mục ngoài phạm vi). Mỗi dòng là một việc cụ thể còn thiếu, đánh dấu `[x]` khi xong. Nguồn đối chiếu và chi tiết ở [coverage-matrix.md](coverage-matrix.md) mục 5 (bản Medplum dùng để so: `v5.2.17-5-ge7e7e4019`, cũ hơn tag `v5.2.18`). Cột "#" trỏ tới việc trong [task-list.md](task-list.md).
 
 Ký hiệu chặn: **M1** runtime Bot, **M3** `agent`/`ccda`/`hl7`, **M4** AI, **M5** kho đối tượng ngoài S3 (xem [coverage-matrix.md](coverage-matrix.md) mục 3); **Q-F*** ở [modules/fhir-parity-audit.md](modules/fhir-parity-audit.md). Dòng không ghi chặn là làm được ngay.
 
@@ -21,17 +21,17 @@ Kế hoạch: [modules/p17-async-batch-download-autodisable.md](modules/p17-asyn
 
 ## 2. Nạp định nghĩa và terminology (#18)
 
-- [ ] `CodeSystem/$import`
-- [ ] `ConceptMap/$import`
-- [ ] `PackageRelease/$install`
+- [x] `CodeSystem/$import` — xong 2026-11-24 (`pkg/fhirrouter/codesystemimport.go`)
+- [x] `ConceptMap/$import` — xong 2026-11-24 (`conceptmapimport.go`)
+- [x] `PackageRelease/$install` — xong 2026-11-23
 - [ ] `$rebuild-base-definitions`
-- [ ] Bước seed SearchParameter, StructureDefinition, ValueSet dựng sẵn (thay `seeds/`)
+- [x] Bước seed SearchParameter, StructureDefinition, ValueSet dựng sẵn (thay `seeds/`) — xong 2026-11-24 (`pkg/fhirseed`, `fhir-server seed definitions`; mỗi project một bản, chạy lại idempotent)
 
 ## 3. Operation lâm sàng và dữ liệu (#19)
 
-- [ ] `Patient/$summary` (IPS)
-- [ ] `Patient/$match`
-- [ ] `QuestionnaireResponse/$extract`
+- [x] `Patient/$summary` (IPS) — xong 2026-11-24 (`patientsummary.go`)
+- [x] `Patient/$match` — xong 2026-11-24 (`patientmatch.go`)
+- [x] `QuestionnaireResponse/$extract` — xong 2026-11-24 (`extract.go`)
 - [x] `:type/:id/$graph` (cần GraphDefinition) — xong 2026-11-24
 - [x] `:type/$csv` — xong 2026-11-24
 - [x] `$refresh-reference-display` — xong 2026-11-24
@@ -44,9 +44,9 @@ Kế hoạch: [modules/p17-async-batch-download-autodisable.md](modules/p17-asyn
 ## 4. Kiểm soát truy cập (#20, trùng #16)
 
 - [ ] Resource `AccessPolicy` lưu trong server (hiện chính sách chỉ đến từ claim token)
-- [ ] Compartment `patient/` và biến `%patient` (token Patient đọc được dữ liệu lâm sàng của chính mình)
-- [ ] `hiddenFields` và `readonlyFields`
-- [ ] Nhiều rule cho một loại resource (OR giữa các rule)
+- [x] Compartment `patient/` và biến `%patient` (token Patient đọc được dữ liệu lâm sàng của chính mình) — xong 2026-11-23 (P8 M0 đến M5, sau cờ `AUTH_PATIENT_COMPARTMENT_ENABLED`)
+- [x] `hiddenFields` và `readonlyFields` — xong 2026-11-24 (`pkg/fhirauth/fieldrules.go`, `hiddensearch.go`)
+- [x] Nhiều rule cho một loại resource (OR giữa các rule) — xong (`mergeRules` trong `pkg/fhirauth/policy.go`)
 - [ ] Claim `fhir_membership` và `Principal.Membership` (điều kiện cho `keyvalue`, `mcp`, `webhook`)
 
 ## 5. Quản trị project, user, client (#21)
@@ -68,7 +68,7 @@ Kế hoạch: [modules/p17-async-batch-download-autodisable.md](modules/p17-asyn
 
 - [ ] `/keyvalue/v1/:key` ([kế hoạch](modules/keyvalue-mcp-webhook.md); cần claim membership)
 - [ ] `/mcp` (`/sse`, `/stream`) ([kế hoạch](modules/keyvalue-mcp-webhook.md); cần claim membership)
-- [ ] DICOMweb `/dicom/PS3/*`, app riêng `dicomweb` ([kế hoạch](cds-dicom/dicom.md))
+- [x] DICOMweb `/dicom/PS3/*`, app riêng `dicomweb` ([kế hoạch](cds-dicom/dicom.md)) — xong D0 đến D12 2026-11-24 (`apps/dicomweb`; compose chưa chạy thử bằng Docker)
 - [ ] `/webhook/:id` — chặn bởi **M1**
 - [ ] `/cds-services` — chặn bởi **M1**
 - [ ] Base URL theo project: `/projects/:projectId/*`, `/api/*` (#22; Q-F1)
@@ -95,6 +95,8 @@ Kế hoạch: [modules/p17-async-batch-download-autodisable.md](modules/p17-asyn
 
 ## 9. Thanh toán và bảo hiểm (chặn bởi M1, Q-F5)
 
+**Ngoài phạm vi** (chốt 2026-11-24, M1); giữ để biết khi mở lại.
+
 - [ ] `Claim/$submit`
 - [ ] `Claim/$export`
 - [ ] `CoverageEligibilityRequest/$submit`
@@ -103,6 +105,8 @@ Kế hoạch: [modules/p17-async-batch-download-autodisable.md](modules/p17-asyn
 
 ## 10. Bot (chặn bởi M1)
 
+**Ngoài phạm vi** (chốt 2026-11-24, M1); giữ để biết khi mở lại.
+
 - [ ] Chốt runtime Bot (HTTP ngoài, sidecar Node, hay port module)
 - [ ] `Bot/$execute` (4 biến thể đường dẫn)
 - [ ] `Bot/:id/$deploy`
@@ -110,12 +114,16 @@ Kế hoạch: [modules/p17-async-batch-download-autodisable.md](modules/p17-asyn
 
 ## 11. Agent (chặn bởi M3)
 
+**Ngoài phạm vi** (chốt 2026-11-24, M3); giữ để biết khi mở lại.
+
 - [ ] `Agent/$push`, `Agent/:id/$push`
 - [ ] `Agent/$status`, `Agent/$bulk-status`, `Agent/$stats`
 - [ ] `Agent/$reload-config`, `Agent/$upgrade`, `Agent/$fetch-logs`
 - [ ] Websocket `agent`
 
 ## 12. AI (chặn bởi M4)
+
+**Ngoài phạm vi** (chốt 2026-11-24, M4); giữ để biết khi mở lại.
 
 - [ ] `$ai`
 - [ ] `:type/:id/$aws-textract`
@@ -138,15 +146,17 @@ Kế hoạch: [modules/p17-async-batch-download-autodisable.md](modules/p17-asyn
 - [ ] Validator: profile và slicing
 - [ ] Validator: fixed/pattern, binding terminology, kiểm tra đích Reference
 - [ ] Ghi `AuditEvent` vào kho (hiện chỉ là dòng log)
-- [ ] Hạn mức dùng chung nhiều replica qua Redis (#14)
+- [x] Hạn mức dùng chung nhiều replica qua Redis (#14) — xong 2026-11-24 (`pkg/ratelimit`)
 - [ ] Khóa tài khoản theo số lần đăng nhập sai (#13)
 
 ## 15. Hạ tầng cloud (chặn bởi M5)
 
+**Ngoài phạm vi** (chốt 2026-11-24, M5); giữ để biết khi mở lại.
+
 - [ ] Kho Binary Azure Blob
 - [ ] Kho Binary Google Cloud Storage
 - [ ] Gửi thư qua SES
-- [ ] Quét dọn Binary mồ côi trong kho (S3, file)
+- [x] Quét dọn Binary mồ côi trong kho (S3, file) — xong (`fhir-server sweep-binary`); chưa quét mồ côi của DICOMweb và downloader
 
 ## 16. Quyết định cần chốt trước
 
