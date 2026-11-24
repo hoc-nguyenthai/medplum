@@ -2847,6 +2847,59 @@ definitions:
     - password
     - secret
     type: object
+  httpapi.SuperProjectBody:
+    properties:
+      features:
+        description: tính năng bật sẵn cho project (tên chữ thường, số, gạch ngang;
+          tối đa 20)
+        example:
+        - scim
+        items:
+          type: string
+        type: array
+      name:
+        description: tên project, 1 đến 72 ký tự; bắt buộc
+        example: Bệnh viện B
+        type: string
+      ownerEmail:
+        description: email của user TOÀN CỤC đã tồn tại sẽ là admin đầu tiên; bỏ trống
+          là chính người gọi
+        example: owner@example.org
+        type: string
+    required:
+    - name
+    type: object
+  httpapi.SuperProjectResponse:
+    properties:
+      clientId:
+        description: id client mặc định của project
+        type: string
+      clientSecret:
+        description: secret của client mặc định; CHỈ hiện trong phản hồi này
+        type: string
+      membershipId:
+        description: id ProjectMembership admin của chủ sở hữu trong project mới
+        type: string
+      name:
+        description: tên project
+        example: Bệnh viện B
+        type: string
+      owner:
+        description: tham chiếu user chủ sở hữu
+        example: User/0192f3a4-7b1c-7d2e-9a10-3c5e8f1b2a45
+        type: string
+      projectId:
+        description: id project mới
+        example: 0192f3a4-7b1c-7d2e-9a10-3c5e8f1b2a44
+        type: string
+    required:
+    - clientId
+    - clientSecret
+    - membershipId
+    - name
+    - owner
+    - projectId
+    type: object
   httpapi.TokenErrorBody:
     properties:
       error:
@@ -3666,6 +3719,48 @@ paths:
       security:
       - BearerAuth: []
       summary: Đặt mật khẩu cho user của project
+      tags:
+      - admin
+  /admin/super/projects:
+    post:
+      consumes:
+      - application/json
+      description: Chỉ admin của project được đánh dấu superAdmin (`auth project super`).
+        Tạo project cùng AccessPolicy mặc định, client mặc định và membership admin
+        cho chủ sở hữu trong một transaction. `ownerEmail` phải là user toàn cục đã
+        tồn tại (không gắn project); bỏ trống là chính người gọi. Trường ngoài danh
+        sách là 400. `clientSecret` chỉ hiện một lần. Ghi log kiểm toán. Tắt mặc định
+        (AUTH_SUPER_ADMIN_ENABLED).
+      parameters:
+      - description: Project
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/httpapi.SuperProjectBody'
+      produces:
+      - application/json
+      - application/fhir+json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/httpapi.SuperProjectResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+      security:
+      - BearerAuth: []
+      summary: Tạo project mới (Project/$init)
       tags:
       - admin
   /auth/changepassword:

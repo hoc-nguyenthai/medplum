@@ -71,6 +71,7 @@ echo 'mat-khau-admin' | auth seed project -name "Bệnh viện A" -admin-email a
 auth client create -project <projectId> -name "Web" -redirect-uri https://app.example.org/cb -grant-type refresh_token
 AUTH_NEW_PASSWORD=... auth user set-password -email admin@example.org
 auth purge-logins -before 2026-01-01 -dry-run        # đếm trước; thêm -yes để xóa VĨNH VIỄN
+auth project super -project <projectId>              # đánh dấu project super-admin: admin của nó dùng được POST /admin/super/projects (AUTH_SUPER_ADMIN_ENABLED)
 auth user unlock -email admin@example.org            # mở khóa tài khoản bị khóa do đăng nhập sai (cần AUTH_REDIS_URL)
 ```
 

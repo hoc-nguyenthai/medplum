@@ -18,7 +18,7 @@ Cập nhật 2026-11-23. Mô tả `auth` làm gì, không làm gì, vì sao là 
 - **Không lưu dữ liệu lâm sàng** và không đọc schema `fhir`. Hồ sơ Patient/Practitioner nằm ở `fhir-server`; vì vậy `userinfo` không có điện thoại, địa chỉ, ngày sinh.
 - **Không phân quyền từng yêu cầu FHIR.** `auth` chỉ nhúng `fhir_project`, `scope` và `fhir_access_policy` vào token; `fhir-server` tự xác minh bằng JWKS và thi hành.
 - **Scope do client khai không bao giờ thành quyền:** mọi term `fhir.*` bị từ chối (`invalid_scope`); `fhir.admin/write/read` do auth tự thêm theo membership.
-- Không giữ khái niệm super admin (D-22): không phát `fhir.super`.
+- Không giữ khái niệm super admin cho dữ liệu FHIR (D-22): không phát `fhir.super`. Ngoại lệ hẹp (đã duyệt 2026-11-24): cờ `Project.superAdmin` chỉ mở `POST /admin/super/projects` (tạo project, Project/$init), tắt mặc định bằng `AUTH_SUPER_ADMIN_ENABLED`; đặt cờ chỉ bằng CLI `auth project super`.
 
 ## 2. Vì sao tách (điều kiện theo [service-principles.md](../../../docs/service-principles.md) mục 1)
 

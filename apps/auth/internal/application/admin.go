@@ -322,6 +322,26 @@ func (s *Service) SetUserPassword(ctx context.Context, email, projectID, passwor
 	return s.SetPassword(ctx, user, password, nil)
 }
 
+// SetProjectSuperAdmin đánh dấu hoặc bỏ đánh dấu project là super-admin (lệnh quản trị `auth project super`): admin của project đó dùng được /admin/super/*. Đặt hai lần
+// cùng giá trị không làm gì. Ghi log kiểm toán.
+func (s *Service) SetProjectSuperAdmin(ctx context.Context, projectID string, enable bool) error {
+	_, err := s.Projects.Mutate(ctx, projectID, func(p *fhir.Project) error {
+		if domain.IsTrue(p.SuperAdmin) == enable {
+			return ErrNoChange
+		}
+		if enable {
+			p.SuperAdmin = ptrTrue()
+		} else {
+			p.SuperAdmin = nil
+		}
+		return nil
+	})
+	if err == nil {
+		s.Logger.WarnContext(ctx, "quản trị đặt cờ superAdmin của project", "audit", true, "project_id", projectID, "super_admin", enable)
+	}
+	return err
+}
+
 // UnlockUserByEmail mở khóa tài khoản bị khóa do đăng nhập sai nhiều lần (lệnh quản trị `auth user unlock`): đúng phạm vi được chỉ định. Ghi log kiểm toán.
 func (s *Service) UnlockUserByEmail(ctx context.Context, email, projectID string) error {
 	user, err := s.FindUserInScope(ctx, email, projectID)

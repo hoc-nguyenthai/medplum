@@ -19,6 +19,7 @@ Quản trị project qua HTTP (tắt mặc định, AUTH_ADMIN_ENABLED): project
 | [`POST /admin/projects/{projectId}/members/{membershipId}/resetpassword`](#post-admin-projects-projectid-members-membershipid-resetpassword) | Gửi thư đặt lại mật khẩu cho một member |
 | [`POST /admin/projects/{projectId}/settings`](#post-admin-projects-projectid-settings) | Đặt các setting của project (allowlist) |
 | [`POST /admin/projects/{projectId}/sites`](#post-admin-projects-projectid-sites) | Đặt các site của project (Google, reCAPTCHA) |
+| [`POST /admin/super/projects`](#post-admin-super-projects) | Tạo project mới (Project/$init) |
 
 ---
 
@@ -928,5 +929,85 @@ Schema: `fhir.OperationOutcome` (cấu trúc dùng chung, xem [common.md mục 3
 Schema: `fhir.OperationOutcome` (cấu trúc dùng chung, xem [common.md mục 3](../common.md#3-operationoutcome)).
 
 **`409`** Conflict
+
+Schema: `fhir.OperationOutcome` (cấu trúc dùng chung, xem [common.md mục 3](../common.md#3-operationoutcome)).
+
+---
+
+<a id="post-admin-super-projects"></a>
+## `POST /admin/super/projects`
+
+**Tạo project mới (Project/$init)**
+
+Chỉ admin của project được đánh dấu superAdmin (`auth project super`). Tạo project cùng AccessPolicy mặc định, client mặc định và membership admin cho chủ sở hữu trong một transaction. `ownerEmail` phải là user toàn cục đã tồn tại (không gắn project); bỏ trống là chính người gọi. Trường ngoài danh sách là 400. `clientSecret` chỉ hiện một lần. Ghi log kiểm toán. Tắt mặc định (AUTH_SUPER_ADMIN_ENABLED).
+
+Các trường hợp phản hồi: [../cases/admin.md#post-admin-super-projects](../cases/admin.md#post-admin-super-projects)
+
+| Thuộc tính | Giá trị |
+|---|---|
+| Xác thực | bắt buộc: header `Authorization: Bearer <access_token>` (BearerAuth) |
+| Content-Type yêu cầu | `application/json` |
+| Content-Type phản hồi | `application/json`, `application/fhir+json` |
+
+**Header yêu cầu**
+
+| Header | Bắt buộc | Mô tả |
+|---|---|---|
+| `Authorization` | có | `Bearer <access_token>` |
+| `Content-Type` | có | `application/json` |
+| `Accept` | không | nên khớp Content-Type phản hồi |
+
+**Body yêu cầu** (Project)
+
+Schema: `httpapi.SuperProjectBody`
+
+| Trường | Kiểu | Bắt buộc | Ràng buộc | Mô tả | Ví dụ |
+|---|---|---|---|---|---|
+| `name` | string | có |  | tên project, 1 đến 72 ký tự; bắt buộc | `"Bệnh viện B"` |
+| `features` | mảng string | không |  | tính năng bật sẵn cho project (tên chữ thường, số, gạch ngang; tối đa 20) | `["scim"]` |
+| `ownerEmail` | string | không |  | email của user TOÀN CỤC đã tồn tại sẽ là admin đầu tiên; bỏ trống là chính người gọi | `"owner@example.org"` |
+
+```json
+{
+  "features": [
+    "scim"
+  ],
+  "name": "Bệnh viện B",
+  "ownerEmail": "owner@example.org"
+}
+```
+
+**Phản hồi**
+
+**`201`** Created
+
+Schema: `httpapi.SuperProjectResponse`
+
+| Trường | Kiểu | Bắt buộc | Ràng buộc | Mô tả | Ví dụ |
+|---|---|---|---|---|---|
+| `clientId` | string | có |  | id client mặc định của project |  |
+| `clientSecret` | string | có |  | secret của client mặc định; CHỈ hiện trong phản hồi này |  |
+| `membershipId` | string | có |  | id ProjectMembership admin của chủ sở hữu trong project mới |  |
+| `name` | string | có |  | tên project | `"Bệnh viện B"` |
+| `owner` | string | có |  | tham chiếu user chủ sở hữu | `"User/0192f3a4-7b1c-7d2e-9a10-3c5e8f1b2a45"` |
+| `projectId` | string | có |  | id project mới | `"0192f3a4-7b1c-7d2e-9a10-3c5e8f1b2a44"` |
+
+```json
+{
+  "name": "Bệnh viện B",
+  "owner": "User/0192f3a4-7b1c-7d2e-9a10-3c5e8f1b2a45",
+  "projectId": "0192f3a4-7b1c-7d2e-9a10-3c5e8f1b2a44"
+}
+```
+
+**`400`** Bad Request
+
+Schema: `fhir.OperationOutcome` (cấu trúc dùng chung, xem [common.md mục 3](../common.md#3-operationoutcome)).
+
+**`401`** Unauthorized
+
+Schema: `fhir.OperationOutcome` (cấu trúc dùng chung, xem [common.md mục 3](../common.md#3-operationoutcome)).
+
+**`403`** Forbidden
 
 Schema: `fhir.OperationOutcome` (cấu trúc dùng chung, xem [common.md mục 3](../common.md#3-operationoutcome)).

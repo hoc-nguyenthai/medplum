@@ -95,7 +95,7 @@ Cập nhật 2026-11-23 cho khớp code hiện tại (đối chiếu lại từn
 | Thanh toán | `Claim/$submit`, `Claim/$export`, `CoverageEligibilityRequest/$submit`, `ChargeItemDefinition/$apply`, `$set-accounts` | M1, Q-F5 |
 | Nạp định nghĩa | `PackageRelease/$install`, `CodeSystem/$import`, `ConceptMap/$import` **có** (2026-11-23 và 2026-11-24). Chưa có: `$rebuild-base-definitions` | không; kế hoạch [modules/definitions-import.md](modules/definitions-import.md) |
 | SMART Health Cards/Links | `$generate-smart-health-card`, `$generate-smart-health-link`, `$verify-smart-health-card`, `$resolve-smart-health-link`, route `/shl/` | không |
-| Quản trị qua FHIR | `Project/$init`, `$clone`, `$archive`, `/$restore`, `Project/:id/$rate-limits`, `User/$rescope`, `User/$update-email`, `ClientApplication/$rotate-secret`, `ClientApplication/$smart-launch` | ranh giới với `auth` |
+| Quản trị qua FHIR | (`Project/$init` **xong** ở `auth` 2026-11-24 dạng `POST /admin/super/projects`) `$clone`, `$archive`, `/$restore`, `Project/:id/$rate-limits`, `User/$rescope`, `User/$update-email`, `ClientApplication/$rotate-secret`, `ClientApplication/$smart-launch` | ranh giới với `auth` |
 | Bot | `Bot/$execute` (4 biến thể), `Bot/$deploy`, `Bot/$init` | M1 |
 | Agent | `Agent/$push`, `$status`, `$bulk-status`, `$reload-config`, `$upgrade`, `$fetch-logs`, `$stats` | M3 |
 | AI | `$ai`, `$aws-textract` | M4 |

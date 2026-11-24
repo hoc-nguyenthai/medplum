@@ -170,6 +170,7 @@ Tất cả qua lệnh `auth ...` (mật khẩu chỉ nhận qua biến môi trư
 | Tạo client OAuth | `auth client create -project <id> -name <tên> -redirect-uri <uri> -grant-type <g>` |
 | Đặt lại mật khẩu (thu hồi mọi login của user) | `AUTH_NEW_PASSWORD=... auth user set-password -email <email> [-project <id>]` |
 | Cấu hình IdP ngoài cho một tên miền email | `auth domain add -domain ... -authorize-url ... -token-url ... -client-id ... -jwks-url ... -issuer ...` (URL phải https, không nội bộ; secret IdP qua `AUTH_DOMAIN_IDP_CLIENT_SECRET` hoặc stdin) |
+| Cho phép một project tạo project khác qua HTTP (Project/$init) | `auth project super -project <id>` (bỏ bằng `-disable`) và bật `AUTH_SUPER_ADMIN_ENABLED=true`; admin của project đó gọi `POST /admin/super/projects` (xem api-contract, mục admin). Cờ có hiệu lực ngay, ghi log `audit=true`; chỉ bật khi cần, tắt cờ môi trường khi xong |
 | Mở khóa tài khoản bị khóa do đăng nhập mật khẩu sai nhiều lần | `auth user unlock -email <email> [-project <id>]` (cần `AUTH_REDIS_URL`: không có Redis thì trạng thái khóa nằm trong bộ nhớ của service đang chạy, CLI không với tới; khi đó đặt lại mật khẩu hoặc chờ hết `AUTH_LOCKOUT_DURATION`). Đặt lại mật khẩu cũng mở khóa. Khóa tự hết sau `AUTH_LOCKOUT_DURATION` (15 phút) |
 | Bật hoặc tắt tính năng project (ví dụ SCIM) | `auth project feature -project <id> -feature scim [-disable]` |
 | Dọn login cũ (cắt cả refresh token của chúng) | `auth purge-logins -before <ngày> -dry-run` (đếm trước), rồi `-yes` để xóa **vĩnh viễn** |

@@ -53,7 +53,7 @@ flowchart LR
 ```
 
 **Auth làm:** đăng ký, đăng nhập, MFA, mật khẩu, OAuth2/OIDC, đăng nhập ngoài, quản trị project/membership, SCIM, gửi thư hệ thống.
-**Auth không làm:** giao diện đăng nhập (do ứng dụng `AUTH_APP_BASE_URL` đảm nhiệm), dữ liệu lâm sàng, phân quyền từng yêu cầu FHIR (do `fhir-server` thi hành), khái niệm super admin (D-22).
+**Auth không làm:** giao diện đăng nhập (do ứng dụng `AUTH_APP_BASE_URL` đảm nhiệm), dữ liệu lâm sàng, phân quyền từng yêu cầu FHIR (do `fhir-server` thi hành), phân quyền super admin xuyên project cho dữ liệu FHIR (D-22: không phát `fhir.super`). Ngoại lệ có chủ đích (2026-11-24, người dùng duyệt đảo một phần D-22): project được đánh dấu `superAdmin` (`auth project super`) có admin dùng được `POST /admin/super/projects` (Project/$init), tắt mặc định bằng `AUTH_SUPER_ADMIN_ENABLED`.
 
 ## 1.3 Tác nhân (actor) và vai trò
 

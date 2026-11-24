@@ -2,7 +2,7 @@
 
 Nhóm `/admin/projects/*` (11 route) cho **admin của một project** quản trị chính project đó: đọc project, đặt setting và site, tạo client, mời user, quản lý membership, đặt/gửi lại mật khẩu, gỡ MFA. Header, envelope OperationOutcome, hạn mức và mã HTTP dùng chung: [../common.md](../common.md). Bảng trường từng route: [../reference/admin.md](../reference/admin.md). Tệp này chỉ ghi **điều kiện nào ra phản hồi nào**.
 
-**Cờ bật nhóm:** `AUTH_ADMIN_ENABLED=true` (mặc định tắt). Tắt thì mọi route `404` (OperationOutcome `Not Found`, không phân biệt với route không tồn tại). Không có `/admin/super/*`, `bot`, `secrets`.
+**Cờ bật nhóm:** `AUTH_ADMIN_ENABLED=true` (mặc định tắt). Tắt thì mọi route `404` (OperationOutcome `Not Found`, không phân biệt với route không tồn tại). Không có `bot`, `secrets`. `/admin/super/projects` (mục cuối) có cờ riêng `AUTH_SUPER_ADMIN_ENABLED` và chỉ dành cho super-admin.
 
 ## Ai được gọi gì
 
@@ -16,7 +16,7 @@ Nhóm `/admin/projects/*` (11 route) cho **admin của một project** quản tr
 | Membership trong `:membershipId` không tồn tại **hoặc** thuộc project khác | `403` `Forbidden` (**403 chung**, không cho dò id) |
 | Admin muốn đụng tới user ở phạm vi server hoặc project khác (resetpassword, mfa/reset) | `403` `Forbidden` |
 
-Không có super admin: không có đường nào xuyên project. Client (ClientApplication) gọi được nếu membership của nó được nâng `admin=true` (ví dụ qua `POST .../members/{membershipId}`), xác thực bằng Bearer `client_credentials`.
+Các route `/admin/projects/*` không có đường nào xuyên project (super-admin chỉ có ở `POST /admin/super/projects`). Client (ClientApplication) gọi được nếu membership của nó được nâng `admin=true` (ví dụ qua `POST .../members/{membershipId}`), xác thực bằng Bearer `client_credentials`.
 
 **403 chung** là OperationOutcome `code=forbidden`, `details.text` = `Forbidden`, không có `expression` (ví dụ ở mục GET project). Mọi mục dưới đây dùng lại khái niệm này.
 
@@ -643,6 +643,54 @@ Content-Type: application/fhir+json; charset=utf-8
 ```
 
 **Lưu ý tích hợp:** có thể không gửi body. Route không chặn gỡ yếu tố cuối khi project bắt buộc MFA (đường khôi phục). Phiên đang đăng nhập không bị thu hồi.
+
+---
+
+<a id="post-admin-super-projects"></a>
+
+## `POST /admin/super/projects`
+
+Tạo project mới (Project/$init): AccessPolicy mặc định, client mặc định và membership admin cho chủ sở hữu trong một transaction. [Tham chiếu trường](../reference/admin.md#post-admin-super-projects)
+
+**Cờ bật:** `AUTH_SUPER_ADMIN_ENABLED=true` (mặc định tắt, độc lập với `AUTH_ADMIN_ENABLED`). Tắt thì `404`. Người gọi phải là **admin hoạt động của một project được đánh dấu `superAdmin`** (`auth project super -project <id>`), qua login không giới hạn bằng scope SMART theo loại resource; cờ đọc lại từ kho mỗi yêu cầu nên bỏ cờ có hiệu lực ngay với token đang dùng. Project tạo ra KHÔNG thừa kế `superAdmin`.
+
+**Thứ tự kiểm tra:** Bearer (401) → hạn mức bước đăng nhập `AUTH_LOGIN_RATE_LIMIT` (429) → parse JSON object (400) → trường lạ (400, liệt kê theo thứ tự chữ cái) → ép kiểu (400 `Invalid project body`) → super-admin (403, `Forbidden`) → tên tính năng (400) → chủ sở hữu (400) → tên project (400) → ghi.
+
+| # | Trường hợp | Điều kiện | HTTP | Header phản hồi riêng | Body | Tác dụng phụ |
+|---|---|---|---|---|---|---|
+| S1 | Thành công | body hợp lệ, người gọi là admin của project super | 201 | `Cache-Control: no-store` | `projectId`, `name`, `owner` (`User/<id>`), `membershipId`, `clientId`, `clientSecret` (**chỉ hiện một lần**) | tạo Project, 6 AccessPolicy mặc định, client mặc định và membership của nó, Practitioner và membership admin của chủ sở hữu (một transaction); log WARN `audit=true` |
+| S2 | Body không đọc được | JSON hỏng hoặc không phải object | 400 | - | `Content could not be parsed` | không |
+| S3 | Trường lạ | khác `name`, `ownerEmail`, `features` (ví dụ `superAdmin`, `owner`) | 400 | - | `Unsupported field: <các tên>` | không |
+| S4 | Sai kiểu | ví dụ `features` là chuỗi | 400 | - | `Invalid project body` | không |
+| S5 | Tên tính năng sai | không khớp `^[a-z][a-z0-9-]{0,63}$` | 400 | - | `Invalid feature name`, `expression` `features` | không |
+| S6 | Quá nhiều tính năng | hơn 20 tên khác nhau (trùng được bỏ) | 400 | - | `Too many features`, `expression` `features` | không |
+| S7 | Chủ sở hữu không có | `ownerEmail` không phải user toàn cục nào | 400 | - | `Owner not found`, `expression` `ownerEmail` | không |
+| S8 | Chủ sở hữu thuộc project | chủ mặc định (người gọi) là user gắn một project | 400 | - | `Owner must be a global user (not scoped to a project)`, `expression` `ownerEmail` | không |
+| S9 | Tên project sai | thiếu, rỗng hoặc hơn 72 ký tự (đếm ký tự) | 400 | - | `Project name must be between 1 and 72 characters`, `expression` `projectName` | không |
+| S10 | Chưa xác thực | | 401 | `WWW-Authenticate` | `Unauthorized` | không |
+| S11 | Không phải super-admin | project không `superAdmin`, membership không `admin`, hoặc login có scope SMART theo loại | 403 | - | `Forbidden` | không |
+| S12 | Quá hạn mức | IP hoặc bước đăng nhập | 429 | `Retry-After` | `Too many requests` | không |
+
+**Ví dụ**
+
+```http
+POST /admin/super/projects HTTP/1.1
+Authorization: Bearer eyJhbGciOi...
+Content-Type: application/json
+
+{ "name": "Bệnh viện B", "ownerEmail": "owner@example.org", "features": ["scim"] }
+```
+
+```http
+HTTP/1.1 201 Created
+Content-Type: application/json
+Cache-Control: no-store
+
+{ "projectId": "0192f3a4-7b1c-7d2e-9a10-3c5e8f1b2a44", "name": "Bệnh viện B", "owner": "User/0192f3a4-7b1c-7d2e-9a10-3c5e8f1b2a45",
+  "membershipId": "0192f3a4-7b1c-7d2e-9a10-3c5e8f1b2a46", "clientId": "0192f3a4-7b1c-7d2e-9a10-3c5e8f1b2a47", "clientSecret": "0f3c9a1e7b5d4c2a8e6f1b3d5a7c9e0f2b4d6f8a1c3e5b7d9f0a2c4e6b8d0f1a" }
+```
+
+**Lưu ý tích hợp:** chủ sở hữu phải là user toàn cục đã có (tạo bằng đăng ký hoặc `auth seed project`); route không tạo user và không đặt mật khẩu. Lưu `clientSecret` ngay. Khác Medplum: đường dẫn là `/admin/super/projects`, không phải `/fhir/R4/Project/$init`, và đặt cờ `superAdmin` bằng CLI (`auth project super`), không có route HTTP để đặt cờ này.
 
 ---
 

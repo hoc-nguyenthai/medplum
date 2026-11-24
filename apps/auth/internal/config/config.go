@@ -143,6 +143,8 @@ type Settings struct {
 	GoogleEnabled                 bool
 	// AdminEnabled bật /admin/projects/* (P7); mặc định tắt.
 	AdminEnabled bool
+	// SuperAdminEnabled bật /admin/super/* (Project/$init): admin của project được đánh dấu superAdmin (`auth project super`) tạo project mới; mặc định tắt.
+	SuperAdminEnabled bool
 	// Route gửi thư POST /email/v1/send (E4): EmailEnabled mặc định tắt (route 404; project còn cần tính năng `email` và người gọi là admin). EmailAllowProjectSMTP cho dùng
 	// SMTP riêng khai ở Project.secret (mặc định tắt: mật khẩu nằm dạng rõ trong Project.secret). EmailAllowUnsafeOutbound tắt chặn địa chỉ nội bộ của SMTP project và
 	// của tệp đính kèm URL (chỉ dev/test, cấm ở staging/production). EmailMaxRecipients là tổng To, Cc, Bcc mỗi thư; EmailMaxBytes là cỡ tối đa của thư và của mỗi tệp tải theo URL.
@@ -344,6 +346,7 @@ func FromEnv(get func(string) string) (Settings, error) {
 	r.String(&s.GoogleJWKSURL, "AUTH_GOOGLE_JWKS_URL")
 	r.Bool(&s.GoogleEnabled, "AUTH_GOOGLE_ENABLED")
 	r.Bool(&s.AdminEnabled, "AUTH_ADMIN_ENABLED")
+	r.Bool(&s.SuperAdminEnabled, "AUTH_SUPER_ADMIN_ENABLED")
 	r.Bool(&s.EmailEnabled, "AUTH_EMAIL_ENABLED")
 	r.Bool(&s.EmailAllowProjectSMTP, "AUTH_EMAIL_ALLOW_PROJECT_SMTP")
 	r.Bool(&s.EmailAllowUnsafeOutbound, "AUTH_EMAIL_ALLOW_UNSAFE_OUTBOUND")

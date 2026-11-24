@@ -40,6 +40,8 @@ type Deps struct {
 	ExternalEnabled bool
 	// AdminEnabled đăng ký /admin/projects/* (mặc định tắt: bề mặt quản trị lớn).
 	AdminEnabled bool
+	// SuperAdminEnabled đăng ký /admin/super/* (mặc định tắt: tác động tới project khác).
+	SuperAdminEnabled bool
 	// ScimEnabled đăng ký /scim/v2/Users (mặc định tắt). ScimAllowedNets: CIDR được gọi (rỗng: không hạn chế); ScimMaxBodyBytes: cỡ body tối đa.
 	ScimEnabled bool
 	// EmailEnabled đăng ký POST /email/v1/send (mặc định tắt).
@@ -105,6 +107,9 @@ func New(dep Deps) (*echo.Echo, error) {
 		registerAuth(e, dep)
 		if dep.AdminEnabled {
 			registerAdmin(e, dep)
+		}
+		if dep.SuperAdminEnabled {
+			registerSuperAdmin(e, dep)
 		}
 		if dep.ScimEnabled {
 			registerScim(e, dep)

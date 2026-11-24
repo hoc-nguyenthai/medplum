@@ -34,6 +34,8 @@ const AdminUsage = `lệnh quản trị:
         (id_token được xác minh chữ ký) trừ khi AUTH_ALLOW_PRIVATE_JWKS=true (dev/test). Secret của IdP đọc từ AUTH_DOMAIN_IDP_CLIENT_SECRET hoặc dòng đầu của stdin
   auth project feature -project <id> -feature <tên> [-disable]
         bật (mặc định) hoặc tắt một tính năng của project, ví dụ "scim" (SCIM 2.0 cần cả AUTH_SCIM_ENABLED và tính năng này)
+  auth project super -project <id> [-disable]
+        đánh dấu (mặc định) hoặc bỏ đánh dấu project là super-admin: admin của project đó dùng được /admin/super/* (cần AUTH_SUPER_ADMIN_ENABLED)
   auth purge-logins -before <RFC3339|YYYY-MM-DD> (-dry-run | -yes)
         xóa VĨNH VIỄN các login không cập nhật từ trước mốc đó (cắt cả refresh token của chúng)`
 
@@ -76,6 +78,8 @@ func RunAdmin(ctx context.Context, s config.Settings, args []string, getenv func
 		return addDomain(ctx, s, svc, args[2:], getenv, in, out)
 	case len(args) >= 2 && args[0] == "project" && args[1] == "feature":
 		return projectFeature(ctx, svc, args[2:], out)
+	case len(args) >= 2 && args[0] == "project" && args[1] == "super":
+		return projectSuper(ctx, svc, args[2:], out)
 	case len(args) >= 1 && args[0] == "purge-logins":
 		return purgeLogins(ctx, svc, args[1:], out)
 	}
@@ -189,6 +193,27 @@ func setUserPassword(ctx context.Context, svc *application.Service, args []strin
 		return explain(err)
 	}
 	fmt.Fprintln(out, "đã đặt mật khẩu và thu hồi mọi login của user")
+	return nil
+}
+
+func projectSuper(ctx context.Context, svc *application.Service, args []string, out io.Writer) error {
+	fs := newFlags("project super")
+	project := fs.String("project", "", "id project (bắt buộc)")
+	disable := fs.Bool("disable", false, "bỏ đánh dấu thay vì đánh dấu")
+	if err := fs.Parse(args); err != nil {
+		return fmt.Errorf("%w\n%s", err, AdminUsage)
+	}
+	if *project == "" {
+		return fmt.Errorf("thiếu -project\n%s", AdminUsage)
+	}
+	if err := svc.SetProjectSuperAdmin(ctx, *project, !*disable); err != nil {
+		return explain(err)
+	}
+	state := "enabled"
+	if *disable {
+		state = "disabled"
+	}
+	fmt.Fprintf(out, "project: %s\nsuperAdmin: %s\n", *project, state)
 	return nil
 }
 

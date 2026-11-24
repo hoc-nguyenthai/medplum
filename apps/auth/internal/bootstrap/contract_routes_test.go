@@ -19,7 +19,7 @@ func TestRoutesMatchSwaggerContract(t *testing.T) {
 		s.PwnedEnabled = false
 		s.AppBaseURL = config.DevAllowedOrigin // bật /oauth2/authorize và đăng nhập ngoài
 		s.OAuthRegisterEnabled = true
-		s.AdminEnabled = true
+		s.AdminEnabled, s.SuperAdminEnabled = true, true
 		s.ScimEnabled = true
 		s.EmailEnabled = true
 		s.GoogleEnabled = true

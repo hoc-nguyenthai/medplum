@@ -51,7 +51,7 @@ Kế hoạch: [modules/p17-async-batch-download-autodisable.md](modules/p17-asyn
 
 ## 5. Quản trị project, user, client (#21)
 
-- [ ] `Project/$init`
+- [x] `Project/$init` — xong 2026-11-24 ở `auth`: `POST /admin/super/projects` (khác Medplum về đường dẫn; `AUTH_SUPER_ADMIN_ENABLED`, `auth project super`)
 - [ ] `Project/:id/$clone`
 - [ ] `Project/:id/$archive`
 - [ ] `/$restore`

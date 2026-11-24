@@ -308,7 +308,7 @@ func (c *Container) Handler(instrument func(*echo.Echo) error) (*echo.Echo, erro
 		Auth: c.Auth, Authenticator: c.Authenticator, CookieSecure: c.Settings.CookieSecure,
 		OAuth:     &httpapi.OAuthInfo{Issuer: c.Settings.IssuerURL(), JWKS: c.Keys.JWKS, SigningAlg: c.Keys.SigningAlg(), AllowPlainPKCE: c.Settings.AllowPlainPKCE, AuthorizeEnabled: c.Settings.AppBaseURL != "", AppBaseURL: c.Settings.AppBaseURL, RegisterEnabled: c.Settings.OAuthRegisterEnabled},
 		RateLimit: c.Settings.RateLimit, RateBurst: c.Settings.RateBurst,
-		ExternalEnabled: c.Auth.External.Enabled(), AdminEnabled: c.Settings.AdminEnabled,
+		ExternalEnabled: c.Auth.External.Enabled(), AdminEnabled: c.Settings.AdminEnabled, SuperAdminEnabled: c.Settings.SuperAdminEnabled,
 		ScimEnabled: c.Settings.ScimEnabled, EmailEnabled: c.Settings.EmailEnabled, ScimAllowedNets: scimNets, ScimMaxBodyBytes: int64(c.Settings.ScimMaxBodyBytes),
 		LoginRateLimit: c.Settings.LoginRateLimit, LoginRateBurst: c.Settings.LoginRateBurst,
 	}
