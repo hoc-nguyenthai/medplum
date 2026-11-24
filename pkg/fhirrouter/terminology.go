@@ -197,6 +197,13 @@ func (r *Router) lookup(ctx context.Context, req *Request) (*Response, error) {
 	if err != nil {
 		return nil, err
 	}
+	if st, ok := storedConcepts(repo, cs); ok {
+		props := map[string]bool{}
+		for _, p := range in.List("property") {
+			props[p] = true
+		}
+		return r.lookupStored(ctx, st, cs, code, props)
+	}
 	ix := indexCodeSystem(cs)
 	c, ok := ix.byKey[code]
 	if !ok {
@@ -403,7 +410,13 @@ func (r *Router) includeMembers(ctx context.Context, repo Repository, inc fhir.V
 			return nil, Unprocessable("CodeSystem không có trên server: " + u)
 		}
 		cs := res.(*fhir.CodeSystem)
-		if cs.Content == "not-present" {
+		if st, ok := storedConcepts(repo, cs); ok {
+			ms, err := r.storedMembers(ctx, st, cs, inc)
+			if err != nil {
+				return nil, err
+			}
+			base = ms
+		} else if cs.Content == "not-present" {
 			return nil, Unprocessable("CodeSystem " + cs.URL + " không có nội dung trên server")
 		}
 		ix := indexCodeSystem(cs)
@@ -412,6 +425,8 @@ func (r *Router) includeMembers(ctx context.Context, repo Repository, inc fhir.V
 			return member{cs.URL, cs.Version, code, c.c.Display}
 		}
 		switch {
+		case cs.Content == "not-present" && repoHasStore(repo):
+			// base đã lấy từ kho concept
 		case len(inc.Concept) > 0:
 			for _, c := range inc.Concept {
 				m := member{cs.URL, cs.Version, c.Code, c.Display}
@@ -615,6 +630,14 @@ func (r *Router) validateCodeValueSet(ctx context.Context, req *Request) (*Respo
 		}
 		code, system, display = cd.code, cd.system, cd.display
 	}
+	if d, found, handled, err := r.storedMembership(ctx, repo, vs, system, code); err != nil {
+		return nil, err
+	} else if handled {
+		if found {
+			return validateResult(true, d, display, ""), nil
+		}
+		return validateResult(false, "", display, "Mã "+code+" không thuộc ValueSet"), nil
+	}
 	ms, err := r.expandMembers(ctx, repo, vs, map[string]bool{})
 	if err != nil {
 		return nil, err
@@ -645,6 +668,9 @@ func (r *Router) validateCodeSystem(ctx context.Context, req *Request) (*Respons
 	if err != nil {
 		return nil, err
 	}
+	if st, ok := storedConcepts(repo, cs); ok {
+		return r.validateStored(ctx, st, cs, code, display)
+	}
 	c, ok := indexCodeSystem(cs).byKey[code]
 	if !ok {
 		return validateResult(false, "", display, "Mã "+code+" không có trong "+cs.URL), nil
@@ -665,3 +691,5 @@ func validateResult(ok bool, actual, given, msg string) *Response {
 	}
 	return &Response{Status: 200, Resource: out}
 }
+
+func repoHasStore(repo Repository) bool { _, ok := repo.(ConceptStore); return ok }

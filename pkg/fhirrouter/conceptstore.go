@@ -3,6 +3,7 @@ package fhirrouter
 import (
 	"context"
 	"slices"
+	"strings"
 	"sync"
 )
 
@@ -16,9 +17,23 @@ type ConceptStore interface {
 	PutConceptDesignations(ctx context.Context, systemID string, ds []ConceptDesignation) error
 	// GetConcept trả nil, nil nếu không có concept.
 	GetConcept(ctx context.Context, systemID, code string) (*StoredConcept, error)
+	// QueryConcepts trả các concept (sắp theo code) thỏa điều kiện, và tổng số trước khi phân trang.
+	QueryConcepts(ctx context.Context, systemID string, q ConceptQuery) ([]Concept, int, error)
 	// DeleteConcepts xóa mọi concept, thuộc tính và designation của một CodeSystem; trả số concept đã xóa.
 	DeleteConcepts(ctx context.Context, systemID string) (int, error)
 }
+
+// ConceptQuery là điều kiện của QueryConcepts; các điều kiện kết hợp bằng AND.
+type ConceptQuery struct {
+	Codes             []string        // nếu không rỗng, chỉ xét các code này
+	Filters           []ConceptFilter // theo ValueSet.compose.include.filter
+	HierarchyProperty string          // thuộc tính chứa code cha (hierarchyMeaning, hoặc "parent")
+	Text              string          // chứa trong code hoặc display, không phân biệt hoa thường
+	Offset, Limit     int             // Limit 0 là không giới hạn
+}
+
+// ConceptFilter là một filter của compose: Op là "is-a", "descendent-of" hoặc "=" (Property "code"/"concept" so với code).
+type ConceptFilter struct{ Op, Property, Value string }
 
 // Concept là một dòng concept.
 type Concept struct{ Code, Display string }
@@ -145,3 +160,83 @@ func (c *memConcepts) DeleteConcepts(_ context.Context, sid string) (int, error)
 }
 
 var _ ConceptStore = (*MemoryRepository)(nil)
+
+func (c *memConcepts) QueryConcepts(_ context.Context, sid string, q ConceptQuery) ([]Concept, int, error) {
+	c.cmu.RLock()
+	defer c.cmu.RUnlock()
+	all := c.sets[sid]
+	kids := map[string][]string{}
+	if q.HierarchyProperty != "" {
+		for code, sc := range all {
+			for _, p := range sc.Properties {
+				if p.Property == q.HierarchyProperty {
+					kids[p.Value] = append(kids[p.Value], code)
+				}
+			}
+		}
+	}
+	allowed := func(code string) bool { return true }
+	restrict := func(set map[string]bool) {
+		prev := allowed
+		allowed = func(code string) bool { return set[code] && prev(code) }
+	}
+	if len(q.Codes) > 0 {
+		set := map[string]bool{}
+		for _, code := range q.Codes {
+			set[code] = true
+		}
+		restrict(set)
+	}
+	for _, f := range q.Filters {
+		set := map[string]bool{}
+		switch {
+		case f.Op == "is-a" || f.Op == "descendent-of":
+			var rec func(string)
+			rec = func(code string) {
+				for _, k := range kids[code] {
+					if !set[k] {
+						set[k] = true
+						rec(k)
+					}
+				}
+			}
+			rec(f.Value)
+			if f.Op == "is-a" {
+				set[f.Value] = true
+			}
+		case f.Op == "=" && (f.Property == "code" || f.Property == "concept"):
+			set[f.Value] = true
+		case f.Op == "=":
+			for code, sc := range all {
+				for _, p := range sc.Properties {
+					if p.Property == f.Property && p.Value == f.Value {
+						set[code] = true
+					}
+				}
+			}
+		default:
+			return nil, 0, Unprocessable("filter không hỗ trợ trên kho concept: " + f.Property + " " + f.Op)
+		}
+		restrict(set)
+	}
+	text := strings.ToLower(q.Text)
+	var out []Concept
+	for code, sc := range all {
+		if !allowed(code) {
+			continue
+		}
+		if text != "" && !strings.Contains(strings.ToLower(code), text) && !strings.Contains(strings.ToLower(sc.Display), text) {
+			continue
+		}
+		out = append(out, Concept{Code: code, Display: sc.Display})
+	}
+	slices.SortFunc(out, func(a, b Concept) int { return strings.Compare(a.Code, b.Code) })
+	total := len(out)
+	if q.Offset > 0 {
+		out = out[min(q.Offset, len(out)):]
+	}
+	if q.Limit > 0 && q.Limit < len(out) {
+		out = out[:q.Limit]
+	}
+	return out, total, nil
+}

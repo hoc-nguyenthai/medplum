@@ -707,6 +707,7 @@ func Run(t *testing.T, mk Factory) {
 	t.Run("BulkExport", func(t *testing.T) { testBulkExport(t, mk) })
 	t.Run("Terminology", func(t *testing.T) { testTerminology(t, mk) })
 	t.Run("CodeSystemImport", func(t *testing.T) { testCodeSystemImport(t, mk) })
+	t.Run("StoredTerminology", func(t *testing.T) { testStoredTerminology(t, mk) })
 	t.Run("ConcurrentIfMatch", func(t *testing.T) { testConcurrentIfMatch(t, mk) })
 	t.Run("ConcurrentConditionalCreate", func(t *testing.T) { testConcurrentConditionalCreate(t, mk) })
 	t.Run("ConcurrentUpdateAsCreate", func(t *testing.T) { testConcurrentUpdateAsCreate(t, mk) })
@@ -2059,4 +2060,147 @@ func testCodeSystemImport(t *testing.T, mk Factory) {
 	if a, _ := cs.GetConcept(ctx, big, "A"); a != nil {
 		t.Fatalf("concept còn sau expunge: %+v", a)
 	}
+}
+
+// ---------------------------------------------------------------- terminology trên concept lưu ở kho (D3)
+
+func testStoredTerminology(t *testing.T, mk Factory) {
+	e := newEnv(t, mk)
+	if _, ok := e.repo.(fhirrouter.ConceptStore); !ok {
+		t.Skip("repository không cài ConceptStore")
+	}
+	const sys = "http://example.org/big2"
+	csID := str(e.mustDo(201, "POST", "CodeSystem", map[string]any{"resourceType": "CodeSystem", "url": sys, "name": "Big2", "version": "7",
+		"status": "active", "content": "not-present",
+		"property": []any{map[string]any{"code": "kind", "type": "string"}}}).body, "id")
+	// R > A > B, R > C; kind: A=x, B=x, C=y
+	par := func(c, p string) map[string]any { return impPart("property", map[string]string{"code": c, "property": "parent", "value": p}) }
+	kind := func(c, v string) map[string]any { return impPart("property", map[string]string{"code": c, "property": "kind", "value": v}) }
+	e.mustDo(200, "POST", "CodeSystem/"+csID+"/$import", importParams("", impConcept("R", "Root"), impConcept("A", "Alpha thing"),
+		impConcept("B", "Beta thing"), impConcept("C", "Gamma_1 100%"),
+		par("A", "R"), par("B", "A"), par("C", "R"), kind("A", "x"), kind("B", "x"), kind("C", "y"),
+		impPart("designation", map[string]string{"code": "A", "language": "vi", "value": "Anpha"})))
+
+	// $lookup
+	lk := e.mustDo(200, "GET", "CodeSystem/$lookup?system="+sys+"&code=A", nil)
+	if d := paramValue(lk.body, "display"); d != "Alpha thing" {
+		t.Errorf("lookup display: %q", d)
+	}
+	if p := propValues(lk.body, "parent"); len(p) != 1 || p[0] != "R" {
+		t.Errorf("lookup parent: %v", p)
+	}
+	if c := propValues(lk.body, "child"); len(c) != 1 || c[0] != "B" {
+		t.Errorf("lookup child: %v", c)
+	}
+	if k := propValues(lk.body, "kind"); len(k) != 1 || k[0] != "x" {
+		t.Errorf("lookup kind: %v", k)
+	}
+	e.mustDo(404, "GET", "CodeSystem/$lookup?system="+sys+"&code=NOPE", nil)
+
+	// $validate-code trên CodeSystem
+	if r := e.mustDo(200, "GET", "CodeSystem/$validate-code?url="+sys+"&code=B", nil); paramValue(r.body, "result") != "true" {
+		t.Errorf("validate B: %v", r.body)
+	}
+	if r := e.mustDo(200, "GET", "CodeSystem/$validate-code?url="+sys+"&code=ZZ", nil); paramValue(r.body, "result") != "false" {
+		t.Errorf("validate ZZ: %v", r.body)
+	}
+
+	inc := func(extra map[string]any) map[string]any {
+		m := map[string]any{"system": sys}
+		for k, v := range extra {
+			m[k] = v
+		}
+		return map[string]any{"include": []any{m}}
+	}
+	flt := func(prop, op, val string) map[string]any {
+		return map[string]any{"filter": []any{map[string]any{"property": prop, "op": op, "value": val}}}
+	}
+	n := 0
+	mkVS := func(compose map[string]any) string {
+		n++
+		return str(e.mustDo(201, "POST", "ValueSet", map[string]any{"resourceType": "ValueSet", "url": "http://example.org/vs/st" + string(rune('a'+n)),
+			"status": "active", "compose": compose}).body, "id")
+	}
+	codes := func(id, q string) []string {
+		r := e.mustDo(200, "GET", "ValueSet/"+id+"/$expand"+q, nil)
+		exp, _ := r.body["expansion"].(map[string]any)
+		var out []string
+		for _, c := range exp["contains"].([]any) {
+			out = append(out, fmt.Sprint(c.(map[string]any)["code"]))
+		}
+		return out
+	}
+	eq := func(what string, got []string, want ...string) {
+		t.Helper()
+		if strings.Join(got, ",") != strings.Join(want, ",") {
+			t.Errorf("%s: %v, muốn %v", what, got, want)
+		}
+	}
+	all := mkVS(inc(nil))
+	eq("toàn bộ", codes(all, ""), "A", "B", "C", "R")
+	eq("is-a A", codes(mkVS(inc(flt("concept", "is-a", "A"))), ""), "A", "B")
+	eq("descendent-of R", codes(mkVS(inc(flt("code", "descendent-of", "R"))), ""), "A", "B", "C")
+	eq("thuộc tính kind=x", codes(mkVS(inc(flt("kind", "=", "x"))), ""), "A", "B")
+	eq("danh sách concept", codes(mkVS(inc(map[string]any{"concept": []any{map[string]any{"code": "C"}, map[string]any{"code": "R"}, map[string]any{"code": "NOPE"}}})), ""), "C", "R")
+	eq("filter văn bản và ký tự LIKE", codes(all, "?filter=100%25"), "C")
+	eq("filter văn bản _", codes(all, "?filter=a_1"), "C")
+	eq("count/offset", codes(all, "?count=2&offset=1"), "B", "C")
+	if r := e.mustDo(200, "GET", "ValueSet/"+all+"/$expand?count=1", nil); r.body["expansion"].(map[string]any)["total"].(float64) != 4 {
+		t.Errorf("total: %v", r.body["expansion"])
+	}
+	// giao với ValueSet khác vẫn chạy trên các thành viên lấy từ kho
+	e.mustDo(422, "GET", "ValueSet/"+mkVS(inc(flt("code", "regex", "A.*")))+"/$expand", nil)
+
+	// $validate-code trên ValueSet (không mở rộng cả tập)
+	v := mkVS(inc(flt("concept", "is-a", "A")))
+	for code, want := range map[string]string{"B": "true", "A": "true", "C": "false", "R": "false"} {
+		if r := e.mustDo(200, "GET", "ValueSet/"+v+"/$validate-code?system="+sys+"&code="+code, nil); paramValue(r.body, "result") != want {
+			t.Errorf("validate %s trong is-a A: %v", code, r.body)
+		}
+	}
+	// CodeSystem chưa có concept: expand vẫn báo 422
+	e.mustDo(201, "POST", "CodeSystem", map[string]any{"resourceType": "CodeSystem", "url": "http://example.org/empty", "status": "active", "content": "not-present"})
+	empty := mkVS(map[string]any{"include": []any{map[string]any{"system": "http://example.org/empty"}}})
+	e.mustDo(422, "GET", "ValueSet/"+empty+"/$expand", nil)
+}
+
+func paramValue(body map[string]any, name string) string {
+	ps, _ := body["parameter"].([]any)
+	for _, p := range ps {
+		pm, _ := p.(map[string]any)
+		if pm["name"] == name {
+			for k, v := range pm {
+				if strings.HasPrefix(k, "value") {
+					return fmt.Sprint(v)
+				}
+			}
+		}
+	}
+	return ""
+}
+
+// propValues trả giá trị của các parameter "property" có part code = name.
+func propValues(body map[string]any, name string) []string {
+	var out []string
+	ps, _ := body["parameter"].([]any)
+	for _, p := range ps {
+		pm, _ := p.(map[string]any)
+		if pm["name"] != "property" {
+			continue
+		}
+		var code, val string
+		for _, pt := range pm["part"].([]any) {
+			m := pt.(map[string]any)
+			if m["name"] == "code" {
+				code = fmt.Sprint(m["valueCode"])
+			}
+			if m["name"] == "value" {
+				val = fmt.Sprint(m["valueString"])
+			}
+		}
+		if code == name {
+			out = append(out, val)
+		}
+	}
+	return out
 }

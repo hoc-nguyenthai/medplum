@@ -190,4 +190,12 @@ func (r *Repo) DeleteConcepts(ctx context.Context, sid string) (int, error) {
 	return cs.DeleteConcepts(ctx, sid)
 }
 
+func (r *Repo) QueryConcepts(ctx context.Context, sid string, q fhirrouter.ConceptQuery) ([]fhirrouter.Concept, int, error) {
+	cs, err := r.cs()
+	if err != nil {
+		return nil, 0, err
+	}
+	return cs.QueryConcepts(ctx, sid, q)
+}
+
 var _ fhirrouter.ConceptStore = (*Repo)(nil)
