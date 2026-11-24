@@ -3,6 +3,7 @@
 | Tệp | Nội dung |
 |---|---|
 | [architecture.md](architecture.md) | Vì sao tách (điều kiện A, B, C, D và bằng chứng), luồng, độ bền của việc giao rest-hook, websocket, consumer group |
+| [api-contract.md](api-contract.md) | Hợp đồng API: không có route nghiệp vụ; 4 probe (thân, header, mã), lệnh `healthcheck`, hợp đồng dây (sự kiện, webhook gửi ra, kênh websocket); ghim bằng `TestProbeContractIsPinned` |
 | [config.md](config.md) | Biến môi trường, sinh từ `internal/config/config.go` (test `TestConfigDocIsUpToDate` giữ cho khớp) |
 | [testing.md](testing.md) | Bốn tầng test, lệnh chạy, đột biến đã chạy |
 | [runbook.md](runbook.md) | Bật service thay cho phần giao trong API, sự cố thường gặp, định cỡ |

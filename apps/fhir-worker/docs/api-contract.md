@@ -56,4 +56,4 @@ Giao diện thật của service (không phải HTTP): các bên chung **schema*
 ## 4. Giữ cho hợp đồng khỏi lệch
 
 - Hình dạng thân và header của probe được ghim bằng `TestProbeContractIsPinned` (`apps/fhir-worker/internal/presentation/httpapi/httpapi_test.go`); đổi thân hoặc header mà không sửa tài liệu này thì test đỏ.
-- `fhir-downloader` và `fhir-notifier` có cùng bộ probe (cùng thân, cùng header, `checks` có thêm `broker`); mỗi service có tệp `api-contract.md` riêng khi cần.
+- `fhir-downloader` và `fhir-notifier` có cùng bộ probe (cùng thân, cùng header, `checks` có thêm `broker`) và tệp `api-contract.md` riêng ([downloader](../../fhir-downloader/docs/api-contract.md), [notifier](../../fhir-notifier/docs/api-contract.md)).

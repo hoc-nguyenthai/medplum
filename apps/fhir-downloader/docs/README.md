@@ -3,6 +3,7 @@
 | Tệp | Nội dung |
 |---|---|
 | [architecture.md](architecture.md) | Vì sao tách (điều kiện A, B, C, D và bằng chứng), luồng xử lý, độ bền, consumer group, ranh giới với `fhir-server` |
+| [api-contract.md](api-contract.md) | Hợp đồng API: không có route nghiệp vụ; 4 probe (thân, header, mã), lệnh `healthcheck`, hợp đồng dây (sự kiện, Binary và cập nhật resource, gọi ra ngoài); ghim bằng `TestProbeContractIsPinned` |
 | [config.md](config.md) | Biến môi trường, sinh từ `internal/config/config.go` (test `TestConfigDocIsUpToDate` giữ cho khớp) |
 | [testing.md](testing.md) | Bốn tầng test, lệnh chạy, điều mỗi tầng kiểm |
 | [runbook.md](runbook.md) | Bật service thay cho worker trong API, sự cố thường gặp, định cỡ |
