@@ -169,8 +169,25 @@ func (r *Router) translate(ctx context.Context, req *Request) (*Response, error)
 			found = append(found, t)
 		}
 	}
+	ms, _ := repo.(MappingStore)
 	for _, cm := range maps {
 		src := cm.URL
+		if ms != nil {
+			stored, err := ms.FindMappings(ctx, cm.ID, mappingQueryFor(code, system, target, reverse))
+			if err != nil {
+				return nil, err
+			}
+			for _, m := range stored {
+				if !reverse && m.TargetCode == "" && m.Equivalence != "unmatched" {
+					continue
+				}
+				if reverse {
+					add(translation{reverseEquivalence(equivalenceOf(m)), m.SourceSystem, m.SourceCode, m.SourceDisplay, src})
+				} else {
+					add(translation{equivalenceOf(m), m.TargetSystem, m.TargetCode, m.TargetDisplay, src})
+				}
+			}
+		}
 		for _, g := range cm.Group {
 			from, to := g.Source, g.Target
 			if reverse {
@@ -266,4 +283,19 @@ func equivalenceRank(e string) int {
 		}
 	}
 	return 99
+}
+
+func equivalenceOf(m StoredMapping) string {
+	if m.Equivalence == "" {
+		return "equivalent"
+	}
+	return m.Equivalence
+}
+
+// mappingQueryFor dựng điều kiện tìm ánh xạ đã nạp: xuôi thì mã là nguồn, ngược thì mã là đích.
+func mappingQueryFor(code, system, target string, reverse bool) MappingQuery {
+	if reverse {
+		return MappingQuery{TargetCode: code, TargetSystem: system, SourceSystem: target}
+	}
+	return MappingQuery{SourceCode: code, SourceSystem: system, TargetSystem: target}
 }

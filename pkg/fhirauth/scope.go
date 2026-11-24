@@ -534,3 +534,49 @@ func (r *Repo) QueryConcepts(ctx context.Context, sid string, q fhirrouter.Conce
 }
 
 var _ fhirrouter.ConceptStore = (*Repo)(nil)
+
+// MappingStore (xem fhirrouter.MappingStore): ánh xạ thuộc ConceptMap nên chỉ ghi khi người gọi có quyền sửa ConceptMap đó
+// trong project của mình, đọc khi có quyền đọc.
+func (r *Repo) mappingGuard(ctx context.Context, id string, need Perm) (fhirrouter.MappingStore, error) {
+	project, err := projectOf(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if err := allow(ctx, "ConceptMap", need); err != nil {
+		return nil, err
+	}
+	if err := r.owned(ctx, project, "ConceptMap", id); err != nil {
+		return nil, err
+	}
+	ms, ok := r.inner.(fhirrouter.MappingStore)
+	if !ok {
+		return nil, fhirrouter.NotImplemented("Repository không hỗ trợ kho ánh xạ")
+	}
+	return ms, nil
+}
+
+func (r *Repo) PutMappings(ctx context.Context, id string, m []fhirrouter.StoredMapping) error {
+	ms, err := r.mappingGuard(ctx, id, PermUpdate)
+	if err != nil {
+		return err
+	}
+	return ms.PutMappings(ctx, id, m)
+}
+
+func (r *Repo) FindMappings(ctx context.Context, id string, q fhirrouter.MappingQuery) ([]fhirrouter.StoredMapping, error) {
+	ms, err := r.mappingGuard(ctx, id, PermRead)
+	if err != nil {
+		return nil, err
+	}
+	return ms.FindMappings(ctx, id, q)
+}
+
+func (r *Repo) DeleteMappings(ctx context.Context, id string) (int, error) {
+	ms, err := r.mappingGuard(ctx, id, PermUpdate)
+	if err != nil {
+		return 0, err
+	}
+	return ms.DeleteMappings(ctx, id)
+}
+
+var _ fhirrouter.MappingStore = (*Repo)(nil)

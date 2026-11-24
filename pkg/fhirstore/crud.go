@@ -540,6 +540,11 @@ func (s *Store) Expunge(ctx context.Context, rt, id string) error {
 				return err
 			}
 		}
+		if rt == "ConceptMap" {
+			if _, err := s.deleteMappings(ctx, q, id); err != nil {
+				return err
+			}
+		}
 		return nil
 	})
 }

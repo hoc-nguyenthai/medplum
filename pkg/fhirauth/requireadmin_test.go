@@ -104,3 +104,32 @@ func TestCodeSystemImportRespectsRoleAndProject(t *testing.T) {
 		}
 	})
 }
+
+// ConceptMap/$import qua HTTP với repo tách project: chỉ admin, và chỉ vào ConceptMap của project mình.
+func TestConceptMapImportRespectsRoleAndProject(t *testing.T) {
+	onEachBackend(t, func(t *testing.T, e *compEnv) {
+		cm := mustCreate(t, e.repo, e.admin, `{"resourceType":"ConceptMap","url":"http://example.org/cm-imp","status":"active"}`)
+		path := "ConceptMap/" + cm + "/$import"
+		body := `{"resourceType":"Parameters","parameter":[{"name":"mapping","part":[` +
+			`{"name":"source","valueCoding":{"system":"http://a","code":"1"}},{"name":"target","valueCoding":{"system":"http://b","code":"X"}}]}]}`
+
+		write := &fhirauth.Principal{Subject: "w", Project: "p1", Role: fhirauth.RoleWrite}
+		if code, _ := e.do(write, "POST", path, body); code != 403 {
+			t.Errorf("write phải 403, được %d", code)
+		}
+		other := &fhirauth.Principal{Subject: "o", Project: "p2", Role: fhirauth.RoleAdmin}
+		if code, _ := e.do(other, "POST", path, body); code != 404 {
+			t.Errorf("ConceptMap của project khác phải 404, được %d", code)
+		}
+		if code, b := e.do(e.admin1(), "POST", path, body); code != 200 {
+			t.Fatalf("admin nạp: %d %v", code, b)
+		}
+		ms := e.repo.(fhirrouter.MappingStore)
+		if got, err := ms.FindMappings(fhirauth.WithPrincipal(context.Background(), e.admin1()), cm, fhirrouter.MappingQuery{}); err != nil || len(got) != 1 {
+			t.Errorf("mapping sau khi nạp: %+v %v", got, err)
+		}
+		if _, err := ms.FindMappings(fhirauth.WithPrincipal(context.Background(), other), cm, fhirrouter.MappingQuery{}); err == nil {
+			t.Error("project khác không được đọc ánh xạ")
+		}
+	})
+}

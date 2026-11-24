@@ -17,6 +17,7 @@ import (
 // đang chạy sẽ bị mất nếu transaction bị hủy.
 type MemoryRepository struct {
 	memConcepts
+	memMappings
 	mu   sync.RWMutex
 	txMu sync.Mutex // tuần tự hóa các transaction
 	data map[string]map[string]*record
@@ -368,11 +369,13 @@ func (m *MemoryRepository) RunInTransaction(_ context.Context, fn func(Repositor
 	snap := m.snapshot()
 	m.mu.RUnlock()
 	csnap := m.memConcepts.clone()
+	msnap := m.memMappings.clone()
 	if err := fn(m); err != nil {
 		m.mu.Lock()
 		m.data = snap
 		m.mu.Unlock()
 		m.memConcepts.restore(csnap)
+		m.memMappings.restore(msnap)
 		return err
 	}
 	return nil
@@ -416,6 +419,9 @@ func (m *MemoryRepository) Expunge(_ context.Context, rt, id string) error {
 	delete(m.data[rt], id)
 	if rt == "CodeSystem" {
 		_, _ = m.DeleteConcepts(context.Background(), id)
+	}
+	if rt == "ConceptMap" {
+		_, _ = m.DeleteMappings(context.Background(), id)
 	}
 	return nil
 }

@@ -708,6 +708,7 @@ func Run(t *testing.T, mk Factory) {
 	t.Run("Terminology", func(t *testing.T) { testTerminology(t, mk) })
 	t.Run("CodeSystemImport", func(t *testing.T) { testCodeSystemImport(t, mk) })
 	t.Run("StoredTerminology", func(t *testing.T) { testStoredTerminology(t, mk) })
+	t.Run("ConceptMapImport", func(t *testing.T) { testConceptMapImport(t, mk) })
 	t.Run("ConcurrentIfMatch", func(t *testing.T) { testConcurrentIfMatch(t, mk) })
 	t.Run("ConcurrentConditionalCreate", func(t *testing.T) { testConcurrentConditionalCreate(t, mk) })
 	t.Run("ConcurrentUpdateAsCreate", func(t *testing.T) { testConcurrentUpdateAsCreate(t, mk) })
@@ -2207,4 +2208,113 @@ func propValues(body map[string]any, name string) []string {
 		}
 	}
 	return out
+}
+
+// ---------------------------------------------------------------- ConceptMap/$import (D4)
+
+func coding(sys, code, display string) map[string]any {
+	return map[string]any{"system": sys, "code": code, "display": display}
+}
+
+func mappingParam(src, tgt map[string]any, extra ...map[string]any) map[string]any {
+	parts := []any{map[string]any{"name": "source", "valueCoding": src}, map[string]any{"name": "target", "valueCoding": tgt}}
+	for _, x := range extra {
+		parts = append(parts, x)
+	}
+	return map[string]any{"name": "mapping", "part": parts}
+}
+
+func testConceptMapImport(t *testing.T, mk Factory) {
+	e := newEnv(t, mk)
+	ms, ok := e.repo.(fhirrouter.MappingStore)
+	if !ok {
+		t.Skip("repository không cài MappingStore")
+	}
+	ctx := context.Background()
+	const a, b = "http://example.org/a", "http://example.org/b"
+	const mapURL = "http://example.org/map-ab"
+	cmID := str(e.mustDo(201, "POST", "ConceptMap", map[string]any{"resourceType": "ConceptMap", "url": mapURL, "status": "active"}).body, "id")
+
+	rel := func(v string) map[string]any { return map[string]any{"name": "relationship", "valueCode": v} }
+	body := importParams("",
+		mappingParam(coding(a, "1", "Một"), coding(b, "X", "Ex")),
+		mappingParam(coding(a, "1", "Một"), coding(b, "Y", "Why"), rel("wider"),
+			map[string]any{"name": "comment", "valueString": "rộng hơn"},
+			map[string]any{"name": "dependsOn", "part": []any{map[string]any{"name": "code", "valueCode": "age"}, map[string]any{"name": "value", "valueString": "adult"}}}),
+		mappingParam(coding(a, "2", "Hai"), coding(b, "", "")))
+	r := e.mustDo(200, "POST", "ConceptMap/"+cmID+"/$import", body)
+	if str(r.body, "resourceType") != "ConceptMap" {
+		t.Fatalf("kết quả: %v", r.body)
+	}
+	got, err := ms.FindMappings(ctx, cmID, fhirrouter.MappingQuery{})
+	if err != nil || len(got) != 3 {
+		t.Fatalf("mappings: %+v %v", got, err)
+	}
+	for _, m := range got {
+		if m.TargetCode == "Y" && (m.Equivalence != "wider" || m.Comment != "rộng hơn" || !strings.Contains(m.Attributes, `"age"`)) {
+			t.Errorf("mapping Y: %+v", m)
+		}
+		if m.TargetCode == "X" && m.Equivalence != "" {
+			t.Errorf("equivalent phải lưu rỗng: %+v", m)
+		}
+	}
+
+	matches := func(path string) []string {
+		t.Helper()
+		out := e.mustDo(200, "GET", path, nil)
+		var l []string
+		for _, p := range out.body["parameter"].([]any) {
+			pm := p.(map[string]any)
+			if pm["name"] != "match" {
+				continue
+			}
+			var eq, code string
+			for _, pt := range pm["part"].([]any) {
+				m := pt.(map[string]any)
+				if m["name"] == "equivalence" {
+					eq = fmt.Sprint(m["valueCode"])
+				}
+				if m["name"] == "concept" {
+					code = fmt.Sprint(m["valueCoding"].(map[string]any)["code"])
+				}
+			}
+			l = append(l, eq+":"+code)
+		}
+		return l
+	}
+	eq := func(what string, got []string, want ...string) {
+		t.Helper()
+		if strings.Join(got, ",") != strings.Join(want, ",") {
+			t.Errorf("%s: %v, muốn %v", what, got, want)
+		}
+	}
+	eq("xuôi theo id", matches("ConceptMap/"+cmID+"/$translate?system="+a+"&code=1"), "equivalent:X", "wider:Y")
+	eq("xuôi theo url", matches("ConceptMap/$translate?url="+mapURL+"&system="+a+"&code=1"), "equivalent:X", "wider:Y")
+	eq("lọc targetsystem", matches("ConceptMap/"+cmID+"/$translate?system="+a+"&code=1&targetsystem=http://example.org/zzz"))
+	eq("ngược", matches("ConceptMap/"+cmID+"/$translate?system="+b+"&code=Y&reverse=true"), "narrower:1")
+	eq("ánh xạ rỗng không là bản dịch", matches("ConceptMap/"+cmID+"/$translate?system="+a+"&code=2"))
+
+	// nạp lại ghi đè, không nhân đôi
+	e.mustDo(200, "POST", "ConceptMap/$import", importParams("", map[string]any{"name": "url", "valueUri": mapURL},
+		mappingParam(coding(a, "1", "Một"), coding(b, "X", "Ex 2"))))
+	if got, _ := ms.FindMappings(ctx, cmID, fhirrouter.MappingQuery{SourceCode: "1", TargetCode: "X"}); len(got) != 1 || got[0].TargetDisplay != "Ex 2" {
+		t.Errorf("sau nạp lại: %+v", got)
+	}
+	if got, _ := ms.FindMappings(ctx, cmID, fhirrouter.MappingQuery{}); len(got) != 3 {
+		t.Errorf("số mapping sau nạp lại: %d", len(got))
+	}
+
+	// lỗi
+	good := mappingParam(coding(a, "9", ""), coding(b, "Z", ""))
+	e.mustDo(400, "POST", "ConceptMap/"+cmID+"/$import", importParams("", map[string]any{"name": "url", "valueUri": mapURL}, good))
+	e.mustDo(400, "POST", "ConceptMap/$import", importParams("", good))
+	e.mustDo(400, "POST", "ConceptMap/"+cmID+"/$import", importParams(""))
+	e.mustDo(400, "POST", "ConceptMap/"+cmID+"/$import", importParams("", mappingParam(coding(a, "", ""), coding(b, "Z", ""))))
+	e.mustDo(400, "POST", "ConceptMap/"+cmID+"/$import", importParams("", mappingParam(coding(a, "9", ""), coding("", "Z", ""))))
+	e.mustDo(404, "POST", "ConceptMap/missing/$import", importParams("", good))
+
+	e.mustDo(200, "POST", "ConceptMap/"+cmID+"/$expunge", map[string]any{"resourceType": "Parameters"})
+	if got, _ := ms.FindMappings(ctx, cmID, fhirrouter.MappingQuery{}); len(got) != 0 {
+		t.Errorf("mapping còn sau expunge: %+v", got)
+	}
 }

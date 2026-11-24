@@ -1252,6 +1252,439 @@ definitions:
         description: Version of the system - if relevant
         type: string
     type: object
+  fhir.ConceptMap:
+    properties:
+      _copyright:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của copyright
+      _date:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của date
+      _description:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của description
+      _experimental:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của experimental
+      _id:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của id
+      _implicitRules:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của implicitRules
+      _language:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của language
+      _name:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của name
+      _publisher:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của publisher
+      _purpose:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của purpose
+      _sourceCanonical:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của sourceCanonical
+      _sourceUri:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của sourceUri
+      _status:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của status
+      _targetCanonical:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của targetCanonical
+      _targetUri:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của targetUri
+      _title:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của title
+      _url:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của url
+      _version:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của version
+      contact:
+        description: Contact details for the publisher
+        items:
+          $ref: '#/definitions/fhir.ContactDetail'
+        type: array
+      contained:
+        description: Contained, inline Resources
+        items:
+          $ref: '#/definitions/fhir.AnyResource'
+        type: array
+      copyright:
+        description: Use and/or publishing restrictions
+        type: string
+      date:
+        description: Date last changed
+        type: string
+      description:
+        description: Natural language description of the concept map
+        type: string
+      experimental:
+        description: For testing purposes, not real usage
+        type: boolean
+      extension:
+        description: Additional content defined by implementations
+        items:
+          type: object
+        type: array
+      group:
+        description: Same source and target systems
+        items:
+          $ref: '#/definitions/fhir.ConceptMapGroup'
+        type: array
+      id:
+        description: Logical id of this artifact
+        type: string
+      identifier:
+        allOf:
+        - $ref: '#/definitions/fhir.Identifier'
+        description: Additional identifier for the concept map
+      implicitRules:
+        description: A set of rules under which this content was created
+        type: string
+      jurisdiction:
+        description: Intended jurisdiction for concept map (if applicable)
+        items:
+          $ref: '#/definitions/fhir.CodeableConcept'
+        type: array
+      language:
+        description: Language of the resource content
+        type: string
+      meta:
+        allOf:
+        - $ref: '#/definitions/fhir.Meta'
+        description: Metadata about the resource
+      modifierExtension:
+        description: Extensions that cannot be ignored
+        items:
+          type: object
+        type: array
+      name:
+        description: Name for this concept map (computer friendly)
+        type: string
+      publisher:
+        description: Name of the publisher (organization or individual)
+        type: string
+      purpose:
+        description: Why this concept map is defined
+        type: string
+      resourceType:
+        type: string
+      sourceCanonical:
+        description: The source value set that contains the concepts that are being
+          mapped
+        type: string
+      sourceUri:
+        description: The source value set that contains the concepts that are being
+          mapped
+        type: string
+      status:
+        description: draft | active | retired | unknown (bắt buộc)
+        type: string
+      targetCanonical:
+        description: The target value set which provides context for the mappings
+        type: string
+      targetUri:
+        description: The target value set which provides context for the mappings
+        type: string
+      text:
+        allOf:
+        - $ref: '#/definitions/fhir.Narrative'
+        description: Text summary of the resource, for human interpretation
+      title:
+        description: Name for this concept map (human friendly)
+        type: string
+      url:
+        description: Canonical identifier for this concept map, represented as a URI
+          (globally unique)
+        type: string
+      useContext:
+        description: The context that the content is intended to support
+        items:
+          $ref: '#/definitions/fhir.UsageContext'
+        type: array
+      version:
+        description: Business version of the concept map
+        type: string
+    type: object
+  fhir.ConceptMapGroup:
+    properties:
+      _id:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của id
+      _source:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của source
+      _sourceVersion:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của sourceVersion
+      _target:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của target
+      _targetVersion:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của targetVersion
+      element:
+        description: Mappings for a concept from the source set (bắt buộc)
+        items:
+          $ref: '#/definitions/fhir.ConceptMapGroupElement'
+        type: array
+      extension:
+        description: Additional content defined by implementations
+        items:
+          type: object
+        type: array
+      id:
+        description: Unique id for inter-element referencing
+        type: string
+      modifierExtension:
+        description: Extensions that cannot be ignored even if unrecognized
+        items:
+          type: object
+        type: array
+      source:
+        description: Source system where concepts to be mapped are defined
+        type: string
+      sourceVersion:
+        description: Specific version of the code system
+        type: string
+      target:
+        description: Target system that the concepts are to be mapped to
+        type: string
+      targetVersion:
+        description: Specific version of the code system
+        type: string
+      unmapped:
+        allOf:
+        - $ref: '#/definitions/fhir.ConceptMapGroupUnmapped'
+        description: What to do when there is no mapping for the source concept
+    type: object
+  fhir.ConceptMapGroupElement:
+    properties:
+      _code:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của code
+      _display:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của display
+      _id:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của id
+      code:
+        description: Identifies element being mapped
+        type: string
+      display:
+        description: Display for the code
+        type: string
+      extension:
+        description: Additional content defined by implementations
+        items:
+          type: object
+        type: array
+      id:
+        description: Unique id for inter-element referencing
+        type: string
+      modifierExtension:
+        description: Extensions that cannot be ignored even if unrecognized
+        items:
+          type: object
+        type: array
+      target:
+        description: Concept in target system for element
+        items:
+          $ref: '#/definitions/fhir.ConceptMapGroupElementTarget'
+        type: array
+    type: object
+  fhir.ConceptMapGroupElementTarget:
+    properties:
+      _code:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của code
+      _comment:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của comment
+      _display:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của display
+      _equivalence:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của equivalence
+      _id:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của id
+      code:
+        description: Code that identifies the target element
+        type: string
+      comment:
+        description: Description of status/issues in mapping
+        type: string
+      dependsOn:
+        description: Other elements required for this mapping (from context)
+        items:
+          $ref: '#/definitions/fhir.ConceptMapGroupElementTargetDependsOn'
+        type: array
+      display:
+        description: Display for the code
+        type: string
+      equivalence:
+        description: relatedto | equivalent | equal | wider | subsumes | narrower
+          | specializes | inexact | unmatched | disjoint (bắt buộc)
+        type: string
+      extension:
+        description: Additional content defined by implementations
+        items:
+          type: object
+        type: array
+      id:
+        description: Unique id for inter-element referencing
+        type: string
+      modifierExtension:
+        description: Extensions that cannot be ignored even if unrecognized
+        items:
+          type: object
+        type: array
+      product:
+        description: Other concepts that this mapping also produces
+        items:
+          $ref: '#/definitions/fhir.ConceptMapGroupElementTargetDependsOn'
+        type: array
+    type: object
+  fhir.ConceptMapGroupElementTargetDependsOn:
+    properties:
+      _display:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của display
+      _id:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của id
+      _property:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của property
+      _system:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của system
+      _value:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của value
+      display:
+        description: Display for the code (if value is a code)
+        type: string
+      extension:
+        description: Additional content defined by implementations
+        items:
+          type: object
+        type: array
+      id:
+        description: Unique id for inter-element referencing
+        type: string
+      modifierExtension:
+        description: Extensions that cannot be ignored even if unrecognized
+        items:
+          type: object
+        type: array
+      property:
+        description: Reference to property mapping depends on (bắt buộc)
+        type: string
+      system:
+        description: Code System (if necessary)
+        type: string
+      value:
+        description: Value of the referenced element (bắt buộc)
+        type: string
+    type: object
+  fhir.ConceptMapGroupUnmapped:
+    properties:
+      _code:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của code
+      _display:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của display
+      _id:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của id
+      _mode:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của mode
+      _url:
+        allOf:
+        - $ref: '#/definitions/fhir.Element'
+        description: Phần mở rộng của url
+      code:
+        description: Fixed code when mode = fixed
+        type: string
+      display:
+        description: Display for the code
+        type: string
+      extension:
+        description: Additional content defined by implementations
+        items:
+          type: object
+        type: array
+      id:
+        description: Unique id for inter-element referencing
+        type: string
+      mode:
+        description: provided | fixed | other-map (bắt buộc)
+        type: string
+      modifierExtension:
+        description: Extensions that cannot be ignored even if unrecognized
+        items:
+          type: object
+        type: array
+      url:
+        description: canonical reference to an additional ConceptMap to use for mapping
+          if the source concept is unmapped
+        type: string
+    type: object
   fhir.ContactDetail:
     properties:
       _id:
@@ -3830,6 +4263,97 @@ paths:
       summary: CodeSystem/$import (nạp concept cho bảng mã lớn)
       tags:
       - operation
+  /fhir/R4/ConceptMap/$import:
+    post:
+      consumes:
+      - application/fhir+json
+      description: Như ConceptMap/{id}/$import nhưng chọn ConceptMap bằng tham số
+        url (canonical) trong body.
+      parameters:
+      - description: Parameters có url
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/fhir.Parameters'
+      produces:
+      - application/fhir+json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/fhir.ConceptMap'
+        "400":
+          description: Thiếu url, mapping, source.code hoặc target.system
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "401":
+          description: Thiếu hoặc sai Bearer token
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "403":
+          description: Token không đủ quyền (cần quyền admin)
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "404":
+          description: ConceptMap không tồn tại
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+      security:
+      - BearerAuth: []
+      summary: ConceptMap/$import theo url (không cần id)
+      tags:
+      - operation
+  /fhir/R4/ConceptMap/{id}/$import:
+    post:
+      consumes:
+      - application/fhir+json
+      description: 'Cần quyền admin project. Body Parameters: mapping (lặp, tối đa
+        10000 mỗi lần gọi; part source và target kiểu Coding, target.system bắt buộc,
+        để trống target.code cho ánh xạ rỗng; relationship mặc định equivalent; comment;
+        property, dependsOn, product với part code và value[x]). Ánh xạ lưu ở bảng
+        dẫn xuất, không sửa JSON của ConceptMap, và ConceptMap/$translate đọc từ đó.
+        Nạp lại cùng cặp nguồn và đích là ghi đè. Trả ConceptMap.'
+      parameters:
+      - description: Id của ConceptMap
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Parameters
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/fhir.Parameters'
+      produces:
+      - application/fhir+json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/fhir.ConceptMap'
+        "400":
+          description: Thiếu mapping, source.code hoặc target.system
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "401":
+          description: Thiếu hoặc sai Bearer token
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "403":
+          description: Token không đủ quyền (cần quyền admin)
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "404":
+          description: ConceptMap không tồn tại
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+      security:
+      - BearerAuth: []
+      summary: ConceptMap/$import (nạp ánh xạ cho bảng ánh xạ lớn)
+      tags:
+      - operation
   /fhir/R4/PackageRelease/{id}/$install:
     post:
       description: 'Cần quyền admin project. Đọc Bundle (batch hoặc transaction) trong
@@ -4137,8 +4661,8 @@ tags:
     (CapabilityStatement). Lỗi trả OperationOutcome (application/fhir+json).'
   name: fhir
 - description: Operation FHIR ($validate, $everything, $reindex, $expunge, PackageRelease/$install,
-    CodeSystem/$import) và trạng thái job nền. $reindex, $expunge, $install và $import
-    cần quyền admin.
+    CodeSystem/$import, ConceptMap/$import) và trạng thái job nền. $reindex, $expunge,
+    $install và $import cần quyền admin.
   name: operation
 - description: 'Terminology cơ bản: ValueSet/$expand và CodeSystem/$lookup.'
   name: terminology

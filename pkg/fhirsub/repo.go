@@ -199,3 +199,38 @@ func (r *Repo) QueryConcepts(ctx context.Context, sid string, q fhirrouter.Conce
 }
 
 var _ fhirrouter.ConceptStore = (*Repo)(nil)
+
+// MappingStore: chuyển cho repository bên trong (xem fhirrouter.MappingStore).
+func (r *Repo) ms() (fhirrouter.MappingStore, error) {
+	ms, ok := r.Repository.(fhirrouter.MappingStore)
+	if !ok {
+		return nil, fhirrouter.NotImplemented("Repository không hỗ trợ kho ánh xạ")
+	}
+	return ms, nil
+}
+
+func (r *Repo) PutMappings(ctx context.Context, id string, m []fhirrouter.StoredMapping) error {
+	ms, err := r.ms()
+	if err != nil {
+		return err
+	}
+	return ms.PutMappings(ctx, id, m)
+}
+
+func (r *Repo) FindMappings(ctx context.Context, id string, q fhirrouter.MappingQuery) ([]fhirrouter.StoredMapping, error) {
+	ms, err := r.ms()
+	if err != nil {
+		return nil, err
+	}
+	return ms.FindMappings(ctx, id, q)
+}
+
+func (r *Repo) DeleteMappings(ctx context.Context, id string) (int, error) {
+	ms, err := r.ms()
+	if err != nil {
+		return 0, err
+	}
+	return ms.DeleteMappings(ctx, id)
+}
+
+var _ fhirrouter.MappingStore = (*Repo)(nil)

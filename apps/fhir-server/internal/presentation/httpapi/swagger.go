@@ -15,7 +15,7 @@ var _ = fhir.Bundle{} // để swag phân giải kiểu pkg/fhir
 // @tag.name					fhir
 // @tag.description			FHIR R4 REST: CRUD, search, history, batch/transaction, GraphQL, metadata (CapabilityStatement). Lỗi trả OperationOutcome (application/fhir+json).
 // @tag.name					operation
-// @tag.description			Operation FHIR ($validate, $everything, $reindex, $expunge, PackageRelease/$install, CodeSystem/$import) và trạng thái job nền. $reindex, $expunge, $install và $import cần quyền admin.
+// @tag.description			Operation FHIR ($validate, $everything, $reindex, $expunge, PackageRelease/$install, CodeSystem/$import, ConceptMap/$import) và trạng thái job nền. $reindex, $expunge, $install và $import cần quyền admin.
 // @tag.name					terminology
 // @tag.description			Terminology cơ bản: ValueSet/$expand và CodeSystem/$lookup.
 // @tag.name					bulk
@@ -528,6 +528,41 @@ func codeSystemImport() {}
 //	@Failure		404		{object}	fhir.OperationOutcome	"CodeSystem không tồn tại"
 //	@Router			/fhir/R4/CodeSystem/$import [post]
 func codeSystemImportByURL() {}
+
+// conceptMapImport godoc
+//
+//	@Summary		ConceptMap/$import (nạp ánh xạ cho bảng ánh xạ lớn)
+//	@Description	Cần quyền admin project. Body Parameters: mapping (lặp, tối đa 10000 mỗi lần gọi; part source và target kiểu Coding, target.system bắt buộc, để trống target.code cho ánh xạ rỗng; relationship mặc định equivalent; comment; property, dependsOn, product với part code và value[x]). Ánh xạ lưu ở bảng dẫn xuất, không sửa JSON của ConceptMap, và ConceptMap/$translate đọc từ đó. Nạp lại cùng cặp nguồn và đích là ghi đè. Trả ConceptMap.
+//	@Tags			operation
+//	@Security		BearerAuth
+//	@Accept			application/fhir+json
+//	@Produce		application/fhir+json
+//	@Param			id		path		string	true	"Id của ConceptMap"
+//	@Param			body	body		fhir.Parameters	true	"Parameters"
+//	@Success		200		{object}	fhir.ConceptMap
+//	@Failure		400		{object}	fhir.OperationOutcome	"Thiếu mapping, source.code hoặc target.system"
+//	@Failure		401		{object}	fhir.OperationOutcome	"Thiếu hoặc sai Bearer token"
+//	@Failure		403		{object}	fhir.OperationOutcome	"Token không đủ quyền (cần quyền admin)"
+//	@Failure		404		{object}	fhir.OperationOutcome	"ConceptMap không tồn tại"
+//	@Router			/fhir/R4/ConceptMap/{id}/$import [post]
+func conceptMapImport() {}
+
+// conceptMapImportByURL godoc
+//
+//	@Summary		ConceptMap/$import theo url (không cần id)
+//	@Description	Như ConceptMap/{id}/$import nhưng chọn ConceptMap bằng tham số url (canonical) trong body.
+//	@Tags			operation
+//	@Security		BearerAuth
+//	@Accept			application/fhir+json
+//	@Produce		application/fhir+json
+//	@Param			body	body		fhir.Parameters	true	"Parameters có url"
+//	@Success		200		{object}	fhir.ConceptMap
+//	@Failure		400		{object}	fhir.OperationOutcome	"Thiếu url, mapping, source.code hoặc target.system"
+//	@Failure		401		{object}	fhir.OperationOutcome	"Thiếu hoặc sai Bearer token"
+//	@Failure		403		{object}	fhir.OperationOutcome	"Token không đủ quyền (cần quyền admin)"
+//	@Failure		404		{object}	fhir.OperationOutcome	"ConceptMap không tồn tại"
+//	@Router			/fhir/R4/ConceptMap/$import [post]
+func conceptMapImportByURL() {}
 
 // jobStatus godoc
 //

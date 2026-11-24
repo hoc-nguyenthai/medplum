@@ -398,6 +398,139 @@
                 }
             }
         },
+        "/fhir/R4/ConceptMap/$import": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Như ConceptMap/{id}/$import nhưng chọn ConceptMap bằng tham số url (canonical) trong body.",
+                "consumes": [
+                    "application/fhir+json"
+                ],
+                "produces": [
+                    "application/fhir+json"
+                ],
+                "tags": [
+                    "operation"
+                ],
+                "summary": "ConceptMap/$import theo url (không cần id)",
+                "parameters": [
+                    {
+                        "description": "Parameters có url",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/fhir.Parameters"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/fhir.ConceptMap"
+                        }
+                    },
+                    "400": {
+                        "description": "Thiếu url, mapping, source.code hoặc target.system",
+                        "schema": {
+                            "$ref": "#/definitions/fhir.OperationOutcome"
+                        }
+                    },
+                    "401": {
+                        "description": "Thiếu hoặc sai Bearer token",
+                        "schema": {
+                            "$ref": "#/definitions/fhir.OperationOutcome"
+                        }
+                    },
+                    "403": {
+                        "description": "Token không đủ quyền (cần quyền admin)",
+                        "schema": {
+                            "$ref": "#/definitions/fhir.OperationOutcome"
+                        }
+                    },
+                    "404": {
+                        "description": "ConceptMap không tồn tại",
+                        "schema": {
+                            "$ref": "#/definitions/fhir.OperationOutcome"
+                        }
+                    }
+                }
+            }
+        },
+        "/fhir/R4/ConceptMap/{id}/$import": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Cần quyền admin project. Body Parameters: mapping (lặp, tối đa 10000 mỗi lần gọi; part source và target kiểu Coding, target.system bắt buộc, để trống target.code cho ánh xạ rỗng; relationship mặc định equivalent; comment; property, dependsOn, product với part code và value[x]). Ánh xạ lưu ở bảng dẫn xuất, không sửa JSON của ConceptMap, và ConceptMap/$translate đọc từ đó. Nạp lại cùng cặp nguồn và đích là ghi đè. Trả ConceptMap.",
+                "consumes": [
+                    "application/fhir+json"
+                ],
+                "produces": [
+                    "application/fhir+json"
+                ],
+                "tags": [
+                    "operation"
+                ],
+                "summary": "ConceptMap/$import (nạp ánh xạ cho bảng ánh xạ lớn)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Id của ConceptMap",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Parameters",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/fhir.Parameters"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/fhir.ConceptMap"
+                        }
+                    },
+                    "400": {
+                        "description": "Thiếu mapping, source.code hoặc target.system",
+                        "schema": {
+                            "$ref": "#/definitions/fhir.OperationOutcome"
+                        }
+                    },
+                    "401": {
+                        "description": "Thiếu hoặc sai Bearer token",
+                        "schema": {
+                            "$ref": "#/definitions/fhir.OperationOutcome"
+                        }
+                    },
+                    "403": {
+                        "description": "Token không đủ quyền (cần quyền admin)",
+                        "schema": {
+                            "$ref": "#/definitions/fhir.OperationOutcome"
+                        }
+                    },
+                    "404": {
+                        "description": "ConceptMap không tồn tại",
+                        "schema": {
+                            "$ref": "#/definitions/fhir.OperationOutcome"
+                        }
+                    }
+                }
+            }
+        },
         "/fhir/R4/PackageRelease/{id}/$install": {
             "post": {
                 "security": [
@@ -3965,6 +4098,710 @@
                 }
             }
         },
+        "fhir.ConceptMap": {
+            "type": "object",
+            "properties": {
+                "_copyright": {
+                    "description": "Phần mở rộng của copyright",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/fhir.Element"
+                        }
+                    ]
+                },
+                "_date": {
+                    "description": "Phần mở rộng của date",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/fhir.Element"
+                        }
+                    ]
+                },
+                "_description": {
+                    "description": "Phần mở rộng của description",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/fhir.Element"
+                        }
+                    ]
+                },
+                "_experimental": {
+                    "description": "Phần mở rộng của experimental",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/fhir.Element"
+                        }
+                    ]
+                },
+                "_id": {
+                    "description": "Phần mở rộng của id",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/fhir.Element"
+                        }
+                    ]
+                },
+                "_implicitRules": {
+                    "description": "Phần mở rộng của implicitRules",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/fhir.Element"
+                        }
+                    ]
+                },
+                "_language": {
+                    "description": "Phần mở rộng của language",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/fhir.Element"
+                        }
+                    ]
+                },
+                "_name": {
+                    "description": "Phần mở rộng của name",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/fhir.Element"
+                        }
+                    ]
+                },
+                "_publisher": {
+                    "description": "Phần mở rộng của publisher",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/fhir.Element"
+                        }
+                    ]
+                },
+                "_purpose": {
+                    "description": "Phần mở rộng của purpose",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/fhir.Element"
+                        }
+                    ]
+                },
+                "_sourceCanonical": {
+                    "description": "Phần mở rộng của sourceCanonical",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/fhir.Element"
+                        }
+                    ]
+                },
+                "_sourceUri": {
+                    "description": "Phần mở rộng của sourceUri",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/fhir.Element"
+                        }
+                    ]
+                },
+                "_status": {
+                    "description": "Phần mở rộng của status",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/fhir.Element"
+                        }
+                    ]
+                },
+                "_targetCanonical": {
+                    "description": "Phần mở rộng của targetCanonical",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/fhir.Element"
+                        }
+                    ]
+                },
+                "_targetUri": {
+                    "description": "Phần mở rộng của targetUri",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/fhir.Element"
+                        }
+                    ]
+                },
+                "_title": {
+                    "description": "Phần mở rộng của title",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/fhir.Element"
+                        }
+                    ]
+                },
+                "_url": {
+                    "description": "Phần mở rộng của url",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/fhir.Element"
+                        }
+                    ]
+                },
+                "_version": {
+                    "description": "Phần mở rộng của version",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/fhir.Element"
+                        }
+                    ]
+                },
+                "contact": {
+                    "description": "Contact details for the publisher",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/fhir.ContactDetail"
+                    }
+                },
+                "contained": {
+                    "description": "Contained, inline Resources",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/fhir.AnyResource"
+                    }
+                },
+                "copyright": {
+                    "description": "Use and/or publishing restrictions",
+                    "type": "string"
+                },
+                "date": {
+                    "description": "Date last changed",
+                    "type": "string"
+                },
+                "description": {
+                    "description": "Natural language description of the concept map",
+                    "type": "string"
+                },
+                "experimental": {
+                    "description": "For testing purposes, not real usage",
+                    "type": "boolean"
+                },
+                "extension": {
+                    "description": "Additional content defined by implementations",
+                    "type": "array",
+                    "items": {
+                        "type": "object"
+                    }
+                },
+                "group": {
+                    "description": "Same source and target systems",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/fhir.ConceptMapGroup"
+                    }
+                },
+                "id": {
+                    "description": "Logical id of this artifact",
+                    "type": "string"
+                },
+                "identifier": {
+                    "description": "Additional identifier for the concept map",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/fhir.Identifier"
+                        }
+                    ]
+                },
+                "implicitRules": {
+                    "description": "A set of rules under which this content was created",
+                    "type": "string"
+                },
+                "jurisdiction": {
+                    "description": "Intended jurisdiction for concept map (if applicable)",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/fhir.CodeableConcept"
+                    }
+                },
+                "language": {
+                    "description": "Language of the resource content",
+                    "type": "string"
+                },
+                "meta": {
+                    "description": "Metadata about the resource",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/fhir.Meta"
+                        }
+                    ]
+                },
+                "modifierExtension": {
+                    "description": "Extensions that cannot be ignored",
+                    "type": "array",
+                    "items": {
+                        "type": "object"
+                    }
+                },
+                "name": {
+                    "description": "Name for this concept map (computer friendly)",
+                    "type": "string"
+                },
+                "publisher": {
+                    "description": "Name of the publisher (organization or individual)",
+                    "type": "string"
+                },
+                "purpose": {
+                    "description": "Why this concept map is defined",
+                    "type": "string"
+                },
+                "resourceType": {
+                    "type": "string"
+                },
+                "sourceCanonical": {
+                    "description": "The source value set that contains the concepts that are being mapped",
+                    "type": "string"
+                },
+                "sourceUri": {
+                    "description": "The source value set that contains the concepts that are being mapped",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "draft | active | retired | unknown (bắt buộc)",
+                    "type": "string"
+                },
+                "targetCanonical": {
+                    "description": "The target value set which provides context for the mappings",
+                    "type": "string"
+                },
+                "targetUri": {
+                    "description": "The target value set which provides context for the mappings",
+                    "type": "string"
+                },
+                "text": {
+                    "description": "Text summary of the resource, for human interpretation",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/fhir.Narrative"
+                        }
+                    ]
+                },
+                "title": {
+                    "description": "Name for this concept map (human friendly)",
+                    "type": "string"
+                },
+                "url": {
+                    "description": "Canonical identifier for this concept map, represented as a URI (globally unique)",
+                    "type": "string"
+                },
+                "useContext": {
+                    "description": "The context that the content is intended to support",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/fhir.UsageContext"
+                    }
+                },
+                "version": {
+                    "description": "Business version of the concept map",
+                    "type": "string"
+                }
+            }
+        },
+        "fhir.ConceptMapGroup": {
+            "type": "object",
+            "properties": {
+                "_id": {
+                    "description": "Phần mở rộng của id",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/fhir.Element"
+                        }
+                    ]
+                },
+                "_source": {
+                    "description": "Phần mở rộng của source",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/fhir.Element"
+                        }
+                    ]
+                },
+                "_sourceVersion": {
+                    "description": "Phần mở rộng của sourceVersion",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/fhir.Element"
+                        }
+                    ]
+                },
+                "_target": {
+                    "description": "Phần mở rộng của target",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/fhir.Element"
+                        }
+                    ]
+                },
+                "_targetVersion": {
+                    "description": "Phần mở rộng của targetVersion",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/fhir.Element"
+                        }
+                    ]
+                },
+                "element": {
+                    "description": "Mappings for a concept from the source set (bắt buộc)",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/fhir.ConceptMapGroupElement"
+                    }
+                },
+                "extension": {
+                    "description": "Additional content defined by implementations",
+                    "type": "array",
+                    "items": {
+                        "type": "object"
+                    }
+                },
+                "id": {
+                    "description": "Unique id for inter-element referencing",
+                    "type": "string"
+                },
+                "modifierExtension": {
+                    "description": "Extensions that cannot be ignored even if unrecognized",
+                    "type": "array",
+                    "items": {
+                        "type": "object"
+                    }
+                },
+                "source": {
+                    "description": "Source system where concepts to be mapped are defined",
+                    "type": "string"
+                },
+                "sourceVersion": {
+                    "description": "Specific version of the code system",
+                    "type": "string"
+                },
+                "target": {
+                    "description": "Target system that the concepts are to be mapped to",
+                    "type": "string"
+                },
+                "targetVersion": {
+                    "description": "Specific version of the code system",
+                    "type": "string"
+                },
+                "unmapped": {
+                    "description": "What to do when there is no mapping for the source concept",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/fhir.ConceptMapGroupUnmapped"
+                        }
+                    ]
+                }
+            }
+        },
+        "fhir.ConceptMapGroupElement": {
+            "type": "object",
+            "properties": {
+                "_code": {
+                    "description": "Phần mở rộng của code",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/fhir.Element"
+                        }
+                    ]
+                },
+                "_display": {
+                    "description": "Phần mở rộng của display",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/fhir.Element"
+                        }
+                    ]
+                },
+                "_id": {
+                    "description": "Phần mở rộng của id",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/fhir.Element"
+                        }
+                    ]
+                },
+                "code": {
+                    "description": "Identifies element being mapped",
+                    "type": "string"
+                },
+                "display": {
+                    "description": "Display for the code",
+                    "type": "string"
+                },
+                "extension": {
+                    "description": "Additional content defined by implementations",
+                    "type": "array",
+                    "items": {
+                        "type": "object"
+                    }
+                },
+                "id": {
+                    "description": "Unique id for inter-element referencing",
+                    "type": "string"
+                },
+                "modifierExtension": {
+                    "description": "Extensions that cannot be ignored even if unrecognized",
+                    "type": "array",
+                    "items": {
+                        "type": "object"
+                    }
+                },
+                "target": {
+                    "description": "Concept in target system for element",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/fhir.ConceptMapGroupElementTarget"
+                    }
+                }
+            }
+        },
+        "fhir.ConceptMapGroupElementTarget": {
+            "type": "object",
+            "properties": {
+                "_code": {
+                    "description": "Phần mở rộng của code",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/fhir.Element"
+                        }
+                    ]
+                },
+                "_comment": {
+                    "description": "Phần mở rộng của comment",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/fhir.Element"
+                        }
+                    ]
+                },
+                "_display": {
+                    "description": "Phần mở rộng của display",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/fhir.Element"
+                        }
+                    ]
+                },
+                "_equivalence": {
+                    "description": "Phần mở rộng của equivalence",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/fhir.Element"
+                        }
+                    ]
+                },
+                "_id": {
+                    "description": "Phần mở rộng của id",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/fhir.Element"
+                        }
+                    ]
+                },
+                "code": {
+                    "description": "Code that identifies the target element",
+                    "type": "string"
+                },
+                "comment": {
+                    "description": "Description of status/issues in mapping",
+                    "type": "string"
+                },
+                "dependsOn": {
+                    "description": "Other elements required for this mapping (from context)",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/fhir.ConceptMapGroupElementTargetDependsOn"
+                    }
+                },
+                "display": {
+                    "description": "Display for the code",
+                    "type": "string"
+                },
+                "equivalence": {
+                    "description": "relatedto | equivalent | equal | wider | subsumes | narrower | specializes | inexact | unmatched | disjoint (bắt buộc)",
+                    "type": "string"
+                },
+                "extension": {
+                    "description": "Additional content defined by implementations",
+                    "type": "array",
+                    "items": {
+                        "type": "object"
+                    }
+                },
+                "id": {
+                    "description": "Unique id for inter-element referencing",
+                    "type": "string"
+                },
+                "modifierExtension": {
+                    "description": "Extensions that cannot be ignored even if unrecognized",
+                    "type": "array",
+                    "items": {
+                        "type": "object"
+                    }
+                },
+                "product": {
+                    "description": "Other concepts that this mapping also produces",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/fhir.ConceptMapGroupElementTargetDependsOn"
+                    }
+                }
+            }
+        },
+        "fhir.ConceptMapGroupElementTargetDependsOn": {
+            "type": "object",
+            "properties": {
+                "_display": {
+                    "description": "Phần mở rộng của display",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/fhir.Element"
+                        }
+                    ]
+                },
+                "_id": {
+                    "description": "Phần mở rộng của id",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/fhir.Element"
+                        }
+                    ]
+                },
+                "_property": {
+                    "description": "Phần mở rộng của property",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/fhir.Element"
+                        }
+                    ]
+                },
+                "_system": {
+                    "description": "Phần mở rộng của system",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/fhir.Element"
+                        }
+                    ]
+                },
+                "_value": {
+                    "description": "Phần mở rộng của value",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/fhir.Element"
+                        }
+                    ]
+                },
+                "display": {
+                    "description": "Display for the code (if value is a code)",
+                    "type": "string"
+                },
+                "extension": {
+                    "description": "Additional content defined by implementations",
+                    "type": "array",
+                    "items": {
+                        "type": "object"
+                    }
+                },
+                "id": {
+                    "description": "Unique id for inter-element referencing",
+                    "type": "string"
+                },
+                "modifierExtension": {
+                    "description": "Extensions that cannot be ignored even if unrecognized",
+                    "type": "array",
+                    "items": {
+                        "type": "object"
+                    }
+                },
+                "property": {
+                    "description": "Reference to property mapping depends on (bắt buộc)",
+                    "type": "string"
+                },
+                "system": {
+                    "description": "Code System (if necessary)",
+                    "type": "string"
+                },
+                "value": {
+                    "description": "Value of the referenced element (bắt buộc)",
+                    "type": "string"
+                }
+            }
+        },
+        "fhir.ConceptMapGroupUnmapped": {
+            "type": "object",
+            "properties": {
+                "_code": {
+                    "description": "Phần mở rộng của code",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/fhir.Element"
+                        }
+                    ]
+                },
+                "_display": {
+                    "description": "Phần mở rộng của display",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/fhir.Element"
+                        }
+                    ]
+                },
+                "_id": {
+                    "description": "Phần mở rộng của id",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/fhir.Element"
+                        }
+                    ]
+                },
+                "_mode": {
+                    "description": "Phần mở rộng của mode",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/fhir.Element"
+                        }
+                    ]
+                },
+                "_url": {
+                    "description": "Phần mở rộng của url",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/fhir.Element"
+                        }
+                    ]
+                },
+                "code": {
+                    "description": "Fixed code when mode = fixed",
+                    "type": "string"
+                },
+                "display": {
+                    "description": "Display for the code",
+                    "type": "string"
+                },
+                "extension": {
+                    "description": "Additional content defined by implementations",
+                    "type": "array",
+                    "items": {
+                        "type": "object"
+                    }
+                },
+                "id": {
+                    "description": "Unique id for inter-element referencing",
+                    "type": "string"
+                },
+                "mode": {
+                    "description": "provided | fixed | other-map (bắt buộc)",
+                    "type": "string"
+                },
+                "modifierExtension": {
+                    "description": "Extensions that cannot be ignored even if unrecognized",
+                    "type": "array",
+                    "items": {
+                        "type": "object"
+                    }
+                },
+                "url": {
+                    "description": "canonical reference to an additional ConceptMap to use for mapping if the source concept is unmapped",
+                    "type": "string"
+                }
+            }
+        },
         "fhir.ContactDetail": {
             "type": "object",
             "properties": {
@@ -6430,7 +7267,7 @@
             "name": "fhir"
         },
         {
-            "description": "Operation FHIR ($validate, $everything, $reindex, $expunge, PackageRelease/$install, CodeSystem/$import) và trạng thái job nền. $reindex, $expunge, $install và $import cần quyền admin.",
+            "description": "Operation FHIR ($validate, $everything, $reindex, $expunge, PackageRelease/$install, CodeSystem/$import, ConceptMap/$import) và trạng thái job nền. $reindex, $expunge, $install và $import cần quyền admin.",
             "name": "operation"
         },
         {
