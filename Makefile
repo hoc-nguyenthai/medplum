@@ -13,7 +13,7 @@ DICOMWEB_PORT ?= :8008
 comma := ,
 
 .DEFAULT_GOAL := help
-.PHONY: help swagger tidy build run run-fhir-server run-auth run-ws-gateway run-dicomweb test-unit test-db test-integration test-service test-app test-e2e bench-ws test-auth-pg migrate test test-race test-pg bench cover lint fmt ci docker up down
+.PHONY: help swagger tidy build run run-fhir-server run-auth run-ws-gateway run-dicomweb test-unit test-db test-integration test-service test-app test-e2e test-load-dicomweb bench-ws test-auth-pg migrate test test-race test-pg bench cover lint fmt ci docker up down
 
 help: ## Liệt kê các lệnh
 	@grep -E '^[a-zA-Z0-9_-]+:.*##' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}'
@@ -146,3 +146,6 @@ up: ## Chạy fhir-server + PostgreSQL bằng compose
 
 down: ## Dừng và xóa cả volume dữ liệu
 	$(COMPOSE) down --volumes
+
+test-load-dicomweb: ## Đo tải dicomweb (STOW, WADO, QIDO song song; SQLite và kho tệp tạm, không cần Docker): DICOMWEB_LOAD_CLIENTS=32 make test-load-dicomweb
+	DICOMWEB_LOAD=1 go test -count=1 -timeout 20m -run TestDicomwebLoad -v ./apps/dicomweb/tests/load/

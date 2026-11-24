@@ -1,6 +1,6 @@
 # dicomweb: test
 
-Bố cục chung: [docs/plans/service-independence.md](../../../docs/plans/service-independence.md). Test đơn vị nằm **cạnh mã**. Chưa có `tests/integration`, `tests/e2e` (image) và `tests/load`; chúng đến ở D6 (STOW đã chạy từ D3, test STOW hiện nằm ở đơn vị và Container).
+Bố cục chung: [docs/plans/service-independence.md](../../../docs/plans/service-independence.md). Test đơn vị nằm **cạnh mã**. Chưa có `tests/integration` (PostgreSQL và S3 thật bằng testcontainers) và `tests/e2e` dựng từ image Docker (cả hai cần Docker, máy phát triển không có). Đã có e2e nhiều tiến trình thật ở `e2e/` gốc repo (binary build bằng `go build`, SQLite và kho tệp dùng chung) và `tests/load`.
 
 | Tầng | Ở đâu | Cần Docker? | Chạy | Kiểm gì |
 |---|---|---|---|---|

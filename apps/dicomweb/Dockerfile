@@ -16,7 +16,8 @@ RUN --mount=type=cache,target=/go/pkg/mod go mod download
 # Layer 2: source
 COPY . ./
 RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache/go-build \
-    go build -ldflags="-s -w" -o /out/app ./apps/dicomweb/cmd/dicomweb
+    go build -ldflags="-s -w" -o /out/app ./apps/dicomweb/cmd/dicomweb \
+    && mkdir -p /out/data
 
 # ---- Stage 2: runtime gọn, non-root, không shell ----
 FROM gcr.io/distroless/static-debian12:nonroot
@@ -25,6 +26,8 @@ FROM gcr.io/distroless/static-debian12:nonroot
 ENV HTTP_ADDR=":8008" \
     LOG_JSON="true"
 COPY --from=builder /out/app /app
+# /data (thuộc UID 65532, không có VOLUME) để volume dùng chung với fhir-server cho kho `file:/data/blobs` khởi tạo đúng quyền ghi; production dùng s3:
+COPY --from=builder --chown=nonroot:nonroot /out/data /data
 EXPOSE 8008
 # UID/GID số (65532 = `nonroot` của distroless): K8s `runAsNonRoot: true` không xác minh được USER dạng tên
 USER 65532:65532

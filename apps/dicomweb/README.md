@@ -17,6 +17,16 @@ make -C apps/dicomweb image    # trivita-dicomweb:local từ apps/dicomweb/Docke
 docker run --rm -p 8008:8008 --env-file apps/dicomweb/.env trivita-dicomweb:local
 ```
 
+## Docker compose
+
+```
+FHIR_JOB_SIGNING_KEY=$(openssl rand -hex 24) \
+docker compose -f docker-compose.yml -f docker-compose.auth.yml -f docker-compose.dicomweb.yml --env-file apps/fhir-server/.env \
+  up --build fhir-server auth dicomweb postgres
+```
+
+dicomweb dùng chung schema `fhir` (role `fhir_app`) và kho Binary với fhir-server, chờ fhir-server healthy vì fhir-server sở hữu migration. **Chưa chạy thử bằng Docker**; xem ghi chú đầu `docker-compose.dicomweb.yml`.
+
 ## Tài liệu
 
 | Tệp | Nội dung |

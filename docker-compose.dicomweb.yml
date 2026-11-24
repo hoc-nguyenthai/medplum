@@ -1,0 +1,29 @@
+# DICOMweb nối với fhir-server và auth: dicomweb nhận access token do auth cấp, ghi DicomStudy/DicomSeries/DicomInstance vào schema fhir (cùng fhir-server) và nội dung tệp DICOM vào
+# kho Binary DÙNG CHUNG với fhir-server (cùng volume ở đây; production dùng s3:<bucket> cho cả hai).
+#   FHIR_JOB_SIGNING_KEY=$(openssl rand -hex 24) \
+#   docker compose -f docker-compose.yml -f docker-compose.auth.yml -f docker-compose.dicomweb.yml --env-file apps/fhir-server/.env \
+#     up --build fhir-server auth dicomweb postgres
+# CHƯA chạy thử bằng Docker (máy phát triển không có Docker): cấu hình này được suy ra từ docker-compose.auth.yml và từ e2e/dicomweb_test.go (đã chạy với tiến trình thật,
+# SQLite và kho tệp dùng chung). Lần đầu chạy nên kiểm: `docker compose ... ps` thấy dicomweb healthy, rồi chạy lại các bước của e2e/dicomweb_test.go bằng curl.
+#
+# Điểm cần đúng:
+#  - issuer/audience là địa chỉ CÔNG KHAI của auth (như docker-compose.auth.yml), JWKS tải qua mạng compose (http://auth:8000); issuer phải khớp từng ký tự giữa các bên.
+#  - Cả hai dịch vụ trỏ CÙNG FHIR_BINARY_STORAGE. Volume dicom-blobs gắn vào /data của cả hai (image nào cũng có /data thuộc UID 65532 nên volume mới khởi tạo đúng quyền ghi).
+#  - dicomweb chỉ chạy sau khi fhir-server healthy (fhir-server sở hữu migration; dicomweb từ chối khởi động nếu schema chưa migrate).
+services:
+  fhir-server:
+    environment:
+      FHIR_BINARY_STORAGE: file:/data/blobs
+    volumes:
+      - dicom-blobs:/data
+  dicomweb:
+    environment:
+      FHIR_JWT_ISSUER: http://localhost:${AUTH_PORT_PUBLISHED:-8006}
+      FHIR_JWT_AUDIENCE: http://localhost:${AUTH_PORT_PUBLISHED:-8006}
+      FHIR_JWKS_URL: http://auth:8000/.well-known/jwks.json
+      FHIR_BINARY_STORAGE: file:/data/blobs
+    volumes:
+      - dicom-blobs:/data
+    depends_on:
+      auth:
+        condition: service_started

@@ -79,6 +79,32 @@ services:
       redis:
         condition: service_healthy
 
+  dicomweb:
+    # DICOMweb (STOW-RS, QIDO-RS, WADO-RS). Dùng CHUNG schema fhir và role fhir_app với fhir-server (DicomStudy, DicomSeries, DicomInstance là resource FHIR), KHÔNG tự migrate:
+    # chờ fhir-server healthy. Cần JWT của auth và kho nội dung dùng chung với fhir-server: bắt buộc chồng thêm docker-compose.auth.yml và docker-compose.dicomweb.yml (xem file đó).
+    # Dockerfile RIÊNG của dicomweb: context là gốc repo.
+    build:
+      context: .
+      dockerfile: apps/dicomweb/Dockerfile
+    image: trivita-dicomweb:local
+    restart: unless-stopped
+    ports:
+      - "${DICOMWEB_PORT:-8008}:8000"
+    env_file:
+      - path: apps/dicomweb/.env
+        required: false
+    environment:
+      HTTP_ADDR: ":8000"
+      DATABASE_URL: postgres://fhir_app:${FHIR_DB_PASSWORD:-fhir}@postgres:5432/${POSTGRES_DB:-trivita}?sslmode=disable
+      DATABASE_REQUIRE_SCHEMA: "true"
+      DICOMWEB_BASE_URL: http://localhost:${DICOMWEB_PORT:-8008}
+      LOG_JSON: "true"
+    depends_on:
+      fhir-server:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+
   redis:
     image: redis:7-alpine
     restart: unless-stopped
@@ -109,3 +135,4 @@ services:
 
 volumes:
   postgres-data:
+  dicom-blobs: # kho nội dung DICOM dùng chung fhir-server và dicomweb (chỉ khi chồng docker-compose.dicomweb.yml)

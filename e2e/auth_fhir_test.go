@@ -104,7 +104,7 @@ func build(t *testing.T, root, _, name string) string {
 		if binDir, buildErr = os.MkdirTemp("", "trivita-e2e-bin-"); buildErr != nil {
 			return
 		}
-		for _, n := range []string{"auth", "fhir-server", "ws-gateway"} {
+		for _, n := range []string{"auth", "fhir-server", "ws-gateway", "dicomweb"} {
 			cmd := exec.Command("go", "build", "-o", filepath.Join(binDir, n), "./apps/"+n+"/cmd/"+n)
 			cmd.Dir = root
 			if out, err := cmd.CombinedOutput(); err != nil {
@@ -168,6 +168,7 @@ type stack struct {
 	clientB, secretB   string
 	projectA, projectB string
 	authProc, fhirProc *proc
+	dir                string // thư mục tạm của test (chứa auth.db, fhir.db, khóa...)
 
 	// chỉ có khi newStackWS
 	gateway, gatewayWS  string // địa chỉ http và websocket của ws-gateway
@@ -225,7 +226,7 @@ func newStackFull(t *testing.T, withWS bool, extraAuthEnv, extraFhirEnv map[stri
 	root, dir := repoRoot(t), t.TempDir()
 	authBin, fhirBin := build(t, root, dir, "auth"), build(t, root, dir, "fhir-server")
 	aPort, fPort := freePort(t), freePort(t)
-	s := &stack{t: t, auth: fmt.Sprintf("http://127.0.0.1:%d", aPort), fhir: fmt.Sprintf("http://127.0.0.1:%d", fPort), fhirBin: fhirBin}
+	s := &stack{t: t, dir: dir, auth: fmt.Sprintf("http://127.0.0.1:%d", aPort), fhir: fmt.Sprintf("http://127.0.0.1:%d", fPort), fhirBin: fhirBin}
 	subst := func(m map[string]string) map[string]string {
 		out := map[string]string{}
 		for k, v := range m {
