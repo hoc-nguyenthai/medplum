@@ -1,6 +1,6 @@
 # dicomweb: kiến trúc
 
-Cập nhật 2026-11-24 (D1).
+Cập nhật 2026-11-24 (D3).
 
 ## Vì sao tách (docs/service-principles.md mục 1)
 
@@ -36,6 +36,16 @@ Lỗi trả `{"error": "..."}` (JSON thường), không dùng OperationOutcome v
 - Probe theo mục 6.3: `/health/live`, `/health/startup` không phụ thuộc ngoài; `/health/ready` kiểm database trong `READINESS_TIMEOUT` và 503 khi đang tắt; `/healthz` cho Docker.
 - Tắt êm theo mục 6.4: SIGTERM, ready 503, chờ `SHUTDOWN_DRAIN_DELAY`, đóng cổng và chờ yêu cầu đang chạy tối đa `SHUTDOWN_TIMEOUT`, đóng kho và DB, mã thoát 0 (`pkg/httpserve.Run`; có test). Lưu ý riêng của tải lên lớn: một STOW đang chạy dài hơn `SHUTDOWN_TIMEOUT` sẽ bị cắt khi tắt; STOW phải idempotent (tải lại cùng SOPInstanceUID không tạo bản trùng) để client tải lại được. `terminationGracePeriodSeconds` phải lớn hơn `SHUTDOWN_DRAIN_DELAY + SHUTDOWN_TIMEOUT`.
 - Hạn mức theo IP đếm theo từng instance (mục 5 điều 7). Log JSON; telemetry qua `pkg/observability`. Không bao giờ ghi tên bệnh nhân, mã bệnh nhân hay metadata DICOM vào log.
+
+## STOW-RS (D3)
+
+Handler (`httpapi.stowHandler`) chỉ chuyển luồng thân yêu cầu cho `pkg/dicomstow`; bootstrap nối với `Container.Repo` và `Container.Blobs`. Mỗi phần (một instance) đi qua: (1) đọc phần đầu vào bộ nhớ (≤ `DICOMWEB_MAX_HEADER_BYTES`) và quét bằng `dicomweb.Scan` (độ sâu SQ ≤ 16, transfer syntax hỗ trợ, kích thước), (2) đọc metadata bằng `dicomread` (thư viện `suyashkumar/dicom` với `SkipPixelData`, chỉ gọi trên dữ liệu đã qua bước 1 vì thư viện tốn bộ nhớ bậc hai với SQ lồng sâu), (3) bỏ qua nếu SOPInstanceUID đã có, (4) tạo Binary rồi ghi luồng vào kho (phần đầu đã đọc, rồi phần còn lại), kiểm tệp không bị cắt, (5) tạo study, series, instance trong một transaction có `LockKey` theo UID theo thứ tự cố định (study, series, instance). Sau cùng tính lại số liệu tổng hợp. Bộ nhớ mỗi yêu cầu là hằng số (phần đầu + vài bộ đệm 64 KB): tải 104 MB tốn đỉnh heap 11 MB.
+
+**Thứ tự ghi và dọn dẹp:** Binary (CSDL) trước, nội dung (kho) sau, resource DICOM cuối cùng; lỗi ở bước nào thì xóa những gì đã tạo ở các bước trước (nội dung rồi Binary, thử lại vài lần). Tiến trình chết giữa chừng có thể để lại nội dung hoặc Binary mồ côi: công cụ quét `fhir-server sweep-binary` xử lý nội dung mồ côi trong kho. Instance chỉ hiện với người dùng khác khi DicomInstance được tạo, tức là sau khi nội dung đã đủ và đúng.
+
+**Idempotent và song song:** tải lại cùng SOPInstanceUID không ghi lại nội dung và không tạo Binary mới; hai yêu cầu song song cùng instance đều tạo Binary nhưng chỉ một thắng ở bước (5), bên thua tự dọn. Khóa theo UID (`pg_advisory_xact_lock` ở PostgreSQL, khóa ghi ở SQLite, thêm tiền tố project) giữ cho tải song song cùng study không tạo trùng study hay series.
+
+**Phản hồi và lỗi (Q-D6, theo chuẩn):** từng instance độc lập: 200 mọi instance thành công; 202 một phần; 409 không instance nào, với `FailedSOPSequence` nêu `FailureReason` (0x0110 lỗi xử lý, 0xA700 quá lớn, 0xA900 sai study, 0xC000 không hiểu được). Lỗi cả yêu cầu: 415, 400, 403 (thiếu quyền ghi kho), 413 (vượt `DICOMWEB_MAX_REQUEST_BYTES`; instance đã xong trước đó vẫn được giữ). Lỗi kho không lộ chi tiết nội bộ trong phản hồi.
 
 ## Chưa có (làm ở các bước sau)
 

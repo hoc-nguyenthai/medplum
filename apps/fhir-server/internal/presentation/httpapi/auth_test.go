@@ -152,7 +152,22 @@ func TestStaticTokenGuardAttachesRolePrincipal(t *testing.T) {
 			t.Fatalf("%s: principal = %+v", want.name, got)
 		}
 	}
+	// kiểm trên Principal của token ghi (thứ tự duyệt map ngẫu nhiên nên `got` ở trên có thể là của token đọc)
+	req := httptest.NewRequest("GET", httpapi.Prefix+"/Patient", nil)
+	req.Header.Set("Authorization", "Bearer write-secret-0123456789abcdef")
+	if err := h(e.NewContext(req, httptest.NewRecorder())); err != nil {
+		t.Fatal(err)
+	}
 	if fhirauth.CanUpdate(fhirauth.WithPrincipal(context.Background(), got), "Binary") != true {
 		t.Fatal("token ghi phải được cập nhật")
+	}
+	got = nil
+	req = httptest.NewRequest("GET", httpapi.Prefix+"/Patient", nil)
+	req.Header.Set("Authorization", "Bearer read-secret-0123456789abcdef")
+	if err := h(e.NewContext(req, httptest.NewRecorder())); err != nil {
+		t.Fatal(err)
+	}
+	if fhirauth.CanUpdate(fhirauth.WithPrincipal(context.Background(), got), "Binary") {
+		t.Fatal("token đọc không được cập nhật")
 	}
 }

@@ -34,6 +34,12 @@ func (ds Dataset) strs(tag string) []string {
 	return out
 }
 
+// Str trả giá trị chuỗi đầu tiên của phần tử ("" nếu không có hoặc không phải chuỗi).
+func (ds Dataset) Str(tag string) string { return ds.str(tag) }
+
+// Int trả giá trị số nguyên đầu tiên của phần tử (nil nếu không có hoặc không phải số nguyên).
+func (ds Dataset) Int(tag string) *int { return ds.num(tag) }
+
 // pn trả tên người của phần tử PN.
 func (ds Dataset) pn(tag string) string { return PersonNameToString(ds[tag].Value) }
 

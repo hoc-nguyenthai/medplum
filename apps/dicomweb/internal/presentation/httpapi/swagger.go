@@ -5,7 +5,7 @@ package httpapi
 
 // @title						Trivita DICOMweb API
 // @version					1.0
-// @description				DICOMweb (STOW-RS, QIDO-RS, WADO-RS) cho kho hình ảnh DICOM, dùng chung schema và kho Binary với fhir-server. Lỗi trả {"error": "..."}. Hiện chỉ có khung: mọi route DICOMweb trả 501 cho tới khi STOW-RS (D3) và QIDO-RS, WADO-RS (D4) được cài.
+// @description				DICOMweb (STOW-RS, QIDO-RS, WADO-RS) cho kho hình ảnh DICOM, dùng chung schema và kho Binary với fhir-server. Lỗi trả {"error": "..."}. STOW-RS đã cài (D3); QIDO-RS và WADO-RS (D4) mới là khung và trả 501.
 // @BasePath					/
 // @tag.name					dicomweb
 // @tag.description			DICOMweb. Bốn tiền tố tương đương: /dicomweb, /api/dicomweb, /projects/{projectId}/dicomweb, /api/projects/{projectId}/dicomweb; với hai tiền tố có project, projectId phải khớp project của token (token thường), không thì 403. Spec này liệt kê tiền tố /dicomweb.
@@ -20,6 +20,19 @@ package httpapi
 type ErrorBody struct {
 	Error string `json:"error" binding:"required" example:"Token không hợp lệ"` // thông điệp lỗi; lỗi 5xx chỉ là mô tả trạng thái chuẩn
 }
+
+// DicomJSONElement là một phần tử của DICOM JSON model (PS3.18 F.2).
+type DicomJSONElement struct {
+	VR           string `json:"vr" binding:"required" example:"UI" enums:"AE,AS,AT,CS,DA,DS,DT,FL,FD,IS,LO,LT,OB,OD,OF,OL,OV,OW,PN,SH,SL,SQ,SS,ST,SV,TM,UC,UI,UL,UN,UR,US,UT,UV"` // Value Representation của phần tử
+	Value        []any  `json:"Value,omitempty"`                                                                                                                                  // danh sách giá trị: chuỗi, số, tên người ({"Alphabetic": ...}) hoặc dataset (phần tử của SQ)
+	InlineBinary string `json:"InlineBinary,omitempty" example:"AQID"`                                                                                                            // dữ liệu nhị phân nhỏ dạng base64
+	BulkDataURI  string `json:"BulkDataURI,omitempty"`                                                                                                                            // URI lấy dữ liệu nhị phân lớn
+}
+
+// StowResponse là phản hồi STOW-RS (PS3.18 10.5.3): dataset DICOM JSON, khóa là tag 8 chữ số hex. 00081190 là RetrieveURL cấp study (khi mọi instance thành công cùng một study), 00081199 là
+// ReferencedSOPSequence (mỗi instance đã lưu: 00081150 ReferencedSOPClassUID, 00081155 ReferencedSOPInstanceUID, 00081190 RetrieveURL), 00081198 là FailedSOPSequence (mỗi instance thất bại, kèm
+// 00081197 FailureReason: 272 = 0x0110 lỗi xử lý, 42752 = 0xA700 hết tài nguyên (quá lớn), 43264 = 0xA900 không thuộc study của yêu cầu, 49152 = 0xC000 không hiểu được tệp).
+type StowResponse map[string]DicomJSONElement
 
 // HealthResponse là phản hồi của probe liveness và startup.
 type HealthResponse struct {
@@ -75,32 +88,40 @@ func healthz() {}
 
 // stowStudies godoc
 //
-//	@Summary		STOW-RS: lưu instance (chưa cài)
-//	@Description	Sẽ nhận multipart/related (application/dicom) và lưu từng instance (D3). Cần quyền ghi. Mọi route DICOMweb khác không liệt kê ở đây (instances, rendered, bulkdata, xóa...) cũng trả 501 sau xác thực.
+//	@Summary		STOW-RS: lưu instance
+//	@Description	Thân là multipart/related; type="application/dicom" (mỗi phần là một tệp DICOM Part 10), truyền luồng: phần đầu (tối đa DICOMWEB_MAX_HEADER_BYTES) được kiểm tra, nội dung ghi vào kho Binary dùng chung với fhir-server, metadata thành DicomStudy, DicomSeries, DicomInstance (tìm được qua API FHIR). Tải lại cùng SOPInstanceUID là idempotent. Từng instance được xử lý độc lập: 200 khi mọi instance thành công, 202 khi một phần (kèm FailedSOPSequence), 409 khi không instance nào thành công. Instance hỏng, bị cắt giữa PixelData, SQ lồng quá sâu, vượt DICOMWEB_MAX_INSTANCE_BYTES bị từ chối riêng và không để lại gì. Cần quyền ghi.
 //	@Tags			dicomweb
 //	@Security		BearerAuth
-//	@Produce		json
-//	@Success		200	{object}	ErrorBody	"Chưa dùng: route này hiện luôn trả 501"
-//	@Failure		401	{object}	ErrorBody	"Thiếu hoặc sai Bearer token"
-//	@Failure		403	{object}	ErrorBody	"Token không đủ quyền (cần quyền ghi) hoặc chọn project khác"
-//	@Failure		413	{object}	ErrorBody	"Body vượt DICOMWEB_MAX_REQUEST_BYTES"
-//	@Failure		501	{object}	ErrorBody	"Chưa cài đặt"
+//	@Accept			multipart/related
+//	@Produce		application/dicom+json,json
+//	@Success		200	{object}	StowResponse	"Mọi instance đã lưu"
+//	@Success		202	{object}	StowResponse	"Một phần: có cả ReferencedSOPSequence và FailedSOPSequence"
+//	@Failure		400	{object}	ErrorBody		"Thân multipart sai, thiếu boundary hoặc không có phần nào"
+//	@Failure		401	{object}	ErrorBody		"Thiếu hoặc sai Bearer token"
+//	@Failure		403	{object}	ErrorBody		"Token không đủ quyền hoặc chọn project khác"
+//	@Failure		409	{object}	StowResponse	"Không instance nào được lưu (FailedSOPSequence nêu lý do từng instance)"
+//	@Failure		413	{object}	ErrorBody		"Body vượt DICOMWEB_MAX_REQUEST_BYTES"
+//	@Failure		415	{object}	ErrorBody		"Content-Type không phải multipart/related"
 //	@Router			/dicomweb/studies [post]
 func stowStudies() {}
 
 // stowStudy godoc
 //
-//	@Summary		STOW-RS: lưu instance vào một study (chưa cài)
-//	@Description	Như STOW-RS ở /studies nhưng ràng buộc mọi instance vào study chỉ định (D3). Cần quyền ghi.
+//	@Summary		STOW-RS: lưu instance vào một study
+//	@Description	Như STOW-RS ở /studies nhưng mọi instance phải thuộc study chỉ định; instance của study khác bị từ chối riêng với FailureReason 0xA900. Cần quyền ghi.
 //	@Tags			dicomweb
 //	@Security		BearerAuth
-//	@Produce		json
-//	@Param			studyUid	path		string	true	"UID của study (DICOM StudyInstanceUID)"
-//	@Success		200	{object}	ErrorBody	"Chưa dùng: route này hiện luôn trả 501"
-//	@Failure		401	{object}	ErrorBody	"Thiếu hoặc sai Bearer token"
-//	@Failure		403	{object}	ErrorBody	"Token không đủ quyền (cần quyền ghi) hoặc chọn project khác"
-//	@Failure		413	{object}	ErrorBody	"Body vượt DICOMWEB_MAX_REQUEST_BYTES"
-//	@Failure		501	{object}	ErrorBody	"Chưa cài đặt"
+//	@Accept			multipart/related
+//	@Produce		application/dicom+json,json
+//	@Param			studyUid	path		string			true	"UID của study (StudyInstanceUID)"
+//	@Success		200			{object}	StowResponse	"Mọi instance đã lưu"
+//	@Success		202			{object}	StowResponse	"Một phần: có cả ReferencedSOPSequence và FailedSOPSequence"
+//	@Failure		400			{object}	ErrorBody		"Thân multipart sai, thiếu boundary hoặc không có phần nào"
+//	@Failure		401			{object}	ErrorBody		"Thiếu hoặc sai Bearer token"
+//	@Failure		403			{object}	ErrorBody		"Token không đủ quyền hoặc chọn project khác"
+//	@Failure		409			{object}	StowResponse	"Không instance nào được lưu"
+//	@Failure		413			{object}	ErrorBody		"Body vượt DICOMWEB_MAX_REQUEST_BYTES"
+//	@Failure		415			{object}	ErrorBody		"Content-Type không phải multipart/related"
 //	@Router			/dicomweb/studies/{studyUid} [post]
 func stowStudy() {}
 

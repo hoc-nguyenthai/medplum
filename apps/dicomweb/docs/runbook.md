@@ -1,6 +1,6 @@
 # dicomweb: vận hành
 
-Cập nhật 2026-11-24 (D1: khung). Cấu hình: [config.md](config.md).
+Cập nhật 2026-11-24 (D3: STOW-RS). Cấu hình: [config.md](config.md).
 
 ## Triển khai
 
@@ -18,11 +18,15 @@ Cập nhật 2026-11-24 (D1: khung). Cấu hình: [config.md](config.md).
 | 401 với mọi token | `FHIR_JWT_ISSUER` hoặc `FHIR_JWT_AUDIENCE` khác của `auth`; JWKS không tải được (xem log "token bị từ chối") | đối chiếu với `auth` và `fhir-server` |
 | 403 "Token không có quyền truy cập FHIR" | token thiếu claim project hoặc scope `fhir.*`/SMART | kiểm token do `auth` cấp |
 | 403 "Không được dùng project khác" | URL `/projects/{id}/dicomweb` hoặc header `X-Fhir-Project` khác project của token | dùng đúng project, hoặc tiền tố không có project |
-| 501 "Chưa cài đặt" | route DICOMweb chưa cài (D1) hoặc không thuộc tập route được hỗ trợ | chờ D3, D4; xem api-contract.md |
+| 501 "Chưa cài đặt" | route DICOMweb chưa cài (QIDO-RS, WADO-RS chờ D4) hoặc không thuộc tập route được hỗ trợ | xem api-contract.md |
+| STOW 409, `FailureReason` 49152 (0xC000) | tệp không phải DICOM, bị cắt giữa PixelData, SQ lồng quá sâu, thiếu hoặc sai UID, transfer syntax không hỗ trợ (Big Endian, Deflated) | kiểm tệp ở phía gửi; thông điệp từng instance nằm trong log (không có dữ liệu bệnh nhân) |
+| STOW 409 hoặc 202, `FailureReason` 42752 (0xA700) | instance vượt `DICOMWEB_MAX_INSTANCE_BYTES`, hoặc phần đầu DICOM vượt `DICOMWEB_MAX_HEADER_BYTES` | tăng trần có cân nhắc; phần đầu lớn bất thường thường là tệp độc |
+| STOW 403 | token thiếu quyền ghi (`fhir.write`), hoặc chính sách truy cập/SMART không cho tạo `Binary`, `DicomStudy`, `DicomSeries`, `DicomInstance` | cấp scope `system/Binary.c system/Dicom*.cru` hoặc quyền ghi |
+| STOW chậm hoặc timeout ở proxy | tải lên lớn qua proxy có `proxy_read_timeout` ngắn hoặc bộ đệm yêu cầu | tắt bộ đệm yêu cầu và tăng timeout cho `/dicomweb` ở proxy |
 | `/health/ready` 503 | database không trả lời trong `READINESS_TIMEOUT`, hoặc đang tắt | kiểm database; không restart pod chỉ vì ready (liveness độc lập) |
 | 413 | body vượt `DICOMWEB_MAX_REQUEST_BYTES` | chia nhỏ yêu cầu STOW hoặc tăng trần có cân nhắc bộ nhớ và thời gian |
 | 429 | hạn mức theo IP của từng instance | đặt `DICOMWEB_RATE_LIMIT` phù hợp, hoặc `DICOMWEB_TRUSTED_PROXIES` nếu IP bị gộp do proxy |
 
 ## Định cỡ
 
-Chưa có số đo cho tải thật (D1 chưa có đường STOW). Số đã có từ spike D0 (tệp tổng hợp, máy phát triển): đường STOW qua luồng với tệp 120 MB tốn khoảng 2 MB bộ nhớ trên mỗi yêu cầu đang chạy (đỉnh), không đọc cả tệp vào bộ nhớ; tệp độc có SQ lồng 2000 lớp (60 KB) làm thư viện mặc định tốn 2,2 GB, nên D3 bắt buộc có chốt chặn độ sâu trước khi định cỡ bộ nhớ. Số đo định cỡ thật sẽ làm ở D6 với `tests/load`.
+Số đo (máy phát triển, tệp tổng hợp, SQLite và kho tệp; chưa phải số của production): tải một tệp 104 MB qua HTTP đỉnh heap 11 MB (đo cả phía client trong cùng tiến trình, `TestStowStreamsLargeFiles`); bộ nhớ mỗi yêu cầu STOW là hằng số, gồm phần đầu DICOM (≤ `DICOMWEB_MAX_HEADER_BYTES`, mặc định 1 MiB) cộng vài bộ đệm 64 KB, không phụ thuộc kích thước tệp. Định cỡ bộ nhớ: số yêu cầu STOW đồng thời × (tối đa khoảng 1,2 MiB) cộng nền. Thời gian tải bị giới hạn bởi băng thông và kho (S3: nhân với độ trễ mỗi lần ghi), không phải CPU. Từ chối tệp độc (SQ lồng 2000 lớp, 60 KB) dưới 1 giây và cấp phát không đáng kể (đưa thẳng vào thư viện sẽ tốn 2,2 GB). Số đo tải thật trên PostgreSQL và S3 làm ở D6 với `tests/load`.

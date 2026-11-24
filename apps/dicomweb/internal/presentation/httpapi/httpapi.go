@@ -6,7 +6,10 @@ package httpapi
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"io"
+	"log/slog"
 	"net/http"
 	"strings"
 	"time"
@@ -23,10 +26,39 @@ import (
 // Prefixes là bốn tiền tố mà Medplum phục vụ (app.ts:223-226); hai tiền tố sau chứa project và phải khớp project của token.
 var Prefixes = []string{"/dicomweb", "/api/dicomweb", "/projects/:projectId/dicomweb", "/api/projects/:projectId/dicomweb"}
 
+// StowRequest là yêu cầu STOW-RS đã qua xác thực.
+type StowRequest struct {
+	ContentType  string    // header Content-Type của yêu cầu
+	Body         io.Reader // thân yêu cầu (luồng, không nạp vào bộ nhớ)
+	StudyUID     string    // khác rỗng với POST /studies/{studyUid}
+	RetrieveBase string    // gốc URL WADO-RS kèm tiền tố đang dùng, ví dụ https://dicom.example.org/dicomweb
+}
+
+// StowResult là kết quả STOW-RS: mã trạng thái (200, 202, 409) và phản hồi DICOM JSON.
+type StowResult struct {
+	Status int
+	Body   any
+}
+
+// Stower thực hiện STOW-RS (cài ở bootstrap, bằng pkg/dicomstow).
+type Stower interface {
+	Stow(ctx context.Context, req StowRequest) (StowResult, error)
+}
+
+// StatusError là lỗi của cả yêu cầu kèm mã HTTP (415, 400, 403...).
+type StatusError struct {
+	Status int
+	Msg    string
+}
+
+func (e *StatusError) Error() string { return e.Msg }
+
 // Deps là mọi thứ presentation cần; được lắp ở bootstrap.
 type Deps struct {
 	Verifier TokenVerifier
-	Ready    func(ctx context.Context) (ready bool, checks map[string]bool)
+	// Stow xử lý STOW-RS; nil thì các route STOW trả 501.
+	Stow  Stower
+	Ready func(ctx context.Context) (ready bool, checks map[string]bool)
 	// Instrument gắn observability vào echo TRƯỚC mọi middleware khác để span bao trùm tất cả (có thể nil).
 	Instrument func(e *echo.Echo) error
 	Debug      bool
@@ -89,8 +121,9 @@ func New(dep Deps) (*echo.Echo, error) {
 	}
 	for _, prefix := range Prefixes {
 		g := e.Group(prefix, mws...)
-		g.POST("/studies", notImplemented)
-		g.POST("/studies/:studyUid", notImplemented)
+		stow := handler(dep.Stow, stowHandler(dep.Stow, dep.BaseURL))
+		g.POST("/studies", stow)
+		g.POST("/studies/:studyUid", stow)
 		g.GET("/studies", notImplemented)
 		g.GET("/studies/:studyUid/series", notImplemented)
 		g.GET("/studies/:studyUid/series/:seriesUid/metadata", notImplemented)
@@ -102,7 +135,47 @@ func New(dep Deps) (*echo.Echo, error) {
 	return e, nil
 }
 
-// notImplemented là chỗ giữ cho handler của D3 và D4.
+func handler(svc Stower, h echo.HandlerFunc) echo.HandlerFunc {
+	if svc == nil {
+		return notImplemented
+	}
+	return h
+}
+
+// stowHandler là STOW-RS (PS3.18 10.5): thân multipart/related được chuyển nguyên dạng luồng cho dịch vụ. Phản hồi là DICOM JSON
+// (application/dicom+json); 200 mọi instance thành công, 202 một phần, 409 không instance nào thành công.
+func stowHandler(svc Stower, baseURL string) echo.HandlerFunc {
+	base := strings.TrimRight(baseURL, "/")
+	return func(c echo.Context) error {
+		req := c.Request()
+		prefix := req.URL.Path
+		if i := strings.Index(prefix, "/studies"); i >= 0 {
+			prefix = prefix[:i]
+		}
+		res, err := svc.Stow(req.Context(), StowRequest{
+			ContentType: req.Header.Get(echo.HeaderContentType), Body: req.Body, StudyUID: c.Param("studyUid"), RetrieveBase: base + prefix,
+		})
+		var se *StatusError
+		switch {
+		case errors.As(err, &se):
+			return echo.NewHTTPError(se.Status, se.Msg)
+		case err != nil:
+			var mbe *http.MaxBytesError
+			if errors.As(err, &mbe) {
+				return echo.NewHTTPError(http.StatusRequestEntityTooLarge, "Body quá lớn")
+			}
+			slog.ErrorContext(req.Context(), "STOW-RS lỗi", "error", err.Error())
+			return err
+		}
+		raw, err := json.Marshal(res.Body)
+		if err != nil {
+			return err
+		}
+		return c.Blob(res.Status, "application/dicom+json", raw)
+	}
+}
+
+// notImplemented là chỗ giữ cho route chưa cài.
 func notImplemented(c echo.Context) error {
 	return echo.NewHTTPError(http.StatusNotImplemented, "Chưa cài đặt")
 }

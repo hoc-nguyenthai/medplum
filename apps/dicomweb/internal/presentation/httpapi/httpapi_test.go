@@ -3,6 +3,8 @@ package httpapi_test
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -218,4 +220,114 @@ type panicVerifier struct{}
 
 func (panicVerifier) Verify(context.Context, string) (*fhirauth.Principal, error) {
 	panic("bí mật nội bộ")
+}
+
+// ---------------------------------------------------------------- STOW-RS (D3)
+
+type fakeStower struct {
+	got httpapi.StowRequest
+	res httpapi.StowResult
+	err error
+	n   int
+}
+
+func (f *fakeStower) Stow(_ context.Context, req httpapi.StowRequest) (httpapi.StowResult, error) {
+	f.n++
+	b, _ := io.ReadAll(req.Body)
+	req.Body = strings.NewReader(string(b))
+	f.got = req
+	return f.res, f.err
+}
+
+func post(h http.Handler, path, token, ct, body string) *httptest.ResponseRecorder {
+	req := httptest.NewRequest("POST", path, strings.NewReader(body))
+	req.Header.Set("Content-Type", ct)
+	if token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	return rec
+}
+
+func TestStowRouteDispatch(t *testing.T) {
+	f := &fakeStower{res: httpapi.StowResult{Status: 202, Body: map[string]any{"00081190": map[string]any{"vr": "UR", "Value": []string{"x"}}}}}
+	h := newHandler(t, func(d *httpapi.Deps) { d.Stow = f; d.BaseURL = "https://dicom.example.org/" })
+	const ct = `multipart/related; type="application/dicom"; boundary=b`
+
+	rec := post(h, "/dicomweb/studies", "write-a", ct, "BODY")
+	if rec.Code != 202 || rec.Header().Get("Content-Type") != "application/dicom+json" || !strings.Contains(rec.Body.String(), `"00081190"`) {
+		t.Fatalf("%d %q %s", rec.Code, rec.Header().Get("Content-Type"), rec.Body.String())
+	}
+	if f.got.ContentType != ct || f.got.StudyUID != "" || f.got.RetrieveBase != "https://dicom.example.org/dicomweb" {
+		t.Errorf("yêu cầu: %+v", f.got)
+	}
+	if b, _ := io.ReadAll(f.got.Body); string(b) != "BODY" {
+		t.Errorf("thân: %q", b)
+	}
+	// vào study cụ thể, và RetrieveBase theo đúng tiền tố đang dùng (kể cả tiền tố có project)
+	for path, base := range map[string]string{
+		"/dicomweb/studies/1.2.3":                "https://dicom.example.org/dicomweb",
+		"/api/dicomweb/studies/1.2.3":            "https://dicom.example.org/api/dicomweb",
+		"/projects/A/dicomweb/studies/1.2.3":     "https://dicom.example.org/projects/A/dicomweb",
+		"/api/projects/A/dicomweb/studies/1.2.3": "https://dicom.example.org/api/projects/A/dicomweb",
+	} {
+		if rec := post(h, path, "write-a", ct, ""); rec.Code != 202 {
+			t.Fatalf("%s: %d", path, rec.Code)
+		}
+		if f.got.StudyUID != "1.2.3" || f.got.RetrieveBase != base {
+			t.Errorf("%s: %+v", path, f.got)
+		}
+	}
+}
+
+// Xác thực và quyền đứng TRƯỚC STOW: yêu cầu bị từ chối không bao giờ chạm tới dịch vụ.
+func TestStowIsGuarded(t *testing.T) {
+	f := &fakeStower{res: httpapi.StowResult{Status: 200, Body: map[string]any{}}}
+	h := newHandler(t, func(d *httpapi.Deps) { d.Stow = f })
+	const ct = "multipart/related; boundary=b"
+	for name, c := range map[string]struct {
+		path, token string
+		want        int
+	}{
+		"không token": {"/dicomweb/studies", "", 401}, "token sai": {"/dicomweb/studies", "x", 401}, "token chỉ đọc": {"/dicomweb/studies", "read-a", 403},
+		"project khác trong URL": {"/projects/B/dicomweb/studies", "write-a", 403},
+	} {
+		if rec := post(h, c.path, c.token, ct, "x"); rec.Code != c.want {
+			t.Errorf("%s: %d, muốn %d", name, rec.Code, c.want)
+		}
+	}
+	if f.n != 0 {
+		t.Errorf("dịch vụ STOW bị gọi %d lần dù yêu cầu bị từ chối", f.n)
+	}
+}
+
+func TestStowErrorsAreJSON(t *testing.T) {
+	for name, c := range map[string]struct {
+		err  error
+		want int
+	}{
+		"415": {&httpapi.StatusError{Status: 415, Msg: "Cần Content-Type multipart/related"}, 415},
+		"403": {&httpapi.StatusError{Status: 403, Msg: "Không đủ quyền"}, 403},
+		"413": {&http.MaxBytesError{Limit: 1}, 413},
+		"500": {errors.New("chi tiết nội bộ bí mật"), 500},
+	} {
+		h := newHandler(t, func(d *httpapi.Deps) { d.Stow = &fakeStower{err: c.err} })
+		rec := post(h, "/dicomweb/studies", "write-a", "multipart/related; boundary=b", "x")
+		if rec.Code != c.want {
+			t.Errorf("%s: %d", name, rec.Code)
+			continue
+		}
+		msg := errorOf(t, rec)
+		if strings.Contains(msg, "bí mật") {
+			t.Errorf("%s: lộ chi tiết nội bộ: %q", name, msg)
+		}
+	}
+}
+
+// Không có dịch vụ STOW (cấu hình chưa lắp) thì route vẫn 501 sau xác thực, không panic.
+func TestStowWithoutServiceIs501(t *testing.T) {
+	if rec := post(newHandler(t), "/dicomweb/studies", "write-a", "multipart/related; boundary=b", "x"); rec.Code != 501 {
+		t.Errorf("%d", rec.Code)
+	}
 }

@@ -2,6 +2,7 @@ package docs
 
 import (
 	"os"
+	"strings"
 	"testing"
 
 	"trivita-fhir/pkg/apicontract"
@@ -25,6 +26,9 @@ func specOptions() apicontract.Options {
 	return apicontract.Options{
 		RequestSuffixes: []string{"Body", "Request"},
 		ContentType: func(def string) string {
+			if strings.HasSuffix(def, "StowResponse") {
+				return "application/dicom+json" // phản hồi STOW-RS là DICOM JSON; lỗi và probe là application/json
+			}
 			return "application/json"
 		},
 	}

@@ -2,7 +2,7 @@
 
 DICOMweb (STOW-RS, QIDO-RS, WADO-RS) cho kho hình ảnh DICOM của Trivita, tương đương phần `dicom/` của Medplum nhưng đã sửa các lỗi đã biết (xem [kế hoạch](../../docs/plans/cds-dicom/dicom.md) mục 3). Dữ liệu là resource FHIR (`DicomStudy`, `DicomSeries`, `DicomInstance`) ở **cùng schema `fhir` với `fhir-server`**, nội dung tệp DICOM ở **cùng kho Binary** (`FHIR_BINARY_STORAGE`), nên tìm được qua API FHIR.
 
-> **Trạng thái: D1, mới có khung.** Cấu hình, probe, xác thực JWT, cô lập project, bốn tiền tố URL, giới hạn body, lỗi `{"error"}` đã chạy; mọi route DICOMweb trả `501` cho tới khi D3 (STOW-RS) và D4 (QIDO-RS, WADO-RS) cài handler. Tiến độ: [task-list.md](../../docs/plans/task-list.md) #10.
+> **Trạng thái: D3, STOW-RS đã chạy.** `POST /dicomweb/studies` (và `/studies/{studyUid}`, cả bốn tiền tố) lưu instance DICOM theo luồng; QIDO-RS và WADO-RS (D4) còn là khung và trả `501`. Tiến độ: [task-list.md](../../docs/plans/task-list.md) #10.
 
 ## Chạy
 
@@ -32,5 +32,8 @@ docker run --rm -p 8008:8008 --env-file apps/dicomweb/.env trivita-dicomweb:loca
 ```
 curl -s localhost:8008/health/ready            # {"ready":true,"checks":{"database":true}}
 curl -s -o /dev/null -w '%{http_code}\n' localhost:8008/dicomweb/studies                       # 401
-curl -s -H "Authorization: Bearer $TOKEN" localhost:8008/dicomweb/studies                     # {"error":"Chưa cài đặt"} (501) cho tới D4
+# STOW-RS: tải một tệp DICOM (multipart/related)
+curl -s -H "Authorization: Bearer $TOKEN" -H 'Content-Type: multipart/related; type="application/dicom"; boundary=b' \
+  --data-binary $'--b\r\nContent-Type: application/dicom\r\n\r\n'"$(cat file.dcm)"$'\r\n--b--\r\n' localhost:8008/dicomweb/studies
+# (tải tệp lớn: dùng client DICOMweb, ví dụ dcm4che `dcm4che-tools storescu`/stowrs, hoặc curl -F kiểu multipart/related)
 ```

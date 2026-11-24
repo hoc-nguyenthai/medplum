@@ -63,17 +63,33 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Sẽ nhận multipart/related (application/dicom) và lưu từng instance (D3). Cần quyền ghi. Mọi route DICOMweb khác không liệt kê ở đây (instances, rendered, bulkdata, xóa...) cũng trả 501 sau xác thực.",
+                "description": "Thân là multipart/related; type=\"application/dicom\" (mỗi phần là một tệp DICOM Part 10), truyền luồng: phần đầu (tối đa DICOMWEB_MAX_HEADER_BYTES) được kiểm tra, nội dung ghi vào kho Binary dùng chung với fhir-server, metadata thành DicomStudy, DicomSeries, DicomInstance (tìm được qua API FHIR). Tải lại cùng SOPInstanceUID là idempotent. Từng instance được xử lý độc lập: 200 khi mọi instance thành công, 202 khi một phần (kèm FailedSOPSequence), 409 khi không instance nào thành công. Instance hỏng, bị cắt giữa PixelData, SQ lồng quá sâu, vượt DICOMWEB_MAX_INSTANCE_BYTES bị từ chối riêng và không để lại gì. Cần quyền ghi.",
+                "consumes": [
+                    "multipart/related"
+                ],
                 "produces": [
+                    "application/dicom+json",
                     "application/json"
                 ],
                 "tags": [
                     "dicomweb"
                 ],
-                "summary": "STOW-RS: lưu instance (chưa cài)",
+                "summary": "STOW-RS: lưu instance",
                 "responses": {
                     "200": {
-                        "description": "Chưa dùng: route này hiện luôn trả 501",
+                        "description": "Mọi instance đã lưu",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.StowResponse"
+                        }
+                    },
+                    "202": {
+                        "description": "Một phần: có cả ReferencedSOPSequence và FailedSOPSequence",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.StowResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Thân multipart sai, thiếu boundary hoặc không có phần nào",
                         "schema": {
                             "$ref": "#/definitions/httpapi.ErrorBody"
                         }
@@ -85,9 +101,15 @@ const docTemplate = `{
                         }
                     },
                     "403": {
-                        "description": "Token không đủ quyền (cần quyền ghi) hoặc chọn project khác",
+                        "description": "Token không đủ quyền hoặc chọn project khác",
                         "schema": {
                             "$ref": "#/definitions/httpapi.ErrorBody"
+                        }
+                    },
+                    "409": {
+                        "description": "Không instance nào được lưu (FailedSOPSequence nêu lý do từng instance)",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.StowResponse"
                         }
                     },
                     "413": {
@@ -96,8 +118,8 @@ const docTemplate = `{
                             "$ref": "#/definitions/httpapi.ErrorBody"
                         }
                     },
-                    "501": {
-                        "description": "Chưa cài đặt",
+                    "415": {
+                        "description": "Content-Type không phải multipart/related",
                         "schema": {
                             "$ref": "#/definitions/httpapi.ErrorBody"
                         }
@@ -112,18 +134,22 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Như STOW-RS ở /studies nhưng ràng buộc mọi instance vào study chỉ định (D3). Cần quyền ghi.",
+                "description": "Như STOW-RS ở /studies nhưng mọi instance phải thuộc study chỉ định; instance của study khác bị từ chối riêng với FailureReason 0xA900. Cần quyền ghi.",
+                "consumes": [
+                    "multipart/related"
+                ],
                 "produces": [
+                    "application/dicom+json",
                     "application/json"
                 ],
                 "tags": [
                     "dicomweb"
                 ],
-                "summary": "STOW-RS: lưu instance vào một study (chưa cài)",
+                "summary": "STOW-RS: lưu instance vào một study",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "UID của study (DICOM StudyInstanceUID)",
+                        "description": "UID của study (StudyInstanceUID)",
                         "name": "studyUid",
                         "in": "path",
                         "required": true
@@ -131,7 +157,19 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Chưa dùng: route này hiện luôn trả 501",
+                        "description": "Mọi instance đã lưu",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.StowResponse"
+                        }
+                    },
+                    "202": {
+                        "description": "Một phần: có cả ReferencedSOPSequence và FailedSOPSequence",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.StowResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Thân multipart sai, thiếu boundary hoặc không có phần nào",
                         "schema": {
                             "$ref": "#/definitions/httpapi.ErrorBody"
                         }
@@ -143,9 +181,15 @@ const docTemplate = `{
                         }
                     },
                     "403": {
-                        "description": "Token không đủ quyền (cần quyền ghi) hoặc chọn project khác",
+                        "description": "Token không đủ quyền hoặc chọn project khác",
                         "schema": {
                             "$ref": "#/definitions/httpapi.ErrorBody"
+                        }
+                    },
+                    "409": {
+                        "description": "Không instance nào được lưu",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.StowResponse"
                         }
                     },
                     "413": {
@@ -154,8 +198,8 @@ const docTemplate = `{
                             "$ref": "#/definitions/httpapi.ErrorBody"
                         }
                     },
-                    "501": {
-                        "description": "Chưa cài đặt",
+                    "415": {
+                        "description": "Content-Type không phải multipart/related",
                         "schema": {
                             "$ref": "#/definitions/httpapi.ErrorBody"
                         }
@@ -435,6 +479,69 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "httpapi.DicomJSONElement": {
+            "type": "object",
+            "required": [
+                "vr"
+            ],
+            "properties": {
+                "BulkDataURI": {
+                    "description": "URI lấy dữ liệu nhị phân lớn",
+                    "type": "string"
+                },
+                "InlineBinary": {
+                    "description": "dữ liệu nhị phân nhỏ dạng base64",
+                    "type": "string",
+                    "example": "AQID"
+                },
+                "Value": {
+                    "description": "danh sách giá trị: chuỗi, số, tên người ({\"Alphabetic\": ...}) hoặc dataset (phần tử của SQ)",
+                    "type": "array",
+                    "items": {}
+                },
+                "vr": {
+                    "description": "Value Representation của phần tử",
+                    "type": "string",
+                    "enum": [
+                        "AE",
+                        "AS",
+                        "AT",
+                        "CS",
+                        "DA",
+                        "DS",
+                        "DT",
+                        "FL",
+                        "FD",
+                        "IS",
+                        "LO",
+                        "LT",
+                        "OB",
+                        "OD",
+                        "OF",
+                        "OL",
+                        "OV",
+                        "OW",
+                        "PN",
+                        "SH",
+                        "SL",
+                        "SQ",
+                        "SS",
+                        "ST",
+                        "SV",
+                        "TM",
+                        "UC",
+                        "UI",
+                        "UL",
+                        "UN",
+                        "UR",
+                        "US",
+                        "UT",
+                        "UV"
+                    ],
+                    "example": "UI"
+                }
+            }
+        },
         "httpapi.ErrorBody": {
             "type": "object",
             "required": [
@@ -481,6 +588,12 @@ const docTemplate = `{
                     "example": true
                 }
             }
+        },
+        "httpapi.StowResponse": {
+            "type": "object",
+            "additionalProperties": {
+                "$ref": "#/definitions/httpapi.DicomJSONElement"
+            }
         }
     },
     "securityDefinitions": {
@@ -510,7 +623,7 @@ var SwaggerInfo = &swag.Spec{
 	BasePath:         "/",
 	Schemes:          []string{},
 	Title:            "Trivita DICOMweb API",
-	Description:      "DICOMweb (STOW-RS, QIDO-RS, WADO-RS) cho kho hình ảnh DICOM, dùng chung schema và kho Binary với fhir-server. Lỗi trả {\"error\": \"...\"}. Hiện chỉ có khung: mọi route DICOMweb trả 501 cho tới khi STOW-RS (D3) và QIDO-RS, WADO-RS (D4) được cài.",
+	Description:      "DICOMweb (STOW-RS, QIDO-RS, WADO-RS) cho kho hình ảnh DICOM, dùng chung schema và kho Binary với fhir-server. Lỗi trả {\"error\": \"...\"}. STOW-RS đã cài (D3); QIDO-RS và WADO-RS (D4) mới là khung và trả 501.",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

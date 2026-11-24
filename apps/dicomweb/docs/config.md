@@ -14,8 +14,8 @@ Tệp này **được sinh từ `internal/config/config.go`** (xem `docs_test.go
 | `DEBUG` | `false` | bật chế độ gỡ lỗi của Echo (không dùng ở production) |
 | `DICOMWEB_ALLOWED_ORIGINS` | `(rỗng)` | là origin được gọi API từ trình duyệt (CORS); rỗng: không origin nào. Mặc định http://localhost:3000 ở local. |
 | `DICOMWEB_BASE_URL` | `http://localhost:8008` | là địa chỉ công khai của dicomweb (không gồm tiền tố /dicomweb), dùng cho RetrieveURL trong phản hồi STOW, ví dụ https://dicom.example.org. |
-| `DICOMWEB_MAX_HEADER_BYTES` | `1048576` | là trần phần đầu (mọi phần tử trước PixelData) bộ đọc metadata nhận; vượt hoặc SQ lồng quá sâu thì từ chối instance (chống tệp độc, d0-spike.md 3.1). |
-| `DICOMWEB_MAX_INSTANCE_BYTES` | `1073741824` | là trần kích thước một phần (một instance) của STOW; MaxRequestBytes là trần cả yêu cầu (nhiều phần). Vượt thì 413. |
+| `DICOMWEB_MAX_HEADER_BYTES` | `1048576` | là trần phần đầu (mọi phần tử trước PixelData) được nạp vào bộ nhớ để đọc metadata; vượt thì instance bị từ chối (0xA700). Cùng với giới hạn độ sâu SQ (16 lớp, cố định) chống tệp độc (docs/plans/cds-dicom/d0-spike.md 3.1). |
+| `DICOMWEB_MAX_INSTANCE_BYTES` | `1073741824` | là trần kích thước một phần (một instance) của STOW: vượt thì instance đó bị từ chối riêng (FailureReason 0xA700) và không để lại gì; MaxRequestBytes là trần cả yêu cầu (nhiều phần): vượt thì 413 (các instance đã xong trước đó vẫn được giữ). |
 | `DICOMWEB_MAX_REQUEST_BYTES` | `4294967296` | trần cả yêu cầu STOW (nhiều phần); xem MaxInstanceBytes |
 | `DICOMWEB_RATE_BURST` | `0` | là cỡ đợt của hạn mức (<=0: gấp đôi RateLimit, tối thiểu 1). |
 | `DICOMWEB_RATE_LIMIT` | `0 (tắt ở local; 20 ở staging/production)` | là số yêu cầu mỗi giây mỗi IP (0: tắt). Không đặt: tắt ở local, 20 ở staging/production. Đếm theo từng instance. |
