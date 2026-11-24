@@ -121,6 +121,17 @@ Loại luật: `BM` nghiệp vụ · `SEC` bảo mật · `DATA` toàn vẹn · 
 | BR-64 | Body vượt 16 MiB bị `413`; CORS chỉ cho origin trong `FHIR_ALLOWED_ORIGINS` (staging/production cấm `*` và `http`); mọi phản hồi, kể cả 401, 403, 429, mang header bảo mật; mọi lỗi dưới `/fhir/R4` là `OperationOutcome`. | SEC | F-27 |
 | BR-65 | Cấu hình sai, hoặc schema chưa migrate khi `DATABASE_AUTO_MIGRATE=false`, làm server từ chối khởi động với thông báo nêu tên biến; `DATABASE_MIGRATE_URL` bắt buộc đi cùng `DATABASE_AUTO_MIGRATE=false`; các lệnh `assign-project`, `sweep-binary` từ chối chạy khi schema chưa migrate hoặc database là bộ nhớ. | OPS | F-26, F-27 |
 
+### Tự tải attachment ngoài (BR-66..BR-71)
+
+| Mã | Luật | Loại | F |
+|---|---|---|---|
+| BR-66 | Tự tải mặc định TẮT (`FHIR_AUTO_DOWNLOAD=false`); bật phải có `FHIR_BINARY_STORAGE`; các cờ phụ (`ALLOWED_PREFIXES`, `ALLOW_PRIVATE`, ...) đặt khi chưa bật là lỗi cấu hình; `MAX_BYTES` âm hoặc `TIMEOUT` không dương bị từ chối; `ALLOW_PRIVATE` cấm ở staging/production. Mọi lỗi nêu tên biến. | OPS | F-28 |
+| BR-67 | Chỉ tải `Attachment.url` tuyệt đối `http`/`https` nằm NGOÀI địa chỉ API và `/storage` của chính server; tiền tố bỏ qua thắng tiền tố cho phép; có danh sách cho phép thì chỉ URL khớp được tải; bỏ qua sự kiện `delete` và loại `Binary`, `AsyncJob`, `AuditEvent`, `Subscription`; URL đã thành `Binary/<id>` (tương đối) không bị tải lại. | DATA | F-28 |
+| BR-68 | Chống SSRF: mặc định chặn URL tới địa chỉ nội bộ (kiểm trước khi gọi và kiểm lại lúc kết nối); URL bị chặn là lỗi vĩnh viễn (chỉ log, không thử lại); log chỉ ghi host, không ghi URL đầy đủ (có thể chứa token ký). | SEC | F-28 |
+| BR-69 | `Binary` tải về mang `meta.project` của resource nguồn và `securityContext` trỏ về resource nguồn nên project khác không đọc được; loại nội dung lấy theo thứ tự phản hồi, `attachment.contentType`, `application/octet-stream`; loại bị cấm hoặc tệp quá `MaxBytes` bị bỏ và không để lại Binary hay tệp. | DATA | F-28 |
+| BR-70 | Thay `url` bằng `Binary/<id>` ở MỌI attachment trùng, ghi bằng `If-Match`; thua ghi song song thì dọn Binary và tệp rồi thử lại trên phiên bản mới; resource đã xóa hoặc đã đổi URL thì dọn và bỏ; mỗi lần thay tạo một phiên bản mới của resource nguồn (có lịch sử và sự kiện). | DATA | F-28 |
+| BR-71 | Lỗi tạm (HTTP từ 400, lỗi mạng, lỗi ghi kho hoặc CSDL) được thử lại, lỗi vĩnh viễn chỉ ghi log; chế độ nền dùng hàng đợi 1024, 2 worker, tối đa 3 lần (chờ 1s rồi 2s), mỗi lần tối đa 5 phút; hàng đầy thì bỏ; broker bộ nhớ mất hàng đợi khi khởi động lại, broker Redis thử lại và đưa vào dead-letter theo cơ chế broker. Việc tải không bao giờ làm lần ghi gốc thất bại. | OPS | F-28 |
+
 ### Ma trận phân quyền
 
 Ô "ok" là qua được cổng vai trò (token tĩnh và JWT dùng chung `RequiredRole`); vai trò cao bao gồm vai trò thấp (ADMIN gồm WRITE gồm READ). Ở chế độ JWT, qua cổng chưa đủ: còn phải có chữ SMART tương ứng và thỏa AccessPolicy (cột "Kiểm thêm ở JWT"). Super-admin luôn có vai trò ADMIN nhưng phải gửi `X-Fhir-Project`. `403` là `Token không đủ quyền cho thao tác này`.
@@ -154,6 +165,7 @@ Loại luật: `BM` nghiệp vụ · `SEC` bảo mật · `DATA` toàn vẹn · 
 | F-25 | tách project | dùng chung | | | | `X-Fhir-Project` khác project: 403 (người thường) |
 | F-26 | CLI | không qua HTTP | | | | quyền do truy cập database, biến môi trường và kho |
 | F-27 | `/healthz`, `/readyz` | công khai, không cần token | | | | không |
+| F-28 | tự tải attachment ngoài | không qua HTTP, chạy nền | | | | Binary mang `meta.project` của resource nguồn; không qua kiểm scope vì worker dùng kho không tách project (xem 5.4) |
 
 ## 5.2 Kịch bản chấp nhận
 
@@ -231,6 +243,15 @@ Loại luật: `BM` nghiệp vụ · `SEC` bảo mật · `DATA` toàn vẹn · 
 | AT-62 | Given `DATABASE_AUTO_MIGRATE=false` và còn migration, When khởi động server, Then từ chối `schema chưa được migrate`; When `fhir-server migrate status` thì in `migration chưa áp dụng: N`, `migrate up` rồi `status` thì 0; Given `DATABASE_MIGRATE_URL` đặt mà `DATABASE_AUTO_MIGRATE=true`, Then từ chối cấu hình; Given `sweep-binary -grace 30m`, Then lỗi ân hạn tối thiểu 1 giờ. | BR-65 |
 | AT-63 | Given server chạy, Then `/healthz` `200` và `/readyz` `200` có `database`; Given broker hỏng khi bật Subscription, Then `/readyz` `503` với `broker:false`; When nhận SIGTERM, Then `/readyz` `503` ngay trong lúc drain còn `/healthz` `200`, yêu cầu đang chạy hoàn tất, rồi tiến trình thoát không lỗi. | BR-61, BR-62 |
 | AT-64 | Given `FHIR_RATE_LIMIT=N` thấp, When vượt, Then `429` kèm `Retry-After` và `OperationOutcome`, kể cả với token sai; `/healthz` không bị giới hạn; When client giả `X-Forwarded-For` mà không khai `FHIR_TRUSTED_PROXIES`, Then vẫn bị chặn; When body trên 16 MiB, Then `413`; When preflight từ origin không có trong `FHIR_ALLOWED_ORIGINS`, Then không có `Access-Control-Allow-Origin`; mọi phản hồi (kể cả 401, 429) có `X-Frame-Options: DENY`. | BR-63, BR-64 |
+| AT-65 | Given bật `FHIR_AUTO_DOWNLOAD` và kho Binary, máy chủ ngoài trả PDF, When tạo `DocumentReference` có `content[].attachment.url` trỏ máy chủ đó, Then (sau ít giây) `url` thành `Binary/<id>` của đúng project, nội dung đúng từng byte, `contentType` lấy từ phản hồi, `Binary.securityContext` trỏ `DocumentReference/<id>`; resource có thêm một phiên bản | BR-67, BR-69, BR-70 |
+| AT-66 | Given `FHIR_AUTO_DOWNLOAD` mặc định (tắt), When tạo `DocumentReference` có URL ngoài, Then máy chủ ngoài không bị gọi, `url` giữ nguyên; Given đã tải xong, When project khác đọc `Binary/<id>`, Then `404` | BR-66, BR-69 |
+| AT-67 | Given URL cùng địa chỉ API hoặc `/storage`, URL không khớp danh sách cho phép, hoặc khớp tiền tố bỏ qua; Given sự kiện `delete` hay resource loại `Binary`/`Subscription`, When ghi, Then không gọi ra ngoài | BR-67 |
+| AT-68 | Given mặc định (không `ALLOW_PRIVATE`), When attachment trỏ `127.0.0.1` hoặc địa chỉ nội bộ, Then không kết nối, không tạo Binary, `url` giữ nguyên, log chỉ có host | BR-68 |
+| AT-69 | Given máy chủ ngoài trả 5xx hoặc ngắt kết nối, When tải, Then lỗi tạm được thử lại, không để lại Binary hay tệp; Given trả loại nội dung bị cấm hoặc tệp quá `MaxBytes`, Then chỉ log và không thử lại, không để lại Binary hay tệp | BR-69, BR-71 |
+| AT-70 | Given resource bị sửa trong lúc đang tải (thua `If-Match`), When thay URL, Then Binary vừa tạo bị dọn và lần thử sau thành công trên phiên bản mới; Given resource đã xóa hoặc đã đổi URL, Then dọn và bỏ, không lỗi | BR-70 |
+| AT-71 | Given hai attachment cùng URL trong một resource, When tải, Then chỉ một lần gọi ra ngoài và cả hai `url` đều thành cùng `Binary/<id>` | BR-67, BR-70 |
+| AT-72 | Given chế độ nền, When ghi resource, Then phản hồi ghi không chờ việc tải; lỗi tạm được thử lại tới 3 lần; hàng đợi đầy thì bỏ và log | BR-71 |
+| AT-73 | Given `FHIR_AUTO_DOWNLOAD=true` thiếu `FHIR_BINARY_STORAGE`, hoặc cờ phụ khi chưa bật, `MAX_BYTES` âm, `TIMEOUT=0s`, When khởi động, Then từ chối và thông báo nêu tên biến `FHIR_AUTO_DOWNLOAD...` | BR-66 |
 
 ## 5.3 Truy vết luật đến bằng chứng kiểm thử
 
@@ -280,6 +301,12 @@ Loại luật: `BM` nghiệp vụ · `SEC` bảo mật · `DATA` toàn vẹn · 
 | BR-63, BR-64 (hạn mức, body, CORS, header, lỗi) | `apps/fhir-server/internal/bootstrap/httpsec_e2e_test.go`: `TestSecurityHeadersAndCORSOnFHIR`, `TestNoCORSWithoutAllowedOrigins`, `TestRateLimitPerIP`, `TestRateLimitIgnoresSpoofedForwardedFor`, `TestRateLimitUsesForwardedForFromTrustedProxy`; `apps/fhir-server/internal/bootstrap/e2e_test.go`: `TestRoutingErrors`; `pkg/httpsec/httpsec_test.go`; `apps/fhir-server/internal/config/httpsec_test.go`: `TestHTTPSecuritySettings`, `TestHTTPSecuritySettingsRejected`, `TestRateLimitDefaultsOnInProduction` |
 | BR-65 (cấu hình, migrate, CLI) | `apps/fhir-server/internal/config/config_test.go`: `TestValidationErrorsAreAggregated`, `TestDatabaseRequireSchema`, `TestDatabaseMigrateURL`, `TestWSModeSettings`; `apps/fhir-server/internal/config/docs_test.go`: `TestConfigDocIsUpToDate`; `apps/fhir-server/internal/bootstrap/e2e_test.go`: `TestPersistenceAndMigrateCLI`, `TestAssignProjectCommand`; `apps/fhir-server/internal/bootstrap/sweep_cli_test.go`: `TestSweepBinaryCommand`; `apps/fhir-server/internal/bootstrap/schema_pg_test.go`: `TestStartsOnOwnSchemaAndRefusesPublic`, `TestSeparateMigrationRolesFlow` (cần PostgreSQL thật); `apps/fhir-server/internal/bootstrap/replicas_e2e_test.go`: `TestReplicasMigrateConcurrentlyOnEmptyDatabase` |
 | Broker (memory, redis, dead-letter) | `pkg/messaging/messaging_test.go`: `TestInMemoryDispatchesAndSwallowsHandlerErrors`, `TestRedisBrokerDeliversAndAcks`, `TestRedisRetriesFailedMessageUntilItSucceeds`, `TestRedisPoisonMessageGoesToDeadLetter`, `TestRedisReclaimsMessagesOfDeadConsumer`, `TestRedisBroadcastReachesEveryInstanceWhileGroupSplits` |
+| BR-66 (bật, cấu hình) | `apps/fhir-server/internal/config/config_test.go`: `TestAutoDownloadSettings`; `pkg/fhirdownload/download_test.go`: `TestNewValidatesConfig` |
+| BR-67 (chọn URL) | `pkg/fhirdownload/download_test.go`: `TestSkipsUrlsThatAreNotExternalOrNotAllowed`, `TestIgnoresDeletesAndUnrelatedTypes` |
+| BR-68 (SSRF) | `pkg/fhirdownload/download_test.go`: `TestBlocksPrivateAddressesByDefault`; `apps/fhir-server/internal/bootstrap/autodownload_e2e_test.go`: `TestAutoDownloadEndToEnd` |
+| BR-69 (Binary đúng project, loại, kích thước) | `pkg/fhirdownload/download_test.go`: `TestDownloadsExternalAttachmentIntoProjectBinary`, `TestPermanentRefusalsLeaveNothing`; `apps/fhir-server/internal/bootstrap/autodownload_e2e_test.go`: `TestAutoDownloadEndToEnd` |
+| BR-70 (thay URL, xung đột phiên bản) | `pkg/fhirdownload/download_test.go`: `TestVersionConflictCleansUpAndRetrySucceeds`, `TestResourceChangedOrDeletedWhileDownloading` |
+| BR-71 (lỗi tạm, hàng đợi nền) | `pkg/fhirdownload/download_test.go`: `TestTemporaryFailuresAreReturnedAndLeaveNothing`, `TestAsyncModeDoesNotBlockTheWriteAndRetries` |
 
 ## 5.4 Lệch, rủi ro và điểm chưa kiểm
 
@@ -344,3 +371,13 @@ Gom từ ba cụm; đây là các điểm tài liệu cũ lệch mã, hành vi b
 - **`seed definitions`** có trong `cmd/fhir-server` và runbook nhưng không thuộc F-26 đã chốt; chưa rõ cụm nào mô tả. (chưa kiểm)
 - **Token tĩnh không có tách project và scope SMART:** `Principal` chỉ có tên và vai trò, kho không bọc `fhirauth.Scope`; ở chế độ này AdminChecker không có nên các thao tác như `CodeSystem/$import` chỉ đòi WRITE ở cổng (đọc mã `AdminChecker`, chưa có test riêng cho chế độ tĩnh). (chưa kiểm)
 - **Cache JWKS dùng HTTP client thường (không chống SSRF):** `FHIR_JWKS_URL` do vận hành đặt nên ít rủi ro, staging/production bắt buộc https.
+
+### Từ cụm tự tải attachment ngoài (F-28)
+
+- **`FHIR_AUTO_DOWNLOAD_IGNORED_PREFIXES` chưa có mô tả:** `apps/fhir-server/docs/config.md` ghi "(chưa có mô tả trong mã)"; thực tế là danh sách tiền tố bỏ qua và thắng danh sách cho phép (đọc `pkg/fhirdownload/download.go`, `wanted`).
+- **Số worker, cỡ hàng đợi và số lần thử không cấu hình được:** 2 worker, hàng đợi 1024, 3 lần (chờ 1s, 2s), 5 phút mỗi lần là mặc định cứng trong thư viện; chỉ có `TIMEOUT`, `MAX_BYTES` và các tiền tố.
+- **Mất việc khi dùng broker bộ nhớ:** hàng đợi nằm trong tiến trình; khởi động lại hoặc hàng đầy thì attachment giữ URL ngoài, không có cách tự quét lại (cần ghi lại resource để kích hoạt lại). Broker Redis thử lại và dead-letter nhưng hàng đợi nội bộ của worker vẫn là bộ nhớ.
+- **Chưa có test giao lại sự kiện sau khi tiến trình chết** (redelivery của broker Redis cho riêng worker này). (chưa kiểm)
+- **Bề mặt ra Internet:** worker gọi URL do người dùng cung cấp; chống SSRF dựa vào `safehttp` (chặn địa chỉ nội bộ); không giới hạn số URL mỗi resource hay tổng băng thông; nên dùng `ALLOWED_PREFIXES` ở production. `ALLOW_PRIVATE` bị cấm ở staging/production nhưng vẫn mở ở dev.
+- **Worker dùng kho không tách project:** Binary và cập nhật resource nguồn đi qua repo không bọc `fhirauth.Scope`, project do worker tự gán từ `meta.project` của resource nguồn. Resource không có `meta.project` (kho dùng chung chưa `assign-project`) tạo Binary không project.
+- **Sinh phiên bản mới ngầm:** mỗi lần tải xong làm resource nguồn lên một phiên bản (có sự kiện), nên Subscription và lịch sử thấy thêm một bản update không do người dùng thực hiện.

@@ -5,12 +5,12 @@ Trả lời **"fhir-server làm gì cho ai, theo luồng nào, theo luật nào"
 | # | Tài liệu | Trả lời câu hỏi |
 |---|---|---|
 | 1 | [01-tong-quan.md](01-tong-quan.md) | Dùng để làm gì, cho ai, ranh giới với `auth`, `ws-gateway`, `dicomweb`; tác nhân; bản đồ năng lực; thuật ngữ; mô hình dữ liệu |
-| 2 | [02-luong-nghiep-vu.md](02-luong-nghiep-vu.md) | 13 luồng nghiệp vụ đầu-cuối BF-1..BF-13: ghi và phiên bản, tìm kiếm, batch, bulk export, job nền, bảo trì chỉ mục, terminology, Binary, Subscription, truy cập, super-admin, triển khai |
+| 2 | [02-luong-nghiep-vu.md](02-luong-nghiep-vu.md) | 14 luồng nghiệp vụ đầu-cuối BF-1..BF-14: ghi và phiên bản, tìm kiếm, batch, bulk export, job nền, bảo trì chỉ mục, terminology, Binary, tự tải attachment ngoài, Subscription, truy cập, super-admin, triển khai |
 | 3 | [03-luong-nguoi-dung.md](03-luong-nguoi-dung.md) | Từng nhân vật (ứng dụng lâm sàng, dịch vụ máy, tích hợp viên, quản trị, vận hành) đi qua bước nào, gặp lỗi gì, làm gì tiếp |
-| 4 | [04-chuc-nang.md](04-chuc-nang.md) | Danh mục chức năng F-01..F-27 |
+| 4 | [04-chuc-nang.md](04-chuc-nang.md) | Danh mục chức năng F-01..F-28 |
 | 5 | [05-luat-va-phan-quyen.md](05-luat-va-phan-quyen.md) | Luật BR-xx, ma trận phân quyền, thứ tự kiểm tra một yêu cầu, kịch bản chấp nhận AT-xx, truy vết test |
 
-Mã truy vết: `F-xx` chức năng, `BR-xx` luật, `BF-x` luồng nghiệp vụ, `AT-xx` kịch bản chấp nhận. Dải mã: F-01..F-14 (hồ sơ, tìm kiếm, bundle), F-15..F-20 và F-23 (terminology, export, job, Binary), F-21..F-22 và F-24..F-27 (Subscription, truy cập, vận hành).
+Mã truy vết: `F-xx` chức năng, `BR-xx` luật, `BF-x` luồng nghiệp vụ, `AT-xx` kịch bản chấp nhận. Dải mã: F-01..F-14 (hồ sơ, tìm kiếm, bundle), F-15..F-20, F-23 và F-28 (terminology, export, job, Binary, tự tải attachment), F-21..F-22 và F-24..F-27 (Subscription, truy cập, vận hành).
 
 **Nguồn sự thật:** mã và test (nghiệp vụ nằm ở `pkg/fhirrouter`, `fhirsearch`, `fhirstore`, `fhirvalidate`, `fhirauth`, `fhirsub`, `fhirbinary`, `binarystore`, `workflow`; app chỉ lắp ráp). Bộ này **không có test chống lệch tự động**; khi lệch, mã đúng. Mô hình dữ liệu ở [docs/erd/fhirstore-physical.md](../../../../docs/erd/fhirstore-physical.md).
 

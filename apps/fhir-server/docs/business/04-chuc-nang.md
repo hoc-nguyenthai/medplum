@@ -31,6 +31,7 @@ Khuôn mỗi chức năng: **Mục đích · Tác nhân · Tiền điều kiện
 | [F-25](#f-25) | Tách project (`meta.project`) và super-admin |
 | [F-26](#f-26) | CLI vận hành (`migrate`, `assign-project`, `sweep-binary`, `healthcheck`) |
 | [F-27](#f-27) | Kiểm soát chung (probe, tắt êm, hạn mức, giới hạn body, CORS, lỗi OperationOutcome) |
+| [F-28](#f-28) | Tự tải attachment ngoài về kho Binary (`FHIR_AUTO_DOWNLOAD`) |
 
 ---
 
@@ -1052,7 +1053,7 @@ flowchart TD
 
 **Luồng chính, `healthcheck`:** gọi `GET http://127.0.0.1:<cổng của HTTP_ADDR>/healthz` với timeout 2 giây; khác `200` hoặc không kết nối được thì thoát mã khác 0. Dùng cho `HEALTHCHECK` của Docker (image distroless không có curl).
 
-Ghi chú: binary còn lệnh `seed definitions` (nạp SearchParameter, StructureDefinition... thành resource cho một project) không thuộc danh mục F-01..F-27 của bộ tài liệu này (chưa kiểm cụm nào nhận).
+Ghi chú: binary còn lệnh `seed definitions` (nạp SearchParameter, StructureDefinition... thành resource cho một project) không thuộc danh mục F-01..F-28 của bộ tài liệu này (chưa kiểm cụm nào nhận).
 
 **Thay thế / lỗi:**
 
@@ -1106,3 +1107,37 @@ Ghi chú: binary còn lệnh `seed definitions` (nạp SearchParameter, Structur
 **Tác dụng phụ:** cảnh báo lúc khởi động: `FHIR_AUTH_DISABLED=true`, `FHIR_RATE_LIMIT=0` ở staging/production, `FHIR_SKIP_VALIDATION=true`, `DATABASE_REQUIRE_SCHEMA` chưa bật ở production PostgreSQL.
 
 **Luật:** BR-61, BR-62, BR-63, BR-64, BR-65.
+
+<a id="f-28"></a>
+### F-28. Tự tải attachment ngoài về kho Binary (`FHIR_AUTO_DOWNLOAD`)
+
+| Mục | Nội dung |
+|---|---|
+| Mục đích | Sau khi một resource được ghi, mọi `Attachment.url` trỏ ra máy chủ NGOÀI được tải về kho Binary của đúng project rồi thay bằng `Binary/<id>`, để dữ liệu không phụ thuộc đường dẫn ngoài (hết hạn, đổi chỗ, bị xóa) và đi qua cùng cơ chế quyền, URL ký và dọn mồ côi như Binary thường. |
+| Tác nhân | Không có người gọi: worker nền của `fhir-server` phản ứng với sự kiện ghi (cùng nguồn sự kiện với Subscription). Vận hành bật và cấu hình. Máy chủ ngoài chứa tệp là bên thứ ba không tin cậy. |
+| Tiền điều kiện | `FHIR_AUTO_DOWNLOAD=true` (mặc định `false`) và `FHIR_BINARY_STORAGE` đã bật (`file:` hoặc `s3:`); thiếu kho thì từ chối khởi động. |
+| Route hoặc cách gọi | Không có route. Kích hoạt bởi `POST`/`PUT`/`PATCH`/batch ghi bất kỳ loại resource nào có trường `Attachment`. |
+| Cấu hình | `FHIR_AUTO_DOWNLOAD`, `FHIR_AUTO_DOWNLOAD_ALLOWED_PREFIXES` (danh sách tiền tố được tải; rỗng là mọi URL ngoài), `FHIR_AUTO_DOWNLOAD_IGNORED_PREFIXES` (tiền tố bỏ qua, thắng danh sách cho phép), `FHIR_AUTO_DOWNLOAD_MAX_BYTES` (0: dùng `FHIR_STORAGE_MAX_UPLOAD_BYTES`), `FHIR_AUTO_DOWNLOAD_TIMEOUT` (30s mỗi lần tải), `FHIR_AUTO_DOWNLOAD_ALLOW_PRIVATE` (chỉ dev). Số worker, cỡ hàng đợi và số lần thử không có biến môi trường. |
+
+**Luồng chính** (mỗi sự kiện ghi):
+
+1. Bỏ qua sự kiện `delete` và các loại `Binary`, `AsyncJob`, `AuditEvent`, `Subscription`.
+2. Duyệt toàn bộ cây resource (mọi kiểu `Attachment`, sâu tối đa 64 tầng), lấy các `url` tuyệt đối `http`/`https` thỏa: không bắt đầu bằng địa chỉ API của chính server (`FHIR_BASE_URL`) hay địa chỉ `/storage`, không khớp tiền tố bỏ qua, và (nếu có danh sách cho phép) khớp một tiền tố được phép. Trùng URL chỉ tải một lần.
+3. Mỗi URL: đọc lại resource (đã mất thì bỏ; URL đã không còn thì bỏ), kiểm SSRF, `GET` tới máy chủ ngoài, kiểm `Content-Length`, loại nội dung.
+4. Tạo `Binary` mang `meta.project` của resource nguồn và `securityContext` trỏ về resource nguồn, ghi nội dung vào kho (có trần `MaxBytes`).
+5. Đọc lại resource lần nữa, đổi `url` của mọi attachment trùng thành `Binary/<id>` (điền `contentType` nếu còn trống), cập nhật bằng `If-Match` phiên bản vừa đọc.
+
+**Thay thế / lỗi:**
+
+| Tình huống | Kết quả |
+|---|---|
+| URL tới địa chỉ nội bộ (mặc định) | Chặn, chỉ ghi log WARN (host, không URL đầy đủ), không thử lại |
+| Phản hồi 4xx/5xx, lỗi mạng, lỗi ghi kho hoặc CSDL | Lỗi tạm: dọn Binary và tệp đã tạo, trả lỗi để thử lại |
+| Tệp quá `MaxBytes` (theo `Content-Length` hoặc khi đang ghi), loại nội dung bị cấm | Lỗi vĩnh viễn: dọn, chỉ ghi log, không thử lại, resource giữ nguyên URL ngoài |
+| Resource bị sửa song song (thua `If-Match`) | Dọn Binary vừa tạo, trả lỗi để thử lại; lần sau đọc phiên bản mới |
+| Resource đã xóa hoặc đã đổi URL khi đang tải | Dọn, bỏ, không lỗi |
+| Hàng đợi nền đầy (1024) | Bỏ sự kiện, ghi log WARN `hàng đợi đầy` |
+
+**Tác dụng phụ:** tạo `Binary` (một phiên bản, kèm tệp trong kho); sửa resource nguồn thành một phiên bản MỚI (có lịch sử, phát sự kiện nên Subscription nhận thêm một thông báo update); gọi HTTP ra Internet từ máy chủ. Không có lỗi nào trả về cho người đã ghi resource: lần ghi gốc đã thành công từ trước.
+
+**Luật:** BR-66, BR-67, BR-68, BR-69, BR-70, BR-71.

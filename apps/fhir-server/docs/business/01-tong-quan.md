@@ -98,6 +98,7 @@ mindmap
     Dữ liệu thô
       Binary file s3
       url ký presigned
+      Tự tải attachment ngoài
     An toàn
       JWT JWKS token tĩnh
       scope SMART

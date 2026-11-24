@@ -17,6 +17,8 @@ flowchart LR
     K -.-> B
     L["BF-12<br/>Super-admin, gán project"] -.-> K
     M["BF-13<br/>Triển khai, tắt êm"] -.-> E
+    N["BF-14<br/>Tự tải attachment ngoài"] -.-> H
+    A --> N
 ```
 
 ---
@@ -422,3 +424,36 @@ stateDiagram-v2
 
 - **Kết quả:** mọi replica chỉ chạy trên schema đã migrate; tắt êm không cắt yêu cầu đang xử lý trong `SHUTDOWN_TIMEOUT`; job nền chưa xong nhả lease cho instance khác chạy lại.
 - **Chức năng tham gia:** F-26, F-27, F-20 (nhả lease khi tắt, cụm khác).
+
+---
+
+### BF-14. Tự tải attachment ngoài về kho Binary
+
+- **Mục tiêu:** biến tham chiếu tệp ở máy chủ ngoài (`Attachment.url`) thành `Binary` nằm trong kho của đúng project, không làm chậm hay làm hỏng lần ghi gốc.
+- **Các bên:** ứng dụng ghi resource; bộ phát sự kiện (cùng nguồn với Subscription); worker tự tải; máy chủ ngoài; kho Binary (`file:`/`s3:`); CSDL.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant App as "Ứng dụng"
+    participant API as "fhir-server"
+    participant W as "Worker tự tải"
+    participant X as "Máy chủ ngoài"
+    participant K as "Kho Binary"
+    App->>API: "POST DocumentReference (url ngoài)"
+    API-->>App: "201 (không chờ tải)"
+    API-)W: "sự kiện ghi (hàng đợi nền)"
+    W->>W: "lọc URL, kiểm SSRF"
+    W->>X: "GET url"
+    X-->>W: "nội dung, Content-Type"
+    W->>API: "tạo Binary (meta.project, securityContext)"
+    W->>K: "ghi nội dung (trần MaxBytes)"
+    W->>API: "update resource bằng If-Match: url thành Binary/id"
+    alt "thua ghi song song"
+        W->>API: "dọn Binary và tệp, thử lại"
+    end
+```
+
+- **Kết quả:** sau ít giây, attachment trỏ `Binary/<id>` (đọc qua F-23 như Binary thường, kể cả URL ký), resource có thêm một phiên bản; nếu lỗi vĩnh viễn thì giữ nguyên URL ngoài và chỉ có log.
+- **Chức năng tham gia:** F-28; F-01, F-03 (ghi gốc và ghi thay URL), F-23 (đọc Binary), F-21 (Subscription nhận thêm một update).
+- **Không thấy trong hình:** việc tải là tối ưu nỗ lực tốt nhất (best effort), không có trạng thái "đang tải" hay API hỏi tiến độ; người dùng chỉ thấy `url` đổi. Máy chủ ngoài chậm hay chết không ảnh hưởng độ trễ ghi, nhưng broker bộ nhớ mất việc khi khởi động lại (BR-71).

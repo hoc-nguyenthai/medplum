@@ -2,7 +2,7 @@
 
 | Tài liệu | Nội dung |
 |---|---|
-| [business/](business/README.md) | **Tài liệu nghiệp vụ (góc nhìn BA kỹ thuật)**: 10 tác nhân, 13 luồng nghiệp vụ, luồng người dùng, danh mục chức năng F-01..F-27, 65 luật BR-xx, ma trận phân quyền, 64 kịch bản chấp nhận, truy vết test, rủi ro đã kiểm |
+| [business/](business/README.md) | **Tài liệu nghiệp vụ (góc nhìn BA kỹ thuật)**: 10 tác nhân, 14 luồng nghiệp vụ, luồng người dùng, danh mục chức năng F-01..F-28, 71 luật BR-xx, ma trận phân quyền, 73 kịch bản chấp nhận, truy vết test, rủi ro đã kiểm |
 | [api-contract.md](api-contract.md) | **Hợp đồng API**: xác thực, định dạng, bảng route (sinh từ swagger, có test chống lệch) |
 | [api-contract/](api-contract/) | Tài liệu chi tiết của hợp đồng: `fhir-rest.md` (CRUD, search, history, batch, GraphQL), `fhir-operations.md` (113 operation), `fhir-server-go.md` (DTO và ví dụ JSON phần đã cài) |
 | [architecture.md](architecture.md) | Làm gì, không làm gì, vì sao tách, cấu trúc và thư viện, dữ liệu, xác thực, luồng chính, hành vi khi lỗi |

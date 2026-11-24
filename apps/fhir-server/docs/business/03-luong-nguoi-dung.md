@@ -131,6 +131,16 @@ Thấy gì: poll nên chờ theo `Retry-After: 2`; tệp chỉ tồn tại tới
 
 ---
 
+### Nhân vật: ứng dụng ghi tài liệu có đường dẫn ngoài (tự tải attachment)
+
+Chỉ có khi vận hành bật `FHIR_AUTO_DOWNLOAD` (mặc định tắt; xem BF-14).
+
+| Bước | Gọi gì | Thấy gì | Lỗi nào thì làm gì |
+|---|---|---|---|
+| 1 | `POST DocumentReference` có `content[].attachment.url` ngoài | 201 ngay, `url` vẫn là địa chỉ ngoài | Không có lỗi tải ở bước này: việc tải chạy nền |
+| 2 | `GET DocumentReference/{id}` sau ít giây | `url` thành `Binary/<id>`, `versionId` tăng một | `url` vẫn là địa chỉ ngoài: tải thất bại, bị chặn (địa chỉ nội bộ, ngoài danh sách cho phép), quá cỡ hoặc loại bị cấm; xem log của vận hành, ghi lại resource để kích hoạt lại |
+| 3 | `GET Binary/{id}` | Nội dung thô (như Binary thường) | 404: không đủ quyền hoặc project khác |
+
 ### Nhân vật: nhà tích hợp nhận webhook
 
 | Bước | Gọi gì | Thấy gì | Lỗi nào thì làm gì |
