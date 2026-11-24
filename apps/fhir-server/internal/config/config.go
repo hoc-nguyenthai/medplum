@@ -61,6 +61,8 @@ type Settings struct {
 	// SkipValidation bỏ kiểm tra resource khi ghi; SkipConstraints chỉ kiểm tra cấu trúc, bỏ invariant FHIRPath.
 	SkipValidation  bool
 	SkipConstraints bool
+	// Audit: ghi AuditEvent vào kho cho thao tác REST của người gọi: `off` (mặc định), `writes` (create, update, delete) hoặc `all` (thêm read, vread, history, search; khối lượng ghi lớn). AuditEvent không sửa, không xóa được qua API; ghi lỗi chỉ ghi log, không làm hỏng yêu cầu.
+	Audit string
 	// ValidateProfiles: kiểm resource theo từng meta.profile bằng StructureDefinition trong kho (cùng project với người gọi): cardinality, fixed/pattern, slicing. Mỗi profile thêm một lần tra cứu kho khi ghi. Mặc định tắt.
 	ValidateProfiles bool
 	// ProfileUnknownError: meta.profile trỏ tới profile không có trong kho bị từ chối (mặc định chỉ cảnh báo); cần FHIR_VALIDATE_PROFILES.
@@ -303,6 +305,7 @@ func FromEnv(get func(string) string) (Settings, error) {
 	r.String(&s.BaseURL, "FHIR_BASE_URL")
 	r.Bool(&s.SkipValidation, "FHIR_SKIP_VALIDATION")
 	r.Bool(&s.SkipConstraints, "FHIR_SKIP_CONSTRAINTS")
+	r.String(&s.Audit, "FHIR_AUDIT")
 	r.Bool(&s.ValidateProfiles, "FHIR_VALIDATE_PROFILES")
 	r.Bool(&s.ProfileUnknownError, "FHIR_PROFILE_UNKNOWN_ERROR")
 	r.Bool(&s.UpdateAsCreate, "FHIR_UPDATE_AS_CREATE")
@@ -661,6 +664,11 @@ func (s Settings) validate() error {
 	}
 	if s.AuthDisabled && isProd(s.Environment) {
 		errs = append(errs, errors.New("FHIR_AUTH_DISABLED: không được tắt xác thực ở staging/production"))
+	}
+	switch s.Audit {
+	case "", "off", "writes", "all":
+	default:
+		errs = append(errs, fmt.Errorf("FHIR_AUDIT: %q không hợp lệ (off, writes hoặc all)", s.Audit))
 	}
 	if s.SkipValidation && isProd(s.Environment) {
 		errs = append(errs, errors.New("FHIR_SKIP_VALIDATION: không được tắt kiểm tra dữ liệu ở staging/production"))

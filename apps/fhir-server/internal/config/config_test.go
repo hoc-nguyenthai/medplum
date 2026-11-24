@@ -90,6 +90,18 @@ func TestValidationErrorsAreAggregated(t *testing.T) {
 	}
 }
 
+func TestAuditModeIsValidated(t *testing.T) {
+	for _, ok := range []string{"", "off", "writes", "all"} {
+		s, err := config.FromEnv(env(map[string]string{"FHIR_AUDIT": ok}))
+		if err != nil || s.Audit != ok {
+			t.Errorf("%q: %v %v", ok, s.Audit, err)
+		}
+	}
+	if _, err := config.FromEnv(env(map[string]string{"FHIR_AUDIT": "reads"})); err == nil || !strings.Contains(err.Error(), "FHIR_AUDIT") {
+		t.Fatalf("giá trị lạ phải lỗi nêu FHIR_AUDIT: %v", err)
+	}
+}
+
 func TestAdminTokensAndNewSettings(t *testing.T) {
 	s, err := config.FromEnv(env(map[string]string{"FHIR_ADMIN_TOKENS": "root:" + secret, "FHIR_SUBSCRIPTIONS": "true", "BROKER_DRIVER": "redis",
 		"REDIS_URL": "redis://r:6379/0", "FHIR_JOB_CONCURRENCY": "4", "FHIR_WEBHOOK_TIMEOUT": "3s"}))

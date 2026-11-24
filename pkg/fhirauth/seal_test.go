@@ -65,3 +65,23 @@ func TestSealRoundTripAndTamper(t *testing.T) {
 		t.Errorf("Grants nil phải giữ nil: %v", un.Grants)
 	}
 }
+
+// Principal dựng lại cho job mang người đã tạo job (đã ký) ở OnBehalfOf để AuditEvent ghi đúng người chịu trách nhiệm; Subject vẫn là "job:<id>".
+func TestOpenedPrincipalCarriesTheSealedSubjectAsOnBehalfOf(t *testing.T) {
+	sl, _ := fhirauth.NewSealer([]byte(strings.Repeat("k", 32)))
+	sealed := sl.Seal("job1", "r", &fhirauth.Principal{Subject: "alice", Project: "p1", Role: fhirauth.RoleRead})
+	got, err := sl.Open("job1", "p1", "r", sealed)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Subject != "job:job1" || got.OnBehalfOf != "alice" {
+		t.Fatalf("Subject=%q OnBehalfOf=%q", got.Subject, got.OnBehalfOf)
+	}
+	anon, err := sl.Open("job2", "", "r", sl.Seal("job2", "r", nil))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if anon.OnBehalfOf != "" {
+		t.Fatalf("job không có người gọi không có OnBehalfOf: %q", anon.OnBehalfOf)
+	}
+}

@@ -14,6 +14,7 @@ import (
 	echoswagger "github.com/swaggo/echo-swagger"
 
 	_ "trivita-fhir/apps/fhir-server/docs" // đăng ký spec OpenAPI do `make swagger` sinh
+	"trivita-fhir/pkg/fhiraudit"
 	"trivita-fhir/pkg/fhirrouter"
 	"trivita-fhir/pkg/httpsec"
 	"trivita-fhir/pkg/ratelimit"
@@ -124,7 +125,7 @@ func New(dep Deps) (*echo.Echo, error) {
 	}
 	fhir := echo.WrapHandler(http.StripPrefix(Prefix, dep.FHIR))
 	// Hạn mức đứng TRƯỚC xác thực để cả việc dò token cũng bị chặn; không áp cho health, swagger, websocket.
-	mws := []echo.MiddlewareFunc{dep.Auth.Guard()}
+	mws := []echo.MiddlewareFunc{clientInfo(), dep.Auth.Guard()}
 	if dep.RateLimit > 0 {
 		mws = append([]echo.MiddlewareFunc{rateLimiter(dep.rateStore("api", dep.RateLimit, dep.RateBurst))}, mws...)
 	}
@@ -132,6 +133,17 @@ func New(dep Deps) (*echo.Echo, error) {
 	g.Any("", fhir)
 	g.Any("/*", fhir)
 	return e, nil
+}
+
+// clientInfo gắn địa chỉ IP người gọi (theo IPExtractor, mặc định không tin header proxy) vào context để AuditEvent ghi agent.network.
+func clientInfo() echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			req := c.Request()
+			c.SetRequest(req.WithContext(fhiraudit.WithClient(req.Context(), fhiraudit.Client{Address: c.RealIP()})))
+			return next(c)
+		}
+	}
 }
 
 func (d Deps) rateStore(name string, rps float64, burst int) ratelimit.Store {

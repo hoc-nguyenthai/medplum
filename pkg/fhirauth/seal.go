@@ -81,7 +81,7 @@ func (s *Sealer) Open(jobID, project, request, sealed string) (*Principal, error
 	if pl.Version != sealVersion {
 		return nil, errors.New("job có ảnh chụp quyền phiên bản cũ, hãy chạy lại")
 	}
-	p := &Principal{Subject: "job:" + jobID, Project: project, Role: RoleRead, Job: true}
+	p := &Principal{Subject: "job:" + jobID, Project: project, Role: RoleRead, Job: true, OnBehalfOf: pl.Subject}
 	if pl.Grants != nil {
 		p.Grants = Grants{}
 		for k, v := range pl.Grants {

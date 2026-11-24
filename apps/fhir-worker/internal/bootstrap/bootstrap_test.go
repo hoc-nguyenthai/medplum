@@ -496,3 +496,57 @@ func TestJobCancelledByTheAPIStopsQuicklyOnTheWorker(t *testing.T) {
 		t.Fatal("job không dừng trong 1 giây sau khi bị hủy (FHIR_JOB_CANCEL_POLL không tới router của worker?)")
 	}
 }
+
+// Entry của batch async và việc đọc của export chạy ở worker cũng có AuditEvent (FHIR_AUDIT trùng fhir-server): thuộc project của người gọi; ghi do người gọi đã ký
+// trong job (batch) hoặc do job (đọc của export).
+func TestWorkerAuditsBatchWritesAndExportReads(t *testing.T) {
+	e := newEnv(t, true, func(v map[string]string) { v["FHIR_AUDIT"] = "all" })
+	e.api.patients("A", 2)
+	bundle := map[string]any{"resourceType": "Bundle", "type": "batch", "entry": []any{
+		map[string]any{"request": map[string]any{"method": "POST", "url": "Patient"}, "resource": map[string]any{"resourceType": "Patient", "name": []any{map[string]any{"family": "Audit"}}}},
+	}}
+	r := e.api.do("POST", "", "A", bundle, "Prefer", "respond-async")
+	if r.status != 202 {
+		t.Fatalf("batch async: %d %s", r.status, r.body)
+	}
+	bpath := strings.TrimPrefix(r.header.Get("Content-Location"), "http://fhir.test/fhir/R4/")
+	start(t, e.settings)
+	deadline := time.Now().Add(20 * time.Second)
+	for time.Now().Before(deadline) {
+		if e.api.do("GET", bpath, "A", nil).status == 200 {
+			break
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
+	// export chạy sau khi batch xong: SQLite chỉ một người ghi, hai job ghi đồng thời (kèm ghi AuditEvent) sẽ SQLITE_BUSY (PostgreSQL không bị)
+	if st := e.api.do("GET", bpath, "A", nil); st.status != 200 {
+		t.Fatalf("batch chưa xong: %d %s", st.status, st.body)
+	}
+	e.api.waitExport(e.api.startExport("A"), "A")
+
+	sr, _ := fhirsearch.Parse("AuditEvent", map[string][]string{"_count": {"100"}})
+	res, err := e.api.store.Search(context.Background(), sr)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var batchCreates, jobReads int
+	for _, m := range res.Matches {
+		ev := m.(*fhir.AuditEvent)
+		if ev.Meta == nil || ev.Meta.Project != "A" {
+			t.Errorf("AuditEvent phải thuộc project A: %+v", ev.Meta)
+		}
+		// người yêu cầu là người đã tạo job (đã ký trong job), job là tác nhân thứ hai
+		if len(ev.Agent) != 2 || ev.Agent[0].Who.Identifier.Value != "u-A" || !*ev.Agent[0].Requestor || *ev.Agent[1].Requestor || !strings.HasPrefix(ev.Agent[1].Who.Identifier.Value, "job:") {
+			t.Errorf("agent của AuditEvent job: %+v", ev.Agent)
+		}
+		switch code := ev.Subtype[0].Code; {
+		case code == "create" && strings.HasPrefix(ev.Entity[0].What.Reference, "Patient/"):
+			batchCreates++
+		case code == "search-type":
+			jobReads++
+		}
+	}
+	if batchCreates != 1 || jobReads == 0 {
+		t.Fatalf("cần 1 create Patient của batch và ít nhất 1 search của export; có %d và %d trong %d AuditEvent", batchCreates, jobReads, len(res.Matches))
+	}
+}

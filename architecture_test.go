@@ -31,7 +31,7 @@ var rules = []rule{
 	// ---- fhir-server ----
 	// Không có domain/application/infrastructure riêng: nghiệp vụ nằm ở pkg/fhir*; presentation chỉ gắn router FHIR vào Echo.
 	{dir: "apps/fhir-server/internal/presentation",
-		allow: []string{mod + "/apps/fhir-server/internal/presentation", mod + "/apps/fhir-server/docs", mod + "/pkg/fhir", mod + "/pkg/fhirrouter", mod + "/pkg/fhirauth", mod + "/pkg/httpsec", mod + "/pkg/ratelimit"},
+		allow: []string{mod + "/apps/fhir-server/internal/presentation", mod + "/apps/fhir-server/docs", mod + "/pkg/fhir", mod + "/pkg/fhirrouter", mod + "/pkg/fhirauth", mod + "/pkg/httpsec", mod + "/pkg/ratelimit", mod + "/pkg/fhiraudit"},
 		third: []string{"github.com/labstack/echo/v4", "github.com/swaggo/echo-swagger", "golang.org/x/time/rate"}},
 	{dir: "apps/fhir-server/internal/config", allow: []string{mod + "/apps/fhir-server/internal/config", mod + "/pkg/envconfig", mod + "/pkg/httpsec"}},
 
@@ -116,6 +116,7 @@ var pkgRules = map[string][]string{
 	"pkg/fhirvalidate":  {mod + "/pkg/fhir", mod + "/pkg/fhirpath"},                                                                                                                                           // validator: schema + invariant FHIRPath
 	"pkg/fhirsearch":    {mod + "/pkg/fhir", mod + "/pkg/fhirpath"},                                                                                                                                           // parse + đối sánh search
 	"pkg/fhirrouter":    {mod + "/pkg/fhir", mod + "/pkg/fhirpath", mod + "/pkg/fhirsearch", mod + "/pkg/fhirvalidate", mod + "/pkg/workflow"},                                                                // REST FHIR trên interface Repository
+	"pkg/fhiraudit":     {mod + "/pkg/fhir", mod + "/pkg/fhirauth", mod + "/pkg/fhirrouter", mod + "/pkg/fhirsearch"},                                                                                         // AuditEvent cho thao tác REST (decorator Repository)
 	"pkg/fhirauth":      {mod + "/pkg/fhir", mod + "/pkg/fhirrouter", mod + "/pkg/fhirsearch"},                                                                                                                // JWT và tách dữ liệu theo project
 	"pkg/fhirstore":     {mod + "/pkg/fhir", mod + "/pkg/fhirsearch", mod + "/pkg/fhirrouter", mod + "/pkg/database"},                                                                                         // Repository SQL (PostgreSQL, SQLite)
 	"pkg/dicomrender":   {},                                                                                                                                                                                   // dựng ảnh PNG/JPEG từ frame DICOM bằng thư viện chuẩn, không phụ thuộc gói nào trong repo

@@ -214,6 +214,7 @@ Biến môi trường (hoặc `.env`); danh sách đầy đủ ở [`.env.exampl
 | `FHIR_SUBSCRIPTION_AUTO_DISABLE` | rỗng (tắt) | JSON mảng `{maxConsecutiveFailures, timeWindowSeconds}`: tự tắt Subscription giao thất bại lặp lại; cần `FHIR_SUBSCRIPTIONS=true` |
 | `FHIR_AUTH_DISABLED` | `false` | chỉ dev; bị từ chối ở staging/production |
 | `FHIR_SKIP_CONSTRAINTS` | `false` | chỉ kiểm tra cấu trúc, bỏ invariant FHIRPath |
+| `FHIR_AUDIT` | `off` | ghi `AuditEvent` vào kho cho thao tác REST của người gọi: `writes` (create, update, delete) hoặc `all` (thêm read, vread, history, search; khối lượng ghi lớn). Không sửa, không xóa `AuditEvent` qua API |
 | `FHIR_VALIDATE_PROFILES` | `false` | kiểm thêm theo từng `meta.profile` bằng StructureDefinition trong kho (cardinality, fixed/pattern, slicing) |
 | `FHIR_PROFILE_UNKNOWN_ERROR` | `false` | `meta.profile` không có trong kho bị từ chối 400 (mặc định chỉ cảnh báo) |
 | `FHIR_SKIP_VALIDATION` | `false` | không kiểm tra dữ liệu; bị từ chối ở staging/production |

@@ -8,6 +8,7 @@ package config
 import (
 	"crypto/sha256"
 	"errors"
+	"fmt"
 	"net/url"
 	"os"
 	"strings"
@@ -90,12 +91,13 @@ type Settings struct {
 	BatchCheckpointEntries int
 
 	// SkipValidation, SkipConstraints, ValidateProfiles, ProfileUnknownError, UpdateAsCreate và Base64BinaryMaxBytes PHẢI trùng fhir-server: batch async chạy từng entry qua cùng bộ xử lý ghi như API.
-	SkipValidation       bool // bỏ kiểm tra bằng fhirvalidate khi ghi (chỉ dev/test)
-	SkipConstraints      bool // chỉ kiểm cấu trúc, bỏ invariant FHIRPath
-	ValidateProfiles     bool // kiểm theo meta.profile bằng StructureDefinition trong kho
-	ProfileUnknownError  bool // profile không có trong kho bị từ chối (mặc định chỉ cảnh báo)
-	UpdateAsCreate       bool // cho phép PUT Type/id tạo resource mới với id do client chọn
-	Base64BinaryMaxBytes int  // trần `data` base64 (đã giải mã) khi batch ghi Binary (khi dùng kho); âm: không trần
+	SkipValidation       bool   // bỏ kiểm tra bằng fhirvalidate khi ghi (chỉ dev/test)
+	SkipConstraints      bool   // chỉ kiểm cấu trúc, bỏ invariant FHIRPath
+	Audit                string // ghi AuditEvent cho thao tác của job (batch async, export): off (mặc định), writes hoặc all; phải trùng fhir-server
+	ValidateProfiles     bool   // kiểm theo meta.profile bằng StructureDefinition trong kho
+	ProfileUnknownError  bool   // profile không có trong kho bị từ chối (mặc định chỉ cảnh báo)
+	UpdateAsCreate       bool   // cho phép PUT Type/id tạo resource mới với id do client chọn
+	Base64BinaryMaxBytes int    // trần `data` base64 (đã giải mã) khi batch ghi Binary (khi dùng kho); âm: không trần
 }
 
 // Default trả về cấu hình mặc định.
@@ -162,6 +164,7 @@ func FromEnv(get func(string) string) (Settings, error) {
 	r.Int(&s.BatchCheckpointEntries, "FHIR_BATCH_CHECKPOINT_ENTRIES")
 	r.Bool(&s.SkipValidation, "FHIR_SKIP_VALIDATION")
 	r.Bool(&s.SkipConstraints, "FHIR_SKIP_CONSTRAINTS")
+	r.String(&s.Audit, "FHIR_AUDIT")
 	r.Bool(&s.ValidateProfiles, "FHIR_VALIDATE_PROFILES")
 	r.Bool(&s.ProfileUnknownError, "FHIR_PROFILE_UNKNOWN_ERROR")
 	r.Bool(&s.UpdateAsCreate, "FHIR_UPDATE_AS_CREATE")
@@ -242,6 +245,11 @@ func (s Settings) validate() error {
 	var errs []error
 	if s.DatabaseRequireSchema && !strings.HasPrefix(s.DatabaseURL, "postgres:") && !strings.HasPrefix(s.DatabaseURL, "postgresql:") {
 		errs = append(errs, errors.New("DATABASE_REQUIRE_SCHEMA: chỉ áp dụng cho PostgreSQL"))
+	}
+	switch s.Audit {
+	case "", "off", "writes", "all":
+	default:
+		errs = append(errs, fmt.Errorf("FHIR_AUDIT: %q không hợp lệ (off, writes hoặc all)", s.Audit))
 	}
 	if isProd(s.Environment) && strings.HasPrefix(s.DatabaseURL, "sqlite:") {
 		errs = append(errs, errors.New("DATABASE_URL: không dùng SQLite ở staging/production"))

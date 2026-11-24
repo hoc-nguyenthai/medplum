@@ -24,6 +24,7 @@ import (
 	"trivita-fhir/apps/fhir-server/internal/presentation/httpapi"
 	"trivita-fhir/pkg/database"
 	"trivita-fhir/pkg/fhir"
+	"trivita-fhir/pkg/fhiraudit"
 	"trivita-fhir/pkg/fhirauth"
 	"trivita-fhir/pkg/fhirbinary"
 	"trivita-fhir/pkg/fhirdownload"
@@ -266,6 +267,17 @@ func (c *Container) build(ctx context.Context) (err error) {
 
 	// Binary kết quả của job (file export, dữ liệu batch async) chỉ người tạo job hoặc quản trị đọc, sửa, xóa được; lớp ngoài cùng của repository phía người gọi.
 	routerRepo = fhirrouter.NewGuard(routerRepo, httpapi.JobAllowed)
+	// Kiểm toán: AuditEvent cho thao tác của người gọi (ngoài Scope và Guard nên chỉ thao tác được phép và thành công mới có) và cho job nền chạy bằng quyền
+	// của người gọi (batch async). Ghi bằng repo không tách project (`repo`), meta.project lấy từ người gọi.
+	auditMode, err := fhiraudit.ParseMode(s.Audit)
+	if err != nil {
+		return err
+	}
+	auditOpts := fhiraudit.Options{Mode: auditMode, Sink: repo, Observer: s.AppName}
+	routerRepo = fhiraudit.Wrap(routerRepo, auditOpts)
+	if scopedJobRepo != nil {
+		scopedJobRepo = fhiraudit.Wrap(scopedJobRepo, auditOpts)
+	}
 	c.routerRepo = routerRepo
 	var responseHook func(context.Context, fhir.Resource) fhir.Resource
 	var binaryContent func(context.Context, *fhir.Binary) ([]byte, error)

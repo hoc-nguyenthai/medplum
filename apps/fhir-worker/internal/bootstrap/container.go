@@ -20,6 +20,7 @@ import (
 	"trivita-fhir/pkg/binarystore/s3store"
 	"trivita-fhir/pkg/database"
 	"trivita-fhir/pkg/fhir"
+	"trivita-fhir/pkg/fhiraudit"
 	"trivita-fhir/pkg/fhirauth"
 	"trivita-fhir/pkg/fhirbinary"
 	"trivita-fhir/pkg/fhirrouter"
@@ -110,6 +111,14 @@ func (c *Container) build(ctx context.Context) (err error) {
 		binaryContent = fhirbinary.ReadContent(blobs, 64<<20) // đọc Bundle đầu vào và đoạn kết quả của batch async đã ra kho
 	}
 
+	// Kiểm toán giống fhir-server (FHIR_AUDIT phải trùng): entry của batch async đi qua router nên ghi AuditEvent bằng routerRepo; ghi bằng repo không tách project.
+	// Không bật JWT thì job không mang người gọi: chủ thể là "anonymous".
+	auditMode, err := fhiraudit.ParseMode(s.Audit)
+	if err != nil {
+		return err
+	}
+	auditOpts := fhiraudit.Options{Mode: auditMode, Sink: jobRepo, Observer: s.AppName}
+
 	// Job mang chữ ký quyền của người gọi khi fhir-server bật JWT: chỉ chạy khi chữ ký hợp lệ, bằng đúng quyền và project đã ký (giống fhir-server).
 	var scopedJobRepo fhirrouter.Repository
 	var jobContext func(context.Context, *fhir.AsyncJob) context.Context
@@ -120,6 +129,7 @@ func (c *Container) build(ctx context.Context) (err error) {
 		}
 		scopedJobRepo = fhirauth.Scope(jobRepo)
 		routerRepo = fhirauth.Scope(routerRepo)
+		scopedJobRepo = fhiraudit.Wrap(scopedJobRepo, auditOpts) // đọc của export chạy bằng quyền người gọi
 		jobContext = func(ctx context.Context, job *fhir.AsyncJob) context.Context {
 			project := ""
 			if job.Meta != nil {
@@ -129,6 +139,7 @@ func (c *Container) build(ctx context.Context) (err error) {
 		}
 	}
 
+	routerRepo = fhiraudit.Wrap(routerRepo, auditOpts)
 	c.Router = fhirrouter.New(routerRepo, fhirrouter.Options{
 		BinaryContent: binaryContent,
 		JobRepository: jobRepo, ScopedJobRepository: scopedJobRepo, JobContext: jobContext, JobOpen: jobOpen(sealer),

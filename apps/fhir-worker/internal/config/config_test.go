@@ -85,6 +85,7 @@ func TestInvalidConfigIsRejectedWithTheVariableName(t *testing.T) {
 		{"Redis sai dạng", map[string]string{"FHIR_SUBSCRIPTIONS": "true", "BROKER_DRIVER": "redis", "REDIS_URL": "http://x"}, "REDIS_URL"},
 		{"driver lạ", map[string]string{"BROKER_DRIVER": "kafka"}, "BROKER_DRIVER"},
 		{"readiness 0", map[string]string{"READINESS_TIMEOUT": "0s"}, "READINESS_TIMEOUT"},
+		{"audit lạ", map[string]string{"FHIR_AUDIT": "reads"}, "FHIR_AUDIT"},
 		{"require schema với sqlite", map[string]string{"DATABASE_REQUIRE_SCHEMA": "true"}, "DATABASE_REQUIRE_SCHEMA"},
 	}
 	for _, c := range cases {

@@ -122,7 +122,7 @@ Cập nhật 2026-11-23 cho khớp code hiện tại (đối chiếu lại từn
 | `bulk-export`, `reindex`, `subscription` (rest-hook) | có |
 | `batch` (batch/transaction với `Prefer: respond-async`) | **có** (`FHIR_ASYNC_BATCH`, tắt mặc định; job `AsyncJob` có checkpoint, hủy bằng `DELETE job/{id}/status`) |
 | `download` (tải attachment URL ngoài về Binary) | **có** (`pkg/fhirdownload`, `FHIR_AUTO_DOWNLOAD`; service `apps/fhir-downloader`) |
-| `subscription-failure-tracker` (tự tắt Subscription lỗi kéo dài) | **có** (`FHIR_SUBSCRIPTION_AUTO_DISABLE`; chưa tạo `AuditEvent`, chỉ ghi log) |
+| `subscription-failure-tracker` (tự tắt Subscription lỗi kéo dài) | **có** (`FHIR_SUBSCRIPTION_AUTO_DISABLE`; chưa tạo `AuditEvent`, chỉ ghi log; `AuditEvent` cho thao tác REST đã có ở `FHIR_AUDIT`) |
 | `cron` | chưa; M1 |
 | `dispatch`, `set-accounts`, `dicom`, `lambda-cleaner`, `post-deploy-migration` | chưa; một phần không áp dụng |
 | `seeds/` (SearchParameter, StructureDefinition, ValueSet dựng sẵn) | **có** (`fhir-server seed definitions`, `pkg/fhirseed`) |
@@ -133,4 +133,4 @@ Cập nhật 2026-11-23 cho khớp code hiện tại (đối chiếu lại từn
 - Kiểm soát truy cập: resource `AccessPolicy` do `auth` lưu (schema `identity`) và dịch thành claim `fhir_access_policy`; `fhir-server` chỉ đọc claim, không lưu `AccessPolicy` (WP-2b). `ParsePolicy` đã **từ chối khóa lạ** (P8 M0 xong). Compartment Patient và `%patient` **xong** (P8, 2026-11-23). `hiddenFields`, `readonlyFields`, `interaction` và nhiều rule OR cho một loại **xong** (2026-11-24; `pkg/fhirauth/fieldrules.go`, `hiddensearch.go`; ws lọc theo người nhận). **Chưa có:** claim `fhir_membership` (điều kiện của `keyvalue`, `mcp`).
 - Search: `_contained` (bị bỏ qua), SubscriptionTopic (R5), chained trong `_sort`/`_include`.
 - Validator: profile/slicing và fixed/pattern **xong 2026-11-24** (`FHIR_VALIDATE_PROFILES`, tắt mặc định; còn discriminator `profile`, resource lồng, Extension theo profile kiểu); **chưa có** binding terminology, kiểm tra đích Reference (WP-5).
-- `AuditEvent`: kiểm toán mới là dòng log (`audit=true` của super-admin, tự tắt Subscription...); Go chưa lưu `AuditEvent` vào kho.
+- `AuditEvent`: **xong 2026-11-24** cho thao tác REST (`pkg/fhiraudit`, `FHIR_AUDIT=off|writes|all`, tắt mặc định, ở `fhir-server` và `fhir-worker`). **Chưa có:** AuditEvent cho đăng nhập (`auth`), tự tắt Subscription (vẫn chỉ ghi log), thao tác bị từ chối, lưu giữ tự động.

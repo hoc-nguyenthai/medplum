@@ -1009,7 +1009,7 @@ flowchart TD
     H --> I["Ghi log WARN audit=true kể cả khi bị từ chối"]
 ```
 
-Điều không thấy trong hình: nhật ký kiểm toán hiện chỉ là dòng log (chưa có `AuditEvent` bền trong kho), nên độ tin cậy của kiểm toán phụ thuộc việc vận hành thu log vào kho không sửa được. Bước 400 xảy ra trước khi chạm kho nên không có dòng audit cho yêu cầu thiếu header.
+Điều không thấy trong hình: dòng log `audit=true` của super-admin là bản ghi duy nhất theo yêu cầu (kể cả bị từ chối), còn `AuditEvent` bền trong kho chỉ có khi bật `FHIR_AUDIT=writes` hoặc `all` (mặc định `off`): ghi cho thao tác thành công của người gọi (kể cả super-admin, đánh dấu `agent.role = super-admin`, thuộc project đã chọn) với người gọi, IP, thực thể và project; không ghi cho thao tác bị từ chối; ghi lỗi chỉ ghi log. `AuditEvent` không sửa, không xóa được qua API (403). Độ tin cậy của kiểm toán với yêu cầu bị từ chối vẫn phụ thuộc việc vận hành thu log vào kho không sửa được. Bước 400 xảy ra trước khi chạm kho nên không có dòng audit cho yêu cầu thiếu header.
 
 **Luồng chính, gán project cho dữ liệu cũ:** xem F-26 (lệnh `assign-project`) và BF-12.
 

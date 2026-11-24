@@ -47,6 +47,9 @@ type Principal struct {
 	Policy *Policy
 	// Job đánh dấu Principal dựng lại cho job nền (từ chuỗi đã ký): được ghi Binary để lưu file kết quả.
 	Job bool
+	// OnBehalfOf là chủ thể của người gọi đã tạo job khi Principal này được dựng lại cho job nền (Subject lúc đó là "job:<id>"): để AuditEvent ghi đúng
+	// người chịu trách nhiệm. Rỗng với người gọi thường và với job không có chủ.
+	OnBehalfOf string
 	// Super là super-admin (scope fhir.super đã được bật): hành động trong project do header chọn. Mọi yêu cầu được ghi nhật ký kiểm toán.
 	Super bool
 	// Expires là lúc token hết hạn (claim exp). Zero: không giới hạn. Dùng cho kết nối sống lâu như websocket.

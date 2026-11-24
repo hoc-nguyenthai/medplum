@@ -13,6 +13,7 @@ Tệp này **được sinh từ `internal/config/config.go`** (xem `docs_test.go
 | `DATABASE_REQUIRE_SCHEMA` | `false` | (chỉ PostgreSQL) từ chối khởi động nếu search_path không phải đúng một schema riêng (docs/plans/microservices-shared-db.md). |
 | `DATABASE_URL` | `sqlite://./fhir.db` | phải trỏ tới CÙNG schema `fhir` với fhir-server (đọc và ghi AsyncJob, đọc và ghi dữ liệu theo quyền của người đã tạo job). fhir-worker KHÔNG chạy migration (fhir-server sở hữu schema); schema chưa migrate thì từ chối khởi động. |
 | `ENVIRONMENT` | `local` | ENVIRONMENT: local \| development \| staging \| production |
+| `FHIR_AUDIT` | `(rỗng)` | ghi AuditEvent cho thao tác của job (batch async, export): off (mặc định), writes hoặc all; phải trùng fhir-server |
 | `FHIR_AUTO_DOWNLOAD` | `false` | AutoDownload: xem Subscriptions. |
 | `FHIR_BASE64_BINARY_MAX_BYTES` | `1048576` | trần `data` base64 (đã giải mã) khi batch ghi Binary (khi dùng kho); âm: không trần |
 | `FHIR_BASE_URL` | `http://localhost:8005/fhir/R4` | là địa chỉ công khai của API FHIR (FHIR_BASE_URL của fhir-server): URL file kết quả export (`<base>/Binary/<id>`) và Location của batch async được dựng từ đây, nên PHẢI trùng fhir-server. |

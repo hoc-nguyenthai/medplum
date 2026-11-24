@@ -142,7 +142,7 @@ Các việc còn mở (chi tiết ở [go-port-checklist.md](go-port-checklist.m
 2. Kiểm tải: search, bulk export, nhiều replica tranh job, websocket nhiều kết nối. Chưa có số liệu.
 3. CI chạy `make ci` (`gofmt`, `go vet`, `go test -race`) và `make test-pg`; repo chưa có file CI.
 4. Diễn tập sao lưu/khôi phục (mục 4) và xoay khóa (mục 5) trên staging.
-5. Kiểm toán bền: hiện chỉ có log `audit=true`, chưa ghi `AuditEvent` vào kho.
+5. Kiểm toán bền: đặt `FHIR_AUDIT=writes` (hoặc `all`) ở `fhir-server` và `fhir-worker` (phải trùng) để ghi `AuditEvent` vào kho (create/update/delete, `all` thêm read/vread/history/search; bulk export của job được ghi theo từng search có dữ liệu, tác nhân là job và người yêu cầu là người tạo job). Mặc định `off`; còn dòng log `audit=true` của super-admin. Ghi `AuditEvent` lỗi chỉ ghi log (không chặn yêu cầu): theo dõi log `fhiraudit: không ghi được AuditEvent`. Chưa có chính sách lưu giữ: dọn bằng `$expunge` của quản trị (AuditEvent không sửa, không xóa qua API). Chưa có AuditEvent cho đăng nhập (ở `auth`) và tự tắt Subscription.
 
 ## 11. Vận hành `ws-gateway` (websocket của Subscription)
 
