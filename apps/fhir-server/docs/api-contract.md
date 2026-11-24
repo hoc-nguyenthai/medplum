@@ -2,6 +2,8 @@
 
 Cập nhật 2026-11-23. **Chỉ mô tả phần `fhir-server` đang phục vụ.** Tài liệu chi tiết (tham chiếu Medplum gốc: REST, 113 operation, ví dụ JSON; có nhãn "CHƯA CÀI" ở phần chưa port) nằm ở thư mục [api-contract/](api-contract/) cạnh tệp này.
 
+> Hợp đồng chi tiết từng route (quy ước chung, bảng trường sinh từ swagger, từng trường hợp phản hồi và các điểm lệch/rủi ro đã đo): [api-contract/common.md](api-contract/common.md), [api-contract/reference/](api-contract/reference/), [api-contract/cases/](api-contract/cases/). Khi lệch, mã và bộ đó thắng.
+
 | Nguồn | Vai trò |
 |---|---|
 | `swagger.json` / `swagger.yaml` (cùng thư mục) | **Nguồn chuẩn** của route, tham số, DTO. Sinh từ annotation: `make swagger APP=fhir-server` |
