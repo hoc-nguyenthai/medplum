@@ -61,6 +61,10 @@ type Settings struct {
 	// SkipValidation bỏ kiểm tra resource khi ghi; SkipConstraints chỉ kiểm tra cấu trúc, bỏ invariant FHIRPath.
 	SkipValidation  bool
 	SkipConstraints bool
+	// ValidateProfiles: kiểm resource theo từng meta.profile bằng StructureDefinition trong kho (cùng project với người gọi): cardinality, fixed/pattern, slicing. Mỗi profile thêm một lần tra cứu kho khi ghi. Mặc định tắt.
+	ValidateProfiles bool
+	// ProfileUnknownError: meta.profile trỏ tới profile không có trong kho bị từ chối (mặc định chỉ cảnh báo); cần FHIR_VALIDATE_PROFILES.
+	ProfileUnknownError bool
 	// UpdateAsCreate: PUT Type/id tạo mới với id do client chọn khi chưa có (mặc định tắt: 404).
 	UpdateAsCreate bool
 
@@ -299,6 +303,8 @@ func FromEnv(get func(string) string) (Settings, error) {
 	r.String(&s.BaseURL, "FHIR_BASE_URL")
 	r.Bool(&s.SkipValidation, "FHIR_SKIP_VALIDATION")
 	r.Bool(&s.SkipConstraints, "FHIR_SKIP_CONSTRAINTS")
+	r.Bool(&s.ValidateProfiles, "FHIR_VALIDATE_PROFILES")
+	r.Bool(&s.ProfileUnknownError, "FHIR_PROFILE_UNKNOWN_ERROR")
 	r.Bool(&s.UpdateAsCreate, "FHIR_UPDATE_AS_CREATE")
 	r.String(&s.ReadTokens, "FHIR_READ_TOKENS")
 	r.String(&s.WriteTokens, "FHIR_WRITE_TOKENS")

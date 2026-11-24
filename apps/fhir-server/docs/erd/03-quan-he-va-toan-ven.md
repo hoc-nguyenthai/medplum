@@ -71,7 +71,7 @@ Mọi ghi đi qua **bốn lớp bọc** rồi tới `Store`: `fhirauth.Scope` (c
 - **`versionId` và `lastUpdated`** do `Store` sinh: UUID v4 mới ở **mỗi** lần ghi và thời điểm UTC mili giây dạng chuỗi; giá trị client gửi trong `meta` bị bỏ (`handlers.go:createWithID`, `crud.go:149-152`). `id` ở `POST` cũng do server cấp (id client gửi bị bỏ).
 - **Mức cô lập**: `BeginTx(ctx, nil)` nên là mức mặc định của driver (PostgreSQL: `READ COMMITTED`). Sự an toàn khi cập nhật đồng thời đến từ `FOR UPDATE` cộng `If-Match`, không từ mức cô lập (chưa kiểm bằng cấu hình cụm).
 - **Mặc định không bắt buộc `If-Match`**: không có `If-Match` thì ghi **ghi đè theo thứ tự đến** (last write wins). Không có cấu hình bắt buộc điều kiện (grep `If-Match` ở `config.go`: không có).
-- **Kiểm dữ liệu khi ghi**: `fhirvalidate` (cấu trúc, cardinality, kiểu nguyên thủy, invariant FHIRPath) trừ khi `FHIR_SKIP_VALIDATION` (bỏ tất cả) hoặc `FHIR_SKIP_CONSTRAINTS` (bỏ invariant); **không kiểm Reference, profile, binding terminology**.
+- **Kiểm dữ liệu khi ghi**: `fhirvalidate` (cấu trúc, cardinality, kiểu nguyên thủy, invariant FHIRPath) trừ khi `FHIR_SKIP_VALIDATION` (bỏ tất cả) hoặc `FHIR_SKIP_CONSTRAINTS` (bỏ invariant); **không kiểm Reference, binding terminology**; profile và slicing chỉ kiểm khi bật `FHIR_VALIDATE_PROFILES`.
 
 ```mermaid
 sequenceDiagram

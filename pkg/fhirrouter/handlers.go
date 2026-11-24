@@ -74,7 +74,7 @@ func toResource(body map[string]any) (fhir.Resource, error) {
 }
 
 // writeBody kiểm tra body của create/update: là object, đúng resourceType, hợp lệ theo fhirvalidate.
-func (r *Router) writeBody(req *Request, rt string) (map[string]any, error) {
+func (r *Router) writeBody(ctx context.Context, req *Request, rt string) (map[string]any, error) {
 	body, ok := req.Body.(map[string]any)
 	if !ok {
 		return nil, BadRequest("Body phải là một resource JSON")
@@ -83,7 +83,7 @@ func (r *Router) writeBody(req *Request, rt string) (map[string]any, error) {
 		return nil, BadRequest(fmt.Sprintf("resourceType không khớp: đường dẫn là %s, body là %q", rt, got))
 	}
 	if !r.opts.SkipValidation {
-		res := fhirvalidate.Validate(body, &fhirvalidate.Options{SkipConstraints: r.opts.SkipConstraints})
+		res := fhirvalidate.Validate(body, r.validateOptions(ctx))
 		if !res.OK() {
 			out := res.Outcome()
 			errs := res.Errors()
@@ -149,7 +149,7 @@ func (r *Router) conditionalMatches(ctx context.Context, rt string, q url.Values
 
 func (r *Router) create(ctx context.Context, req *Request) (*Response, error) {
 	rt := req.Params["resourceType"]
-	body, err := r.writeBody(req, rt)
+	body, err := r.writeBody(ctx, req, rt)
 	if err != nil {
 		return nil, err
 	}
@@ -289,7 +289,7 @@ func (r *Router) vread(ctx context.Context, req *Request) (*Response, error) {
 
 func (r *Router) update(ctx context.Context, req *Request) (*Response, error) {
 	rt, id := req.Params["resourceType"], req.Params["id"]
-	body, err := r.writeBody(req, rt)
+	body, err := r.writeBody(ctx, req, rt)
 	if err != nil {
 		return nil, err
 	}
@@ -343,7 +343,7 @@ func (r *Router) updateFrom(ctx context.Context, body map[string]any, id, ifMatc
 
 func (r *Router) conditionalUpdate(ctx context.Context, req *Request) (*Response, error) {
 	rt := req.Params["resourceType"]
-	body, err := r.writeBody(req, rt)
+	body, err := r.writeBody(ctx, req, rt)
 	if err != nil {
 		return nil, err
 	}
@@ -435,7 +435,7 @@ func (r *Router) patchBody(ctx context.Context, req *Request, rt, id string) (*R
 	}
 	if !r.opts.SkipValidation {
 		sub := &Request{Body: pm}
-		if _, err := r.writeBody(sub, rt); err != nil {
+		if _, err := r.writeBody(ctx, sub, rt); err != nil {
 			return nil, err
 		}
 	}

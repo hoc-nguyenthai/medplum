@@ -191,8 +191,8 @@ Mỗi dòng một tính năng hoặc operation. Cột: ID, tên và vị trí Me
 |---|---|---|---|---|---|---|
 | V-01 | Kiểm cấu trúc, kiểu, cardinality, choice type khi ghi (chế độ strict) (`repository/validation.ts:40-69,106-149`) | CÓ | `pkg/fhirvalidate/validate.go`; 0 lỗi trên 14 file dữ liệu thật (`go-port-status.md` 2b); `suite.go:228,718` | — | cao | — |
 | V-02 | Invariant FHIRPath (`validateResource` của `@medplum/core`) | CÓ | `validate.go:407-444`, `pkg/fhirpath` 679/686 ca HL7 | — | cao | — |
-| V-03 | Kiểm theo profile `meta.profile` -> `StructureDefinition` (`validation.ts:151-179,234-256`) | CHƯA | `validate.go:5`: "Chưa làm: profile và slicing, fixed/pattern, binding, đích Reference" | StructureDefinition trong kho (V-12) | cao nếu dùng profile | L |
-| V-04 | Slicing, `fixed[x]`, `pattern[x]` | CHƯA | như V-03 | — | cao nếu dùng profile | L |
+| V-03 | Kiểm theo profile `meta.profile` -> `StructureDefinition` (`validation.ts:151-179,234-256`) | **MỘT PHẦN (2026-11-24)** | `pkg/fhirvalidate/profile.go`, `pkg/fhirrouter/profiles.go`; bật bằng `FHIR_VALIDATE_PROFILES`, tra StructureDefinition trong kho theo project; cardinality, maxLength, giới hạn kiểu `[x]`, invariant của profile. Chưa: resource lồng, Extension theo profile kiểu, chưa đối chiếu với validator của Medplum trên bộ profile thật | StructureDefinition trong kho (V-12) | cao nếu dùng profile | M |
+| V-04 | Slicing, `fixed[x]`, `pattern[x]` | **MỘT PHẦN (2026-11-24)** | như V-03; discriminator `value`, `pattern`, `exists`, `type`; `closed`/`ordered`/`openAtEnd`; discriminator `profile` và đường dẫn có hàm FHIRPath chỉ cảnh báo | — | cao nếu dùng profile | M |
 | V-05 | Kiểm binding terminology khi ghi (cờ `validateTerminology`) (`validation.ts:181-232`) | CHƯA | `validate.go:5`; README `fhir-server`: "code ngoài ValueSet chưa bị từ chối" | Terminology (nhóm T) | vừa | M |
 | V-06 | Kiểm đích `Reference` theo profile target | CHƯA | `validate.go:5` | — | thấp | M |
 | V-07 | `checkReferencesOnWrite`: mọi `Reference` phải đọc được (`references.ts:29-119`, `repo.ts:1183-1187`) | CHƯA | grep `referential`, `checkReferences`: 0 | — | vừa | M |

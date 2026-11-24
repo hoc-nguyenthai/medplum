@@ -126,7 +126,7 @@ func informational(msg string) *fhir.OperationOutcome {
 
 // validateOp: POST /{type}/$validate. Body là resource cần kiểm tra, hoặc Parameters có tham số "resource".
 // Hợp lệ trả 200 + OperationOutcome (có thể kèm cảnh báo); không hợp lệ trả 400 + OperationOutcome các lỗi.
-func (r *Router) validateOp(_ context.Context, req *Request) (*Response, error) {
+func (r *Router) validateOp(ctx context.Context, req *Request) (*Response, error) {
 	rt := req.Params["resourceType"]
 	in, err := ParseInput(req)
 	if err != nil {
@@ -142,7 +142,7 @@ func (r *Router) validateOp(_ context.Context, req *Request) (*Response, error) 
 	if got, _ := doc["resourceType"].(string); got != rt {
 		return nil, BadRequest(fmt.Sprintf("resourceType không khớp: đường dẫn là %s, resource là %q", rt, got))
 	}
-	res := fhirvalidate.Validate(doc, &fhirvalidate.Options{SkipConstraints: r.opts.SkipConstraints})
+	res := fhirvalidate.Validate(doc, r.validateOptions(ctx))
 	if !res.OK() {
 		return nil, &Error{Status: 400, Outcome: res.Outcome()}
 	}

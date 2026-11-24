@@ -143,8 +143,9 @@ Kế hoạch: [modules/p17-async-batch-download-autodisable.md](modules/p17-asyn
 - [ ] Search `_contained`
 - [ ] Chained trong `_sort` và `_include`; `:iterate` lồng chained
 - [ ] SubscriptionTopic (R5)
-- [ ] Validator: profile và slicing
-- [ ] Validator: fixed/pattern, binding terminology, kiểm tra đích Reference
+- [x] Validator: profile và slicing — xong 2026-11-24 (`pkg/fhirvalidate/profile.go`, `FHIR_VALIDATE_PROFILES`, tắt mặc định); còn: discriminator `profile`/hàm FHIRPath, resource lồng, Extension theo profile kiểu
+- [x] Validator: fixed/pattern — xong cùng profile (2026-11-24)
+- [ ] Validator: binding terminology, kiểm tra đích Reference
 - [ ] Ghi `AuditEvent` vào kho (hiện chỉ là dòng log)
 - [x] Hạn mức dùng chung nhiều replica qua Redis (#14) — xong 2026-11-24 (`pkg/ratelimit`)
 - [ ] Khóa tài khoản theo số lần đăng nhập sai (#13)

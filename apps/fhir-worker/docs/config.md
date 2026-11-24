@@ -27,6 +27,7 @@ Tệp này **được sinh từ `internal/config/config.go`** (xem `docs_test.go
 | `FHIR_JOB_SIGNING_KEY` | `(rỗng)` | là khóa ký quyền của job (tối thiểu 32 ký tự), dùng chung với fhir-server; bắt buộc khi bật JWT trừ khi dùng dev HMAC. |
 | `FHIR_JWT_HMAC_SECRET` | `(rỗng)` | CHỈ cho dev: khi FHIR_JWT_HMAC_SECRET của fhir-server dùng HS256 thì khóa ký job được suy từ nó (như fhir-server); cấm ở staging/production. |
 | `FHIR_JWT_ISSUER` | `(rỗng)` | chỉ để biết fhir-server có bật JWT không (fhir-worker không kiểm token): có thì job mang chữ ký quyền của người gọi (job-seal) và chỉ chạy khi chữ ký hợp lệ, bằng đúng quyền và project của người đó; khi đó phải có khóa ký job (FHIR_JOB_SIGNING_KEY, hoặc dev HMAC). Rỗng: token tĩnh, job chạy không tách project như fhir-server ở chế độ đó. |
+| `FHIR_PROFILE_UNKNOWN_ERROR` | `false` | profile không có trong kho bị từ chối (mặc định chỉ cảnh báo) |
 | `FHIR_S3_ACCESS_KEY_ID` | `(rỗng)` | bắt buộc khi dùng s3: |
 | `FHIR_S3_ENDPOINT` | `(rỗng)` | kho tương thích S3 (MinIO, RustFS...), http(s)://host[:port]; trống: AWS |
 | `FHIR_S3_REGION` | `(rỗng)` | S3 (BinaryStorage dạng `s3:`). Khóa truy cập chỉ đọc từ biến môi trường, không có trong log. bắt buộc (vd eu-west-1) |
@@ -34,10 +35,11 @@ Tệp này **được sinh từ `internal/config/config.go`** (xem `docs_test.go
 | `FHIR_S3_SESSION_TOKEN` | `(rỗng)` | tùy chọn, cho khóa tạm |
 | `FHIR_S3_SSE` | `(rỗng)` | "", "AES256" hoặc "aws:kms" |
 | `FHIR_SKIP_CONSTRAINTS` | `false` | chỉ kiểm cấu trúc, bỏ invariant FHIRPath |
-| `FHIR_SKIP_VALIDATION` | `false` | SkipValidation, SkipConstraints, UpdateAsCreate và Base64BinaryMaxBytes PHẢI trùng fhir-server: batch async chạy từng entry qua cùng bộ xử lý ghi như API. bỏ kiểm tra bằng fhirvalidate khi ghi (chỉ dev/test) |
+| `FHIR_SKIP_VALIDATION` | `false` | SkipValidation, SkipConstraints, ValidateProfiles, ProfileUnknownError, UpdateAsCreate và Base64BinaryMaxBytes PHẢI trùng fhir-server: batch async chạy từng entry qua cùng bộ xử lý ghi như API. bỏ kiểm tra bằng fhirvalidate khi ghi (chỉ dev/test) |
 | `FHIR_STORAGE_BASE_URL` | `(rỗng)` | (tùy chọn) là địa chỉ công khai của /storage nếu khác mặc định; dùng để nhận ra và viết lại URL kho trong dữ liệu batch (như fhir-server). |
 | `FHIR_SUBSCRIPTIONS` | `false` | Publish: có phát sự kiện ghi resource lên Redis không. Tự suy từ FHIR_SUBSCRIPTIONS hoặc FHIR_AUTO_DOWNLOAD (cùng điều kiện của fhir-server): batch async ghi resource nên các service nghe (fhir-notifier, fhir-downloader) phải thấy các lần ghi đó. Cần BROKER_DRIVER=redis và REDIS_URL (broker bộ nhớ không đến được tiến trình khác). |
 | `FHIR_UPDATE_AS_CREATE` | `false` | cho phép PUT Type/id tạo resource mới với id do client chọn |
+| `FHIR_VALIDATE_PROFILES` | `false` | kiểm theo meta.profile bằng StructureDefinition trong kho |
 | `HTTP_ADDR` | `:8011` | địa chỉ nghe của các probe, ví dụ :8011 (service không có route nghiệp vụ) |
 | `READINESS_TIMEOUT` | `2s` | hạn tối đa của /health/ready khi kiểm database |
 | `READ_HEADER_TIMEOUT` | `10s` | hạn đọc phần đầu HTTP của mỗi yêu cầu probe (chống kết nối treo) |

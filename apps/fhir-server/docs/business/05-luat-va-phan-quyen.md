@@ -49,7 +49,7 @@ Loại luật: `BM` nghiệp vụ · `SEC` bảo mật · `DATA` toàn vẹn · 
 |---|---|---|---|
 | BR-25 | Mọi create, update, patch (kể cả entry bundle) qua `fhirvalidate`; issue mức `error` thì 400 OperationOutcome với `expression` là đường dẫn; `warning` không chặn ghi | DATA | F-01, F-03, F-04, F-09, F-11 |
 | BR-26 | Phạm vi kiểm: cấu trúc, kiểu, cardinality, choice type, regex nguyên thủy, invariant FHIRPath; không có profile, slicing, fixed/pattern, binding terminology | DATA | F-11 |
-| BR-27 | `FHIR_SKIP_VALIDATION=true` bỏ kiểm khi ghi và bị cấm ở staging/production (service từ chối khởi động); `FHIR_SKIP_CONSTRAINTS=true` chỉ bỏ invariant; `$validate` luôn kiểm | OPS | F-11 |
+| BR-27 | `FHIR_SKIP_VALIDATION=true` bỏ kiểm khi ghi và bị cấm ở staging/production (service từ chối khởi động); `FHIR_SKIP_CONSTRAINTS=true` chỉ bỏ invariant; `$validate` luôn kiểm; `FHIR_VALIDATE_PROFILES=true` kiểm thêm theo từng `meta.profile` (StructureDefinition trong kho, cùng project), profile không có trong kho chỉ là cảnh báo trừ khi `FHIR_PROFILE_UNKNOWN_ERROR=true` | OPS | F-11 |
 | BR-28 | Server không kiểm tồn tại của đích Reference khi ghi và không kiểm tham chiếu ngược khi xóa; tham chiếu treo là hợp lệ | DATA | F-05, F-11 |
 | BR-29 | Khi bật JWT, `meta.project` của resource ghi luôn bị ghi đè bằng project của người gọi (giá trị client gửi bị bỏ); khi dùng token tĩnh không có tách project nên `meta.project` do client gửi được giữ nguyên | SEC | F-01, F-03, F-11 |
 

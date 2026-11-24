@@ -337,6 +337,7 @@ Khuôn mỗi chức năng: **Mục đích · Tác nhân · Tiền điều kiện
 **Luồng chính:**
 1. Kiểm cấu trúc theo định nghĩa R4: thuộc tính lạ, kiểu, mảng hay đơn, giá trị rỗng, cardinality tối thiểu, choice type, định dạng kiểu nguyên thủy (regex của đặc tả).
 2. Kiểm invariant FHIRPath (dom-2, pat-1, obs-6, ...) trừ khi `FHIR_SKIP_CONSTRAINTS`.
+2a. Khi `FHIR_VALIDATE_PROFILES=true` và resource có `meta.profile`: kiểm theo StructureDefinition tương ứng trong kho (cardinality min/max, `fixed[x]`, `pattern[x]`, `maxLength`, giới hạn kiểu của `[x]`, invariant do profile khai báo, slicing theo discriminator `value`, `pattern`, `exists`, `type` kèm `closed`, `ordered`, `openAtEnd`). Chỉ chạy khi cấu trúc cơ bản đã đúng. Discriminator `profile` hoặc đường dẫn có hàm FHIRPath chỉ cho cảnh báo, không áp cardinality của slice. Chưa kiểm binding terminology, đích `Reference`, resource lồng (`contained`, `Bundle.entry`) theo profile riêng, và giá trị Extension theo profile kiểu.
 3. Chỉ issue mức `error` chặn việc ghi; `warning` (ví dụ dom-6) không chặn và không được trả lại ở thao tác ghi.
 4. Lỗi: 400 OperationOutcome, mỗi issue có `severity=error`, `code`, `diagnostics`, `details.text` và `expression` (ví dụ `Patient.name[0].given[1]`).
 5. `$validate` luôn kiểm (kể cả khi `FHIR_SKIP_VALIDATION`), không chạm CSDL: hợp lệ thì 200 OperationOutcome (`All OK` hoặc kèm cảnh báo), không hợp lệ thì 400 với toàn bộ issue (cả cảnh báo).

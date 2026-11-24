@@ -278,7 +278,7 @@ func (r *Router) postWithID(ctx context.Context, outer *Request, e *entryRequest
 		return nil, NotFoundMsg("Resource type không tồn tại: " + rt)
 	}
 	req := &Request{Method: "POST", Path: e.pathPart, Params: map[string]string{"resourceType": rt}, Header: http.Header{}, Body: e.resource}
-	body, err := r.writeBody(req, rt)
+	body, err := r.writeBody(ctx, req, rt)
 	if err != nil {
 		return nil, err
 	}

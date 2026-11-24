@@ -286,6 +286,7 @@ func (c *Container) build(ctx context.Context) (err error) {
 		BaseURL:         strings.TrimRight(s.BaseURL, "/"),
 		SkipValidation:  s.SkipValidation,
 		SkipConstraints: s.SkipConstraints, UpdateAsCreate: s.UpdateAsCreate,
+		ValidateProfiles: s.ValidateProfiles, ProfileUnknownError: s.ProfileUnknownError,
 		NewOrchestrator: func(run workflow.JobRunner) workflow.JobOrchestrator {
 			return workflow.NewInline(run, s.JobConcurrency)
 		},

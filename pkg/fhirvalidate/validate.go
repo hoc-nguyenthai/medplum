@@ -2,7 +2,8 @@
 // cấu trúc (thuộc tính lạ, kiểu, mảng hay đơn, rỗng), cardinality tối thiểu, choice type,
 // định dạng kiểu nguyên thủy (regex của đặc tả) và các invariant FHIRPath (dom-2, pat-1, obs-6, ...).
 //
-// Chưa làm: profile và slicing, fixed/pattern, binding với terminology, kiểm tra đích của Reference.
+// Theo profile (meta.profile): cardinality, fixed/pattern, slicing... khi Options.Profiles được đặt, xem profile.go.
+// Chưa làm: binding với terminology, kiểm tra đích của Reference.
 package fhirvalidate
 
 import (
@@ -84,6 +85,11 @@ func (r Result) Outcome() *fhir.OperationOutcome {
 type Options struct {
 	// SkipConstraints bỏ qua invariant FHIRPath (nhanh hơn, chỉ kiểm tra cấu trúc).
 	SkipConstraints bool
+	// Profiles (tùy chọn) tra StructureDefinition theo canonical để kiểm resource theo từng meta.profile (profile.go).
+	// Không đặt thì meta.profile không được kiểm.
+	Profiles ProfileResolver
+	// UnknownProfile là mức độ khi meta.profile trỏ tới profile Profiles không tìm thấy; mặc định Warning.
+	UnknownProfile Severity
 }
 
 // Validate kiểm tra resource là object JSON đã giải mã (nên dùng fhirpath.Decode để giữ nguyên số).
@@ -97,6 +103,9 @@ func Validate(resource any, opts *Options) Result {
 	}
 	v := &validator{opts: *opts, top: obj}
 	v.resource(obj, "", true)
+	if opts.Profiles != nil && v.errorCount() == 0 {
+		v.validateProfiles(obj)
+	}
 	return Result{v.issues}
 }
 

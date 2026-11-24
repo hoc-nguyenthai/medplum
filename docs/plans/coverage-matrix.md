@@ -132,5 +132,5 @@ Cập nhật 2026-11-23 cho khớp code hiện tại (đối chiếu lại từn
 
 - Kiểm soát truy cập: resource `AccessPolicy` do `auth` lưu (schema `identity`) và dịch thành claim `fhir_access_policy`; `fhir-server` chỉ đọc claim, không lưu `AccessPolicy` (WP-2b). `ParsePolicy` đã **từ chối khóa lạ** (P8 M0 xong). Compartment Patient và `%patient` **xong** (P8, 2026-11-23). `hiddenFields`, `readonlyFields`, `interaction` và nhiều rule OR cho một loại **xong** (2026-11-24; `pkg/fhirauth/fieldrules.go`, `hiddensearch.go`; ws lọc theo người nhận). **Chưa có:** claim `fhir_membership` (điều kiện của `keyvalue`, `mcp`).
 - Search: `_contained` (bị bỏ qua), SubscriptionTopic (R5), chained trong `_sort`/`_include`.
-- Validator: profile/slicing, fixed/pattern, binding terminology, kiểm tra đích Reference (WP-5).
+- Validator: profile/slicing và fixed/pattern **xong 2026-11-24** (`FHIR_VALIDATE_PROFILES`, tắt mặc định; còn discriminator `profile`, resource lồng, Extension theo profile kiểu); **chưa có** binding terminology, kiểm tra đích Reference (WP-5).
 - `AuditEvent`: kiểm toán mới là dòng log (`audit=true` của super-admin, tự tắt Subscription...); Go chưa lưu `AuditEvent` vào kho.

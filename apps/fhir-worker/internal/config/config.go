@@ -89,9 +89,11 @@ type Settings struct {
 	// BatchCheckpointEntries: số entry giữa hai lần lưu checkpoint của batch async (ngoài ra lưu ít nhất mỗi 5 giây).
 	BatchCheckpointEntries int
 
-	// SkipValidation, SkipConstraints, UpdateAsCreate và Base64BinaryMaxBytes PHẢI trùng fhir-server: batch async chạy từng entry qua cùng bộ xử lý ghi như API.
+	// SkipValidation, SkipConstraints, ValidateProfiles, ProfileUnknownError, UpdateAsCreate và Base64BinaryMaxBytes PHẢI trùng fhir-server: batch async chạy từng entry qua cùng bộ xử lý ghi như API.
 	SkipValidation       bool // bỏ kiểm tra bằng fhirvalidate khi ghi (chỉ dev/test)
 	SkipConstraints      bool // chỉ kiểm cấu trúc, bỏ invariant FHIRPath
+	ValidateProfiles     bool // kiểm theo meta.profile bằng StructureDefinition trong kho
+	ProfileUnknownError  bool // profile không có trong kho bị từ chối (mặc định chỉ cảnh báo)
 	UpdateAsCreate       bool // cho phép PUT Type/id tạo resource mới với id do client chọn
 	Base64BinaryMaxBytes int  // trần `data` base64 (đã giải mã) khi batch ghi Binary (khi dùng kho); âm: không trần
 }
@@ -160,6 +162,8 @@ func FromEnv(get func(string) string) (Settings, error) {
 	r.Int(&s.BatchCheckpointEntries, "FHIR_BATCH_CHECKPOINT_ENTRIES")
 	r.Bool(&s.SkipValidation, "FHIR_SKIP_VALIDATION")
 	r.Bool(&s.SkipConstraints, "FHIR_SKIP_CONSTRAINTS")
+	r.Bool(&s.ValidateProfiles, "FHIR_VALIDATE_PROFILES")
+	r.Bool(&s.ProfileUnknownError, "FHIR_PROFILE_UNKNOWN_ERROR")
 	r.Bool(&s.UpdateAsCreate, "FHIR_UPDATE_AS_CREATE")
 	r.Int(&s.Base64BinaryMaxBytes, "FHIR_BASE64_BINARY_MAX_BYTES")
 	if err := r.Err(); err != nil {

@@ -112,6 +112,11 @@ type Options struct {
 	SkipValidation bool
 	// SkipConstraints chỉ kiểm tra cấu trúc, bỏ invariant FHIRPath.
 	SkipConstraints bool
+	// ValidateProfiles bật kiểm resource theo từng meta.profile bằng StructureDefinition trong kho (cùng project với người gọi):
+	// cardinality, fixed/pattern, slicing... (pkg/fhirvalidate/profile.go). Mỗi profile tốn một lần tra cứu kho khi ghi.
+	// Profile không tìm thấy là cảnh báo, trừ khi ProfileUnknownError (khi đó là lỗi 400).
+	ValidateProfiles    bool
+	ProfileUnknownError bool
 	// NewOrchestrator tạo orchestrator chạy job nền (AsyncJob) với runner do Router cung cấp.
 	// Mặc định: workflow.Inline với 2 job đồng thời (trong process, mất job đang chạy khi restart);
 	// dùng adapter asynq hoặc Temporal để bền vững và chạy ở tiến trình khác.
