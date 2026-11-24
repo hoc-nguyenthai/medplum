@@ -10,7 +10,7 @@ Cập nhật 2026-11-24 (D1).
 
 ## Tầng
 
-Như `fhir-server` và `ws-gateway` ("vỏ mỏng", C-5): `config`, `presentation/httpapi`, `bootstrap`, không có `domain`/`application`/`infrastructure`. Nghiệp vụ DICOM (đọc metadata, chuyển DICOM JSON, tách frame) sẽ nằm ở `pkg/dicomweb` (D2 trở đi) để dùng lại và test độc lập. Luật phụ thuộc ở `architecture_test.go`.
+Như `fhir-server` và `ws-gateway` ("vỏ mỏng", C-5): `config`, `presentation/httpapi`, `bootstrap`, không có `domain`/`application`/`infrastructure`. Nghiệp vụ DICOM nằm ở `pkg/dicomweb` (phần thuần đã có từ D2: DICOM JSON, chuyển đổi, ánh xạ study/series, làm sạch metadata, số liệu tổng hợp; đọc tệp và tách frame thêm ở D3, D5) để dùng lại và test độc lập. Luật phụ thuộc ở `architecture_test.go`.
 
 ```
 cmd/dicomweb            serve | healthcheck
@@ -39,4 +39,4 @@ Lỗi trả `{"error": "..."}` (JSON thường), không dùng OperationOutcome v
 
 ## Chưa có (làm ở các bước sau)
 
-D2 `pkg/dicomweb` (chuyển đổi, DICOM JSON); D3 STOW-RS (tách luồng ghi kho và đọc metadata, chốt chặn SQ lồng sâu và tệp cắt giữa PixelData); D4 QIDO-RS, WADO-RS; D5 worker pixel data; D6 compose và e2e. Manifest K8s mẫu chưa có (dự án hiện bỏ qua K8s).
+D3 STOW-RS (kèm đọc tệp DICOM thật và đọc-sửa-ghi số liệu tổng hợp trên `pkg/dicomweb` đã có từ D2) (tách luồng ghi kho và đọc metadata, chốt chặn SQ lồng sâu và tệp cắt giữa PixelData); D4 QIDO-RS, WADO-RS; D5 worker pixel data; D6 compose và e2e. Manifest K8s mẫu chưa có (dự án hiện bỏ qua K8s).
