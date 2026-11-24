@@ -150,10 +150,10 @@ Kế hoạch: [modules/p17-async-batch-download-autodisable.md](modules/p17-asyn
 
 ## 16. Quyết định cần chốt trước
 
-- [ ] M1: runtime Bot
-- [ ] M2: có chuyển dữ liệu từ CSDL Medplum đang chạy không
-- [ ] M3: phạm vi `agent`, `ccda`, `hl7`, tích hợp bên thứ ba
-- [ ] M4: nhà cung cấp AI
-- [ ] M5: kho đối tượng ngoài S3
+- [x] M1: runtime Bot — chốt 2026-11-24: ngoài phạm vi
+- [x] M2: có chuyển dữ liệu từ CSDL Medplum đang chạy không — chốt 2026-11-24: không
+- [x] M3: phạm vi `agent`, `ccda`, `hl7`, tích hợp bên thứ ba — chốt 2026-11-24: ngoài phạm vi
+- [x] M4: nhà cung cấp AI — chốt 2026-11-24: ngoài phạm vi
+- [x] M5: kho đối tượng ngoài S3 — chốt 2026-11-24: chỉ hệ thống tệp và S3
 - [ ] Q-F1: mức tương thích với client Medplum (quyết định có làm base URL theo project, `openapi.json`)
 - [ ] Q-17.1 đến Q-17.7 của kế hoạch #17

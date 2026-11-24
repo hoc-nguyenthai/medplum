@@ -39,7 +39,21 @@ Tổng khoảng 69,5 nghìn dòng (chưa tính `migrations`). Phần có kế ho
 
 `packages/` còn có `agent`, `app`, `bot-layer`, `ccda`, `cli`, `core`, `fhir-router`, `fhirtypes`, `hl7`, `react`, `react-hooks`, `graphiql`, `generator`, `create-medplum` và các tích hợp (`dosespot-*`, `health-gorilla-*`, `scriptsure-react`). Trong repo Go đã có phần tương đương của `core`/`fhirtypes` (`pkg/fhir`), `fhir-router` (`pkg/fhirrouter`) và `cli` (`apps/fhir-cli`). **`agent`** (cầu nối HL7/DICOM chạy tại cơ sở y tế), `ccda`, `hl7` và các tích hợp bên thứ ba **chưa nằm trong bất kỳ kế hoạch nào**; chưa rõ chúng có thuộc phạm vi migration hay không.
 
-## 3. Quyết định còn thiếu (chặn việc lập kế hoạch cho phần C)
+## 3. Quyết định M1 đến M5 (chốt 2026-11-24)
+
+Đã chốt theo đề xuất, tất cả theo hướng **ngoài phạm vi** của đợt này; mở lại khi có nhu cầu cụ thể (ghi quyết định mới ở đây).
+
+| # | Quyết định | Hệ quả |
+|---|---|---|
+| M1 | **Không chạy Bot** trong đợt này (ngoài phạm vi, làm sau) | `cds`, `webhook` thật (executor W7), `cron`, `Bot/$execute`/`$deploy`/`$init`, `/admin/projects/:id/bot`, thanh toán (`Claim/$submit`...), `hl7`, `cloud` (Lambda, Fission) và `bots` **ngoài phạm vi**. Khung `webhook` với executor giả (đã có) giữ nguyên. Không lập kế hoạch `bots`. |
+| M2 | **Không chuyển dữ liệu** từ CSDL Medplum, bắt đầu với dữ liệu mới | `migrations/` của Medplum không liên quan; không cần kế hoạch di trú (ánh xạ bảng, băm mật khẩu `$2b$`, Binary). |
+| M3 | `agent`, `ccda`, `hl7` và tích hợp bên thứ ba (Health Gorilla, DoseSpot, ScriptSure) **ngoài phạm vi** | `Agent/*`, `ws/agent`, `Patient/$ccda-export` không làm. |
+| M4 | `ai` **ngoài phạm vi** | `$ai`, `$aws-textract`, `ws/ai-realtime` không làm. |
+| M5 | **Chỉ hệ thống tệp và S3** | Giữ S1 đến S7. Azure Blob, GCP Storage, SES ngoài phạm vi. |
+
+Còn mở: H1 đến H5 (`dicom`), Q-F1 và các Q khác ở bảng 5.
+
+### 3.1 Bản gốc (trước khi chốt)
 
 | # | Câu hỏi | Vì sao chặn |
 |---|---|---|
@@ -51,10 +65,10 @@ Tổng khoảng 69,5 nghìn dòng (chưa tính `migrations`). Phần có kế ho
 
 ## 4. Việc nên làm để "đủ" ở mức kế hoạch
 
-1. Chốt M1 đến M5 (hoặc ghi rõ "ngoài phạm vi").
+1. ~~Chốt M1 đến M5~~ (xong 2026-11-24, tất cả ngoài phạm vi, xem mục 3).
 2. Bản kiểm kê tương đương cho `fhir` (đã ở mục 6 của khảo sát).
 3. ~~Viết kế hoạch chi tiết cho `email` + `storage`, `keyvalue`, `mcp`~~ (đã có, xem mục 1); `email` và `storage` đã cài, `keyvalue` và `mcp` chưa.
-4. Kế hoạch cho `workers` (nhóm theo hàng đợi, gắn với từng module sở hữu nó) và cho `bots` nếu chọn phương án D ở M1.
+4. Kế hoạch cho `workers` (nhóm theo hàng đợi, gắn với từng module sở hữu nó) (`bots` ngoài phạm vi theo M1).
 5. Bảng đối chiếu hạ tầng (`otel`, `redis`, `pubsub`, `ratelimit`, `config`, `healthcheck`) để biết phần nào Go đã có, phần nào còn thiếu.
 
 ## 5. Đối chiếu route và operation (2026-11-23)

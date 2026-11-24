@@ -2,7 +2,7 @@
 
 Cập nhật 2026-11-23 (thêm mục Ưu tiên 1b từ đối chiếu route, [coverage-matrix.md](coverage-matrix.md) mục 5). Thứ tự ưu tiên do người dùng chốt: **hoàn thành các module và gắn thành service API trước**; việc hardening riêng lẻ (như khóa tài khoản) làm sau. Chi tiết từng việc nằm ở tài liệu được dẫn; file này chỉ là sổ theo dõi.
 
-Trạng thái: `[ ]` chưa làm, `[~]` đang chặn bởi quyết định, `[x]` xong.
+Trạng thái: `[ ]` chưa làm, `[~]` đang chặn bởi quyết định, `[x]` xong, `[-]` ngoài phạm vi (đã quyết định không làm, mở lại khi có nhu cầu).
 
 ## Ưu tiên 1: hoàn thành module và gắn thành service API
 
@@ -12,13 +12,13 @@ Trạng thái: `[ ]` chưa làm, `[~]` đang chặn bởi quyết định, `[x]`
 | 2 | `auth` P4/P5: đăng ký, reCAPTCHA, MFA | [x] P4 và P5 xong; còn P6/P7 (#3); P4 đã duyệt, **P4 và P5 xong (2026-11-22)**: `resetpassword`, `setpassword`, `verifyemail`, `changepassword`, `newuser` + reCAPTCHA, `newproject` + thư chào, `newpatient`, bộ test S1-S17 và e2e; P5 (MFA: TOTP và mã email, hạn mức thử, mã hóa `mfaSecret`, Q8 ở token endpoint, e2e) | Kênh gửi thư thật chưa có (D4) | [auth/p4-p5-register-mfa.md](../../apps/auth/docs/plans/p4-p5-register-mfa.md) |
 | 3 | `auth` P6/P7: đăng nhập ngoài, `domain add`, `/admin/*` HTTP, SCIM | [x] P6, P7 (HTTP, `sites`) và SCIM XONG (2026-11-22: `/admin/projects/*` và `/scim/v2/Users` mặc định tắt) | P7 HTTP đã hoãn (chỉ CLI); Q-SC-1 (Basic auth cho SCIM) | [auth/p6-p7-external-admin.md](../../apps/auth/docs/plans/p6-p7-external-admin.md) |
 | 4 | Gói dùng chung: ~~`pkg/safehttp`~~ (xong, B7), ~~`pkg/mailer`~~ (xong 2026-11-22: lõi, SMTP, `smtptest`; `auth` dùng qua `AUTH_MAIL_PROVIDER=smtp`), ~~`pkg/binarystore`~~ (xong S1, S2, S5 2026-11-22: `Store` FS/Memory, `CheckMetadata`, `Signer` RSA-SHA256, `storetest`), `Mutate` dùng chung, `SessionBus` | [~] còn `Mutate` dùng chung, `SessionBus`; S3a, S3b xong 2026-11-22 (`pkg/fhirbinary`, `fhir-server` bật bằng `FHIR_BINARY_STORAGE`); S3c (`$presigned-url`), S6 (`rewriteAttachments`) và E5 (email đính kèm `Binary/<id>`) xong 2026-11-22; S7 (adapter S3, `pkg/binarystore/s3store`) xong 2026-11-23; còn quét mồ côi, kiểm log không ghi `Signature` | Điều kiện cho storage, webhook, dicom | [modules/README.md](modules/README.md) |
-| 5 | `email` + `storage` | [~] `pkg/mailer` (E2, E3) và route `/email/v1/send` (E4) xong; còn `storage` và E5 | M5 (object storage) chưa chốt | [modules/email-storage.md](modules/email-storage.md) |
+| 5 | `email` + `storage` | [~] `pkg/mailer` (E2, E3) và route `/email/v1/send` (E4) xong; còn `storage` và E5 | M5 đã chốt 2026-11-24: chỉ hệ thống tệp và S3 | [modules/email-storage.md](modules/email-storage.md) |
 | 6 | `keyvalue`, `mcp` | [ ] | | [modules/keyvalue-mcp-webhook.md](modules/keyvalue-mcp-webhook.md) |
 | 7 | `scim`, `ws` còn lại (hidden fields, `unbind-from-token`, hạn mức bind), `fhircast` | [x] xong, trừ lọc `hiddenFields` từng trường (chuyển sang #20) | `scim` xong trong `auth` (2026-11-22, `/scim/v2/Users` tắt mặc định); **WS-1..WS-9 xong (2026-11-22)**: `ws` (kể cả `unbind-from-token` và hạn mức bind `FHIR_WS_MAX_BINDINGS_PER_USER`) và `fhircast` đã chạy trong `apps/ws-gateway` (token của `auth` kèm `hub.url`, `hub.topic`); `subscriptions-r4` kiểm quyền lúc phát. Kế hoạch tách service: [modules/split-scim-ws-services.md](modules/split-scim-ws-services.md) (ws → `apps/ws-gateway`; scim ở lại `auth`) | [modules/scim-ws-fhircast.md](modules/scim-ws-fhircast.md) |
 | 8 | Gói công việc kiểm kê `fhir` (17 WP; WP-1 lệch REST, các WP khác) | [ ] | WP-2a (SMART v2) xong | [modules/fhir-parity-audit.md](modules/fhir-parity-audit.md) |
-| 9 | `cds`, `webhook`, `cron`, `Bot/$execute` | [~] | Chặn bởi M1 (runtime Bot) | [cds-dicom/cds.md](cds-dicom/cds.md) |
+| 9 | `cds`, `webhook`, `cron`, `Bot/$execute` | [-] ngoài phạm vi | M1 chốt 2026-11-24: không chạy Bot (làm sau khi có nhu cầu) | [cds-dicom/cds.md](cds-dicom/cds.md) |
 | 10 | `dicom` | [~] | Cần #4, #5; quyết định H1 đến H5 | [cds-dicom/dicom.md](cds-dicom/dicom.md) |
-| 11 | Chốt M1 đến M5 và H1 đến H5; lập kế hoạch mức C (`bots`, `workers`, `cloud`, `ai`) | [ ] | Quyết định của người dùng | [coverage-matrix.md](coverage-matrix.md) |
+| 11 | Chốt M1 đến M5 và H1 đến H5; lập kế hoạch mức C (`bots`, `workers`, `cloud`, `ai`) | [~] **M1 đến M5 chốt 2026-11-24, tất cả ngoài phạm vi** (không Bot, không di trú dữ liệu, không agent/ccda/hl7/tích hợp thứ ba, không AI, kho chỉ tệp + S3), nên không lập kế hoạch `bots`, `cloud`, `ai`; còn H1 đến H5 (`dicom`) và `workers` | Quyết định H1 đến H5 của người dùng | [coverage-matrix.md](coverage-matrix.md) |
 | 12 | (một phần xong: B8 test hai tiến trình; B9 đã chạy thử `docker-compose.auth.yml` bằng Docker OK với auth + fhir-server + postgres; còn `dicomweb`, K8s) Đóng gói và chạy thành service: compose/K8s cho `fhir-server`, `auth`, `dicomweb`; `auth` cấp token cho `fhir-server` qua JWKS; kiểm đầu-cuối cả chuỗi | [ ] | Làm khi #1 xong; liên quan Q-SC-1 và `Principal.Membership` | [apps-auth.md](../../apps/auth/docs/plans/apps-auth.md) |
 | 12b | Tổ chức microservice theo nghiệp vụ, dùng chung một PostgreSQL (schema và role riêng cho từng service) | [ ] | D-DB-1, D-DB-2 và D-DB-3 đã chốt (D-DB-3: chưa tách `fhir-worker`, chờ đo tải); **P1, P2 và P3a xong (2026-11-22)**; còn D-DB-4 và D-DB-5 | [microservices-shared-db.md](microservices-shared-db.md) |
 | 12c | **Đo tải export song song với API** (quyết định có mở P3b `fhir-worker` hay không): chạy `export` lớn cùng lúc với tải API, ghi p95/p99 của API, CPU và bộ nhớ, so với đường cơ sở không có export | [ ] | Điều kiện mở lại P3b (D-DB-3). Cần chốt: kích thước dữ liệu mẫu, môi trường đo (máy cục bộ hay có máy riêng), ngưỡng "bị ảnh hưởng" (ví dụ p95 API tăng quá X%). Kết quả tính được ngay cho `FHIR_JOB_CONCURRENCY` | [microservices-shared-db.md](microservices-shared-db.md) mục 14 |
@@ -39,7 +39,7 @@ Trạng thái: `[ ]` chưa làm, `[~]` đang chặn bởi quyết định, `[x]`
 | 8 | SMART Health Cards/Links | #23 | Cần khóa ký |
 | 9 | Operation vận hành và DB | #25 | Ưu tiên thấp |
 | sau cùng | Hardening: khóa tài khoản, hạn mức dùng chung nhiều replica | #13, #14 | Ưu tiên 2. #12c (đo tải) chạy khi tiện, quyết định có tách `fhir-worker` |
-| chặn | Bot, `cds`, `webhook`, `cron`, `$execute`, thanh toán, xử lý HL7 | #9, #26 | Chờ **M1**; `agent`/`hl7`/`ccda` chờ **M3**; `ai` chờ M4; cloud ngoài S3 chờ M5; `dicom` chờ H1 đến H5. Đề nghị chốt M1 sớm vì chặn nhiều nhất |
+| chặn | Bot, `cds`, `webhook`, `cron`, `$execute`, thanh toán, xử lý HL7 | #9, #26 | **Ngoài phạm vi** theo M1, M3, M4, M5 (chốt 2026-11-24); riêng `dicom` còn chờ H1 đến H5 |
 
 ## Ưu tiên 1b: phần còn thiếu theo đối chiếu route (2026-11-23)
 
