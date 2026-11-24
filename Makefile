@@ -113,7 +113,7 @@ test-e2e: ## (system e2e, sẽ chuyển sang tests/e2e và image thật ở bư�
 	TRIVITA_E2E=1 go test ./e2e -count=1 -v
 
 WS_LOAD_CONNS ?= 1000
-bench-export: ## Đo ảnh hưởng của $export lớn lên API (#12c; cần Docker cho PostgreSQL): EXPORT_LOAD_RESOURCES=300000 EXPORT_LOAD_CLIENTS=32 make bench-export
+bench-export: ## Đo ảnh hưởng của $export lớn lên API (#12c; cần Docker cho PostgreSQL): EXPORT_LOAD_RESOURCES=300000 EXPORT_LOAD_CLIENTS=32 make bench-export; thêm EXPORT_LOAD_EXPORTS=4 FHIR_JOB_CONCURRENCY=4 để đo nhiều export đồng thời
 	TRIVITA_E2E_LOAD=1 go test -count=1 -timeout 60m -run TestExportLoadVersusAPI -v ./apps/fhir-server/tests/load/
 
 bench-ws: ## Đo tải ws-gateway thật (cần Docker cho Redis): WS_LOAD_CONNS=4000 make bench-ws (RSS mỗi socket và độ trễ fan-out; kết quả in bằng t.Log)

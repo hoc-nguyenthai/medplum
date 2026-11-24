@@ -70,7 +70,7 @@ Nguồn: [fhir-server-split-candidates.md](fhir-server-split-candidates.md) (m�
 | 28 | S1: công tắc tắt phía nghe/giao (rest-hook, tự tải) ở `fhir-server`; tùy chọn để API không tự chạy job; P0-4 (cấm broker `memory` khi phía nghe ở ngoài) | [x] 2026-11-24: `FHIR_SUBSCRIPTION_DELIVERY`, `FHIR_AUTO_DOWNLOAD_WORKER`, `FHIR_JOB_EXECUTION`, `fhirrouter.Options.DisableJobExecution` | S0 | mục 7, S1 |
 | 29 | S2: `apps/fhir-downloader` | [x] 2026-11-24: service, 4 tầng test (đơn vị, tích hợp PostgreSQL/Redis thật, e2e image), tài liệu; sửa `safehttp` thiếu dải `0.0.0.0/8` | S1 | [../../apps/fhir-downloader/docs/architecture.md](../../apps/fhir-downloader/docs/architecture.md); mục 3.1, 7 |
 | 30 | S3: P0-1 (rest-hook bền), rồi `apps/fhir-notifier` | [x] 2026-11-24: P0-1 (`fhirsub.Config.Durable`, `FHIR_WEBHOOK_DURABLE`, `messaging` Concurrency/ClaimIdle; `c10c528`), service `apps/fhir-notifier` :8010 với 4 tầng test, tài liệu | S1; D-SP-4 (chọn (a)) | mục 3.2, 7 |
-| 31 | S4: đo tải #12c cỡ lớn (200.000 resource, máy riêng, nhiều job đồng thời, resource lớn) | [~] công cụ và một lần đo xong (xem #12c) | chốt D-SP-7 | mục 3.3, 7 |
+| 31 | S4: đo tải #12c cỡ lớn (200.000 resource, máy riêng, nhiều job đồng thời, resource lớn) | [x] 2026-11-24: 200.000 resource một export: p95 API x1,02; bốn export đồng thời (50.000): p95 x1,35, p99 x1,48, thông lượng x0,76; chưa đo máy riêng và resource lớn (số ở kế hoạch tách mục 3.3) | D-SP-7 đã có số đo, chờ quyết | mục 3.3, 7 |
 | 32 | S5: P0-2 (kết quả export ra kho đối tượng), rồi `apps/fhir-worker` | [ ] | S1, S4; có thể hoãn (#12c chưa cho thấy API bị ảnh hưởng) | mục 3.3, 7 |
 | 33 | S6: tài liệu, compose, Makefile `run-<tên>`, bản đồ service | [ ] | các bước trên | mục 7 |
 

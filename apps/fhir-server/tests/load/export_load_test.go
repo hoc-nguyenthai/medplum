@@ -10,6 +10,7 @@
 //
 //	make bench-export                                   # 50.000 resource, 16 client, FHIR_JOB_CONCURRENCY=2
 //	EXPORT_LOAD_RESOURCES=300000 EXPORT_LOAD_CLIENTS=32 make bench-export
+//	EXPORT_LOAD_EXPORTS=4 FHIR_JOB_CONCURRENCY=4 make bench-export   # bốn export đồng thời ở pha C
 //
 // Số đo phụ thuộc máy: server, PostgreSQL (trong Docker) và bộ tạo tải chia sẻ cùng CPU, nên đo lại trên cấu hình triển khai thật trước khi quyết định.
 package load_test
@@ -420,6 +421,7 @@ func TestExportLoadVersusAPI(t *testing.T) {
 	clients := envInt("EXPORT_LOAD_CLIENTS", 16)
 	baseSecs := envInt("EXPORT_LOAD_BASELINE_SECS", 20)
 	conc := envInt("FHIR_JOB_CONCURRENCY", 2)
+	exports := envInt("EXPORT_LOAD_EXPORTS", 1) // số export chạy đồng thời ở pha C
 	ratio := envFloat("EXPORT_LOAD_MAX_RATIO", 1.5)
 	patients := resources / 5
 
@@ -443,7 +445,7 @@ func TestExportLoadVersusAPI(t *testing.T) {
 		t.Fatalf("ANALYZE: %v", err)
 	}
 	t.Logf("nạp %d resource (%d Patient + %d Observation) mất %v; RSS sau nạp %d MB", 5*len(ids), len(ids), 4*len(ids), time.Since(t0).Round(time.Second), func() int { r, _ := procStat(pid); return r / 1024 }())
-	t.Logf("cấu hình: %d client, FHIR_JOB_CONCURRENCY=%d, ngưỡng ảnh hưởng p95/p99 > %.2fx baseline", clients, conc, ratio)
+	t.Logf("cấu hình: %d client, FHIR_JOB_CONCURRENCY=%d, %d export đồng thời ở pha C, ngưỡng ảnh hưởng p95/p99 > %.2fx baseline", clients, conc, exports, ratio)
 
 	// A. baseline (có một lượt khởi động ngắn để làm nóng cache/plan)
 	warm := make(chan struct{})
@@ -479,12 +481,25 @@ func TestExportLoadVersusAPI(t *testing.T) {
 		go func() {
 			defer close(done)
 			t1 := time.Now()
-			files, err := runExport(t, api)
-			if err != nil {
-				t.Errorf("export (song song): %v", err)
+			var ew sync.WaitGroup
+			var mu sync.Mutex
+			files := 0
+			for i := 0; i < exports; i++ {
+				ew.Add(1)
+				go func() {
+					defer ew.Done()
+					n, err := runExport(t, api)
+					if err != nil {
+						t.Errorf("export (song song): %v", err)
+					}
+					mu.Lock()
+					files += n
+					mu.Unlock()
+				}()
 			}
+			ew.Wait()
 			exportDur = time.Since(t1)
-			C.extra = fmt.Sprintf("(export %v, %d file)", exportDur.Round(100*time.Millisecond), files)
+			C.extra = fmt.Sprintf("(%d export, xong hết sau %v, %d file)", exports, exportDur.Round(100*time.Millisecond), files)
 			time.Sleep(2 * time.Second)
 			close(stopC)
 		}()
