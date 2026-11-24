@@ -87,14 +87,14 @@ WADO-URI; `rendered`; bộ lọc QIDO; bulkdata; tích hợp OHIF phía server n
 
 ## 9. Quyết định đã chốt và câu hỏi mở
 
-Chốt 2026-11-24: H2 = app riêng `apps/dicomweb`; H4 = `pkg/binarystore` (tệp + S3, đã có); H5 = sửa các lỗi của Medplum ở mục 3 (kéo theo Q-D6 = theo chuẩn). Q-D2 coi như xong (tệp và S3). Bước tiếp theo: D0 (spike thư viện DICOM, chốt Q-D3).
+Chốt 2026-11-24: H2 = app riêng `apps/dicomweb`; H4 = `pkg/binarystore` (tệp + S3, đã có); H5 = sửa các lỗi của Medplum ở mục 3 (kéo theo Q-D6 = theo chuẩn). Q-D2 coi như xong (tệp và S3). **D0 xong 2026-11-24**: báo cáo [d0-spike.md](d0-spike.md): Q-D3 = `suyashkumar/dicom` v1.1.0 với `SkipPixelData` + bộ quét luồng riêng + chốt chặn SQ lồng sâu (tệp 60 KB làm thư viện dùng 2,2 GB) và tệp cắt giữa PixelData. Bước tiếp theo: D1.
 
 
 | # | Câu hỏi | Khuyến nghị |
 |---|---|---|
 | Q-D1 | Ánh xạ quyền token sang DICOM: STOW cần `fhir.write`, QIDO/WADO cần `fhir.read`, cộng `Grants` theo loại `Dicom*` và `Binary` | Có |
 | Q-D2 | Kho đối tượng cho Binary: hệ thống tệp (dev) và S3 (prod)? Dung lượng dự kiến | Giao diện + tệp trước; S3 khi có nhu cầu |
-| Q-D3 | Chọn thư viện DICOM sau spike D0 (`suyashkumar/dicom` hay khác) | Theo kết quả spike |
+| Q-D3 | Chọn thư viện DICOM sau spike D0 (`suyashkumar/dicom` hay khác) | **Chốt:** `suyashkumar/dicom` v1.1.0 + `SkipPixelData` + bộ quét riêng (d0-spike.md) |
 | Q-D4 | Binary của DICOM có lưu qua cùng `fhir.Binary` (id, `securityContext`) hay mô hình riêng | Giữ `fhir.Binary` (metadata trong CSDL, nội dung ở `binarystore`) để tương thích Medplum |
 | Q-D5 | Có cần ghi `pixelData` khi ghi `DicomInstance` qua FHIR API (hook ghi) hay chỉ từ STOW | Chỉ STOW trước |
 | Q-D6 | Phản hồi STOW lỗi một phần: theo chuẩn (`FailedSOPSequence`, 202/409) hay giữ hành vi Medplum (400 toàn bộ) | Theo chuẩn |
