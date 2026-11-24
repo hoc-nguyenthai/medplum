@@ -37,6 +37,9 @@ type Deps struct {
 	MFAState   MFAState
 	MFASecrets SecretBox
 	MFACfg     MFAConfig
+	// LoginGuard và Lockout: khóa tài khoản sau nhiều lần đăng nhập mật khẩu sai (lockout.go). nil hoặc Lockout.MaxFailures <= 0: tắt.
+	LoginGuard LoginGuard
+	Lockout    LockoutConfig
 	// OIDC, IDVerifier và External: đăng nhập qua IdP ngoài (P6).
 	OIDC       OIDCClient
 	IDVerifier IDTokenVerifier

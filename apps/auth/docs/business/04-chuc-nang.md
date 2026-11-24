@@ -104,7 +104,7 @@ flowchart TD
     D -->|Không| R5["{login, memberships[]} → gọi profile"]
 ```
 
-**Lỗi:** `400` thông điệp chung `Email or password is invalid`; `429` + `Retry-After`; `500` chung khi hạ tầng lỗi. **Luật:** BR-10, BR-11, BR-12, BR-40, BR-41. **Hậu điều kiện:** Login mới (`authMethod=password`).
+**Lỗi:** `400` thông điệp chung `Email or password is invalid` (kể cả khi tài khoản đang bị khóa: xem bên dưới); `429` + `Retry-After`; `500` chung khi hạ tầng lỗi. **Khóa tài khoản:** sai mật khẩu quá `AUTH_LOCKOUT_MAX_FAILURES` (10) lượt trong cửa sổ `AUTH_LOCKOUT_WINDOW` (15 phút) thì lượt kế tiếp khóa tài khoản `AUTH_LOCKOUT_DURATION` (15 phút, không bị kéo dài khi tiếp tục thử); khi khóa, mật khẩu ĐÚNG cũng nhận đúng lỗi "sai thông tin" (không kiểm mật khẩu thật nhưng vẫn tốn một lần bcrypt giả, nên không lộ khóa và không lộ email có tồn tại), ghi log `audit=true`; thành công xóa bộ đếm; đặt lại mật khẩu hoặc `auth user unlock` mở khóa; đếm theo user (không theo IP), chỉ với đăng nhập mật khẩu; đặt `AUTH_LOCKOUT_MAX_FAILURES=0` để tắt. Kẻ tấn công vẫn khóa được tài khoản người khác tạm thời (DoS có chủ ý); giảm nhẹ bằng khóa tự hết và đặt lại mật khẩu mở khóa. **Luật:** BR-10, BR-11, BR-12, BR-40, BR-41. **Hậu điều kiện:** Login mới (`authMethod=password`).
 
 <a id="f-07"></a>
 ### F-07. Chọn hồ sơ và scope (`profile`, `scope`, `GET login/{login}`)

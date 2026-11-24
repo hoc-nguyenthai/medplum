@@ -74,6 +74,10 @@ func (s *Service) SetPassword(ctx context.Context, user *fhir.User, password str
 	if err != nil {
 		return err
 	}
+	// đặt lại mật khẩu (qua email hoặc quản trị) chứng minh chủ tài khoản: mở khóa. Lỗi chỉ ghi log, việc đổi mật khẩu đã thành công.
+	if err := s.UnlockUser(ctx, user.ID); err != nil {
+		s.Logger.ErrorContext(ctx, "khóa tài khoản: không mở được khóa sau khi đặt lại mật khẩu", "user_id", user.ID, "error", err)
+	}
 	return s.RevokeUserLogins(ctx, user)
 }
 

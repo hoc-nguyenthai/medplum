@@ -322,6 +322,22 @@ func (s *Service) SetUserPassword(ctx context.Context, email, projectID, passwor
 	return s.SetPassword(ctx, user, password, nil)
 }
 
+// UnlockUserByEmail mở khóa tài khoản bị khóa do đăng nhập sai nhiều lần (lệnh quản trị `auth user unlock`): đúng phạm vi được chỉ định. Ghi log kiểm toán.
+func (s *Service) UnlockUserByEmail(ctx context.Context, email, projectID string) error {
+	user, err := s.FindUserInScope(ctx, email, projectID)
+	if err != nil {
+		return err
+	}
+	if user == nil {
+		return domain.NotFound()
+	}
+	if err := s.UnlockUser(ctx, user.ID); err != nil {
+		return domain.InternalErr("mở khóa tài khoản", err)
+	}
+	s.Logger.WarnContext(ctx, "quản trị mở khóa tài khoản", "audit", true, "user_id", user.ID, "project", projectID)
+	return nil
+}
+
 // PurgeLogins xóa vĩnh viễn các Login có lastUpdated < before (dryRun: chỉ đếm). before phải ở quá khứ. Trả số login khớp.
 func (s *Service) PurgeLogins(ctx context.Context, before time.Time, dryRun bool) (int, error) {
 	if !before.Before(s.Clock.Now()) {

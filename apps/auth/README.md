@@ -71,6 +71,7 @@ echo 'mat-khau-admin' | auth seed project -name "Bệnh viện A" -admin-email a
 auth client create -project <projectId> -name "Web" -redirect-uri https://app.example.org/cb -grant-type refresh_token
 AUTH_NEW_PASSWORD=... auth user set-password -email admin@example.org
 auth purge-logins -before 2026-01-01 -dry-run        # đếm trước; thêm -yes để xóa VĨNH VIỄN
+auth user unlock -email admin@example.org            # mở khóa tài khoản bị khóa do đăng nhập sai (cần AUTH_REDIS_URL)
 ```
 
 `seed project` tạo trong một transaction: admin (nếu chưa có; có rồi thì giữ nguyên mật khẩu), 6 access policy mặc định (Patient, RelatedPerson, Admin, Practitioner, Bot, ClientApplication), project (`strictMode`), client mặc định cùng membership, Practitioner và membership admin. Lỗi giữa chừng hoàn tác hết. `domain add` (đăng nhập ngoài) để P6, vì cần chống SSRF khi lưu URL IdP.

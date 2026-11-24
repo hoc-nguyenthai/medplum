@@ -496,7 +496,7 @@ Bước đầu của đăng nhập bằng email và mật khẩu; trả một tr
 | C4 | Cần MFA | User đã đăng ký MFA | 200 | - | `LoginResult.mfaRequired` | Tạo Login; có thể tự gửi mã email |
 | C5 | Cần đăng ký MFA | MFA bắt buộc, chưa đăng ký | 200 | - | `LoginResult.mfaEnrollRequired` | Tạo Login; sinh secret TOTP được mời |
 | C6 | Lỗi nhập liệu | Email/projectId/password/redirectUri sai | 400 | - | Mỗi lỗi một issue theo thứ tự validator: `Valid email address is required` (`email`); `Invalid projectId` (`projectId`); `Password must be at least 8 characters` hoặc `Password must be no more than 72 characters` (`password`); `Invalid redirectUri` (`redirectUri`) | Không |
-| C7 | Sai thông tin | Email không tồn tại hoặc mật khẩu sai (phản hồi giống hệt nhau) | 400 | - | `Email or password is invalid` | Không (user không tồn tại); sai mật khẩu cũng không tạo Login |
+| C7 | Sai thông tin | Email không tồn tại, mật khẩu sai, hoặc tài khoản đang bị khóa do đăng nhập sai nhiều lần (phản hồi giống hệt nhau; khi khóa, mật khẩu đúng cũng bị từ chối) | 400 | - | `Email or password is invalid` | Không (user không tồn tại); sai mật khẩu cũng không tạo Login |
 | C8 | Client không tồn tại | `clientId` lạ | 404 | - | `Not found` | Không |
 | C9 | Lệch project | `projectId` khác project của client | 400 | - | `Invalid projectId` | Không |
 | C10 | Origin/redirect/PKCE | `Invalid origin`; `Invalid redirect URI`; `Invalid code challenge` (`code_challenge`); `Invalid code challenge method` (`code_challenge_method`) | 400 | - | tương ứng (PKCE có `expression`) | Không |

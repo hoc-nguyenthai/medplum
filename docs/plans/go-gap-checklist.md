@@ -148,7 +148,7 @@ Kế hoạch: [modules/p17-async-batch-download-autodisable.md](modules/p17-asyn
 - [ ] Validator: binding terminology, kiểm tra đích Reference
 - [x] Ghi `AuditEvent` vào kho — xong 2026-11-24 cho thao tác REST (`pkg/fhiraudit`, `FHIR_AUDIT`, tắt mặc định); còn: đăng nhập (`auth`), tự tắt Subscription, thao tác bị từ chối, lưu giữ tự động
 - [x] Hạn mức dùng chung nhiều replica qua Redis (#14) — xong 2026-11-24 (`pkg/ratelimit`)
-- [ ] Khóa tài khoản theo số lần đăng nhập sai (#13)
+- [x] Khóa tài khoản theo số lần đăng nhập sai (#13) — xong 2026-11-24 (`apps/auth`, `AUTH_LOCKOUT_*`, bật mặc định 10 lần/15 phút)
 
 ## 15. Hạ tầng cloud (chặn bởi M5)
 

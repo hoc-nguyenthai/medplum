@@ -32,6 +32,7 @@ import (
 	"trivita-fhir/apps/auth/internal/infrastructure/hubtopic"
 	"trivita-fhir/apps/auth/internal/infrastructure/jti"
 	"trivita-fhir/apps/auth/internal/infrastructure/keys"
+	"trivita-fhir/apps/auth/internal/infrastructure/loginguard"
 	"trivita-fhir/apps/auth/internal/infrastructure/mailer"
 	"trivita-fhir/apps/auth/internal/infrastructure/mfastate"
 	"trivita-fhir/apps/auth/internal/infrastructure/oidc"
@@ -112,8 +113,11 @@ func (c *Container) build(ctx context.Context) (err error) {
 			return errors.New("schema chưa được migrate: chạy `auth migrate up` hoặc bật DATABASE_AUTO_MIGRATE")
 		}
 	}
-	c.Auth, err = newAuthService(s, c.Store)
-	return err
+	if c.Auth, err = newAuthService(s, c.Store); err != nil {
+		return err
+	}
+	// khóa tài khoản lắp ở đây (không phải khi dựng handler) để lệnh quản trị `auth user unlock` cũng có LoginGuard
+	return c.wireLockout(s)
 }
 
 // newAuthService lắp Service từ cấu hình: kho trên repository nền, bcrypt, kiểm tra mật khẩu rò rỉ, client dựng sẵn.
@@ -356,6 +360,26 @@ func Serve(ctx context.Context, s config.Settings, opts ServeOptions) error {
 		DrainDelay: s.ShutdownDrainDelay, ShutdownTimeout: s.ShutdownTimeout,
 		BeginShutdown: c.BeginShutdown, Stop: c.Stop, OnListen: opts.OnListen,
 	})
+}
+
+// wireLockout lắp khóa tài khoản theo số lần đăng nhập mật khẩu sai: trạng thái trên Redis nếu có AUTH_REDIS_URL, không thì bộ nhớ (chỉ đúng với một instance).
+func (c *Container) wireLockout(s config.Settings) error {
+	if s.LockoutMaxFailures <= 0 {
+		slog.Warn("AUTH_LOCKOUT_MAX_FAILURES=0: khóa tài khoản theo số lần đăng nhập sai bị tắt")
+		return nil
+	}
+	if s.RedisURL != "" {
+		g, closeFn, err := loginguard.OpenRedis(s.RedisURL)
+		if err != nil {
+			return fmt.Errorf("AUTH_REDIS_URL: %w", err)
+		}
+		c.Auth.LoginGuard = g
+		c.onStop(func(context.Context) error { return closeFn() })
+	} else {
+		c.Auth.LoginGuard = loginguard.NewMemory(nil)
+	}
+	c.Auth.Lockout = application.LockoutConfig{MaxFailures: s.LockoutMaxFailures, Window: s.LockoutWindow, Duration: s.LockoutDuration}
+	return nil
 }
 
 // wireMFA lắp MFA (P5): kho trạng thái (Redis nếu có AUTH_REDIS_URL, không thì bộ nhớ: chỉ đúng với một instance), mã hóa mfaSecret khi lưu, TOTP và QR.

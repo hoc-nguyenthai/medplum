@@ -26,6 +26,8 @@ const AdminUsage = `lệnh quản trị:
         tạo client OAuth; secret chỉ hiện MỘT lần
   auth user set-password -email <email> [-project <id>]
         đặt lại mật khẩu (AUTH_NEW_PASSWORD hoặc stdin) và thu hồi mọi login của user
+  auth user unlock -email <email> [-project <id>]
+        mở khóa tài khoản bị khóa do đăng nhập sai nhiều lần (cần AUTH_REDIS_URL: trạng thái khóa trong bộ nhớ của service đang chạy thì tiến trình CLI không với tới)
   auth domain add -domain <tên miền> -authorize-url <url> -token-url <url> -client-id <id> [-user-info-url <url>] [-jwks-url <url> -issuer <iss>]
         [-audience <aud>] [-client-secret-post] [-use-pkce] [-use-subject] [-allowed-redirect-url <url>]...
         cấu hình identity provider ngoài cho một tên miền email (đăng nhập ngoài, P6). URL phải là https và không trỏ vào địa chỉ nội bộ, và phải có -jwks-url
@@ -68,6 +70,8 @@ func RunAdmin(ctx context.Context, s config.Settings, args []string, getenv func
 		return createClient(ctx, svc, args[2:], out)
 	case len(args) >= 2 && args[0] == "user" && args[1] == "set-password":
 		return setUserPassword(ctx, svc, args[2:], getenv, in, out)
+	case len(args) >= 2 && args[0] == "user" && args[1] == "unlock":
+		return unlockUser(ctx, s, svc, args[2:], out)
 	case len(args) >= 2 && args[0] == "domain" && args[1] == "add":
 		return addDomain(ctx, s, svc, args[2:], getenv, in, out)
 	case len(args) >= 2 && args[0] == "project" && args[1] == "feature":
@@ -185,6 +189,26 @@ func setUserPassword(ctx context.Context, svc *application.Service, args []strin
 		return explain(err)
 	}
 	fmt.Fprintln(out, "đã đặt mật khẩu và thu hồi mọi login của user")
+	return nil
+}
+
+func unlockUser(ctx context.Context, s config.Settings, svc *application.Service, args []string, out io.Writer) error {
+	fs := newFlags("user unlock")
+	email := fs.String("email", "", "email user (bắt buộc)")
+	project := fs.String("project", "", "id project của user (rỗng: user không gắn project)")
+	if err := fs.Parse(args); err != nil {
+		return fmt.Errorf("%w\n%s", err, AdminUsage)
+	}
+	if *email == "" {
+		return fmt.Errorf("thiếu -email\n%s", AdminUsage)
+	}
+	if s.RedisURL == "" {
+		return errors.New("user unlock cần AUTH_REDIS_URL: không có Redis thì trạng thái khóa nằm trong bộ nhớ của service đang chạy, lệnh này không mở được (khởi động lại service hoặc đặt lại mật khẩu của user)")
+	}
+	if err := svc.UnlockUserByEmail(ctx, *email, *project); err != nil {
+		return explain(err)
+	}
+	fmt.Fprintln(out, "đã mở khóa tài khoản và xóa bộ đếm đăng nhập sai")
 	return nil
 }
 

@@ -730,3 +730,23 @@ func TestEmailFHIRURLSettings(t *testing.T) {
 		t.Errorf("production https: %v", err)
 	}
 }
+
+func TestLockoutSettings(t *testing.T) {
+	s, err := FromEnv(env(nil))
+	if err != nil || s.LockoutMaxFailures != 10 || s.LockoutWindow != 15*time.Minute || s.LockoutDuration != 15*time.Minute {
+		t.Fatalf("mặc định: bật, 10 lần, cửa sổ 15 phút, khóa 15 phút: %+v %v", s, err)
+	}
+	s, err = FromEnv(env(map[string]string{"AUTH_LOCKOUT_MAX_FAILURES": "5", "AUTH_LOCKOUT_WINDOW": "1m", "AUTH_LOCKOUT_DURATION": "2m"}))
+	if err != nil || s.LockoutMaxFailures != 5 || s.LockoutWindow != time.Minute || s.LockoutDuration != 2*time.Minute {
+		t.Fatalf("đặt tay: %+v %v", s, err)
+	}
+	// 0 là tắt: cửa sổ và thời gian khóa không còn bị kiểm
+	if s, err = FromEnv(env(map[string]string{"AUTH_LOCKOUT_MAX_FAILURES": "0", "AUTH_LOCKOUT_WINDOW": "0s", "AUTH_LOCKOUT_DURATION": "0s"})); err != nil || s.LockoutMaxFailures != 0 {
+		t.Fatalf("tắt: %+v %v", s, err)
+	}
+	for _, kv := range [][]string{{"AUTH_LOCKOUT_MAX_FAILURES", "-1"}, {"AUTH_LOCKOUT_WINDOW", "0s"}, {"AUTH_LOCKOUT_DURATION", "0s"}, {"AUTH_LOCKOUT_DURATION", "-1m"}} {
+		if _, err := FromEnv(env(map[string]string{kv[0]: kv[1]})); err == nil || !strings.Contains(err.Error(), "AUTH_LOCKOUT_") {
+			t.Errorf("%s=%s phải bị từ chối: %v", kv[0], kv[1], err)
+		}
+	}
+}

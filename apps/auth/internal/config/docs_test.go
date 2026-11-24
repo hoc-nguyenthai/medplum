@@ -54,6 +54,8 @@ var extraDesc = map[string]string{
 	"AUTH_SCIM_MAX_PAGE":                               "Cỡ trang mặc định và trần của `count` ở SCIM (phải > 0).",
 	"AUTH_SCIM_MAX_PATCH_OPS":                          "Số thao tác tối đa của một PATCH SCIM (phải > 0).",
 	"AUTH_SCIM_MAX_BODY_BYTES":                         "Cỡ body tối đa của yêu cầu SCIM (byte, phải > 0).",
+	"AUTH_LOCKOUT_WINDOW":                              "Cửa sổ đếm lượt thử mật khẩu (cố định, bắt đầu từ lượt đầu); phải > 0 khi AUTH_LOCKOUT_MAX_FAILURES > 0.",
+	"AUTH_LOCKOUT_DURATION":                            "Thời gian khóa tài khoản khi vượt AUTH_LOCKOUT_MAX_FAILURES; không bị kéo dài bởi các lượt thử trong lúc khóa; phải > 0 khi bật.",
 	"AUTH_MFA_WINDOW":                                  "Số bước TOTP được chấp nhận mỗi bên (trong [0, 5]).",
 	"AUTH_MFA_LOGIN_ATTEMPT_LIMIT":                     "Số lần thử mã MFA tối đa mỗi login trong AUTH_MFA_LOGIN_EXPIRATION.",
 	"AUTH_MFA_USER_ATTEMPT_LIMIT":                      "Số lần thử mã MFA tối đa mỗi user trong AUTH_MFA_LOGIN_EXPIRATION.",

@@ -60,9 +60,15 @@ func (s *Service) TryLogin(ctx context.Context, req domain.LoginRequest) (*fhir.
 	authenticatedHash := user.PasswordHash
 	switch {
 	case req.Password != "":
+		if !s.lockoutAllow(ctx, user, req.RemoteAddress) {
+			// đang khóa: không kiểm mật khẩu thật (đoán đúng cũng không vào được), vẫn tốn một lần bcrypt để thời gian không lộ trạng thái khóa
+			s.Hasher.CompareDummy(req.Password)
+			return nil, domain.BadRequest(invalidCredentials)
+		}
 		if !s.VerifyPassword(user, req.Password) {
 			return nil, domain.BadRequest(invalidCredentials)
 		}
+		s.lockoutSucceeded(ctx, user.ID)
 	case req.HasGoogleCredentials || req.AuthMethod == domain.AuthExternal || req.AuthMethod == domain.AuthExchange:
 		// đã được xác minh ở nơi khác (P6)
 	default:

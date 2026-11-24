@@ -78,7 +78,7 @@ Nguồn: [fhir-server-split-candidates.md](fhir-server-split-candidates.md) (m�
 
 | # | Việc | Trạng thái | Ghi chú | Chi tiết |
 |---|---|---|---|---|
-| 13 | **Khóa tài khoản theo số lần đăng nhập sai** | [ ] | Xem mục dưới | dưới |
+| 13 | **Khóa tài khoản theo số lần đăng nhập sai** | [x] 2026-11-24 | `AUTH_LOCKOUT_MAX_FAILURES` (mặc định 10, 0 là tắt), `AUTH_LOCKOUT_WINDOW`, `AUTH_LOCKOUT_DURATION` (15 phút, tự hết); đếm theo user trên Redis (`loginguard`, nguyên tử, đặt chỗ trước khi kiểm mật khẩu) hoặc bộ nhớ; khi khóa trả đúng lỗi sai mật khẩu; đặt lại mật khẩu và `auth user unlock` mở khóa; kho trạng thái hỏng thì mở khi lỗi. Chưa: thư thông báo khi bị khóa, chống DoS có chủ ý ngoài việc khóa tự hết | dưới |
 | 14 | Hạn mức dùng chung nhiều replica (Redis) thay cho bộ đếm trong bộ nhớ; tách limiter dùng chung ra `pkg` | [x] 2026-11-24 | `pkg/ratelimit` (Memory + Redis token bucket Lua, Redis lỗi thì rơi về bộ nhớ replica, ngắt mạch 5 giây). Bật bằng `FHIR_RATE_LIMIT_SHARED` (fhir-server, `REDIS_URL`) và `AUTH_RATE_LIMIT_SHARED` (auth, `AUTH_REDIS_URL`); mặc định tắt. `dicomweb` và `ws-gateway` vẫn dùng bộ đếm riêng từng replica (chưa chuyển) | |
 | 15 | Cấm tiền tố `fhir.*` trong scope client khai ở `auth` (client `client_credentials` xin được `fhir.admin`) | [x] | Xong cùng B2 (2026-11-21): `domain.ValidateRequestedScope`, có test đột biến | [auth/p3-oauth2-tokens.md](../../apps/auth/docs/plans/p3-oauth2-tokens.md) |
 | 16 | Compartment (`patient/` scope, AccessPolicy `%patient`) ở `pkg/fhirauth`, `hiddenFields` và `interaction` | [x] xong cả `hiddenFields`, `readonlyFields`, `interaction` (xem #20) | Token Patient đọc được dữ liệu trong compartment khi bật cờ (mặc định tắt: vẫn `deny`); claim chính sách mặc định ~5 KB | [auth/README.md](../../apps/auth/docs/plans/README.md) mục 5.2 |
@@ -89,7 +89,9 @@ Việc #15 thực chất là điều kiện của #1, không phải việc hậu
 
 Vì sao: hạn mức theo IP (đã có ở `auth`, 1 rps burst 10) chỉ làm chậm một IP; kẻ tấn công đổi IP vẫn dò được mật khẩu của một tài khoản cụ thể.
 
-Phạm vi đề xuất (chưa chốt, cần duyệt trước khi làm):
+**Đã làm (2026-11-24), các câu hỏi mở được chốt theo đề xuất mặc định của mục này:** ngưỡng 10 lần mỗi cửa sổ 15 phút, khóa tự hết sau 15 phút (không vĩnh viễn), lưu trạng thái ở Redis (`AUTH_REDIS_URL`, dùng chung nhiều replica) hoặc bộ nhớ khi không có Redis, không gửi email thông báo (chưa làm). Khác đề xuất ban đầu: không ghi lên `User` (mỗi lần sai sẽ sinh một phiên bản User); đặt chỗ lượt thử TRƯỚC khi kiểm mật khẩu để các lượt song song không vượt ngưỡng; lượt thứ N+1 mới khóa (N lượt sai vẫn đăng nhập đúng được ở lượt N). Đã kiểm trên Redis qua miniredis (Lua), chưa kiểm trên Redis thật.
+
+Phạm vi đề xuất ban đầu:
 - Đếm lần sai liên tiếp theo user (không theo IP); đạt ngưỡng (đề xuất 10) thì khóa tạm một khoảng (đề xuất 15 phút), thành công thì xóa bộ đếm.
 - Không lộ tài khoản có tồn tại hay không: email lạ vẫn trả lỗi chung như hiện nay, và việc khóa không đổi thông báo lỗi khi sai mật khẩu.
 - Lưu bộ đếm trong kho FHIR của `auth` (trường trên `User`) bằng `Mutate` có retry IfMatch, hoặc Redis nếu chạy nhiều replica; cần quyết định.

@@ -121,7 +121,12 @@ type Settings struct {
 	// giải mã nên xoay khóa bằng cách thêm khóa mới lên đầu); bắt buộc ở staging/production, ngoài đó để trống thì lưu dạng thô (cảnh báo). Hạn mức thử: MFALoginAttemptLimit
 	// mỗi login (5) và MFAUserAttemptLimit mỗi user (20) trong MFALoginExpiration (10 phút, cũng là tuổi tối đa của login chờ MFA); MFAWindow là số bước TOTP chấp nhận mỗi bên (1).
 	// Hạn mã email và hạn secret được mời mặc định 20 phút; MFAEmailSendLimit là số lần gửi mã email mỗi login trong thời hạn mã.
-	MFASecretKeys                                        string
+	MFASecretKeys string
+	// Khóa tài khoản theo số lần đăng nhập MẬT KHẨU sai (không đổi theo IP): tối đa LockoutMaxFailures lượt thử mỗi LockoutWindow (cố định, từ lượt đầu), lượt kế tiếp
+	// khóa tài khoản LockoutDuration; thành công xóa bộ đếm, đặt lại mật khẩu hoặc `auth user unlock` mở khóa. Khi khóa, trả đúng lỗi "sai thông tin" như sai mật khẩu
+	// (không lộ khóa, không lộ email có tồn tại). 0 là tắt. Trạng thái dùng AUTH_REDIS_URL (nhiều instance); không có thì nhớ trong bộ nhớ (một instance).
+	LockoutMaxFailures                                   int
+	LockoutWindow, LockoutDuration                       time.Duration
 	MFAWindow, MFALoginAttemptLimit, MFAUserAttemptLimit int
 	MFALoginExpiration, MFAEmailCodeExpiration           time.Duration
 	MFAEnrollmentExpiration                              time.Duration
@@ -210,7 +215,7 @@ func Default() Settings {
 		DatabaseMaxOpenConns: 20, DatabaseMaxIdleConns: 5, DatabaseConnLifetime: 30 * time.Minute,
 		BaseURL:         "http://localhost:8006",
 		RegisterEnabled: true, NewProjectRegistrationEnabled: true, RecaptchaTimeout: 3 * time.Second,
-		ExternalStateTTL: 10 * time.Minute, SMTPPort: 587, SMTPTimeout: 20 * time.Second, EmailFHIRTimeout: 30 * time.Second, ScimAllowBasic: true, EmailMaxRecipients: 50, EmailMaxBytes: 10 << 20, ScimMaxPage: 100, ScimMaxPatchOps: 50, ScimMaxBodyBytes: 1 << 20, MFAWindow: 1, MFALoginAttemptLimit: 5, MFAUserAttemptLimit: 20, MFALoginExpiration: 10 * time.Minute, MFAEmailCodeExpiration: 20 * time.Minute,
+		ExternalStateTTL: 10 * time.Minute, SMTPPort: 587, SMTPTimeout: 20 * time.Second, EmailFHIRTimeout: 30 * time.Second, ScimAllowBasic: true, EmailMaxRecipients: 50, EmailMaxBytes: 10 << 20, ScimMaxPage: 100, ScimMaxPatchOps: 50, ScimMaxBodyBytes: 1 << 20, LockoutMaxFailures: 10, LockoutWindow: 15 * time.Minute, LockoutDuration: 15 * time.Minute, MFAWindow: 1, MFALoginAttemptLimit: 5, MFAUserAttemptLimit: 20, MFALoginExpiration: 10 * time.Minute, MFAEmailCodeExpiration: 20 * time.Minute,
 		MFAEnrollmentExpiration: 20 * time.Minute, MFAEmailSendLimit: 5,
 		AccessTTL: 15 * time.Minute, RefreshTTL: 14 * 24 * time.Hour, IDTTL: time.Hour, AuthCodeTTL: 10 * time.Minute, RefreshGrace: 30 * time.Second, MaxPolicyClaimBytes: 16384, SigningAlg: "RS256",
 		BcryptCost: 10, CookieSecure: true, PwnedEnabled: true, PwnedTimeout: 3 * time.Second, CLIClientEnabled: true,
@@ -355,6 +360,9 @@ func FromEnv(get func(string) string) (Settings, error) {
 	r.String(&s.AdminBlockedEmailDomains, "AUTH_BLOCKED_EMAIL_DOMAINS")
 	r.String(&s.ExternalAuthProviders, "AUTH_EXTERNAL_AUTH_PROVIDERS")
 	r.Int(&s.MFAWindow, "AUTH_MFA_WINDOW")
+	r.Int(&s.LockoutMaxFailures, "AUTH_LOCKOUT_MAX_FAILURES")
+	r.Duration(&s.LockoutWindow, "AUTH_LOCKOUT_WINDOW")
+	r.Duration(&s.LockoutDuration, "AUTH_LOCKOUT_DURATION")
 	r.Int(&s.MFALoginAttemptLimit, "AUTH_MFA_LOGIN_ATTEMPT_LIMIT")
 	r.Int(&s.MFAUserAttemptLimit, "AUTH_MFA_USER_ATTEMPT_LIMIT")
 	r.Duration(&s.MFALoginExpiration, "AUTH_MFA_LOGIN_EXPIRATION")
@@ -506,6 +514,9 @@ func (s Settings) validate() error {
 	}
 	if s.FHIRBaseURL != "" && !httpURL(s.FHIRBaseURL) {
 		errs = append(errs, errors.New("AUTH_FHIR_BASE_URL: phải là URL http(s) đầy đủ"))
+	}
+	if s.LockoutMaxFailures < 0 || (s.LockoutMaxFailures > 0 && (s.LockoutWindow <= 0 || s.LockoutDuration <= 0)) {
+		errs = append(errs, errors.New("AUTH_LOCKOUT_*: AUTH_LOCKOUT_MAX_FAILURES phải >= 0 (0 là tắt); AUTH_LOCKOUT_WINDOW và AUTH_LOCKOUT_DURATION phải > 0 khi bật"))
 	}
 	if s.MFAWindow < 0 || s.MFAWindow > 5 || s.MFALoginAttemptLimit <= 0 || s.MFAUserAttemptLimit <= 0 || s.MFAEmailSendLimit <= 0 ||
 		s.MFALoginExpiration <= 0 || s.MFAEmailCodeExpiration <= 0 || s.MFAEnrollmentExpiration <= 0 {
