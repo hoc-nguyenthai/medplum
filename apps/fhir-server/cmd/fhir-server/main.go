@@ -6,6 +6,8 @@
 //	                              gán project cho dữ liệu cũ chưa có project (chạy khi bật tách theo project)
 //	fhir-server sweep-binary [-grace 24h] [-max-delete 1000] [-dry-run] [-force]
 //	                              xóa nội dung Binary mồ côi trong kho (chạy định kỳ bằng cron; cần FHIR_BINARY_STORAGE)
+//	fhir-server seed definitions [-project <id>] [-dir <thư mục định nghĩa Medplum>] [-type SearchParameter,ValueSet] [-dry-run]
+//	                              nạp SearchParameter, StructureDefinition, ValueSet... dựng sẵn thành resource cho một project
 //	fhir-server healthcheck       GET /healthz (cho HEALTHCHECK của Docker, image distroless không có curl)
 package main
 
@@ -27,6 +29,7 @@ import (
 	"trivita-fhir/apps/fhir-server/internal/bootstrap"
 	"trivita-fhir/apps/fhir-server/internal/config"
 	"trivita-fhir/pkg/fhirbinary"
+	"trivita-fhir/pkg/fhirseed"
 	"trivita-fhir/pkg/httpserve"
 )
 
@@ -67,6 +70,22 @@ func run(ctx context.Context, args []string) error {
 			}
 		}
 		return bootstrap.AssignProject(ctx, settings, *project, ts, *dry, os.Stdout)
+	case len(args) > 1 && args[0] == "seed" && args[1] == "definitions":
+		fs := flag.NewFlagSet("seed definitions", flag.ContinueOnError)
+		project := fs.String("project", "", "project nhận bản sao định nghĩa (rỗng: không gán project, chế độ một tenant)")
+		dir := fs.String("dir", "", "thư mục định nghĩa của Medplum (packages/definitions/src/fhir/r4); rỗng: chỉ SearchParameter dựng sẵn")
+		types := fs.String("type", "", "chỉ nạp các loại này, cách nhau bằng dấu phẩy (mặc định SearchParameter,StructureDefinition,OperationDefinition,CodeSystem,ValueSet)")
+		dry := fs.Bool("dry-run", false, "chỉ đếm, không ghi")
+		if err := fs.Parse(args[2:]); err != nil {
+			return err
+		}
+		var ts []string
+		for _, t := range strings.Split(*types, ",") {
+			if t = strings.TrimSpace(t); t != "" {
+				ts = append(ts, t)
+			}
+		}
+		return bootstrap.SeedDefinitions(ctx, settings, fhirseed.Options{Project: *project, Dir: *dir, Types: ts, DryRun: *dry}, os.Stdout)
 	case len(args) > 0 && args[0] == "sweep-binary":
 		fs := flag.NewFlagSet("sweep-binary", flag.ContinueOnError)
 		grace := fs.Duration("grace", fhirbinary.DefaultSweepGrace, "chỉ xét nội dung cũ hơn mức này (tối thiểu 1h; phải dài hơn mọi transaction)")
@@ -78,7 +97,7 @@ func run(ctx context.Context, args []string) error {
 		}
 		return bootstrap.SweepBinary(ctx, settings, fhirbinary.SweepOptions{Grace: *grace, MaxDelete: *max, DryRun: *dry, Force: *force}, os.Stdout)
 	}
-	return fmt.Errorf("cách dùng: fhir-server [migrate up|down|status | assign-project ... | sweep-binary ... | healthcheck]")
+	return fmt.Errorf("cách dùng: fhir-server [migrate up|down|status | assign-project ... | seed definitions ... | sweep-binary ... | healthcheck]")
 }
 
 func serve(ctx context.Context, settings config.Settings) error {

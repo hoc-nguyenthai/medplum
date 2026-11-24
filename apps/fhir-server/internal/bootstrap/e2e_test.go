@@ -18,6 +18,7 @@ import (
 	"trivita-fhir/apps/fhir-server/internal/bootstrap"
 	"trivita-fhir/apps/fhir-server/internal/config"
 	"trivita-fhir/pkg/fhir"
+	"trivita-fhir/pkg/fhirseed"
 )
 
 const (
@@ -571,5 +572,32 @@ func TestAssignProjectCommand(t *testing.T) {
 	}
 	if err := bootstrap.AssignProject(ctx, s, "", nil, false, &out); err == nil {
 		t.Fatal("thiếu project phải lỗi")
+	}
+}
+
+// seed definitions chạy trực tiếp trên CSDL: cần schema đã migrate, nạp SearchParameter dựng sẵn cho project, chạy lại không đổi.
+func TestSeedDefinitionsCLI(t *testing.T) {
+	file := "sqlite://" + filepath.Join(t.TempDir(), "fhir.db")
+	s := settings(func(s *config.Settings) { s.DatabaseURL = file; s.DatabaseAutoMigrate = false })
+	ctx := context.Background()
+	opt := fhirseed.Options{Project: "demo", Types: []string{"SearchParameter"}}
+
+	var out bytes.Buffer
+	if err := bootstrap.SeedDefinitions(ctx, s, opt, &out); err == nil || !strings.Contains(err.Error(), "migrate") {
+		t.Fatalf("chưa migrate phải từ chối, được %v", err)
+	}
+	if err := bootstrap.Migrate(ctx, s, "up", &out); err != nil {
+		t.Fatal(err)
+	}
+	out.Reset()
+	if err := bootstrap.SeedDefinitions(ctx, s, opt, &out); err != nil || !strings.Contains(out.String(), "SearchParameter: đã ghi mới ") || strings.Contains(out.String(), "mới 0,") {
+		t.Fatalf("lần 1: %q %v", out.String(), err)
+	}
+	out.Reset()
+	if err := bootstrap.SeedDefinitions(ctx, s, opt, &out); err != nil || !strings.Contains(out.String(), "mới 0, cập nhật 0, không đổi ") {
+		t.Fatalf("lần 2 phải không đổi: %q %v", out.String(), err)
+	}
+	if err := bootstrap.SeedDefinitions(ctx, s, fhirseed.Options{Project: "demo", Types: []string{"Patient"}}, &out); err == nil {
+		t.Error("loại không hỗ trợ phải lỗi")
 	}
 }

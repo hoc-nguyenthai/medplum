@@ -9,6 +9,8 @@ import (
 	"trivita-fhir/pkg/database"
 	"trivita-fhir/pkg/fhirauth"
 	"trivita-fhir/pkg/fhirbinary"
+	"trivita-fhir/pkg/fhirrouter"
+	"trivita-fhir/pkg/fhirseed"
 	"trivita-fhir/pkg/fhirstore"
 	"trivita-fhir/pkg/fhirstore/migrations"
 )
@@ -123,6 +125,57 @@ func SweepBinary(ctx context.Context, s config.Settings, opt fhirbinary.SweepOpt
 	}
 	if err == nil && rep.Errors > 0 {
 		err = fmt.Errorf("%d lỗi khi quét (xem log); các khóa đó được giữ lại", rep.Errors)
+	}
+	return err
+}
+
+// SeedDefinitions nạp định nghĩa dựng sẵn (SearchParameter, StructureDefinition, ValueSet...) vào CSDL cho một project, chạy trực
+// tiếp trên CSDL, không qua HTTP; xem fhirseed.Seed. Project rỗng: ghi không gán project (chế độ một tenant).
+func SeedDefinitions(ctx context.Context, s config.Settings, opt fhirseed.Options, out io.Writer) error {
+	db, err := database.Open(ctx, database.Config{URL: s.DatabaseURL, Echo: s.DatabaseEcho, RequireSchema: s.DatabaseRequireSchema})
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+	if db.IsInMemory() {
+		return fmt.Errorf("seed cần database lưu bền, không dùng được với bộ nhớ")
+	}
+	store, err := fhirstore.New(db)
+	if err != nil {
+		return err
+	}
+	if n, err := store.Pending(ctx); err != nil {
+		return err
+	} else if n > 0 {
+		return fmt.Errorf("schema chưa được migrate: chạy `fhir-server migrate up` trước")
+	}
+	var repo fhirrouter.Repository = store
+	if opt.Project != "" {
+		repo = fhirauth.Scope(store)
+	}
+	rep, err := fhirseed.Seed(ctx, repo, opt)
+	verb := "đã ghi"
+	if opt.DryRun {
+		verb = "sẽ ghi (dry-run)"
+	}
+	for _, t := range fhirseed.AllTypes {
+		if rep.Created[t]+rep.Updated[t]+rep.Unchanged[t]+rep.Failed[t] > 0 {
+			fmt.Fprintf(out, "%s: %s mới %d, cập nhật %d, không đổi %d, lỗi %d\n", t, verb, rep.Created[t], rep.Updated[t], rep.Unchanged[t], rep.Failed[t])
+		}
+	}
+	if len(rep.Missing) > 0 {
+		fmt.Fprintf(out, "không có tệp: %v\n", rep.Missing)
+	}
+	for _, e := range rep.Errors {
+		fmt.Fprintln(out, "  lỗi:", e)
+	}
+	if err == nil {
+		for _, n := range rep.Failed {
+			if n > 0 {
+				err = fmt.Errorf("có resource nạp lỗi (xem trên)")
+				break
+			}
+		}
 	}
 	return err
 }
