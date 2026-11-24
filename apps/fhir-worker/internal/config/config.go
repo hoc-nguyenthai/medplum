@@ -78,6 +78,8 @@ type Settings struct {
 	JobConcurrency int
 	// JobLease: thời gian một instance giữ quyền chạy job trước khi instance khác tiếp quản (tự gia hạn khi job còn chạy).
 	JobLease time.Duration
+	// JobCancelPoll: Chu kỳ replica đang chạy job kiểm tra job có bị hủy (từ replica khác) không; việc hủy có hiệu lực trong chừng này thay vì chờ JobLease/3. Mỗi job đang chạy tốn một lần đọc mỗi chu kỳ; không vượt JobLease/3. Phải > 0.
+	JobCancelPoll time.Duration
 	// JobMaintenanceInterval là chu kỳ nhận job mới (accepted), tiếp quản job mồ côi và xóa kết quả export hết hạn; fhir-worker nhận job qua vòng này nên mặc định ngắn (5 giây). Phải > 0.
 	JobMaintenanceInterval time.Duration
 	// JobRecoveryGrace là tuổi tối thiểu của job accepted mới được nhận (mặc định 2 giây): fhir-server không tự chạy job nên không cần chờ lâu như khi chạy cùng tiến trình.
@@ -103,7 +105,7 @@ func Default() Settings {
 		DatabaseURL:       "sqlite://./fhir.db", DatabaseMaxOpenConns: 20, DatabaseMaxIdleConns: 5, DatabaseConnLifetime: 30 * time.Minute,
 		BaseURL:      "http://localhost:8005/fhir/R4",
 		BrokerDriver: "memory", RedisURL: "redis://localhost:6379/0",
-		JobConcurrency: 2, JobLease: 5 * time.Minute, JobMaintenanceInterval: 5 * time.Second, JobRecoveryGrace: 2 * time.Second,
+		JobConcurrency: 2, JobLease: 5 * time.Minute, JobCancelPoll: 2 * time.Second, JobMaintenanceInterval: 5 * time.Second, JobRecoveryGrace: 2 * time.Second,
 		ExportRetention: 24 * time.Hour, BatchCheckpointEntries: 10, Base64BinaryMaxBytes: 1 << 20,
 	}
 }
@@ -151,6 +153,7 @@ func FromEnv(get func(string) string) (Settings, error) {
 	r.String(&s.RedisURL, "REDIS_URL")
 	r.Int(&s.JobConcurrency, "FHIR_JOB_CONCURRENCY")
 	r.Duration(&s.JobLease, "FHIR_JOB_LEASE")
+	r.Duration(&s.JobCancelPoll, "FHIR_JOB_CANCEL_POLL")
 	r.Duration(&s.JobMaintenanceInterval, "FHIR_JOB_MAINTENANCE_INTERVAL")
 	r.Duration(&s.JobRecoveryGrace, "FHIR_JOB_RECOVERY_GRACE")
 	r.Duration(&s.ExportRetention, "FHIR_EXPORT_RETENTION")
@@ -269,6 +272,9 @@ func (s Settings) validateJobs() []error {
 	}
 	if s.JobLease <= 0 {
 		errs = append(errs, errors.New("FHIR_JOB_LEASE: phải > 0"))
+	}
+	if s.JobCancelPoll <= 0 {
+		errs = append(errs, errors.New("FHIR_JOB_CANCEL_POLL: phải > 0"))
 	}
 	if s.JobMaintenanceInterval <= 0 {
 		errs = append(errs, errors.New("FHIR_JOB_MAINTENANCE_INTERVAL: phải > 0 (fhir-worker nhận job mới qua vòng này)"))

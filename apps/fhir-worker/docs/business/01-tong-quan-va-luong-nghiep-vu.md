@@ -89,7 +89,7 @@ mindmap
 |---|---|
 | **AsyncJob** | Resource lưu ở schema `fhir` mô tả một job: `status` (`accepted`, `completed`, `error`, `cancelled`), `request` (`<loại>?<tham số>`), chữ ký quyền, lease, kết quả (`output`) |
 | **Lease** | Quyền chạy một job trong một khoảng (`FHIR_JOB_LEASE`, mặc định 5 phút), lưu ở `AsyncJob.transactionTime`; hết hạn thì worker khác được nhận |
-| **Heartbeat** | Việc gia hạn lease định kỳ (mỗi lease/3) và kiểm job có bị hủy không |
+| **Heartbeat** | Goroutine theo dõi job đang chạy: gia hạn lease mỗi lease/3 và kiểm job có bị hủy không mỗi `FHIR_JOB_CANCEL_POLL` (mặc định 2 giây, hai nhịp tách nhau từ 2026-11-24) |
 | **Job-seal** | Chuỗi ký (HMAC, `FHIR_JOB_SIGNING_KEY`) gắn lên job lúc tạo, mang ảnh chụp quyền của người gọi; ràng buộc mã job, project và nội dung `request` |
 | **Checkpoint** | Trạng thái chạy dở lưu trên `AsyncJob` (batch async) để chạy tiếp thay vì làm lại |
 | **Nhận job** | `RecoverJobs`: vòng định kỳ tìm job `accepted` đủ cũ và chưa có lease để đưa vào bộ điều phối |

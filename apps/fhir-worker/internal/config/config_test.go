@@ -36,7 +36,7 @@ func TestDefaultsAreValidForLocal(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if s.Addr != ":8011" || s.JobConcurrency != 2 || s.JobMaintenanceInterval != 5*time.Second || s.JobRecoveryGrace != 2*time.Second || s.JobLease != 5*time.Minute ||
+	if s.Addr != ":8011" || s.JobConcurrency != 2 || s.JobMaintenanceInterval != 5*time.Second || s.JobRecoveryGrace != 2*time.Second || s.JobLease != 5*time.Minute || s.JobCancelPoll != 2*time.Second ||
 		s.JWTEnabled() || s.StorageEnabled() || s.Publishes() || s.JobKey() != nil {
 		t.Errorf("mặc định: %+v", s)
 	}
@@ -64,6 +64,8 @@ func TestInvalidConfigIsRejectedWithTheVariableName(t *testing.T) {
 		{"concurrency 0", map[string]string{"FHIR_JOB_CONCURRENCY": "0"}, "FHIR_JOB_CONCURRENCY"},
 		{"concurrency quá lớn", map[string]string{"FHIR_JOB_CONCURRENCY": "1000"}, "FHIR_JOB_CONCURRENCY"},
 		{"lease 0", map[string]string{"FHIR_JOB_LEASE": "0s"}, "FHIR_JOB_LEASE"},
+		{"chu kỳ thăm dò hủy 0", map[string]string{"FHIR_JOB_CANCEL_POLL": "0s"}, "FHIR_JOB_CANCEL_POLL"},
+		{"chu kỳ thăm dò hủy âm", map[string]string{"FHIR_JOB_CANCEL_POLL": "-1s"}, "FHIR_JOB_CANCEL_POLL"},
 		{"chu kỳ nhận job 0", map[string]string{"FHIR_JOB_MAINTENANCE_INTERVAL": "0s"}, "FHIR_JOB_MAINTENANCE_INTERVAL"},
 		{"grace âm", map[string]string{"FHIR_JOB_RECOVERY_GRACE": "-1s"}, "FHIR_JOB_RECOVERY_GRACE"},
 		{"checkpoint 0", map[string]string{"FHIR_BATCH_CHECKPOINT_ENTRIES": "0"}, "FHIR_BATCH_CHECKPOINT_ENTRIES"},

@@ -142,6 +142,9 @@ type Options struct {
 	// JobLease là thời gian một replica giữ quyền chạy job trước khi replica khác được tiếp quản (mặc định 5 phút;
 	// tự gia hạn mỗi JobLease/3 khi job còn chạy).
 	JobLease time.Duration
+	// JobCancelPoll là chu kỳ replica đang chạy job kiểm tra xem AsyncJob có bị đánh dấu cancelled (từ replica khác) không (mặc định 2 giây; không vượt JobLease/3).
+	// Tách khỏi nhịp gia hạn lease để việc hủy có hiệu lực trong vài giây thay vì chờ JobLease/3 (mặc định 100 giây). Mỗi job đang chạy tốn một lần đọc mỗi chu kỳ.
+	JobCancelPoll time.Duration
 	// JobMaintenanceInterval > 0 bật vòng nền định kỳ: chạy lại job mồ côi (RecoverJobs) và xóa kết quả export hết hạn
 	// (ExpireJobs). Mặc định 0 (tắt; gọi tay các hàm này). JobRecoveryGrace là tuổi tối thiểu của job mới được coi là
 	// mồ côi (mặc định 30 giây, tránh giành job vừa tạo còn đang xếp hàng).
@@ -199,6 +202,9 @@ func New(repo Repository, opts Options) *Router {
 	}
 	if r.opts.JobLease <= 0 {
 		r.opts.JobLease = 5 * time.Minute
+	}
+	if r.opts.JobCancelPoll <= 0 {
+		r.opts.JobCancelPoll = 2 * time.Second
 	}
 	if r.opts.JobRecoveryGrace <= 0 {
 		r.opts.JobRecoveryGrace = 30 * time.Second

@@ -91,9 +91,11 @@ type Settings struct {
 	// JobLease: thời gian một replica giữ quyền chạy job trước khi replica khác tiếp quản (tự gia hạn khi job còn chạy).
 	// JobMaintenanceInterval: chu kỳ chạy lại job mồ côi và xóa kết quả export hết hạn (0 = tắt).
 	// ExportRetention: thời gian giữ kết quả bulk export (âm = không bao giờ xóa).
+	// JobCancelPoll: Chu kỳ replica đang chạy job kiểm tra job có bị hủy (từ replica khác) không; việc hủy có hiệu lực trong chừng này thay vì chờ JobLease/3. Mỗi job đang chạy tốn một lần đọc mỗi chu kỳ; không vượt JobLease/3. Phải > 0.
 	JobLease               time.Duration
 	JobMaintenanceInterval time.Duration
 	ExportRetention        time.Duration
+	JobCancelPoll          time.Duration
 	// AsyncBatch: POST Bundle batch kèm `Prefer: respond-async` chạy thành job nền (tắt: header bị bỏ qua, chạy đồng bộ).
 	// BatchCheckpointEntries: số entry giữa hai lần lưu checkpoint của batch async (ngoài ra lưu ít nhất mỗi 5 giây).
 	AsyncBatch             bool
@@ -257,7 +259,7 @@ func Default() Settings {
 		DatabaseMaxOpenConns: 20, DatabaseMaxIdleConns: 5, DatabaseConnLifetime: 30 * time.Minute,
 		BaseURL:        "http://localhost:8005/fhir/R4",
 		JobConcurrency: 2, JobExecution: true, SubscriptionDelivery: true, AutoDownloadWorker: true,
-		JobLease: 5 * time.Minute, JobMaintenanceInterval: 30 * time.Second, ExportRetention: 24 * time.Hour, BatchCheckpointEntries: 10,
+		JobLease: 5 * time.Minute, JobCancelPoll: 2 * time.Second, JobMaintenanceInterval: 30 * time.Second, ExportRetention: 24 * time.Hour, BatchCheckpointEntries: 10,
 		JWTProjectClaim: "fhir_project", JWTScopeClaim: "scope", JWTPolicyClaim: "fhir_access_policy",
 		BrokerDriver: "memory", RedisURL: "redis://localhost:6379/0",
 		WebhookWorkers: 4, WebhookMaxAttempts: 5, WebhookTimeout: 10 * time.Second, AutoDownloadTimeout: 30 * time.Second,
@@ -313,6 +315,7 @@ func FromEnv(get func(string) string) (Settings, error) {
 	r.Bool(&s.JWTSuperAdmin, "FHIR_JWT_SUPER_ADMIN")
 	r.Int(&s.JobConcurrency, "FHIR_JOB_CONCURRENCY")
 	r.Duration(&s.JobLease, "FHIR_JOB_LEASE")
+	r.Duration(&s.JobCancelPoll, "FHIR_JOB_CANCEL_POLL")
 	r.Duration(&s.JobMaintenanceInterval, "FHIR_JOB_MAINTENANCE_INTERVAL")
 	r.Duration(&s.ExportRetention, "FHIR_EXPORT_RETENTION")
 	r.Bool(&s.AsyncBatch, "FHIR_ASYNC_BATCH")
@@ -603,6 +606,9 @@ func (s Settings) validate() error {
 	errs = append(errs, s.validateWS()...)
 	if s.BatchCheckpointEntries <= 0 {
 		errs = append(errs, errors.New("FHIR_BATCH_CHECKPOINT_ENTRIES: phải > 0"))
+	}
+	if s.JobCancelPoll <= 0 {
+		errs = append(errs, errors.New("FHIR_JOB_CANCEL_POLL phải > 0"))
 	}
 	if s.JobLease <= 0 || s.JobMaintenanceInterval < 0 {
 		errs = append(errs, errors.New("FHIR_JOB_LEASE phải > 0 và FHIR_JOB_MAINTENANCE_INTERVAL phải >= 0"))

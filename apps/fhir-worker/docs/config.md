@@ -19,6 +19,7 @@ Tệp này **được sinh từ `internal/config/config.go`** (xem `docs_test.go
 | `FHIR_BATCH_CHECKPOINT_ENTRIES` | `10` | BatchCheckpointEntries: số entry giữa hai lần lưu checkpoint của batch async (ngoài ra lưu ít nhất mỗi 5 giây). |
 | `FHIR_BINARY_STORAGE` | `(rỗng)` | (tùy chọn) là kho nội dung Binary, PHẢI trùng FHIR_BINARY_STORAGE của fhir-server khi API dùng kho: file kết quả export và đầu vào, kết quả của batch async ghi ra kho thay vì base64 trong CSDL. Rỗng: kết quả nằm base64 trong CSDL (như fhir-server không bật kho): `file:<thư mục>` hoặc `s3:<bucket>[/<prefix>]`. |
 | `FHIR_EXPORT_RETENTION` | `24h0m0s` | là thời gian giữ kết quả bulk export và batch async (âm: không bao giờ xóa); xóa bằng Expunge nên nội dung ở kho cũng bị xóa. |
+| `FHIR_JOB_CANCEL_POLL` | `2s` | JobCancelPoll: Chu kỳ replica đang chạy job kiểm tra job có bị hủy (từ replica khác) không; việc hủy có hiệu lực trong chừng này thay vì chờ JobLease/3. Mỗi job đang chạy tốn một lần đọc mỗi chu kỳ; không vượt JobLease/3. Phải > 0. |
 | `FHIR_JOB_CONCURRENCY` | `2` | là số job chạy đồng thời trong một instance. |
 | `FHIR_JOB_LEASE` | `5m0s` | JobLease: thời gian một instance giữ quyền chạy job trước khi instance khác tiếp quản (tự gia hạn khi job còn chạy). |
 | `FHIR_JOB_MAINTENANCE_INTERVAL` | `5s` | là chu kỳ nhận job mới (accepted), tiếp quản job mồ côi và xóa kết quả export hết hạn; fhir-worker nhận job qua vòng này nên mặc định ngắn (5 giây). Phải > 0. |

@@ -80,7 +80,7 @@ FHIRSTORE_TEST_POSTGRES_URL="postgres://user:pass@host:5432/db?sslmode=disable" 
 - Lease dùng trường `AsyncJob.transactionTime` (AsyncJob không có extension): job chưa xong có trường này là hạn lease, khi xong là thời điểm hoàn tất. Đồng hồ các replica cần lệch nhau ít hơn `FHIR_JOB_LEASE`.
 - Job phải idempotent vì có thể chạy lại từ đầu. Checkpoint dùng chung (`Router.JobState`, `SaveJobState`) có từ việc #17 (A1) nhưng mới chỉ batch async dùng; `$export` và `$reindex` vẫn chạy lại từ đầu. Một lần chạy dở của `$export` dọn file đã ghi khi bị hủy hoặc lỗi, nhưng nếu process bị kill cứng (SIGKILL) các file đã ghi của lần đó ở lại tới khi hết hạn (không có trong manifest nên `ExpireJobs` không biết chúng).
 - Bản chạy lại sau khi lease hết hạn có thể chạy song song với bản cũ nếu replica cũ chỉ bị treo (không chết) lâu hơn lease; chưa có fencing token.
-- Hủy cross-replica có độ trễ tối đa `FHIR_JOB_LEASE/3` (heartbeat phát hiện trạng thái cancelled).
+- Hủy cross-replica có độ trễ tối đa `FHIR_JOB_CANCEL_POLL` (mặc định 2 giây; vòng thăm dò phát hiện trạng thái cancelled, tách khỏi nhịp gia hạn lease JobLease/3; trước 2026-11-24 độ trễ là JobLease/3).
 - Adapter asynq/Temporal có cơ chế bền vững riêng; lease ở đây là lớp bổ sung, chưa nối với hai adapter đó.
 
 ## Giới hạn của giai đoạn 10a

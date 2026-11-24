@@ -176,6 +176,22 @@ func TestJWTSettingsValidation(t *testing.T) {
 	}
 }
 
+func TestJobCancelPollSetting(t *testing.T) {
+	s, err := config.FromEnv(env(map[string]string{"FHIR_BASE_URL": "https://h/fhir/R4"}))
+	if err != nil || s.JobCancelPoll != 2*time.Second {
+		t.Fatalf("mặc định phải là 2s: %v %v", s.JobCancelPoll, err)
+	}
+	s, err = config.FromEnv(env(map[string]string{"FHIR_BASE_URL": "https://h/fhir/R4", "FHIR_JOB_CANCEL_POLL": "500ms"}))
+	if err != nil || s.JobCancelPoll != 500*time.Millisecond {
+		t.Fatalf("FHIR_JOB_CANCEL_POLL=500ms: %v %v", s.JobCancelPoll, err)
+	}
+	for _, v := range []string{"0s", "-1s"} {
+		if _, err := config.FromEnv(env(map[string]string{"FHIR_BASE_URL": "https://h/fhir/R4", "FHIR_JOB_CANCEL_POLL": v})); err == nil || !strings.Contains(err.Error(), "FHIR_JOB_CANCEL_POLL") {
+			t.Errorf("FHIR_JOB_CANCEL_POLL=%s phải bị từ chối: %v", v, err)
+		}
+	}
+}
+
 func TestJobDurabilitySettings(t *testing.T) {
 	s, err := config.FromEnv(env(map[string]string{"FHIR_BASE_URL": "https://h/fhir/R4", "FHIR_JOB_LEASE": "2m", "FHIR_JOB_MAINTENANCE_INTERVAL": "0s", "FHIR_EXPORT_RETENTION": "-1h"}))
 	if err != nil || s.JobLease != 2*time.Minute || s.JobMaintenanceInterval != 0 || s.ExportRetention != -time.Hour {

@@ -579,7 +579,7 @@ Khuôn mỗi chức năng: **Mục đích · Tác nhân · Tiền điều kiện
 | Kết quả quá retention | 404 | AsyncJob và Binary đã bị bảo trì xóa |
 | Replica chết khi job đang chạy | Poll vẫn 202 cho tới khi replica khác tiếp quản | Chạy lại từ đầu (export không có checkpoint), xem F-20 |
 
-**Hủy:** `DELETE bulkdata/{id}/status` (RoleRead đủ). Job `accepted` (đang chờ hoặc đang chạy): đánh dấu `cancelled`, ngắt context của job đang chạy ở process này, trả 202 `Cancelled`; job chạy ở replica khác sẽ thấy trạng thái `cancelled` ở nhịp heartbeat kế tiếp (tối đa JobLease/3) và tự dừng. Job đã `completed`, `error`, `cancelled`: xóa các Binary kết quả và AsyncJob, trả 202 `Deleted`.
+**Hủy:** `DELETE bulkdata/{id}/status` (RoleRead đủ). Job `accepted` (đang chờ hoặc đang chạy): đánh dấu `cancelled`, ngắt context của job đang chạy ở process này, trả 202 `Cancelled`; job chạy ở replica khác thấy trạng thái `cancelled` ở vòng thăm dò kế tiếp (`FHIR_JOB_CANCEL_POLL`, mặc định 2 giây; trước 2026-11-24 phải chờ nhịp heartbeat JobLease/3, mặc định khoảng 100 giây) và tự dừng. Job đã `completed`, `error`, `cancelled`: xóa các Binary kết quả và AsyncJob, trả 202 `Deleted`.
 
 **Tác dụng phụ:** tạo AsyncJob và các Binary NDJSON; Binary này nằm TRONG CƠ SỞ DỮ LIỆU (dữ liệu base64 trong resource), không vào kho tệp `file:`/`s3:` dù FHIR_BINARY_STORAGE bật, vì job dùng repository không bọc Binary (nên không vướng trần base64 1 MiB). Bảo trì định kỳ xóa theo FHIR_EXPORT_RETENTION. Phân trang bằng offset nên dữ liệu ghi trong lúc xuất có thể bị lặp hoặc sót.
 
@@ -695,7 +695,7 @@ Khuôn mỗi chức năng: **Mục đích · Tác nhân · Tiền điều kiện
 2. Đọc AsyncJob bằng repository không tách; bỏ qua nếu `status != accepted` hoặc lease còn hạn.
 3. Giành lease: ghi `transactionTime` = bây giờ + FHIR_JOB_LEASE bằng cập nhật có `If-Match` (chỉ một replica thắng; thua thì thôi, không lỗi).
 4. Dựng quyền: nếu JWT bật, `JobOpen` kiểm chữ ký (ràng buộc id job, project của AsyncJob, `request`, ảnh chụp quyền) và dựng lại principal; loại job đăng ký "scoped" (export, batch async) chạy bằng repository tách project với principal đó, loại khác (reindex) chạy bằng repository không tách. Chữ ký sai hoặc thiếu thì job ghi `error` với `job thiếu hoặc sai chữ ký quyền` (hoặc `job có ảnh chụp quyền phiên bản cũ, hãy chạy lại`) và không chạy.
-5. Chạy hàm của loại job, có `recover` panic (thành lỗi `job panic: ...`); đồng thời goroutine heartbeat mỗi JobLease/3 đọc lại AsyncJob: nếu `cancelled` thì hủy context của job; nếu còn `accepted` thì gia hạn lease.
+5. Chạy hàm của loại job, có `recover` panic (thành lỗi `job panic: ...`); đồng thời goroutine theo dõi cứ `FHIR_JOB_CANCEL_POLL` (mặc định 2 giây, không vượt JobLease/3) đọc lại AsyncJob: nếu `cancelled` thì hủy context của job; nếu còn `accepted` và đã đủ JobLease/3 kể từ lần gia hạn trước thì gia hạn lease (hai nhịp tách nhau để lease không bị ghi dày).
 6. Ghi kết quả bằng context độc lập (10 giây): đọc lại AsyncJob; nếu đã `cancelled` thì bỏ kết quả và xóa Binary kết quả; nếu job lỗi VÀ process đang tắt thì xóa `transactionTime` (nhả lease), giữ `accepted`; ngược lại đặt `transactionTime` = lúc xong, xóa checkpoint, `status = completed` hoặc `error` (kèm OperationOutcome trong `output`).
 7. `GET job/{id}/status`: `accepted` 202 + AsyncJob; `completed` 200 + AsyncJob; `error` 500 + OperationOutcome (hoặc `Job lỗi`); `cancelled` 410. Không có hoặc project khác: 404.
 

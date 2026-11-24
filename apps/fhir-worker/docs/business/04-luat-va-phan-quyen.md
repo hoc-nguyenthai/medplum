@@ -88,7 +88,7 @@ stateDiagram-v2
 
 | Mã | Luật | Loại | F |
 |---|---|---|---|
-| BR-22 | Hủy khi job còn `accepted` chỉ đánh dấu `cancelled` ở CSDL; worker (tiến trình khác API) dừng khi heartbeat đọc thấy (tối đa `FHIR_JOB_LEASE`/3, mặc định khoảng 100 giây) hoặc, với batch, ở lần lưu checkpoint kế tiếp; kết quả của job bị hủy bị bỏ. | OPS | F-06 |
+| BR-22 | Hủy khi job còn `accepted` chỉ đánh dấu `cancelled` ở CSDL; worker (tiến trình khác API) dừng khi vòng thăm dò hủy đọc thấy (tối đa `FHIR_JOB_CANCEL_POLL`, mặc định 2 giây, không vượt `FHIR_JOB_LEASE`/3; trước 2026-11-24 chờ nhịp heartbeat lease/3, khoảng 100 giây) hoặc, với batch, ở lần lưu checkpoint kế tiếp; kết quả của job bị hủy bị bỏ. | OPS | F-06 |
 | BR-23 | `DELETE` job đã xong, lỗi hoặc đã hủy xóa job cùng Binary kết quả (`202` `Deleted`). | DATA | F-06 |
 | BR-24 | Vòng bảo trì xóa `AsyncJob` `completed`, `error`, `cancelled` quá `FHIR_EXPORT_RETENTION` (mặc định 24 giờ; âm là không bao giờ) với loại `export?`, `batch?` và `reindex?` (job `reindex` không có Binary kết quả nên chỉ xóa dòng); loại job không biết thì không bị đụng tới. | OPS | F-07 |
 | BR-25 | Xóa kết quả dùng Expunge (xóa dòng, lịch sử và tệp ở kho) khi repository và quyền cho phép; nếu không thì xóa mềm và nội dung còn lại. | DATA | F-07, F-08 |
@@ -116,7 +116,8 @@ stateDiagram-v2
 | Hạng mục | Mặc định | Cấu hình |
 |---|---|---|
 | Lease của job | 5 phút | `FHIR_JOB_LEASE` |
-| Gia hạn lease và kiểm hủy | lease/3 (khoảng 100 giây) | theo lease |
+| Gia hạn lease | lease/3 (khoảng 100 giây) | theo lease |
+| Thăm dò hủy job | `FHIR_JOB_CANCEL_POLL` (mặc định 2 giây, không vượt lease/3) | theo cấu hình |
 | Chu kỳ nhận job, tiếp quản, dọn | 5 giây | `FHIR_JOB_MAINTENANCE_INTERVAL` (> 0) |
 | Tuổi tối thiểu của job được nhận | 2 giây | `FHIR_JOB_RECOVERY_GRACE` |
 | Job đồng thời mỗi worker | 2 | `FHIR_JOB_CONCURRENCY` (1 đến 256) |
@@ -168,7 +169,7 @@ stateDiagram-v2
 | BR-13 (reindex theo project) | `pkg/fhirauth/scope_test.go`: `TestReindexTypeStaysInsideCallerProject` |
 | BR-15..18 (export) | `pkg/fhirrouter/repotest/suite.go`: `testBulkExport`, `testGroupExport`, `testExportTypeFilter`; `pkg/fhirrouter/jobs_durable_test.go`: `TestExportCancelWhileRunningAndDelete` |
 | BR-19..21 (batch async) | `pkg/fhirrouter/batch_async_test.go`: `TestAsyncBatchMatchesSync`, `TestAsyncBatchResumesFromCheckpoint`, `TestAsyncBatchCancelWhileRunning`; `apps/fhir-worker/internal/bootstrap/bootstrap_test.go`: `TestBatchAsyncWritesResourcesAndPublishesEvents`; `apps/fhir-server/internal/bootstrap/batch_async_e2e_test.go`: `TestAsyncBatchRunsWithCallerGrants` |
-| BR-22, BR-23 (hủy, xóa) | `pkg/fhirrouter/jobs_durable_test.go`: `TestExportCancelWhileRunningAndDelete`, `TestExportDeleteRemovesCompletedFiles`; `pkg/fhirrouter/batch_async_test.go`: `TestAsyncBatchCancelWhileRunning` |
+| BR-22, BR-23 (hủy, xóa) | `pkg/fhirrouter/jobs_durable_test.go`: `TestExportCancelWhileRunningAndDelete`, `TestExportDeleteRemovesCompletedFiles`; `pkg/fhirrouter/batch_async_test.go`: `TestAsyncBatchCancelWhileRunning`; `pkg/fhirrouter/job_cancel_poll_test.go`: `TestJobCancelledElsewhereStopsWithinThePollInterval`; `apps/fhir-worker/internal/bootstrap/bootstrap_test.go`: `TestJobCancelledByTheAPIStopsQuicklyOnTheWorker` |
 | BR-24, BR-25 (hết hạn, Expunge) | `pkg/fhirrouter/jobs_durable_test.go`: `TestExpireJobs` (export, reindex hết hạn, loại không biết còn); `pkg/fhirrouter/batch_async_test.go`: `TestAsyncBatchExpires`; `apps/fhir-worker/internal/bootstrap/bootstrap_test.go`: `TestResultsGoToObjectStorageAndAreExpungedWhenExpired`; `apps/fhir-server/internal/bootstrap/split_e2e_test.go`: `TestExportResultsGoToObjectStorageAndAreExpungedOnExpiry` |
 | BR-26, BR-27 (kho, trùng cấu hình) | `apps/fhir-worker/internal/bootstrap/bootstrap_test.go`: `TestResultsGoToObjectStorageAndAreExpungedWhenExpired`; `apps/fhir-worker/internal/config/config_test.go`: `TestSharedEnvFileWithFhirServerIsAccepted` (chỉ kiểm chấp nhận tệp dùng chung, chưa kiểm lệch giá trị) |
 | BR-28 (phát sự kiện) | `apps/fhir-worker/internal/bootstrap/bootstrap_test.go`: `TestBatchAsyncWritesResourcesAndPublishesEvents`; `apps/fhir-worker/internal/config/config_test.go`: `TestAllErrorsAreReportedTogetherAndPublishRulesFollowFhirServer` |

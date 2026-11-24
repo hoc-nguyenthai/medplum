@@ -457,3 +457,42 @@ func TestServeShutsDownGracefullyOnSignal(t *testing.T) {
 		t.Fatal("Serve không thoát sau khi nhận tín hiệu")
 	}
 }
+
+// FHIR_JOB_CANCEL_POLL tới được router của worker: job API tạo và worker chạy dừng trong chưa tới 1 giây sau khi bị hủy ở nơi khác, dù lease 10 phút (nhịp gia hạn 200 giây).
+func TestJobCancelledByTheAPIStopsQuicklyOnTheWorker(t *testing.T) {
+	e := newEnv(t, false, func(v map[string]string) { v["FHIR_JOB_LEASE"], v["FHIR_JOB_CANCEL_POLL"] = "10m", "30ms" })
+	c := start(t, e.settings)
+	started, stopped := make(chan struct{}), make(chan struct{})
+	c.Router.RegisterJob("longcancel", func(ctx context.Context, _ fhirrouter.Repository, _ *fhirrouter.Input) (*fhir.Parameters, error) {
+		close(started)
+		<-ctx.Done()
+		close(stopped)
+		return nil, ctx.Err()
+	})
+	e.api.router.RegisterJob("longcancel", func(context.Context, fhirrouter.Repository, *fhirrouter.Input) (*fhir.Parameters, error) {
+		return nil, nil // API không chạy job (DisableJobExecution); chỉ cần loại job tồn tại để tạo AsyncJob
+	})
+	job, err := e.api.router.StartJob(context.Background(), "longcancel", map[string][]string{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case <-started:
+	case <-time.After(10 * time.Second):
+		t.Fatal("worker không nhận job")
+	}
+	cur, err := e.api.store.ReadResource(context.Background(), "AsyncJob", job.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cj := cur.(*fhir.AsyncJob)
+	cj.Status = "cancelled"
+	if _, err := e.api.store.UpdateResource(context.Background(), cj, fhirrouter.UpdateOptions{}); err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case <-stopped:
+	case <-time.After(time.Second):
+		t.Fatal("job không dừng trong 1 giây sau khi bị hủy (FHIR_JOB_CANCEL_POLL không tới router của worker?)")
+	}
+}

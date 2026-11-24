@@ -41,18 +41,24 @@ func (r *Router) claimJob(ctx context.Context, repo Repository, job *fhir.AsyncJ
 	return true
 }
 
-// heartbeat gia hạn lease định kỳ và hủy job (cancelRun) khi AsyncJob bị đánh dấu cancelled (kể cả từ replica khác).
+// heartbeat theo dõi job đang chạy: cứ JobCancelPoll đọc AsyncJob và hủy job (cancelRun) khi nó bị đánh dấu cancelled (kể cả từ replica khác), và cứ JobLease/3 gia hạn lease.
+// Hai nhịp tách nhau để việc hủy có hiệu lực trong vài giây mà lease không bị ghi dày (mỗi lần gia hạn là một phiên bản AsyncJob mới).
 // Hàm trả về chỉ dừng khi goroutine đã thoát.
 func (r *Router) heartbeat(ctx context.Context, repo Repository, id string, cancelRun context.CancelFunc) (stop func()) {
-	every := r.opts.JobLease / 3
-	if every < 10*time.Millisecond {
-		every = 10 * time.Millisecond
+	renewEvery := r.opts.JobLease / 3
+	if renewEvery < 10*time.Millisecond {
+		renewEvery = 10 * time.Millisecond
+	}
+	poll := min(r.opts.JobCancelPoll, renewEvery)
+	if poll < 10*time.Millisecond {
+		poll = 10 * time.Millisecond
 	}
 	done, exited := make(chan struct{}), make(chan struct{})
 	go func() {
 		defer close(exited)
-		t := time.NewTicker(every)
+		t := time.NewTicker(poll)
 		defer t.Stop()
+		lastRenew := time.Now()
 		for {
 			select {
 			case <-done:
@@ -73,13 +79,15 @@ func (r *Router) heartbeat(ctx context.Context, repo Repository, id string, canc
 				cancelRun()
 				return
 			}
-			if job.Status == "accepted" {
+			if job.Status == "accepted" && time.Since(lastRenew) >= renewEvery {
 				job.TransactionTime = r.leaseDeadline()
 				vid := ""
 				if job.Meta != nil {
 					vid = job.Meta.VersionId
 				}
-				_, _ = repo.UpdateResource(ctx, job, UpdateOptions{IfMatch: vid})
+				if _, err := repo.UpdateResource(ctx, job, UpdateOptions{IfMatch: vid}); err == nil {
+					lastRenew = time.Now()
+				}
 			}
 		}
 	}()

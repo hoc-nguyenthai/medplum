@@ -132,7 +132,7 @@ func (c *Container) build(ctx context.Context) (err error) {
 	c.Router = fhirrouter.New(routerRepo, fhirrouter.Options{
 		BinaryContent: binaryContent,
 		JobRepository: jobRepo, ScopedJobRepository: scopedJobRepo, JobContext: jobContext, JobOpen: jobOpen(sealer),
-		JobLease: s.JobLease, JobMaintenanceInterval: s.JobMaintenanceInterval, JobRecoveryGrace: s.JobRecoveryGrace, ExportRetention: s.ExportRetention,
+		JobLease: s.JobLease, JobCancelPoll: s.JobCancelPoll, JobMaintenanceInterval: s.JobMaintenanceInterval, JobRecoveryGrace: s.JobRecoveryGrace, ExportRetention: s.ExportRetention,
 		AsyncBatch: true, BatchCheckpointEntries: s.BatchCheckpointEntries,
 		BaseURL:         strings.TrimRight(s.BaseURL, "/"),
 		SkipValidation:  s.SkipValidation,

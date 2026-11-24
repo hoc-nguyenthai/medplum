@@ -281,7 +281,7 @@ func (c *Container) build(ctx context.Context) (err error) {
 		JobRepository: jobRepo, ScopedJobRepository: scopedJobRepo, JobContext: jobContext,
 		JobSeal: jobSeal(sealer), JobOpen: jobOpen(sealer),
 		DisableJobExecution: !s.JobExecution,
-		JobLease:            s.JobLease, JobMaintenanceInterval: s.JobMaintenanceInterval, ExportRetention: s.ExportRetention,
+		JobLease:            s.JobLease, JobCancelPoll: s.JobCancelPoll, JobMaintenanceInterval: s.JobMaintenanceInterval, ExportRetention: s.ExportRetention,
 		AsyncBatch: s.AsyncBatch, BatchCheckpointEntries: s.BatchCheckpointEntries,
 		BaseURL:         strings.TrimRight(s.BaseURL, "/"),
 		SkipValidation:  s.SkipValidation,
