@@ -27,6 +27,10 @@ type rule struct {
 	deny     bool // loại bị cấm rõ ràng (kể cả khi có rule "*")
 	readonly bool
 	req      *fhirsearch.Request // nil: cả loại
+	// interactions (nil: mọi interaction) là tập con của read, vread, history, search, create, update, delete mà rule cho phép; xem fieldrules.go.
+	interactions   map[string]bool
+	hidden         []string // trường bị gỡ khi đọc và không ghi được (đã sắp xếp)
+	readonlyFields []string // trường không ghi được (đã sắp xếp)
 }
 
 // wildcardExcluded là các loại mà rule "*" không bao giờ khớp: loại quản trị project và loại bảo vệ của Medplum (access.ts), nên một
@@ -49,7 +53,7 @@ func (p *Policy) ruleFor(rt string) (rule, bool) {
 }
 
 // policyRuleKeys là các khóa hợp lệ của một rule dạng object trong claim chính sách.
-var policyRuleKeys = map[string]bool{"resourceType": true, "criteria": true, "readonly": true, "deny": true}
+var policyRuleKeys = map[string]bool{"resourceType": true, "criteria": true, "readonly": true, "deny": true, "hiddenFields": true, "readonlyFields": true, "interaction": true}
 
 // ParsePolicy dựng Policy từ giá trị claim: mảng phần tử là object {"resourceType","criteria","readonly","deny"} hoặc chuỗi
 // "Observation?subject=Patient/123". resourceType "*" (một lần, không có criteria) áp cho mọi loại không có rule riêng, trừ các loại
@@ -66,6 +70,8 @@ func ParsePolicy(v any) (*Policy, error) {
 	for _, e := range list {
 		var rt, criteria string
 		var ro, deny bool
+		var hidden, roFields []string
+		var interactions map[string]bool
 		switch x := e.(type) {
 		case string:
 			rt, criteria, _ = strings.Cut(x, "?")
@@ -96,6 +102,22 @@ func ParsePolicy(v any) (*Policy, error) {
 					return nil, fmt.Errorf("readonly của %s phải là boolean", rt)
 				}
 			}
+			var perr error
+			if v, ok := x["hiddenFields"]; ok {
+				if hidden, perr = parseFieldList(v, "hiddenFields", rt); perr != nil {
+					return nil, perr
+				}
+			}
+			if v, ok := x["readonlyFields"]; ok {
+				if roFields, perr = parseFieldList(v, "readonlyFields", rt); perr != nil {
+					return nil, perr
+				}
+			}
+			if v, ok := x["interaction"]; ok {
+				if interactions, perr = parseInteractions(v, rt); perr != nil {
+					return nil, perr
+				}
+			}
 		default:
 			return nil, fmt.Errorf("phần tử chính sách không hợp lệ")
 		}
@@ -105,7 +127,10 @@ func ParsePolicy(v any) (*Policy, error) {
 		if rt == "*" && p.wild != nil {
 			return nil, fmt.Errorf("loại %s có nhiều hơn một rule", rt)
 		}
-		r := rule{readonly: ro, deny: deny}
+		r := rule{readonly: ro, deny: deny, hidden: hidden, readonlyFields: roFields, interactions: interactions}
+		if deny && (len(hidden) > 0 || len(roFields) > 0 || interactions != nil) {
+			return nil, fmt.Errorf("rule deny của %s không có hiddenFields, readonlyFields hay interaction", rt)
+		}
 		if rt == "*" && strings.TrimSpace(criteria) != "" {
 			return nil, fmt.Errorf(`rule "*" không có criteria`)
 		}
@@ -162,6 +187,8 @@ func mergeRules(rt string, rs []rule) (rule, error) {
 			return rule{}, fmt.Errorf("loại %s có rule không criteria (đã cho cả loại) kèm rule khác", rt)
 		case r.readonly != rs[0].readonly:
 			return rule{}, fmt.Errorf("các rule của loại %s phải cùng readonly", rt)
+		case !sameStrings(r.hidden, rs[0].hidden) || !sameStrings(r.readonlyFields, rs[0].readonlyFields) || !sameSet(r.interactions, rs[0].interactions):
+			return rule{}, fmt.Errorf("các rule của loại %s phải cùng hiddenFields, readonlyFields và interaction", rt)
 		}
 		var kids []*fhirsearch.Expr
 		for i := range r.req.Filters {
@@ -175,7 +202,8 @@ func mergeRules(rt string, rs []rule) (rule, error) {
 			alts = append(alts, &fhirsearch.Expr{Op: "and", Kids: kids})
 		}
 	}
-	return rule{readonly: rs[0].readonly, req: &fhirsearch.Request{ResourceType: rt, Exprs: []*fhirsearch.Expr{{Op: "or", Kids: alts}}}}, nil
+	return rule{readonly: rs[0].readonly, hidden: rs[0].hidden, readonlyFields: rs[0].readonlyFields, interactions: rs[0].interactions,
+		req: &fhirsearch.Request{ResourceType: rt, Exprs: []*fhirsearch.Expr{{Op: "or", Kids: alts}}}}, nil
 }
 
 // Types liệt kê các loại có rule.

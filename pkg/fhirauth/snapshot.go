@@ -80,11 +80,50 @@ func (p *Principal) CanReadResource(rt string, doc map[string]any) bool {
 	if p == nil {
 		return true
 	}
-	if !p.Grants.CanRead(rt) || !p.Policy.allows(rt, false) {
+	if !p.Grants.CanRead(rt) || !p.Policy.allows(rt, false) || !p.Policy.permits(rt, "read") {
 		return false
 	}
 	if rt == jobType {
 		return true
 	}
 	return p.Policy.matchDoc(rt, doc)
+}
+
+// RedactDoc trả bản doc đã gỡ các trường ẩn (hiddenFields) của AccessPolicy cho loại rt, để giao thông báo. Không đổi doc gốc;
+// không có trường ẩn (hoặc p nil) thì trả nguyên doc.
+func (p *Principal) RedactDoc(rt string, doc map[string]any) map[string]any {
+	if p == nil || doc == nil {
+		return doc
+	}
+	r := p.Policy.fieldRule(rt)
+	if r == nil || len(r.hidden) == 0 {
+		return doc
+	}
+	out := deepCopyDoc(doc)
+	for _, f := range r.hidden {
+		removeField(out, f)
+	}
+	return out
+}
+
+func deepCopyDoc(v map[string]any) map[string]any {
+	out := make(map[string]any, len(v))
+	for k, x := range v {
+		out[k] = deepCopyAny(x)
+	}
+	return out
+}
+
+func deepCopyAny(x any) any {
+	switch t := x.(type) {
+	case map[string]any:
+		return deepCopyDoc(t)
+	case []any:
+		o := make([]any, len(t))
+		for i, e := range t {
+			o[i] = deepCopyAny(e)
+		}
+		return o
+	}
+	return x
 }

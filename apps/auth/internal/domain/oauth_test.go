@@ -208,3 +208,70 @@ func TestPolicyClaimOfDefaultPolicies(t *testing.T) {
 		}
 	}
 }
+
+// FieldRules bật: hiddenFields, readonlyFields và interaction đi vào claim theo hướng thu hẹp (hợp các trường, giao các interaction, mọi rule của một loại cùng một bộ quy tắc);
+// tên trường lạ, writeConstraint, tham số hoá vẫn thu hẹp như trước.
+func TestPolicyClaimWithFieldRules(t *testing.T) {
+	yes := true
+	policies := []fhir.AccessPolicy{{Resource: []fhir.AccessPolicyResource{
+		{ResourceType: "Patient", HiddenFields: []string{"birthDate", "name.family"}, ReadonlyFields: []string{"gender"}, Interaction: []string{"read", "search", "update", "patch", "lạ"}},
+		{ResourceType: "Patient", HiddenFields: []string{"address", "birthDate"}, Interaction: []string{"read", "update", "delete"}}, // cùng criteria: gộp
+		{ResourceType: "Device", Interaction: []string{"read", "patch", "lạ"}},                                                       // patch và giá trị lạ bị bỏ
+		{ResourceType: "Observation", Interaction: []string{}},                                                                       // không khai: không thu hẹp
+		{ResourceType: "Condition", HiddenFields: []string{"note"}, Readonly: &yes},
+		{ResourceType: "Task", HiddenFields: []string{"input; drop"}},                      // tên lạ -> cấm loại
+		{ResourceType: "Encounter", WriteConstraint: []fhir.Expression{{Expression: "x"}}}, // vẫn ép chỉ đọc
+		{ResourceType: "Procedure", Criteria: "Procedure?status=a", HiddenFields: []string{"note"}},
+		{ResourceType: "Procedure", Criteria: "Procedure?status=b", HiddenFields: []string{"performer"}},
+		{ResourceType: "*", HiddenFields: []string{"meta.author"}},
+	}}}
+	claim, _, err := PolicyClaimWith(policies, PolicyOptions{FieldRules: true, Compartment: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	byType := map[string][]map[string]any{}
+	for _, e := range claim {
+		byType[e["resourceType"].(string)] = append(byType[e["resourceType"].(string)], e)
+	}
+	patient := byType["Patient"][0]
+	if !reflect.DeepEqual(patient["hiddenFields"], []string{"address", "birthDate", "name.family"}) || !reflect.DeepEqual(patient["readonlyFields"], []string{"gender"}) ||
+		!reflect.DeepEqual(patient["interaction"], []string{"read", "update"}) || patient["readonly"] != nil {
+		t.Errorf("Patient: %v", patient)
+	}
+	if d := byType["Device"][0]; !reflect.DeepEqual(d["interaction"], []string{"read"}) {
+		t.Errorf("Device: patch và giá trị lạ phải bị bỏ: %v", d)
+	}
+	if o := byType["Observation"][0]; o["hiddenFields"] != nil || o["interaction"] != nil || len(o) != 1 {
+		t.Errorf("Observation không có quy tắc: %v", o)
+	}
+	if c := byType["Condition"][0]; c["readonly"] != true || !reflect.DeepEqual(c["hiddenFields"], []string{"note"}) {
+		t.Errorf("Condition: %v", c)
+	}
+	if tk := byType["Task"][0]; tk["deny"] != true || tk["hiddenFields"] != nil {
+		t.Errorf("tên trường lạ phải cấm loại: %v", tk)
+	}
+	if e := byType["Encounter"][0]; e["readonly"] != true {
+		t.Errorf("writeConstraint vẫn ép chỉ đọc: %v", e)
+	}
+	procs := byType["Procedure"]
+	if len(procs) != 2 {
+		t.Fatalf("hai criteria: %v", procs)
+	}
+	for _, p := range procs {
+		if !reflect.DeepEqual(p["hiddenFields"], []string{"note", "performer"}) { // mọi rule của loại cùng một bộ quy tắc (hợp)
+			t.Errorf("Procedure: %v", p)
+		}
+	}
+	if w := byType["*"][0]; !reflect.DeepEqual(w["hiddenFields"], []string{"meta.author"}) {
+		t.Errorf("wildcard: %v", w)
+	}
+	// cờ tắt: như trước (hiddenFields và interaction cấm loại, readonlyFields chỉ đọc)
+	old, _, err := PolicyClaimWith([]fhir.AccessPolicy{{Resource: append(append([]fhir.AccessPolicyResource(nil), policies[0].Resource[:2]...), policies[0].Resource[4:6]...)}}, PolicyOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	m := claimByType(t, old)
+	if m["Patient"]["deny"] != true || m["Condition"]["deny"] != true || m["Task"]["deny"] != true {
+		t.Errorf("cờ tắt phải cấm loại có hiddenFields/interaction: %v", m)
+	}
+}

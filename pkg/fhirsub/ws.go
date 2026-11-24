@@ -6,6 +6,7 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"reflect"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -465,8 +466,16 @@ func (h *Hub) notify(subID string, ev ChangeEvent) {
 		}
 		b.events++
 		n := b.events
+		out := &ev
+		if b.who != nil && doc != nil && ev.Interaction != Delete {
+			if red := b.who.RedactDoc(ev.ResourceType, doc); !sameDoc(red, doc) {
+				cp := ev
+				cp.Resource = mustJSON(red)
+				out = &cp
+			}
+		}
 		c.mu.Unlock()
-		c.enqueue(statusBundle(subID, "event-notification", n, &ev, nil))
+		c.enqueue(statusBundle(subID, "event-notification", n, out, nil))
 	}
 }
 
@@ -506,4 +515,9 @@ func statusBundle(subID, typ string, n int64, ev *ChangeEvent, _ any) []byte {
 		entries = append(entries, e)
 	}
 	return mustJSON(map[string]any{"resourceType": "Bundle", "type": "history", "timestamp": time.Now().UTC().Format(time.RFC3339Nano), "entry": entries})
+}
+
+// sameDoc: RedactDoc trả đúng map đầu vào khi không có gì để gỡ.
+func sameDoc(a, b map[string]any) bool {
+	return reflect.ValueOf(a).Pointer() == reflect.ValueOf(b).Pointer()
 }

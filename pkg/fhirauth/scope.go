@@ -53,11 +53,34 @@ func allow(ctx context.Context, rt string, need Perm) error {
 	if p == nil {
 		return fhirrouter.Forbidden("Không xác định được người gọi")
 	}
-	if !p.Policy.allows(rt, need&PermWrite != 0) {
+	if !p.Policy.allows(rt, need&PermWrite != 0) || !p.Policy.permits(rt, interactionOf(need)) {
 		return fhirrouter.Forbidden("Chính sách truy cập không cho phép " + rt)
 	}
 	if !p.Grants.Can(rt, need) {
 		return fhirrouter.Forbidden("Token thiếu quyền " + describe(need) + " (SMART) trên " + rt)
+	}
+	return nil
+}
+
+// interactionOf đổi bit quyền đơn sang tên interaction của chính sách.
+func interactionOf(need Perm) string {
+	switch need {
+	case PermCreate:
+		return "create"
+	case PermUpdate:
+		return "update"
+	case PermDelete:
+		return "delete"
+	case PermSearch:
+		return "search"
+	}
+	return "read"
+}
+
+// permit kiểm interaction riêng (vread, history) của chính sách trên loại rt.
+func permit(ctx context.Context, rt, interaction string) error {
+	if !policyOf(ctx).permits(rt, interaction) {
+		return fhirrouter.Forbidden("Chính sách truy cập không cho phép " + interaction + " trên " + rt)
 	}
 	return nil
 }
@@ -186,6 +209,10 @@ func (r *Repo) CreateResource(ctx context.Context, res fhir.Resource) (fhir.Reso
 	if err := allow(ctx, res.GetResourceType(), PermCreate); err != nil {
 		return nil, err
 	}
+	res, err = policyOf(ctx).protectWrite(res, nil)
+	if err != nil {
+		return nil, err
+	}
 	s, err := stamp(res, project)
 	if err != nil {
 		return nil, err
@@ -193,7 +220,11 @@ func (r *Repo) CreateResource(ctx context.Context, res fhir.Resource) (fhir.Reso
 	if !policyOf(ctx).matches(s) {
 		return nil, fhirrouter.Forbidden("Resource không thỏa tiêu chí của chính sách truy cập")
 	}
-	return r.inner.CreateResource(ctx, s)
+	out, err := r.inner.CreateResource(ctx, s)
+	if err != nil {
+		return nil, err
+	}
+	return policyOf(ctx).redact(out)
 }
 
 func (r *Repo) ReadResource(ctx context.Context, rt, id string) (fhir.Resource, error) {
@@ -211,7 +242,7 @@ func (r *Repo) ReadResource(ctx context.Context, rt, id string) (fhir.Resource, 
 	if !inProject(res, project) || !policyOf(ctx).matches(res) {
 		return nil, fhirrouter.NotFound()
 	}
-	return res, nil
+	return policyOf(ctx).redact(res)
 }
 
 func (r *Repo) ReadVersion(ctx context.Context, rt, id, vid string) (fhir.Resource, error) {
@@ -222,6 +253,9 @@ func (r *Repo) ReadVersion(ctx context.Context, rt, id, vid string) (fhir.Resour
 	if err := allow(ctx, rt, PermRead); err != nil {
 		return nil, err
 	}
+	if err := permit(ctx, rt, "vread"); err != nil {
+		return nil, err
+	}
 	res, err := r.inner.ReadVersion(ctx, rt, id, vid)
 	if err != nil {
 		return nil, err
@@ -229,7 +263,7 @@ func (r *Repo) ReadVersion(ctx context.Context, rt, id, vid string) (fhir.Resour
 	if !inProject(res, project) || !policyOf(ctx).matches(res) {
 		return nil, fhirrouter.NotFound()
 	}
-	return res, nil
+	return policyOf(ctx).redact(res)
 }
 
 func (r *Repo) ReadHistory(ctx context.Context, rt, id string) ([]fhirrouter.HistoryEntry, error) {
@@ -238,6 +272,9 @@ func (r *Repo) ReadHistory(ctx context.Context, rt, id string) ([]fhirrouter.His
 		return nil, err
 	}
 	if err := allow(ctx, rt, PermRead); err != nil {
+		return nil, err
+	}
+	if err := permit(ctx, rt, "history"); err != nil {
 		return nil, err
 	}
 	h, err := r.inner.ReadHistory(ctx, rt, id)
@@ -256,6 +293,15 @@ func (r *Repo) ReadHistory(ctx context.Context, rt, id string) ([]fhirrouter.His
 	if !owned {
 		return nil, fhirrouter.NotFound()
 	}
+	for i := range h {
+		if h[i].Resource != nil && !h[i].Deleted {
+			red, err := policyOf(ctx).redact(h[i].Resource)
+			if err != nil {
+				return nil, err
+			}
+			h[i].Resource = red
+		}
+	}
 	return h, nil
 }
 
@@ -270,6 +316,15 @@ func (r *Repo) UpdateResource(ctx context.Context, res fhir.Resource, o fhirrout
 	if err := r.owned(ctx, project, res.GetResourceType(), res.GetID()); err != nil {
 		return nil, err
 	}
+	if policyOf(ctx).fieldRule(res.GetResourceType()) != nil {
+		original, err := r.inner.ReadResource(ctx, res.GetResourceType(), res.GetID())
+		if err != nil {
+			return nil, err
+		}
+		if res, err = policyOf(ctx).protectWrite(res, original); err != nil {
+			return nil, err
+		}
+	}
 	s, err := stamp(res, project)
 	if err != nil {
 		return nil, err
@@ -277,7 +332,11 @@ func (r *Repo) UpdateResource(ctx context.Context, res fhir.Resource, o fhirrout
 	if !policyOf(ctx).matches(s) {
 		return nil, fhirrouter.Forbidden("Resource không thỏa tiêu chí của chính sách truy cập")
 	}
-	return r.inner.UpdateResource(ctx, s, o)
+	out, err := r.inner.UpdateResource(ctx, s, o)
+	if err != nil {
+		return nil, err
+	}
+	return policyOf(ctx).redact(out)
 }
 
 func (r *Repo) DeleteResource(ctx context.Context, rt, id string) error {
@@ -338,6 +397,12 @@ func (r *Repo) Search(ctx context.Context, req *fhirsearch.Request) (*fhirrouter
 	out := *res
 	out.Matches = filterPolicy(filterReadable(filterProject(res.Matches, project), g), pol)
 	out.Included = filterPolicy(filterReadable(filterProject(res.Included, project), g), pol)
+	if out.Matches, err = pol.redactAll(out.Matches); err != nil {
+		return nil, err
+	}
+	if out.Included, err = pol.redactAll(out.Included); err != nil {
+		return nil, err
+	}
 	return &out, nil
 }
 

@@ -96,6 +96,10 @@ type PolicyOptions struct {
 	// thì cấm cả loại (fail đóng); (2) nhiều criteria khác nhau cùng loại thành nhiều rule (OR). CHỈ bật khi mọi fhir-server đã nâng cấp lên bản hiểu
 	// `_compartment` và nhiều rule cùng loại (P8 M1, M2): bản cũ từ chối claim như vậy nên token bị 403.
 	Compartment bool
+	// FieldRules bật dịch hiddenFields, readonlyFields và interaction sang claim (A-04, A-05; fhir-server thực thi ở pkg/fhirauth): trường ẩn bị gỡ khỏi mọi phản hồi đọc,
+	// trường chỉ đọc không ghi được, interaction giới hạn thao tác. Tắt (mặc định): entry có hiddenFields hoặc interaction cấm cả loại, readonlyFields làm loại chỉ đọc (như trước).
+	// CHỈ bật khi mọi fhir-server đã nâng cấp: bản cũ từ chối khóa lạ trong claim nên token bị 403.
+	FieldRules bool
 	// Vars là biến của từng AccessPolicy, cùng thứ tự với policies (độ dài khác hoặc nil: không có biến). Khóa viết thường: patient, profile.
 	Vars []map[string]string
 }
@@ -152,10 +156,16 @@ func PolicyClaimWith(policies []fhir.AccessPolicy, opts PolicyOptions) (claim []
 	for _, g := range groups {
 		unsupported, forcedReadonly := g.bad, false
 		for _, r := range g.entries {
-			if r.Compartment != nil || len(r.HiddenFields) > 0 || len(r.Interaction) > 0 || strings.Contains(r.Criteria, "%") || (g.rt == "*" && r.Criteria != "") {
+			if r.Compartment != nil || strings.Contains(r.Criteria, "%") || (g.rt == "*" && r.Criteria != "") {
 				unsupported = true
 			}
-			if len(r.ReadonlyFields) > 0 || len(r.WriteConstraint) > 0 {
+			if !opts.FieldRules && (len(r.HiddenFields) > 0 || len(r.Interaction) > 0) {
+				unsupported = true
+			}
+			if opts.FieldRules && (!validFieldNames(r.HiddenFields) || !validFieldNames(r.ReadonlyFields)) {
+				unsupported = true // tên trường lạ: fhir-server sẽ từ chối cả claim, nên cấm riêng loại này
+			}
+			if len(r.WriteConstraint) > 0 || (!opts.FieldRules && len(r.ReadonlyFields) > 0) {
 				forcedReadonly = true
 			}
 		}
@@ -171,7 +181,7 @@ func PolicyClaimWith(policies []fhir.AccessPolicy, opts PolicyOptions) (claim []
 		if forcedReadonly {
 			narrowed = append(narrowed, g.rt+" chỉ đọc vì dùng readonlyFields hoặc writeConstraint")
 		}
-		entries, note := mergeEntries(g, forcedReadonly, opts.Compartment)
+		entries, note := mergeEntries(g, forcedReadonly, opts.Compartment, opts.FieldRules)
 		if note != "" {
 			narrowed = append(narrowed, note)
 		}
@@ -183,7 +193,94 @@ func PolicyClaimWith(policies []fhir.AccessPolicy, opts PolicyOptions) (claim []
 // mergeEntries gộp các entry (đã hỗ trợ) cùng loại thành một rule, hoặc (multi=true) thành nhiều rule khi các criteria khác nhau và đều không phải
 // toàn loại: fhir-server hiểu nhiều rule cùng loại là OR (P8 M2), mọi rule của loại phải cùng `readonly` nên lấy mức hẹp nhất (chỉ đọc nếu BẤT KỲ entry
 // nào chỉ đọc).
-func mergeEntries(g *policyGroup, forceReadonly, multi bool) ([]map[string]any, string) {
+func mergeEntries(g *policyGroup, forceReadonly, multi, fields bool) ([]map[string]any, string) {
+	out, note := mergeEntriesBase(g, forceReadonly, multi)
+	if fields {
+		hidden, readonlyFields, interaction := mergeFieldRules(g.entries)
+		for _, e := range out {
+			if e["deny"] == true {
+				continue
+			}
+			if len(hidden) > 0 {
+				e["hiddenFields"] = hidden
+			}
+			if len(readonlyFields) > 0 {
+				e["readonlyFields"] = readonlyFields
+			}
+			if interaction != nil {
+				e["interaction"] = interaction
+			}
+		}
+	}
+	return out, note
+}
+
+// validFieldNames: mọi tên trường khớp dạng fhir-server nhận (tên thuộc tính, đường dẫn chấm, hậu tố [x]).
+var fieldNameRE = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*(\[x\])?(\.[A-Za-z_][A-Za-z0-9_]*(\[x\])?)*$`)
+
+func validFieldNames(names []string) bool {
+	if len(names) > 64 {
+		return false
+	}
+	for _, n := range names {
+		if !fieldNameRE.MatchString(n) {
+			return false
+		}
+	}
+	return true
+}
+
+var claimInteractions = map[string]bool{"read": true, "vread": true, "history": true, "search": true, "create": true, "update": true, "delete": true}
+
+// mergeFieldRules gộp quy tắc trường của các entry cùng loại theo hướng THU HẸP: hợp của hiddenFields và readonlyFields (đã sắp xếp), giao của các interaction đã khai
+// (entry không khai interaction không thu hẹp; nil khi không entry nào khai). `patch` và giá trị lạ bị bỏ (không có interaction tương ứng ở fhir-server).
+func mergeFieldRules(entries []fhir.AccessPolicyResource) (hidden, readonlyFields, interaction []string) {
+	h, ro := map[string]bool{}, map[string]bool{}
+	var inter map[string]bool
+	for _, r := range entries {
+		for _, f := range r.HiddenFields {
+			h[f] = true
+		}
+		for _, f := range r.ReadonlyFields {
+			ro[f] = true
+		}
+		if len(r.Interaction) > 0 {
+			set := map[string]bool{}
+			for _, i := range r.Interaction {
+				if claimInteractions[i] {
+					set[i] = true
+				}
+			}
+			if inter == nil {
+				inter = set
+			} else {
+				for k := range inter {
+					if !set[k] {
+						delete(inter, k)
+					}
+				}
+			}
+		}
+	}
+	for f := range h {
+		hidden = append(hidden, f)
+	}
+	for f := range ro {
+		readonlyFields = append(readonlyFields, f)
+	}
+	slices.Sort(hidden)
+	slices.Sort(readonlyFields)
+	if inter != nil {
+		interaction = []string{}
+		for i := range inter {
+			interaction = append(interaction, i)
+		}
+		slices.Sort(interaction)
+	}
+	return hidden, readonlyFields, interaction
+}
+
+func mergeEntriesBase(g *policyGroup, forceReadonly, multi bool) ([]map[string]any, string) {
 	criteria := map[string]bool{}
 	for _, r := range g.entries {
 		criteria[r.Criteria] = true

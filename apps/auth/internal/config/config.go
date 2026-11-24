@@ -87,6 +87,10 @@ type Settings struct {
 	// và người thân đọc được dữ liệu trong compartment của mình. Mặc định TẮT (các loại đó bị cấm cả loại). CHỈ bật sau khi mọi fhir-server đã nâng cấp: bản
 	// cũ từ chối claim dạng này nên token bị 403. Thứ tự deploy: fhir-server trước, rồi bật biến này ở auth.
 	PatientCompartmentEnabled bool
+	// PolicyFieldRulesEnabled bật dịch hiddenFields, readonlyFields và interaction của AccessPolicy sang claim fhir_access_policy: fhir-server gỡ trường ẩn khỏi mọi phản hồi đọc, chặn ghi
+	// trường chỉ đọc (khôi phục từ bản đang lưu) và giới hạn interaction. Mặc định TẮT (entry có hiddenFields hoặc interaction cấm cả loại, readonlyFields làm loại chỉ đọc). CHỈ bật sau
+	// khi mọi fhir-server đã nâng cấp: bản cũ từ chối khóa lạ trong claim nên token bị 403. Thứ tự deploy: fhir-server trước, rồi bật biến này ở auth.
+	PolicyFieldRulesEnabled bool
 
 	// RegisterEnabled=false tắt mọi đăng ký; NewProjectRegistrationEnabled=false chỉ tắt tạo project mới.
 	RegisterEnabled               bool
@@ -318,6 +322,7 @@ func FromEnv(get func(string) string) (Settings, error) {
 	r.Duration(&s.SessionMaxAge, "AUTH_SESSION_MAX_AGE")
 	r.Int(&s.MaxPolicyClaimBytes, "AUTH_MAX_POLICY_CLAIM_BYTES")
 	r.Bool(&s.PatientCompartmentEnabled, "AUTH_PATIENT_COMPARTMENT_ENABLED")
+	r.Bool(&s.PolicyFieldRulesEnabled, "AUTH_POLICY_FIELD_RULES_ENABLED")
 	r.Bool(&s.RegisterEnabled, "AUTH_REGISTER_ENABLED")
 	r.Bool(&s.NewProjectRegistrationEnabled, "AUTH_NEW_PROJECT_REGISTRATION_ENABLED")
 	r.String(&s.RecaptchaSiteKey, "AUTH_RECAPTCHA_SITE_KEY")

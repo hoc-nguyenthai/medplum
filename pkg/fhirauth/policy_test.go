@@ -34,7 +34,7 @@ func TestParsePolicy(t *testing.T) {
 		"phần tử lạ":      []any{42},
 		// S-C1: khóa lạ phải bị từ chối, nếu không rule không criteria sẽ cấp cả loại.
 		"khóa lạ":            []any{map[string]any{"resourceType": "Communication", "criteriaAny": []any{"sender=Patient/1"}}},
-		"khóa lạ kèm hợp lệ": []any{map[string]any{"resourceType": "Observation", "criteria": "status=final", "hiddenFields": []any{"x"}}},
+		"khóa lạ kèm hợp lệ": []any{map[string]any{"resourceType": "Observation", "criteria": "status=final", "writeConstraint": []any{"x"}}},
 	} {
 		if _, err := fhirauth.ParsePolicy(v); err == nil {
 			t.Errorf("%s: muốn lỗi", name)

@@ -65,6 +65,54 @@ Số liệu lấy từ tài liệu này và đếm trực tiếp trong mã ngày
 
 Mỗi service mới phải thỏa danh sách kiểm 10 mục của [service-principles.md](../service-principles.md) mục 7. Cách đọc số: số dòng của `fhir-notifier` gồm cả phần websocket nhúng nên phần thật sự chuyển sang service mới nhỏ hơn con số trên; số biến cấu hình là ước lượng theo tiền tố tên biến trong `config.md` (khoảng 87 biến tổng, một số dùng chung giữa các cụm); `pkg/fhirdownload` còn đang sửa dở (chưa commit) nên số dòng có thể đổi.
 
+## 0.2 Thống kê toàn hệ thống (hiện có và đề xuất)
+
+Đếm trực tiếp trong mã ngày 2026-11-24. Mã tính bỏ dòng trống, dòng chú thích, `docs.go` (sinh tự động) và `*_gen.go`; test của `e2e/` ở gốc repo chưa tính. **Các dòng của service đề xuất là ước lượng**, suy từ `ws-gateway` (1.027 dòng) và `dicomweb` (1.380 dòng) cho phần vỏ; chưa kiểm cho các service mới.
+
+**Bảng A: tất cả service**
+
+| Service | Trạng thái | Cổng | Dữ liệu | Redis | Route | Biến cấu hình | Mã (dòng) | Test (dòng, tệp) |
+|---|---|---|---|---|---|---|---|---|
+| `auth` | có | 8006 | schema `identity`, role `identity_app` và `identity_migrate` | bắt buộc ở production | 63 | 106 | 13.887 | 20.563 (88) |
+| `fhir-server` (API) | có | 8005 | schema `fhir`, role `fhir_app` và `fhir_migrate`, sở hữu migration | tùy chọn (cần khi Subscription nhiều replica hoặc websocket `issuer`) | 31 | 87 | 1.910 | 3.908 (21) |
+| `ws-gateway` | có | 8007 | không có DB | bắt buộc | 18 | 37 | 1.027 | 2.584 (14) |
+| `dicomweb` | có | 8008 | dùng chung schema `fhir`, không tự migrate | không | 23 | 39 | 1.380 | 3.460 (17) |
+| `fhir-cli` | có (công cụ) | không | không | không | 0 | 0 | 754 | 361 (2) |
+| `fhir-downloader` | **đề xuất** | 8009 | dùng chung schema `fhir` | **bắt buộc** | 0 (chỉ probe) | ước 6 đến 10 | ước 1.000 đến 1.500 phần vỏ, cộng dùng lại khoảng 395 từ `pkg/fhirdownload` | chưa có |
+| `fhir-notifier` | **đề xuất** | 8010 | dùng chung schema `fhir` | **bắt buộc** | 0 (chỉ probe) | ước 17 đến 22 | ước 1.000 đến 1.500 phần vỏ, cộng dùng lại khoảng 1.637 từ `pkg/fhirsub` | chưa có |
+| `fhir-worker` | **đề xuất** | 8011 | dùng chung schema `fhir` | không bắt buộc | 0 (chỉ probe) | ước 8 đến 12 | ước 1.000 đến 1.500 phần vỏ, cộng dùng lại khoảng 1.365 (`jobs*`, `bulk`, `batch_async`, `workflow`) | chưa có |
+
+**Bảng B: bố cục kiểm thử và tài liệu hiện có**
+
+| Service | Dockerfile riêng | `tests/` | Tài liệu nghiệp vụ | ERD | Hợp đồng API chi tiết (`cases/`) |
+|---|---|---|---|---|---|
+| `auth` | có | `e2e` | có | có | có |
+| `fhir-server` | có | `e2e` | có | không | không |
+| `ws-gateway` | có | `e2e`, `integration`, `load` | không | không | không |
+| `dicomweb` | có | `load` (cộng e2e ở gốc repo) | có | không | có |
+| `fhir-cli` | không (công cụ) | không | có | không | không |
+| 3 service đề xuất | phải có (DoD mục 7) | phải có bốn tầng | phải có | nếu đổi dữ liệu | không áp dụng (không có route nghiệp vụ) |
+
+**Bảng C: tổng cộng**
+
+| Chỉ tiêu | Hiện tại (4 service và 1 công cụ) | Sau khi tách (7 service và 1 công cụ) |
+|---|---|---|
+| Số service | 4 | 7 |
+| Route nghiệp vụ | 135 (63 + 31 + 18 + 23) | 135 (ba service mới chỉ có probe) |
+| Biến cấu hình (có trùng giữa service) | 269 (106 + 87 + 37 + 39) | khoảng 300 trở lên (biến dùng chung lặp lại ở mỗi service) |
+| Mã ở `apps/` | 18.958 | thêm khoảng 3.000 đến 4.500 dòng vỏ (ước) |
+| Test ở `apps/` | 30.876 | tăng theo bốn tầng |
+| Mã dùng chung `pkg/` | 51.272 mã, 21.963 test | gần như không đổi (ba service mới dùng lại mã đã có) |
+| Service có Redis bắt buộc | 2 (`auth`, `ws-gateway`) | 4 (thêm `fhir-downloader`, `fhir-notifier`) |
+| Service dùng chung schema `fhir` | 2 (`fhir-server`, `dicomweb`) | 5 (thêm ba service mới; rủi ro ở D-SP-8) |
+
+**Nhận xét từ số liệu**
+
+- `auth` chiếm 73% mã ở `apps/` (13.887 trên 18.958); `fhir-server` chỉ 1.910 dòng vì là vỏ mỏng, nghiệp vụ nằm ở `pkg/` (hơn 51.000 dòng).
+- Tỉ lệ test trên mã ở `apps/`: `ws-gateway` và `dicomweb` khoảng 2,5; `fhir-server` 2,0; `auth` 1,5; `fhir-cli` 0,5 (và `cmd/fhir-cli` không có test).
+- Chỉ `ws-gateway` có đủ bốn tầng trong `tests/`; ba service đề xuất phải theo khuôn đó.
+- Số biến cấu hình lấy từ `docs/config.md` của từng app (dòng bắt đầu bằng biến viết hoa); ước lượng cho service đề xuất theo số biến liên quan đã đếm ở mục 0.1.
+
 ## 1. Hiện trạng (bằng chứng)
 
 `fhir-server` là một tiến trình lắp ráp các thành phần sau trong `container.go` (`build`); thành phần có điều kiện bật bằng cờ:
