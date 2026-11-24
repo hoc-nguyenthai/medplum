@@ -28,6 +28,7 @@ func (r *Router) registerGraph() {
 }
 
 type graphWalk struct {
+	noJobs  bool // người gọi không được xem mọi job: không đi vào AsyncJob
 	repo    Repository
 	ctx     context.Context
 	cache   map[string]fhir.Resource // theo "Loại/id" và theo canonical url
@@ -89,7 +90,7 @@ func (r *Router) graphOp(ctx context.Context, req *Request) (*Response, error) {
 	if err != nil {
 		return nil, err
 	}
-	g := &graphWalk{repo: repo, ctx: ctx, cache: map[string]fhir.Resource{}, results: []fhir.Resource{root}}
+	g := &graphWalk{repo: repo, ctx: ctx, noJobs: !r.jobsAll(ctx), cache: map[string]fhir.Resource{}, results: []fhir.Resource{root}}
 	g.remember(root)
 	if err := g.follow(root, def.Link, 0); err != nil {
 		return nil, err
@@ -101,12 +102,24 @@ func (r *Router) graphOp(ctx context.Context, req *Request) (*Response, error) {
 	return &Response{Status: 200, Resource: b}, nil
 }
 
+// checkTarget từ chối đích liên kết là AsyncJob với người không xem được mọi job: GraphDefinition do quản trị soạn không được dùng làm đường vòng qua
+// kiểm chủ sở hữu job. Kiểm cả hai kiểu liên kết (path và tìm kiếm), kể cả đích khác nằm cùng một link.
+func (g *graphWalk) checkTarget(rt string) error {
+	if g.noJobs && rt == "AsyncJob" {
+		return Forbidden("AsyncJob không truy vấn được bằng $graph")
+	}
+	return nil
+}
+
 func (g *graphWalk) follow(res fhir.Resource, links []fhir.GraphDefinitionLink, depth int) error {
 	if len(g.results) > graphMaxResources || depth >= graphMaxDepth || len(links) == 0 {
 		return nil
 	}
 	for _, link := range links {
 		for _, target := range link.Target {
+			if err := g.checkTarget(target.Type); err != nil {
+				return err
+			}
 			var linked []fhir.Resource
 			var err error
 			switch {
@@ -193,6 +206,9 @@ func (g *graphWalk) followPath(link fhir.GraphDefinitionLink, target fhir.GraphD
 func (g *graphWalk) followSearch(res fhir.Resource, link fhir.GraphDefinitionLink) ([]fhir.Resource, error) {
 	var out []fhir.Resource
 	for _, t := range link.Target {
+		if err := g.checkTarget(t.Type); err != nil {
+			return nil, err
+		}
 		if !strings.Contains(t.Params, "{ref}") {
 			return nil, BadRequest("Link target search params must include {ref}")
 		}

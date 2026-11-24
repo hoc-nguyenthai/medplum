@@ -174,3 +174,35 @@ func TestAsyncBatchInputBinaryHasOwnerWhileJobWaits(t *testing.T) {
 		t.Errorf("Binary đầu vào có chủ %q, muốn alice", got)
 	}
 }
+
+// $graph theo GraphDefinition do quản trị soạn không được dẫn tới AsyncJob của người khác: người không phải quản trị nhận 403, quản trị vẫn đi được.
+func TestGraphCannotReachJobs(t *testing.T) {
+	repo := fhirrouter.NewMemoryRepository()
+	ctx := context.Background()
+	for _, r := range []fhir.Resource{
+		&fhir.Patient{ID: "p1"},
+		&fhir.AsyncJob{ID: "j1", Status: "completed", Request: "export?_level=system"},
+		&fhir.GraphDefinition{ID: "g-search", Name: "jobsearch", Start: "Patient", Status: "active", Link: []fhir.GraphDefinitionLink{{Target: []fhir.GraphDefinitionLinkTarget{{Type: "AsyncJob", Params: "_id={ref}"}}}}},
+		&fhir.GraphDefinition{ID: "g-ok", Name: "patientonly", Start: "Patient", Status: "active", Link: []fhir.GraphDefinitionLink{{Target: []fhir.GraphDefinitionLinkTarget{{Type: "Observation", Params: "subject={ref}"}}}}},
+		&fhir.GraphDefinition{ID: "g-mixed", Name: "mixed", Start: "Patient", Status: "active", Link: []fhir.GraphDefinitionLink{{Target: []fhir.GraphDefinitionLinkTarget{{Type: "Observation", Params: "subject={ref}"}, {Type: "AsyncJob", Params: "_id={ref}"}}}}},
+		&fhir.GraphDefinition{ID: "g-path", Name: "jobpath", Start: "Patient", Status: "active", Link: []fhir.GraphDefinitionLink{{Path: "generalPractitioner", Target: []fhir.GraphDefinitionLinkTarget{{Type: "AsyncJob"}}}}},
+	} {
+		if _, err := repo.CreateResource(ctx, r); err != nil {
+			t.Fatal(err)
+		}
+	}
+	o := ownerOpts()
+	o.SkipValidation = true
+	h := asUser(newRouter(t, repo, o).HTTPHandler())
+	for _, name := range []string{"jobsearch", "mixed", "jobpath"} {
+		if c, b := putTo(h, "GET", "Patient/p1/$graph?graph="+name, "", "X-User", "bob"); c != 403 {
+			t.Errorf("bob %s: %d %s, muốn 403", name, c, b)
+		}
+		if c, b := putTo(h, "GET", "Patient/p1/$graph?graph="+name, "", "X-User", "root"); c != 200 {
+			t.Errorf("quản trị %s: %d %s, muốn 200", name, c, b)
+		}
+	}
+	if c, b := putTo(h, "GET", "Patient/p1/$graph?graph=patientonly", "", "X-User", "bob"); c != 200 {
+		t.Errorf("graph không dính AsyncJob: %d %s", c, b)
+	}
+}
