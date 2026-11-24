@@ -1,6 +1,6 @@
 # dicomweb: kiến trúc
 
-Cập nhật 2026-11-24 (D5).
+Cập nhật 2026-11-24 (D11).
 
 ## Vì sao tách (docs/service-principles.md mục 1)
 
@@ -23,7 +23,7 @@ internal/bootstrap      lắp DB, fhirstore, kho Binary, Verifier; vòng đời 
 
 - **Dùng chung schema `fhir` của fhir-server** (quyết định D-DW-1, 2026-11-24): `DicomStudy`, `DicomSeries`, `DicomInstance` là resource FHIR tìm được qua `GET /fhir/R4/DicomStudy?...` của fhir-server (tương thích Medplum), nên không thể nằm ở schema khác. Hệ quả: (a) **fhir-server sở hữu migration**; dicomweb không migrate và từ chối khởi động khi `fhirstore.Pending > 0` (có test); (b) dicomweb kết nối bằng cùng role ứng dụng của fhir-server (`fhir_app`, chỉ DML), không có role riêng; ngoại lệ so với D-1 của `service-principles.md` ("mỗi service một schema và một role") vì hai service là hai cửa vào của **cùng một miền dữ liệu**; (c) cô lập theo project bằng `fhirauth.Scope`, như fhir-server.
 - **Kho Binary dùng chung:** nội dung DICOM (`application/dicom`) ghi vào `binarystore` (tệp hoặc S3) với khóa theo Binary; `fhir-server` đọc cùng kho để phục vụ `Binary/{id}` và `/storage`. Hai service phải trỏ cùng `FHIR_BINARY_STORAGE` (và cùng bucket/prefix). Ghi theo thứ tự CSDL trước, kho sau, bù trừ khi lỗi (như `fhirbinary`, S9) sẽ làm ở D3.
-- Không có Redis, không có hàng đợi ở D1. Worker pixel data (D5) dùng `pkg/workflow`.
+- Không có Redis và không có hàng đợi bền. Việc dựng `DicomInstance.pixelData` (D11, tùy chọn, mặc định tắt) chạy trong worker nền của tiến trình với hàng đợi trong bộ nhớ, **không dùng `pkg/workflow`**; lệnh `dicomweb pixeldata` quét bù (mục `DicomInstance.pixelData` bên dưới).
 
 ## Xác thực và cô lập project
 
@@ -51,7 +51,7 @@ Handler (`httpapi.stowHandler`) chỉ chuyển luồng thân yêu cầu cho `pkg
 
 `pkg/dicomretrieve` đọc lại những gì STOW đã ghi, qua cùng `Container.Repo` (đã tách project, nên mọi tra cứu study/series/instance chỉ thấy dữ liệu của project người gọi) và `Container.Blobs`. Lỗi 404 phân biệt study, series, instance; 416 khi số frame vượt `NumberOfFrames` (kiểm trước khi mở nội dung); instance không có `Rows`/`Columns` (báo cáo có cấu trúc) thì 404 "không có pixel data". **Mọi lỗi xảy ra trước khi ghi byte nào** (kiểm hợp lệ, quét cấu trúc tệp); lỗi sau đó (kho đứt giữa chừng) làm handler ngắt kết nối (`panic(http.ErrAbortHandler)`) để client thấy phản hồi bị cắt chứ không nhận một JSON hay multipart dở dang trông như hợp lệ.
 
-**Frame lấy thẳng từ nội dung đã lưu, theo chỉ mục (D5):** không tách frame ra Binary riêng (sẽ nhân đôi dung lượng và cần hàng đợi). Lúc STOW, trong khi nội dung đang được ghi, dịch vụ lập chỉ mục vị trí từng frame (ảnh không nén: tính từ phần đầu; ảnh đóng gói: một goroutine đọc các fragment qua `io.Pipe` bằng `dicomweb.IndexEncapsulated`) và lưu ở extension `dicomweb.FrameIndexURL` của `DicomInstance`. WADO-RS đọc chỉ mục rồi gọi `binarystore.RangeOpener.OpenRange` cho đúng khoảng của frame (FS: Seek, S3: header Range, kể cả khi máy chủ bỏ qua Range thì vẫn trả đúng byte): chi phí O(kích thước frame), bộ nhớ hằng số. Phần đầu tiên được mở trước khi ghi byte nào nên nội dung mất hay khoảng hỏng trả 500 sạch; khoảng dài hơn nội dung thật thì ngắt kết nối. Không có chỉ mục (instance cũ, chỉ mục hỏng hoặc sai số frame, ảnh đóng gói không tách được, quá 256 KB) hoặc kho không đọc theo khoảng thì quay về cách của D4: quét tìm vị trí rồi chép, O(vị trí frame). Metadata series ghi theo luồng từng trang 500 instance, ghi nguyên văn chuỗi JSON đã làm sạch do STOW lưu.
+**Frame lấy thẳng từ nội dung đã lưu, theo chỉ mục (D5):** không tách frame ra Binary riêng theo mặc định (sẽ nhân đôi dung lượng và cần hàng đợi; ai cần thì bật `pixelData` ở D11, xem mục `DicomInstance.pixelData`). Lúc STOW, trong khi nội dung đang được ghi, dịch vụ lập chỉ mục vị trí từng frame (ảnh không nén: tính từ phần đầu; ảnh đóng gói: một goroutine đọc các fragment qua `io.Pipe` bằng `dicomweb.IndexEncapsulated`) và lưu ở extension `dicomweb.FrameIndexURL` của `DicomInstance`. WADO-RS đọc chỉ mục rồi gọi `binarystore.RangeOpener.OpenRange` cho đúng khoảng của frame (FS: Seek, S3: header Range, kể cả khi máy chủ bỏ qua Range thì vẫn trả đúng byte): chi phí O(kích thước frame), bộ nhớ hằng số. Phần đầu tiên được mở trước khi ghi byte nào nên nội dung mất hay khoảng hỏng trả 500 sạch; khoảng dài hơn nội dung thật thì ngắt kết nối. Không có chỉ mục (instance cũ, chỉ mục hỏng hoặc sai số frame, ảnh đóng gói không tách được, quá 256 KB) hoặc kho không đọc theo khoảng thì quay về cách của D4: quét tìm vị trí rồi chép, O(vị trí frame). Metadata series ghi theo luồng từng trang 500 instance, ghi nguyên văn chuỗi JSON đã làm sạch do STOW lưu.
 
 **Quyền:** đọc frame cần quyền đọc cả `DicomStudy`, `DicomSeries`, `DicomInstance` và `Binary` (Q-D1); thiếu quyền đọc `Binary` thì 403 chứ không phải 500.
 
@@ -77,6 +77,8 @@ Tương thích với client đọc thẳng `pixelData` qua API FHIR như Medplum
 
 Hai đường: (1) `DICOMWEB_PIXELDATA_FRAMES=true`: sau khi STOW lưu instance mới (không tính tải lại), một worker nền trong tiến trình (`DICOMWEB_PIXELDATA_WORKERS` goroutine, hàng đợi 1024 trong bộ nhớ, thử lại 3 lần lùi 1 s, 2 s) dựng pixelData bằng quyền và project của người STOW; (2) lệnh `dicomweb pixeldata [--dry-run] [--force] [--limit N]` quét bù mọi project (instance có từ trước khi bật, hàng đợi đầy, tiến trình tắt giữa chừng, lỗi sau 3 lần), hai pha như `reindex`, chạy lại an toàn. Không dùng asynq: dicomweb không có Redis và việc này nhẹ, đổi lại hàng đợi không bền; lệnh quét bù là lưới an toàn. Lỗi giữa chừng (một frame không ghi được, thua tranh chấp phiên bản) xóa các Binary và nội dung đã tạo (đã kiểm không để lại rác); `--force` tạo Binary mới, đổi tham chiếu rồi xóa Binary cũ. Giới hạn: xóa `DicomInstance` không xóa Binary frame của nó (như Medplum); tải lại tệp sai khác cùng SOPInstanceUID không cập nhật pixelData (instance đã có là idempotent); `meta.author` không đặt.
 
-## Chưa có (làm ở các bước sau)
+## Chưa có hoặc chưa kiểm
 
-D3 STOW-RS (kèm đọc tệp DICOM thật và đọc-sửa-ghi số liệu tổng hợp trên `pkg/dicomweb` đã có từ D2) (tách luồng ghi kho và đọc metadata, chốt chặn SQ lồng sâu và tệp cắt giữa PixelData);  D6 compose và e2e. Manifest K8s mẫu chưa có (dự án hiện bỏ qua K8s).
+- Chưa có: `rendered` cấp series và study, `viewport` và `annotation`, xóa instance, dựng ảnh cho JPEG 2000, JPEG-LS, RLE, JPEG mở rộng 12 bit, YBR, bảng màu và 32 bit (`rendered` trả `406`), bulkdata ngoài PixelData, STOW dạng metadata với PixelData đứng trước phần tử khác hoặc bulkdata trong SQ. Manifest K8s mẫu chưa có (dự án hiện bỏ qua K8s).
+- Chưa kiểm: `tests/integration` (PostgreSQL và S3 thật bằng testcontainers) và e2e dựng từ image Docker (máy phát triển không có Docker), tải trên PostgreSQL, chạy thử `docker-compose.dicomweb.yml`.
+- Đã xong từng bước: D3 STOW-RS, D4 QIDO-RS và WADO-RS, D5 chỉ mục frame, D6 compose, e2e đa tiến trình và đo tải, D7 vượt parity, D8 reindex, D9 bulkdata và WADO-URI, D10 STOW dạng metadata, D11 pixelData tùy chọn.
