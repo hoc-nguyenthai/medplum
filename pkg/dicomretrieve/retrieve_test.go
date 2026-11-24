@@ -11,6 +11,8 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/textproto"
+	"net/url"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -18,8 +20,11 @@ import (
 	"trivita-fhir/pkg/dicomretrieve"
 	"trivita-fhir/pkg/dicomstow"
 	"trivita-fhir/pkg/dicomtest"
+	"trivita-fhir/pkg/dicomweb"
+	"trivita-fhir/pkg/fhir"
 	"trivita-fhir/pkg/fhirauth"
 	"trivita-fhir/pkg/fhirrouter"
+	"trivita-fhir/pkg/fhirsearch"
 )
 
 type env struct {
@@ -395,5 +400,192 @@ func TestFramesWithBrokenStorage(t *testing.T) {
 	var re *dicomretrieve.Error
 	if !errors.As(err, &re) || re.Status != http.StatusInternalServerError || strings.Contains(re.Msg, "memory") || strings.Contains(re.Msg, "key") {
 		t.Errorf("nội dung mất: %v", err)
+	}
+}
+
+// ---------------------------------------------------------------- chỉ mục frame và đọc theo khoảng (D5)
+
+// countingStore đếm số byte đọc ra từ kho và số lần mở cả nội dung; hideRange giấu RangeOpener để thử đường quay về.
+type countingStore struct {
+	binarystore.Store
+	bytes     int64
+	fullOpens int
+	ranges    int
+}
+
+func (c *countingStore) Open(ctx context.Context, key string) (io.ReadCloser, error) {
+	c.fullOpens++
+	rc, err := c.Store.Open(ctx, key)
+	if err != nil {
+		return nil, err
+	}
+	return &countReader{rc, &c.bytes}, nil
+}
+
+func (c *countingStore) OpenRange(ctx context.Context, key string, off, n int64) (io.ReadCloser, error) {
+	c.ranges++
+	rc, err := c.Store.(binarystore.RangeOpener).OpenRange(ctx, key, off, n)
+	if err != nil {
+		return nil, err
+	}
+	return &countReader{rc, &c.bytes}, nil
+}
+
+type countReader struct {
+	io.ReadCloser
+	n *int64
+}
+
+func (c *countReader) Read(p []byte) (int, error) {
+	n, err := c.ReadCloser.Read(p)
+	*c.n += int64(n)
+	return n, err
+}
+
+// plainStore chỉ cài Store (không RangeOpener), để thử đường mở và bỏ qua byte.
+type plainStore struct{ binarystore.Store }
+
+func frameBytes(t *testing.T, cfg dicomretrieve.Config, study, series, inst string, frames []int) [][]byte {
+	t.Helper()
+	f, err := dicomretrieve.OpenFrames(principal("A"), cfg, dicomtest.UID(study), dicomtest.UID(study, series), dicomtest.UID(study, series, inst), frames)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, parts, _ := parseMultipart(t, f)
+	return parts
+}
+
+// stripIndex xóa extension chỉ mục frame của một instance (giả lập instance cũ chưa có chỉ mục).
+func (e *env) stripIndex(sop string) {
+	e.t.Helper()
+	e.editIndex(sop, func(ex *fhir.Extension) bool { return false })
+}
+
+func (e *env) editIndex(sop string, edit func(*fhir.Extension) bool) {
+	e.t.Helper()
+	req, _ := fhirsearch.Parse("DicomInstance", url.Values{"sop-instance-uid:exact": {sop}})
+	res, err := e.repo.Search(e.ctx, req)
+	if err != nil || len(res.Matches) != 1 {
+		e.t.Fatalf("tìm instance: %v", err)
+	}
+	inst := res.Matches[0].(*fhir.DicomInstance)
+	var keep []fhir.Extension
+	for _, ex := range inst.Extension {
+		if ex.URL == dicomweb.FrameIndexURL && !edit(&ex) {
+			continue
+		}
+		keep = append(keep, ex)
+	}
+	inst.Extension = keep
+	if _, err := e.repo.UpdateResource(e.ctx, inst, fhirrouter.UpdateOptions{}); err != nil {
+		e.t.Fatal(err)
+	}
+}
+
+// Đường chỉ mục + đọc theo khoảng và đường quay về (quét + bỏ qua byte) phải cho cùng từng byte, ở mọi dạng ảnh và mọi frame.
+func TestIndexedAndFallbackPathsReturnTheSameBytes(t *testing.T) {
+	e := newEnv(t)
+	jf := [][]byte{bytes.Repeat([]byte{0xFF, 0xD8, 1}, 40), bytes.Repeat([]byte{0xFF, 0xD8, 2}, 25), bytes.Repeat([]byte{0xFF, 0xD8, 3}, 9)}
+	e.stow(e.ctx,
+		file("1", "1", "1", func(m *dicomtest.Meta) { m.Rows, m.Cols, m.Bits, m.Frames = 8, 8, 16, 4 }),
+		file("1", "1", "2", func(m *dicomtest.Meta) {
+			m.TransferSyntax, m.Bits, m.Frames, m.Fragments = dicomtest.JPEGBaseline, 8, 3, jf
+		}),
+		file("1", "1", "3", func(m *dicomtest.Meta) {
+			m.TransferSyntax, m.Bits, m.Frames, m.Fragments = dicomtest.JPEGBaseline, 8, 1, jf
+		}),
+		file("1", "1", "4", func(m *dicomtest.Meta) { m.TransferSyntax = dicomtest.ImplicitLE; m.Rows, m.Cols = 5, 5 }))
+	indexed := e.cfg()
+	cs := &countingStore{Store: e.blobs}
+	indexed.Blobs = cs
+	plain := e.cfg()
+	plain.Blobs = plainStore{e.blobs}
+	for _, c := range []struct {
+		sop    string
+		frames []int
+	}{{"1", []int{1}}, {"1", []int{4, 2}}, {"2", []int{3}}, {"2", []int{1, 2, 3}}, {"3", []int{1}}, {"4", []int{1}}} {
+		a := frameBytes(t, indexed, "1", "1", c.sop, c.frames)
+		b := frameBytes(t, plain, "1", "1", c.sop, c.frames)
+		if !reflect.DeepEqual(a, b) {
+			t.Errorf("instance %s frames %v: đường chỉ mục khác đường quay về", c.sop, c.frames)
+		}
+	}
+	if cs.fullOpens != 0 || cs.ranges == 0 {
+		t.Errorf("đường chỉ mục không được mở cả nội dung: %d lần mở cả nội dung, %d lần đọc khoảng", cs.fullOpens, cs.ranges)
+	}
+	// xóa chỉ mục (instance cũ): quay về quét, vẫn đúng
+	for _, sop := range []string{"1", "2", "3", "4"} {
+		e.stripIndex(dicomtest.UID("1", "1", sop))
+	}
+	cs2 := &countingStore{Store: e.blobs}
+	noIdx := e.cfg()
+	noIdx.Blobs = cs2
+	for _, c := range []struct {
+		sop    string
+		frames []int
+	}{{"1", []int{3}}, {"2", []int{2}}, {"3", []int{1}}} {
+		if a, b := frameBytes(t, noIdx, "1", "1", c.sop, c.frames), frameBytes(t, plain, "1", "1", c.sop, c.frames); !reflect.DeepEqual(a, b) || len(a[0]) == 0 {
+			t.Errorf("không chỉ mục, instance %s: kết quả khác hoặc rỗng", c.sop)
+		}
+	}
+	if cs2.fullOpens == 0 {
+		t.Error("không có chỉ mục thì phải quét nội dung")
+	}
+}
+
+// Lấy một frame của instance lớn chỉ đọc đúng byte của frame (đo ở mức kho), không đọc cả tệp.
+func TestFrameReadsOnlyItsOwnBytes(t *testing.T) {
+	e := newEnv(t)
+	e.stow(e.ctx, file("1", "1", "1", func(m *dicomtest.Meta) { m.Rows, m.Cols, m.Bits, m.Frames = 256, 256, 16, 20 })) // 20 frame x 128 KiB
+	cs := &countingStore{Store: e.blobs}
+	cfg := e.cfg()
+	cfg.Blobs = cs
+	parts := frameBytes(t, cfg, "1", "1", "1", []int{20})
+	if len(parts[0]) != 256*256*2 {
+		t.Fatalf("frame %d byte", len(parts[0]))
+	}
+	if cs.bytes != int64(len(parts[0])) || cs.fullOpens != 0 || cs.ranges != 1 {
+		t.Errorf("đọc %d byte (muốn %d), %d lần mở cả nội dung, %d lần đọc khoảng", cs.bytes, len(parts[0]), cs.fullOpens, cs.ranges)
+	}
+}
+
+// Chỉ mục hỏng, sai số frame, hoặc trỏ ra ngoài nội dung không được làm sai dữ liệu: hỏng và sai số thì quay về quét; trỏ ra ngoài thì 500 trước khi ghi byte nào.
+func TestBadFrameIndexNeverReturnsWrongData(t *testing.T) {
+	e := newEnv(t)
+	px := make([]byte, 8*8*2*3)
+	for i := range px {
+		px[i] = byte(i + 7)
+	}
+	e.stow(e.ctx, file("1", "1", "1", func(m *dicomtest.Meta) { m.Rows, m.Cols, m.Bits, m.Frames, m.Pixel = 8, 8, 16, 3, px }))
+	sop := dicomtest.UID("1", "1", "1")
+	want := frameBytes(t, e.cfg(), "1", "1", "1", []int{2})
+	if !bytes.Equal(want[0], px[128:256]) {
+		t.Fatal("dữ liệu gốc sai")
+	}
+	set := func(v string) { e.editIndex(sop, func(ex *fhir.Extension) bool { ex.ValueString = v; return true }) }
+
+	set(`{"v":1,"ts":"x","f":[[1,0]]}`) // không hợp lệ
+	if got := frameBytes(t, e.cfg(), "1", "1", "1", []int{2}); !bytes.Equal(got[0], want[0]) {
+		t.Error("chỉ mục hỏng: phải quay về quét")
+	}
+	set(`{"v":1,"ts":"1.2.840.10008.1.2.1","f":[[100,128],[228,128]]}`) // 2 frame trong khi instance có 3
+	if got := frameBytes(t, e.cfg(), "1", "1", "1", []int{2}); !bytes.Equal(got[0], want[0]) {
+		t.Error("sai số frame: phải quay về quét")
+	}
+	set(`{"v":1,"ts":"1.2.840.10008.1.2.1","f":[[9000000,128],[9000200,128],[9000400,128]]}`) // trỏ ra ngoài nội dung
+	_, err := dicomretrieve.OpenFrames(e.ctx, e.cfg(), dicomtest.UID("1"), dicomtest.UID("1", "1"), sop, []int{2})
+	var re *dicomretrieve.Error
+	if !errors.As(err, &re) || re.Status != http.StatusInternalServerError {
+		t.Errorf("chỉ mục trỏ ra ngoài: %v", err)
+	}
+	// khoảng bắt đầu trong nội dung nhưng kéo dài quá cuối tệp: nội dung ngắn hơn khai báo không được trả như dữ liệu hợp lệ (lỗi giữa chừng, để handler ngắt kết nối)
+	cut := `{"v":1,"ts":"1.2.840.10008.1.2.1","f":[[100,10],[100,10],[100,1000000]]}` // bắt đầu trong tệp, dài hơn tệp
+	e.editIndex(sop, func(ex *fhir.Extension) bool { ex.ValueString = cut; return true })
+	g, err := dicomretrieve.OpenFrames(e.ctx, e.cfg(), dicomtest.UID("1"), dicomtest.UID("1", "1"), sop, []int{3})
+	if err != nil {
+		t.Fatalf("OpenFrames: %v", err)
+	}
+	if err := g.Write(io.Discard); err == nil {
+		t.Error("khoảng dài hơn nội dung phải báo lỗi khi ghi, không trả thiếu byte như hợp lệ")
 	}
 }

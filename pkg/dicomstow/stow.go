@@ -9,8 +9,9 @@
 //  2. Đọc metadata bằng dicomread (SkipPixelData), kiểm các UID, kiểm study khi POST vào một study cụ thể.
 //  3. Instance đã có (cùng SOPInstanceUID) thì coi là thành công mà không lưu lại nội dung: tải lại là idempotent, không tạo Binary mồ côi (Medplum tạo một Binary
 //     mới rồi bỏ rơi).
-//  4. Tạo Binary rồi ghi nội dung theo luồng (phần đầu đã đọc rồi phần còn lại) vào kho; kiểm tệp không bị cắt giữa PixelData (so số byte nhận với độ dài khai
-//     báo, d0-spike.md 3.3); lỗi thì xóa Binary và nội dung.
+//  4. Tạo Binary rồi ghi nội dung theo luồng (phần đầu đã đọc rồi phần còn lại) vào kho, đồng thời lập chỉ mục frame (ảnh không nén: từ phần đầu; ảnh đóng gói: đọc các
+//     fragment song song với việc ghi, không đọc lại tệp); kiểm tệp không bị cắt giữa PixelData (không nén: so số byte nhận với độ dài khai báo; đóng gói: phải đọc
+//     tới Sequence Delimitation; d0-spike.md 3.3); lỗi thì xóa Binary và nội dung. Chỉ mục lưu ở extension của DicomInstance.
 //  5. Trong một transaction có khóa theo UID: tạo DicomStudy, DicomSeries, DicomInstance nếu chưa có (tải song song cùng study không tạo trùng).
 //
 // Sau khi xử lý hết các phần, tính lại số liệu tổng hợp của từng study và series chạm tới (idempotent, có điều kiện ifMatch, thử tối đa 3 lần; lỗi chỉ ghi log vì
@@ -218,24 +219,56 @@ func (s *sourceReader) Read(p []byte) (int, error) {
 	return n, err
 }
 
-// tailReader đếm byte và giữ 64 byte cuối.
+// tailReader đếm số byte đã đi qua.
 type tailReader struct {
-	r    io.Reader
-	n    int64
-	tail []byte
+	r io.Reader
+	n int64
 }
 
 func (t *tailReader) Read(p []byte) (int, error) {
 	n, err := t.r.Read(p)
 	t.n += int64(n)
-	t.tail = append(t.tail, p[:n]...)
-	if len(t.tail) > 64 {
-		t.tail = append([]byte(nil), t.tail[len(t.tail)-64:]...)
-	}
 	return n, err
 }
 
-var seqDelimiter = []byte{0xFE, 0xFF, 0xDD, 0xE0, 0, 0, 0, 0}
+// indexer lập chỉ mục frame của PixelData đóng gói ngay trong lúc nội dung được ghi vào kho: nhận cùng các byte (qua io.Pipe, nối bằng TeeReader), bỏ qua tới đầu PixelData
+// rồi đọc các fragment tới Sequence Delimitation. Không đọc lại tệp và bộ nhớ hằng số. Luôn xả hết phần còn lại của luồng để không chặn đường ghi.
+type indexer struct {
+	pw   *io.PipeWriter
+	done chan indexResult
+}
+
+type indexResult struct {
+	frames []dicomweb.FrameRange
+	end    int64 // vị trí ngay sau Sequence Delimitation (0 nếu cấu trúc hỏng hoặc bị cắt)
+	err    error
+}
+
+func startIndexer(pixelOffset int64, frames int) *indexer {
+	pr, pw := io.Pipe()
+	ix := &indexer{pw: pw, done: make(chan indexResult, 1)}
+	go func() {
+		var res indexResult
+		if _, err := io.CopyN(io.Discard, pr, pixelOffset); err != nil {
+			res.err = err
+		} else {
+			res.frames, res.end, res.err = dicomweb.IndexEncapsulated(pr, pixelOffset, frames)
+		}
+		_, _ = io.Copy(io.Discard, pr)
+		ix.done <- res
+	}()
+	return ix
+}
+
+// finish đóng luồng (kết thúc phía ghi) và chờ kết quả.
+func (ix *indexer) finish(putErr error) indexResult {
+	if putErr != nil {
+		_ = ix.pw.CloseWithError(putErr)
+	} else {
+		_ = ix.pw.Close()
+	}
+	return <-ix.done
+}
 
 func fail(reason uint16, msg string, ds dicomweb.Dataset) *Failed {
 	f := &Failed{Reason: reason, Message: msg}
@@ -338,7 +371,22 @@ func (s *service) storeOne(ctx context.Context, part *multipart.Part) (*Stored, 
 		return nil, fail(ReasonProcessingFailure, "Khóa kho không hợp lệ", ds), nil
 	}
 	tail := &tailReader{r: io.MultiReader(bytes.NewReader(head.Bytes()), src)}
-	if _, err := s.cfg.Blobs.Put(ctx, key, tail, binarystore.PutOptions{ContentType: "application/dicom", MaxBytes: s.cfg.MaxInstanceBytes}); err != nil {
+	var upload io.Reader = tail
+	var ix *indexer
+	frames := 1
+	if n := ds.Int("00280008"); n != nil && *n > 0 {
+		frames = *n
+	}
+	if scan.HasPixelData && scan.Encapsulated {
+		ix = startIndexer(scan.PixelOffset, frames)
+		upload = io.TeeReader(tail, ix.pw)
+	}
+	_, putErr := s.cfg.Blobs.Put(ctx, key, upload, binarystore.PutOptions{ContentType: "application/dicom", MaxBytes: s.cfg.MaxInstanceBytes})
+	var enc indexResult
+	if ix != nil {
+		enc = ix.finish(putErr)
+	}
+	if err := putErr; err != nil {
 		s.dropBinary(ctx, binID, key)
 		switch {
 		case isTooLarge(src.err):
@@ -353,12 +401,25 @@ func (s *service) storeOne(ctx context.Context, part *multipart.Part) (*Stored, 
 		slog.ErrorContext(ctx, "dicomstow: ghi nội dung lỗi", "binary", binID, "error", err)
 		return nil, fail(ReasonProcessingFailure, "Không ghi được nội dung", ds), nil
 	}
-	if truncated(scan, tail) {
+	index := dicomweb.FrameIndex{TransferSyntax: scan.TransferSyntax, Frames: scan.Frames}
+	if scan.HasPixelData && scan.Encapsulated {
+		// chỉ mục đọc được tới Sequence Delimitation nghĩa là tệp không bị cắt; không tách được frame (ErrUnsplittable) thì vẫn lưu, chỉ không có chỉ mục
+		switch {
+		case enc.err == nil:
+			index.Frames = enc.frames
+		case errors.Is(enc.err, dicomweb.ErrUnsplittable) && enc.end > 0 && tail.n >= enc.end:
+			index.Frames = nil
+		default:
+			s.dropBinary(ctx, binID, key)
+			return nil, fail(ReasonCannotUnderstand, "Tệp bị cắt giữa PixelData hoặc PixelData đóng gói không hợp lệ", ds), nil
+		}
+	} else if truncated(scan, tail) {
 		s.dropBinary(ctx, binID, key)
 		return nil, fail(ReasonCannotUnderstand, "Tệp bị cắt giữa PixelData", ds), nil
 	}
+	encoded, _ := index.Encode()
 
-	inst, study, series, created, err := s.persist(ctx, ds, studyUID, seriesUID, sopUID, classUID, instanceID, binID, string(metadata))
+	inst, study, series, created, err := s.persist(ctx, ds, studyUID, seriesUID, sopUID, classUID, instanceID, binID, string(metadata), encoded)
 	if err != nil {
 		s.dropBinary(ctx, binID, key)
 		if f := fatalOf(err); f != nil {
@@ -386,15 +447,9 @@ func (s *service) storedOf(inst *fhir.DicomInstance, studyUID, seriesUID, classU
 	return st
 }
 
-// truncated cho biết tệp đã nhận ít hơn PixelData khai báo (không nén), hoặc PixelData đóng gói không kết thúc bằng Sequence Delimitation.
+// truncated cho biết tệp không nén đã nhận ít hơn PixelData khai báo (ảnh đóng gói được kiểm bằng chỉ mục frame: phải đọc tới Sequence Delimitation).
 func truncated(scan *dicomweb.ScanResult, t *tailReader) bool {
-	if !scan.HasPixelData {
-		return false
-	}
-	if scan.PixelLength >= 0 {
-		return t.n < scan.PixelOffset+scan.PixelLength
-	}
-	return !bytes.Contains(t.tail, seqDelimiter)
+	return scan.HasPixelData && scan.PixelLength >= 0 && t.n < scan.PixelOffset+scan.PixelLength
 }
 
 // isTooLarge: thân yêu cầu vượt trần kích thước của cả yêu cầu (http.MaxBytesReader). Là lỗi của cả yêu cầu (413), không phải của một instance; những instance
@@ -478,7 +533,7 @@ func lock(ctx context.Context, repo fhirrouter.Repository, key string) error {
 
 // persist tạo (nếu chưa có) study, series, instance trong một transaction; khóa theo UID theo thứ tự cố định (study, series, instance) nên tải song song
 // không tạo trùng và không bế tắc. created=false nghĩa là instance đã được một yêu cầu khác tạo trước.
-func (s *service) persist(ctx context.Context, ds dicomweb.Dataset, studyUID, seriesUID, sopUID, classUID, instanceID, binID, metadata string) (inst *fhir.DicomInstance, study *fhir.DicomStudy, series *fhir.DicomSeries, created bool, err error) {
+func (s *service) persist(ctx context.Context, ds dicomweb.Dataset, studyUID, seriesUID, sopUID, classUID, instanceID, binID, metadata, frameIndex string) (inst *fhir.DicomInstance, study *fhir.DicomStudy, series *fhir.DicomSeries, created bool, err error) {
 	run := func(rp fhirrouter.Repository) error {
 		if err := lock(ctx, rp, "dicomweb|study|"+studyUID); err != nil {
 			return err
@@ -531,6 +586,9 @@ func (s *service) persist(ctx context.Context, ds dicomweb.Dataset, studyUID, se
 		}
 		if n := ds.Int("00200013"); n != nil {
 			ni.InstanceNumber = fmt.Sprint(*n)
+		}
+		if frameIndex != "" { // chỉ mục frame (D5): WADO-RS đọc frame theo khoảng mà không quét tệp
+			ni.Extension = []fhir.Extension{{URL: dicomweb.FrameIndexURL, ValueString: frameIndex}}
 		}
 		c, err := rp.CreateResource(ctx, ni)
 		if err != nil {

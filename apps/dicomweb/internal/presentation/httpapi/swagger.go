@@ -186,7 +186,7 @@ func wadoSeriesMetadata() {}
 // wadoFrames godoc
 //
 //	@Summary		WADO-RS: lấy frame
-//	@Description	Trả một hoặc nhiều frame dạng multipart/related (có Content-Length), chép theo luồng từ nội dung đã lưu (bộ nhớ hằng số). Content-Type của phần: application/octet-stream với dữ liệu không nén, image/jpeg, image/jls, image/jp2, image/jpx, image/jphc kèm transfer-syntax với dữ liệu nén. Frame đóng gói nhiều fragment được nối lại. Chi phí mỗi yêu cầu tỉ lệ với vị trí frame trong tệp (và cả tệp với ảnh nén) cho tới khi worker D5 tách sẵn frame. Cần quyền đọc, gồm cả quyền đọc Binary.
+//	@Description	Trả một hoặc nhiều frame dạng multipart/related (có Content-Length), chép theo luồng từ nội dung đã lưu (bộ nhớ hằng số). Content-Type của phần: application/octet-stream với dữ liệu không nén, image/jpeg, image/jls, image/jp2, image/jpx, image/jphc kèm transfer-syntax với dữ liệu nén. Frame đóng gói nhiều fragment được nối lại. Vị trí frame lấy từ chỉ mục lập lúc STOW và đọc theo khoảng nên chi phí tỉ lệ với kích thước frame (instance cũ chưa có chỉ mục hoặc kho không đọc theo khoảng thì quay về quét tệp). Cần quyền đọc, gồm cả quyền đọc Binary.
 //	@Tags			dicomweb
 //	@Security		BearerAuth
 //	@Produce		multipart/related,json

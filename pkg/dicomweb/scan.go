@@ -26,6 +26,9 @@ var (
 	ErrTooDeep           = errors.New("dicomweb: SQ lồng quá sâu")
 	ErrUnsupportedSyntax = errors.New("dicomweb: transfer syntax không hỗ trợ")
 	ErrMalformed         = errors.New("dicomweb: cấu trúc DICOM không hợp lệ")
+	// ErrUnsplittable: PixelData đóng gói hợp lệ về cấu trúc (đã đọc tới Sequence Delimitation) nhưng không tách được thành frame, ví dụ nhiều fragment cho nhiều frame mà
+	// không có Basic Offset Table. Tệp vẫn là DICOM hợp lệ để lưu; chỉ không lấy được từng frame.
+	ErrUnsplittable = errors.New("dicomweb: không tách được frame của PixelData đóng gói")
 )
 
 // Transfer syntax không hỗ trợ: Explicit VR Big Endian (đã lỗi thời) và Deflated (cả dataset bị nén, không quét được cấu trúc).
@@ -354,7 +357,8 @@ func (s *scanner) skipFragments() error {
 	}
 }
 
-// pixelData chốt kết quả khi gặp PixelData cấp cao nhất.
+// pixelData chốt kết quả khi gặp PixelData cấp cao nhất. Ảnh không nén có frame tính được ngay từ phần đầu (kích thước ảnh và NumberOfFrames), nên cả chế độ HeaderOnly cũng
+// trả Frames; ảnh đóng gói cần đọc các fragment nên chỉ có khi quét đầy đủ (hoặc IndexEncapsulated trên luồng đang ghi).
 func (s *scanner) pixelData(tagStart int64, length uint32) (*ScanResult, error) {
 	r := s.res
 	r.HasPixelData, r.PixelHeaderOffset, r.PixelOffset = true, tagStart, s.pos
@@ -363,10 +367,10 @@ func (s *scanner) pixelData(tagStart int64, length uint32) (*ScanResult, error) 
 	}
 	r.Encapsulated = length == undefinedLength
 	r.End = s.pos
-	if s.opt.HeaderOnly {
-		return r, nil
-	}
 	if r.Encapsulated {
+		if s.opt.HeaderOnly {
+			return r, nil
+		}
 		return r, s.encapsulated()
 	}
 	n := r.NumberOfFrames
@@ -384,8 +388,24 @@ func (s *scanner) pixelData(tagStart int64, length uint32) (*ScanResult, error) 
 	for i := 0; i < n; i++ {
 		r.Frames = append(r.Frames, FrameRange{Offset: r.PixelOffset + int64(i)*fs, Length: fs})
 	}
-	r.End = r.PixelOffset + int64(length)
+	if !s.opt.HeaderOnly {
+		r.End = r.PixelOffset + int64(length)
+	}
 	return r, nil
+}
+
+// IndexEncapsulated đọc phần giá trị của một PixelData đóng gói (Basic Offset Table rồi các fragment, tới Sequence Delimitation) từ rd, đang đứng ngay đầu giá trị, và trả
+// khoảng byte từng frame theo vị trí tuyệt đối trong tệp (pixelOffset là vị trí đầu giá trị) cùng vị trí ngay sau Sequence Delimitation. Dùng song song với việc ghi tệp
+// vào kho để lập chỉ mục frame mà không đọc lại tệp. numberOfFrames là NumberOfFrames của instance (0 nghĩa là 1).
+func IndexEncapsulated(rd io.Reader, pixelOffset int64, numberOfFrames int) (frames []FrameRange, end int64, err error) {
+	s := &scanner{r: bufio.NewReaderSize(rd, 1<<16), pos: pixelOffset, res: &ScanResult{NumberOfFrames: numberOfFrames, PixelLength: -1, Encapsulated: true}}
+	if err := s.encapsulated(); err != nil {
+		if errors.Is(err, ErrUnsplittable) {
+			return nil, s.res.End, err // cấu trúc đủ và hợp lệ, chỉ không tách được frame: end cho biết tệp không bị cắt
+		}
+		return nil, 0, err
+	}
+	return s.res.Frames, s.res.End, nil
 }
 
 // encapsulated đọc Basic Offset Table và các fragment, tách thành frame: theo BOT nếu có, không thì mỗi fragment một frame (hoặc một frame khi
@@ -461,12 +481,12 @@ func (s *scanner) encapsulated() error {
 		for i := 0; i < n; i++ {
 			first, last := idx(bot[i]), len(frags)-1
 			if first < 0 {
-				return fmt.Errorf("%w: Basic Offset Table trỏ vào chỗ không phải đầu fragment", ErrMalformed)
+				return fmt.Errorf("%w: Basic Offset Table trỏ vào chỗ không phải đầu fragment", ErrUnsplittable)
 			}
 			if i+1 < n {
 				next := idx(bot[i+1])
 				if next <= first {
-					return fmt.Errorf("%w: Basic Offset Table không tăng dần", ErrMalformed)
+					return fmt.Errorf("%w: Basic Offset Table không tăng dần", ErrUnsplittable)
 				}
 				last = next - 1
 			}
@@ -477,7 +497,7 @@ func (s *scanner) encapsulated() error {
 	case n == 1:
 		r.Frames = append(r.Frames, span(frags))
 	default:
-		return fmt.Errorf("%w: %d fragment cho %d frame và không có Basic Offset Table", ErrMalformed, len(frags), n)
+		return fmt.Errorf("%w: %d fragment cho %d frame và không có Basic Offset Table", ErrUnsplittable, len(frags), n)
 	}
 	return nil
 }

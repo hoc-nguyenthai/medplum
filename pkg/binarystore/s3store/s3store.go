@@ -304,30 +304,81 @@ func (s *Store) Put(ctx context.Context, key string, r io.Reader, opts binarysto
 
 // Open gửi GET; người gọi đóng thân phản hồi.
 func (s *Store) Open(ctx context.Context, key string) (io.ReadCloser, error) {
-	if _, _, err := binarystore.SplitKey(key); err != nil {
+	rc, _, err := s.open(ctx, key, "")
+	return rc, err
+}
+
+// OpenRange: xem binarystore.RangeOpener. Dùng GET với header Range (S3 trả 206; 416 khi offset không nhỏ hơn kích thước nội dung).
+func (s *Store) OpenRange(ctx context.Context, key string, offset, length int64) (io.ReadCloser, error) {
+	if offset < 0 || length <= 0 {
+		if _, _, err := binarystore.SplitKey(key); err != nil {
+			return nil, err
+		}
+		return nil, binarystore.ErrInvalidRange
+	}
+	rc, status, err := s.open(ctx, key, fmt.Sprintf("bytes=%d-%d", offset, offset+length-1))
+	if err != nil || status == http.StatusPartialContent {
+		return rc, err
+	}
+	// máy chủ bỏ qua Range và trả cả nội dung (200): tự bỏ qua offset và cắt độ dài, để không bao giờ trả sai byte
+	if _, err := io.CopyN(io.Discard, rc, offset); err != nil {
+		_ = rc.Close()
+		if err == io.EOF {
+			return nil, binarystore.ErrInvalidRange
+		}
 		return nil, err
 	}
-	if err := ctx.Err(); err != nil {
+	first := make([]byte, 1)
+	if _, err := io.ReadFull(rc, first); err != nil { // không còn byte nào từ offset: offset không nhỏ hơn kích thước nội dung
+		_ = rc.Close()
+		if err == io.EOF {
+			return nil, binarystore.ErrInvalidRange
+		}
 		return nil, err
+	}
+	return limitedBody{io.LimitReader(io.MultiReader(bytes.NewReader(first), rc), length), rc}, nil
+}
+
+type limitedBody struct {
+	io.Reader
+	c io.Closer
+}
+
+func (l limitedBody) Close() error { return l.c.Close() }
+
+var _ binarystore.RangeOpener = (*Store)(nil)
+
+func (s *Store) open(ctx context.Context, key, rng string) (io.ReadCloser, int, error) {
+	if _, _, err := binarystore.SplitKey(key); err != nil {
+		return nil, 0, err
+	}
+	if err := ctx.Err(); err != nil {
+		return nil, 0, err
 	}
 	req, err := s.newRequest(ctx, http.MethodGet, key, nil, 0)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
+	}
+	if rng != "" {
+		req.Header.Set("Range", rng)
 	}
 	resp, err := s.do(req, emptySHA256)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	if resp.StatusCode == http.StatusOK {
-		return resp.Body, nil
+	if resp.StatusCode == http.StatusOK || (rng != "" && resp.StatusCode == http.StatusPartialContent) {
+		return resp.Body, resp.StatusCode, nil
 	}
 	b, _ := io.ReadAll(io.LimitReader(resp.Body, 64<<10))
 	_ = resp.Body.Close()
 	if notFound(resp.StatusCode, b) {
-		return nil, binarystore.ErrNotFound
+		return nil, 0, binarystore.ErrNotFound
+	}
+	if rng != "" && resp.StatusCode == http.StatusRequestedRangeNotSatisfiable {
+		return nil, 0, binarystore.ErrInvalidRange
 	}
 	resp.Body = io.NopCloser(bytes.NewReader(b))
-	return nil, apiError("GET", resp)
+	return nil, 0, apiError("GET", resp)
 }
 
 // Copy dùng CopyObject phía máy chủ. S3 có thể trả 200 kèm thân <Error>, nên thân luôn được kiểm.

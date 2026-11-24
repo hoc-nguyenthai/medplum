@@ -443,3 +443,87 @@ func RunLister(t *testing.T, mk New) {
 		}
 	})
 }
+
+// RunRange chạy hợp đồng của binarystore.RangeOpener; mk phải trả kho cài RangeOpener.
+func RunRange(t *testing.T, mk func(testing.TB) binarystore.Store) {
+	ctx := context.Background()
+	put := func(t *testing.T, s binarystore.Store, id string, size int) (string, []byte) {
+		t.Helper()
+		data := make([]byte, size)
+		for i := range data {
+			data[i] = byte(i*13 + 1)
+		}
+		k := mustKey(t, id, "v1")
+		if _, err := s.Put(ctx, k, bytes.NewReader(data), binarystore.PutOptions{}); err != nil {
+			t.Fatal(err)
+		}
+		return k, data
+	}
+	open := func(t *testing.T) (binarystore.Store, binarystore.RangeOpener) {
+		t.Helper()
+		s := mk(t)
+		ro, ok := s.(binarystore.RangeOpener)
+		if !ok {
+			t.Fatal("kho không cài RangeOpener")
+		}
+		return s, ro
+	}
+	readRange := func(t *testing.T, ro binarystore.RangeOpener, k string, off, n int64) ([]byte, error) {
+		t.Helper()
+		rc, err := ro.OpenRange(ctx, k, off, n)
+		if err != nil {
+			return nil, err
+		}
+		defer rc.Close()
+		return io.ReadAll(rc)
+	}
+
+	t.Run("RangeReturnsExactlyTheRequestedBytes", func(t *testing.T) {
+		s, ro := open(t)
+		k, data := put(t, s, "r1", 5000)
+		for _, c := range [][2]int64{{0, 1}, {0, 5000}, {10, 100}, {4999, 1}, {1234, 2000}, {2048, 1024}} {
+			got, err := readRange(t, ro, k, c[0], c[1])
+			if err != nil || !bytes.Equal(got, data[c[0]:c[0]+c[1]]) {
+				t.Errorf("[%d,+%d): %d byte, %v", c[0], c[1], len(got), err)
+			}
+		}
+	})
+	t.Run("RangePastTheEndIsTruncated", func(t *testing.T) {
+		s, ro := open(t)
+		k, data := put(t, s, "r2", 1000)
+		got, err := readRange(t, ro, k, 900, 500)
+		if err != nil || !bytes.Equal(got, data[900:]) {
+			t.Errorf("%d byte, %v", len(got), err)
+		}
+	})
+	t.Run("RangeRejectsBadRanges", func(t *testing.T) {
+		s, ro := open(t)
+		k, _ := put(t, s, "r3", 100)
+		for _, c := range [][2]int64{{-1, 10}, {0, 0}, {0, -5}, {100, 10}, {5000, 1}} {
+			if _, err := ro.OpenRange(ctx, k, c[0], c[1]); !errors.Is(err, binarystore.ErrInvalidRange) {
+				t.Errorf("[%d,+%d): %v, muốn ErrInvalidRange", c[0], c[1], err)
+			}
+		}
+	})
+	t.Run("RangeMissingAndInvalidKeys", func(t *testing.T) {
+		_, ro := open(t)
+		if _, err := ro.OpenRange(ctx, mustKey(t, "nope", "v1"), 0, 10); !errors.Is(err, binarystore.ErrNotFound) {
+			t.Errorf("khóa không có: %v", err)
+		}
+		if _, err := ro.OpenRange(ctx, "../etc/passwd", 0, 10); !errors.Is(err, binarystore.ErrInvalidKey) {
+			t.Errorf("khóa sai: %v", err)
+		}
+		if _, err := ro.OpenRange(ctx, "../etc/passwd", -1, 10); !errors.Is(err, binarystore.ErrInvalidKey) {
+			t.Errorf("khóa sai và khoảng sai: %v", err)
+		}
+	})
+	t.Run("RangeHonorsCanceledContext", func(t *testing.T) {
+		s, ro := open(t)
+		k, _ := put(t, s, "r4", 100)
+		cctx, cancel := context.WithCancel(ctx)
+		cancel()
+		if _, err := ro.OpenRange(cctx, k, 0, 10); err == nil {
+			t.Error("ctx đã hủy phải lỗi")
+		}
+	})
+}

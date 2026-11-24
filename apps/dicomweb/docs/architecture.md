@@ -1,6 +1,6 @@
 # dicomweb: kiến trúc
 
-Cập nhật 2026-11-24 (D4).
+Cập nhật 2026-11-24 (D5).
 
 ## Vì sao tách (docs/service-principles.md mục 1)
 
@@ -51,10 +51,10 @@ Handler (`httpapi.stowHandler`) chỉ chuyển luồng thân yêu cầu cho `pkg
 
 `pkg/dicomretrieve` đọc lại những gì STOW đã ghi, qua cùng `Container.Repo` (đã tách project, nên mọi tra cứu study/series/instance chỉ thấy dữ liệu của project người gọi) và `Container.Blobs`. Lỗi 404 phân biệt study, series, instance; 416 khi số frame vượt `NumberOfFrames` (kiểm trước khi mở nội dung); instance không có `Rows`/`Columns` (báo cáo có cấu trúc) thì 404 "không có pixel data". **Mọi lỗi xảy ra trước khi ghi byte nào** (kiểm hợp lệ, quét cấu trúc tệp); lỗi sau đó (kho đứt giữa chừng) làm handler ngắt kết nối (`panic(http.ErrAbortHandler)`) để client thấy phản hồi bị cắt chứ không nhận một JSON hay multipart dở dang trông như hợp lệ.
 
-**Frame lấy thẳng từ nội dung đã lưu:** `binarystore.Store` chỉ có `Open` (không đọc theo khoảng), nên mỗi yêu cầu mở nội dung hai lần: lượt một `dicomweb.Scan` tìm vị trí frame (ảnh không nén chỉ đọc phần đầu; ảnh nén đọc cả tệp để biết các fragment), lượt hai `dicomweb.CopyFrame` bỏ qua tới frame rồi chép. Bộ nhớ hằng số; chi phí tỉ lệ với vị trí frame trong tệp. Worker D5 sẽ tách sẵn từng frame ra Binary riêng (`DicomInstance.pixelData`) để bỏ chi phí này; đó là tối ưu hóa, không phải điều kiện để WADO-RS chạy. Metadata series ghi theo luồng từng trang 500 instance, ghi nguyên văn chuỗi JSON đã làm sạch do STOW lưu.
+**Frame lấy thẳng từ nội dung đã lưu, theo chỉ mục (D5):** không tách frame ra Binary riêng (sẽ nhân đôi dung lượng và cần hàng đợi). Lúc STOW, trong khi nội dung đang được ghi, dịch vụ lập chỉ mục vị trí từng frame (ảnh không nén: tính từ phần đầu; ảnh đóng gói: một goroutine đọc các fragment qua `io.Pipe` bằng `dicomweb.IndexEncapsulated`) và lưu ở extension `dicomweb.FrameIndexURL` của `DicomInstance`. WADO-RS đọc chỉ mục rồi gọi `binarystore.RangeOpener.OpenRange` cho đúng khoảng của frame (FS: Seek, S3: header Range, kể cả khi máy chủ bỏ qua Range thì vẫn trả đúng byte): chi phí O(kích thước frame), bộ nhớ hằng số. Phần đầu tiên được mở trước khi ghi byte nào nên nội dung mất hay khoảng hỏng trả 500 sạch; khoảng dài hơn nội dung thật thì ngắt kết nối. Không có chỉ mục (instance cũ, chỉ mục hỏng hoặc sai số frame, ảnh đóng gói không tách được, quá 256 KB) hoặc kho không đọc theo khoảng thì quay về cách của D4: quét tìm vị trí rồi chép, O(vị trí frame). Metadata series ghi theo luồng từng trang 500 instance, ghi nguyên văn chuỗi JSON đã làm sạch do STOW lưu.
 
 **Quyền:** đọc frame cần quyền đọc cả `DicomStudy`, `DicomSeries`, `DicomInstance` và `Binary` (Q-D1); thiếu quyền đọc `Binary` thì 403 chứ không phải 500.
 
 ## Chưa có (làm ở các bước sau)
 
-D3 STOW-RS (kèm đọc tệp DICOM thật và đọc-sửa-ghi số liệu tổng hợp trên `pkg/dicomweb` đã có từ D2) (tách luồng ghi kho và đọc metadata, chốt chặn SQ lồng sâu và tệp cắt giữa PixelData); D5 worker tách sẵn frame (tối ưu); D6 compose và e2e. Manifest K8s mẫu chưa có (dự án hiện bỏ qua K8s).
+D3 STOW-RS (kèm đọc tệp DICOM thật và đọc-sửa-ghi số liệu tổng hợp trên `pkg/dicomweb` đã có từ D2) (tách luồng ghi kho và đọc metadata, chốt chặn SQ lồng sâu và tệp cắt giữa PixelData);  D6 compose và e2e. Manifest K8s mẫu chưa có (dự án hiện bỏ qua K8s).

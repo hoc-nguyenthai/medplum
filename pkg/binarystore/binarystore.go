@@ -18,6 +18,8 @@ var (
 	ErrNotFound = errors.New("binarystore: not found")
 	// ErrTooLarge: nội dung vượt PutOptions.MaxBytes; kho không giữ lại gì.
 	ErrTooLarge = errors.New("binarystore: content too large")
+	// ErrInvalidRange: khoảng đọc của OpenRange không hợp lệ (offset âm, độ dài không dương, hoặc offset từ cuối nội dung trở đi).
+	ErrInvalidRange = errors.New("binarystore: invalid range")
 	// ErrInvalidKey: khóa không đúng dạng binary/<id>/<versionId> (hoặc id có ký tự ngoài ^[A-Za-z0-9\-.]{1,64}$, hoặc là "." / "..").
 	ErrInvalidKey = errors.New("binarystore: invalid key")
 	// ErrBlockedFileExtension và ErrBlockedContentType: tên tệp hay loại nội dung nằm trong danh sách chặn (CheckMetadata, Put).
@@ -71,6 +73,13 @@ type Store interface {
 	Copy(ctx context.Context, srcKey, dstKey string) error
 	// Delete xóa; idempotent (khóa không có thì không lỗi).
 	Delete(ctx context.Context, key string) error
+}
+
+// RangeOpener là tùy chọn của adapter: đọc một khoảng byte mà không đọc phần đứng trước (FS: Seek; S3: header Range; Memory: cắt lát). Nhờ đó lấy một frame của tệp DICOM
+// lớn tốn O(kích thước frame) thay vì O(vị trí frame). OpenRange trả đúng các byte [offset, offset+length); nội dung ngắn hơn offset+length thì trả tới hết nội dung (người đọc
+// tự kiểm số byte nhận được); offset không nhỏ hơn kích thước nội dung thì ErrInvalidRange; ErrNotFound nếu khóa không có. Người gọi phải Close.
+type RangeOpener interface {
+	OpenRange(ctx context.Context, key string, offset, length int64) (io.ReadCloser, error)
 }
 
 // URLPresigner là tùy chọn của adapter ngoài (S3...) cấp URL ký phía kho; FS và Memory không cài.

@@ -11,6 +11,7 @@ import (
 	"net/http/httptest"
 	"net/textproto"
 	"net/url"
+	"reflect"
 	"strings"
 	"sync"
 	"testing"
@@ -569,3 +570,87 @@ func TestRequestTooLargeKeepsCompletedInstances(t *testing.T) {
 func dicomBody(ct string, r io.Reader) body { return body{ct, r} }
 
 func httptestRecorder() http.ResponseWriter { return httptest.NewRecorder() }
+
+// ---------------------------------------------------------------- chỉ mục frame (D5)
+
+// storedIndex đọc chỉ mục frame lưu ở DicomInstance và nội dung đã ghi của instance.
+func (e *env) storedIndex(st dicomstow.Stored) (*dicomweb.FrameIndex, []byte) {
+	e.t.Helper()
+	inst := e.one("DicomInstance", st.InstanceID).(*fhir.DicomInstance)
+	var idx *dicomweb.FrameIndex
+	for _, ex := range inst.Extension {
+		if ex.URL == dicomweb.FrameIndexURL {
+			var err error
+			if idx, err = dicomweb.ParseFrameIndex(ex.ValueString); err != nil {
+				e.t.Fatalf("chỉ mục hỏng: %v", err)
+			}
+		}
+	}
+	bin := e.one("Binary", strings.TrimPrefix(inst.Raw.Reference, "Binary/")).(*fhir.Binary)
+	key, _ := binarystore.Key(bin.ID, bin.Meta.VersionId)
+	rc, err := e.blobs.Open(context.Background(), key)
+	if err != nil {
+		e.t.Fatal(err)
+	}
+	defer rc.Close()
+	data, _ := io.ReadAll(rc)
+	return idx, data
+}
+
+// Chỉ mục lập lúc STOW (không đọc lại tệp) phải trùng khít với kết quả quét đầy đủ nội dung đã lưu, ở mọi dạng PixelData.
+func TestStoredFrameIndexMatchesFullScan(t *testing.T) {
+	e := newEnv(t)
+	jf := [][]byte{bytes.Repeat([]byte{0xFF, 0xD8, 1}, 40), bytes.Repeat([]byte{0xFF, 0xD8, 2}, 25), bytes.Repeat([]byte{0xFF, 0xD8, 3}, 9)}
+	out := e.must(multi(
+		file("20", "1", "1", func(m *dicomtest.Meta) { m.Rows, m.Cols, m.Bits, m.Frames = 8, 8, 16, 4 }),
+		file("20", "1", "2", func(m *dicomtest.Meta) {
+			m.TransferSyntax, m.Bits, m.Frames, m.Fragments = dicomtest.JPEGBaseline, 8, 3, jf
+		}),
+		file("20", "1", "3", func(m *dicomtest.Meta) {
+			m.TransferSyntax, m.Bits, m.Frames, m.Fragments = dicomtest.JPEGBaseline, 8, 1, jf
+		}), // một frame nhiều fragment
+		file("20", "1", "4", func(m *dicomtest.Meta) { m.TransferSyntax = dicomtest.ImplicitLE }),
+		file("20", "1", "5", func(m *dicomtest.Meta) { m.NoPixelData = true }),
+	))
+	if out.Status != 200 {
+		t.Fatalf("%+v", out)
+	}
+	for i, st := range out.Stored {
+		idx, data := e.storedIndex(st)
+		if i == 4 { // không có ảnh: không có chỉ mục
+			if idx != nil {
+				t.Errorf("instance %d không có PixelData mà có chỉ mục %+v", i, idx)
+			}
+			continue
+		}
+		full, err := dicomweb.Scan(bytes.NewReader(data), dicomweb.ScanOptions{})
+		if err != nil {
+			t.Fatalf("instance %d: %v", i, err)
+		}
+		if idx == nil || idx.TransferSyntax != full.TransferSyntax || !reflect.DeepEqual(idx.Frames, full.Frames) {
+			t.Errorf("instance %d: chỉ mục %+v, quét đầy đủ %+v", i, idx, full.Frames)
+		}
+	}
+}
+
+// Nhiều fragment cho nhiều frame mà không có Basic Offset Table: tệp hợp lệ nên vẫn được lưu, chỉ không có chỉ mục (không tách được frame).
+func TestUnsplittableEncapsulatedIsStoredWithoutIndex(t *testing.T) {
+	e := newEnv(t)
+	jf := [][]byte{bytes.Repeat([]byte{1}, 20), bytes.Repeat([]byte{2}, 20), bytes.Repeat([]byte{3}, 20)}
+	out := e.must(multi(file("21", "1", "1", func(m *dicomtest.Meta) {
+		m.TransferSyntax, m.Bits, m.Frames, m.Fragments = dicomtest.JPEGBaseline, 8, 2, jf
+	})))
+	if out.Status != 200 || len(out.Stored) != 1 {
+		t.Fatalf("%+v", out)
+	}
+	if idx, data := e.storedIndex(out.Stored[0]); idx != nil || len(data) == 0 {
+		t.Errorf("chỉ mục %+v, nội dung %d byte", idx, len(data))
+	}
+	// còn tệp bị cắt giữa fragment thì vẫn bị từ chối
+	bad := e.must(multi(file("21", "1", "2", func(m *dicomtest.Meta) {
+		m.TransferSyntax, m.Bits, m.Frames, m.Fragments, m.TruncatePixel = dicomtest.JPEGBaseline, 8, 2, jf, 30
+	})))
+	if bad.Status != 409 {
+		t.Errorf("bị cắt: %+v", bad)
+	}
+}

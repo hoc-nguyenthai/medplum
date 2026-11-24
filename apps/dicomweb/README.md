@@ -2,7 +2,7 @@
 
 DICOMweb (STOW-RS, QIDO-RS, WADO-RS) cho kho hình ảnh DICOM của Trivita, tương đương phần `dicom/` của Medplum nhưng đã sửa các lỗi đã biết (xem [kế hoạch](../../docs/plans/cds-dicom/dicom.md) mục 3). Dữ liệu là resource FHIR (`DicomStudy`, `DicomSeries`, `DicomInstance`) ở **cùng schema `fhir` với `fhir-server`**, nội dung tệp DICOM ở **cùng kho Binary** (`FHIR_BINARY_STORAGE`), nên tìm được qua API FHIR.
 
-> **Trạng thái: D4, STOW-RS, QIDO-RS và WADO-RS đã chạy.** Lưu instance (`POST /studies`), tìm study và series, lấy metadata series và frame ảnh, đều theo luồng và qua cả bốn tiền tố URL. Chưa có: bộ lọc QIDO theo thuộc tính, rendered, instance lẻ, bulkdata, WADO-URI (D7); các route đó trả `501`. Tiến độ: [task-list.md](../../docs/plans/task-list.md) #10.
+> **Trạng thái: D5, STOW-RS, QIDO-RS và WADO-RS đã chạy.** Lưu instance (`POST /studies`), tìm study và series, lấy metadata series và frame ảnh, đều theo luồng và qua cả bốn tiền tố URL. Chưa có: bộ lọc QIDO theo thuộc tính, rendered, instance lẻ, bulkdata, WADO-URI (D7); các route đó trả `501`. Tiến độ: [task-list.md](../../docs/plans/task-list.md) #10.
 
 ## Chạy
 

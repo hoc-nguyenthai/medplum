@@ -62,6 +62,29 @@ func (s *Memory) Open(ctx context.Context, key string) (io.ReadCloser, error) {
 	return io.NopCloser(bytes.NewReader(b)), nil
 }
 
+// OpenRange: xem RangeOpener.
+func (s *Memory) OpenRange(ctx context.Context, key string, offset, length int64) (io.ReadCloser, error) {
+	if _, _, err := SplitKey(key); err != nil {
+		return nil, err
+	}
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	s.mu.Lock()
+	b, ok := s.m[key]
+	s.mu.Unlock()
+	if !ok {
+		return nil, ErrNotFound
+	}
+	if offset < 0 || length <= 0 || offset >= int64(len(b)) {
+		return nil, ErrInvalidRange
+	}
+	end := min(offset+length, int64(len(b)))
+	return io.NopCloser(bytes.NewReader(b[offset:end])), nil
+}
+
+var _ RangeOpener = (*Memory)(nil)
+
 func (s *Memory) Copy(ctx context.Context, srcKey, dstKey string) error {
 	if _, _, err := SplitKey(dstKey); err != nil {
 		return err

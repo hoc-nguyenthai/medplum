@@ -2,6 +2,7 @@ package bootstrap_test
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 	"mime"
@@ -16,6 +17,7 @@ import (
 	"time"
 
 	"trivita-fhir/apps/dicomweb/internal/config"
+	"trivita-fhir/pkg/binarystore"
 	"trivita-fhir/pkg/dicomtest"
 )
 
@@ -185,7 +187,7 @@ func TestWadoFrameOfLargeFileStreams(t *testing.T) {
 	if testing.Short() {
 		t.Skip("bỏ qua với -short")
 	}
-	_, h := handler(t, settings(t, true, func(s *config.Settings) { s.MaxRequestBytes, s.MaxInstanceBytes = 1<<30, 1<<30 }))
+	c, h := handler(t, settings(t, true, func(s *config.Settings) { s.MaxRequestBytes, s.MaxInstanceBytes = 1<<30, 1<<30 }))
 	srv := httptest.NewServer(h)
 	defer srv.Close()
 	wr, rd := tok(t, "A", "fhir.write"), tok(t, "A", "fhir.read")
@@ -196,6 +198,9 @@ func TestWadoFrameOfLargeFileStreams(t *testing.T) {
 		t.Fatalf("STOW: %d %s", code, raw)
 	}
 
+	// đếm byte đọc ra từ kho khi lấy frame (chỉ mục + đọc theo khoảng: chỉ đúng byte của frame, không phải cả tệp 104 MB)
+	cb := &countingBlobs{Store: c.Blobs}
+	c.Blobs = cb
 	var peak atomic.Uint64
 	stop := make(chan struct{})
 	go func() {
@@ -248,8 +253,77 @@ func TestWadoFrameOfLargeFileStreams(t *testing.T) {
 	if got != frameSize || res.StatusCode != 200 {
 		t.Fatalf("%d, frame %d byte (muốn %d)", res.StatusCode, got, frameSize)
 	}
-	t.Logf("lấy frame 8 MB từ tệp 104 MB, đỉnh heap %d MB", peak.Load()>>20)
+	t.Logf("lấy frame 8 MB từ tệp 104 MB: đọc %d MB từ kho, đỉnh heap %d MB", cb.n.Load()>>20, peak.Load()>>20)
+	if n := cb.n.Load(); n != frameSize {
+		t.Errorf("đọc %d byte từ kho để lấy frame %d byte: phải đọc đúng khoảng của frame (chỉ mục frame lập lúc STOW)", n, frameSize)
+	}
 	if p := peak.Load(); p > 60<<20 {
 		t.Errorf("đỉnh bộ nhớ %d MB: phải chép theo luồng", p>>20)
+	}
+}
+
+// countingBlobs đếm byte đọc ra từ kho (cả Open lẫn OpenRange).
+type countingBlobs struct {
+	binarystore.Store
+	n atomic.Int64
+}
+
+type countRC struct {
+	io.ReadCloser
+	n *atomic.Int64
+}
+
+func (c countRC) Read(p []byte) (int, error) {
+	n, err := c.ReadCloser.Read(p)
+	c.n.Add(int64(n))
+	return n, err
+}
+
+func (c *countingBlobs) Open(ctx context.Context, key string) (io.ReadCloser, error) {
+	rc, err := c.Store.Open(ctx, key)
+	if err != nil {
+		return nil, err
+	}
+	return countRC{rc, &c.n}, nil
+}
+
+func (c *countingBlobs) OpenRange(ctx context.Context, key string, off, n int64) (io.ReadCloser, error) {
+	rc, err := c.Store.(binarystore.RangeOpener).OpenRange(ctx, key, off, n)
+	if err != nil {
+		return nil, err
+	}
+	return countRC{rc, &c.n}, nil
+}
+
+// Ảnh nén lớn (30 frame JPEG 1 MB): chỉ mục lập song song với việc ghi (không đọc lại tệp), rồi một frame cuối chỉ đọc đúng 1 MB từ kho thay vì cả tệp 30 MB.
+func TestCompressedFrameUsesIndexAndReadsOnlyItsBytes(t *testing.T) {
+	c, h := handler(t, settings(t, true))
+	srv := httptest.NewServer(h)
+	defer srv.Close()
+	wr, rd := tok(t, "A", "fhir.write"), tok(t, "A", "fhir.read")
+	frames := make([][]byte, 30)
+	for i := range frames {
+		frames[i] = bytes.Repeat([]byte{0xFF, 0xD8, byte(i), 0xAB}, 256<<10) // 1 MiB
+	}
+	data := inst("1", "1", "1", func(m *dicomtest.Meta) {
+		m.TransferSyntax, m.Bits, m.Frames, m.Fragments = dicomtest.JPEGBaseline, 8, len(frames), frames
+	})
+	ct, body := stowBody(bytes.NewReader(data))
+	if code, _, raw := send(t, srv, "/dicomweb/studies", wr, ct, body); code != 200 {
+		t.Fatalf("STOW: %d %s", code, raw)
+	}
+	cb := &countingBlobs{Store: c.Blobs}
+	c.Blobs = cb
+	path := "/dicomweb/studies/" + dicomtest.UID("1") + "/series/" + dicomtest.UID("1", "1") + "/instances/" + dicomtest.UID("1", "1", "1") + "/frames/"
+	code, hdr, raw := get(t, srv, path+"30", rd)
+	typ, parts, types := multipartParts(t, hdr, raw)
+	if code != 200 || typ != "image/jpeg" || len(parts) != 1 || !bytes.Equal(parts[0], frames[29]) || types[0] != "image/jpeg; transfer-syntax="+dicomtest.JPEGBaseline {
+		t.Fatalf("frame 30: %d type=%q", code, typ)
+	}
+	if n := cb.n.Load(); n != int64(len(frames[29])) {
+		t.Errorf("đọc %d byte từ kho để lấy frame %d byte (tệp %d byte)", n, len(frames[29]), len(data))
+	}
+	if code, _, raw := get(t, srv, path+"31", rd); code != 416 {
+		t.Errorf("frame 31: %d %s", code, raw)
 	}
 }

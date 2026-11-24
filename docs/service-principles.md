@@ -40,7 +40,7 @@ Chỉ lên bậc 3 khi bậc 2 không đủ (ví dụ cần ranh giới B, hoặ
 | `fhir-server` | `apps/fhir-server` | 8005 | schema `fhir` (resource, lịch sử, chỉ mục, AsyncJob, Binary) | PostgreSQL; JWKS của `auth`; Redis nếu bật Subscription websocket | số yêu cầu | lõi |
 | `ws-gateway` | `apps/ws-gateway` | 8007 | **không có DB** | Redis, khóa ký token; JWKS của `auth` nếu bật FHIRcast | số socket (bộ nhớ) | A, C |
 | `fhir-cli` | `apps/fhir-cli` | không có | không có | gọi API | không áp dụng | công cụ, không phải service |
-| `dicomweb` | `apps/dicomweb` | 8008 | **dùng chung schema `fhir`** (DicomStudy/Series/Instance là resource FHIR) + kho Binary dùng chung; không tự migrate | PostgreSQL; JWKS của `auth`; kho tệp hoặc S3 | dung lượng và thời gian tải lên | A, C (D4 xong: STOW-RS, QIDO-RS, WADO-RS chạy; xem [apps/dicomweb/docs/architecture.md](../apps/dicomweb/docs/architecture.md)) |
+| `dicomweb` | `apps/dicomweb` | 8008 | **dùng chung schema `fhir`** (DicomStudy/Series/Instance là resource FHIR) + kho Binary dùng chung; không tự migrate | PostgreSQL; JWKS của `auth`; kho tệp hoặc S3 | dung lượng và thời gian tải lên | A, C (D5 xong: STOW-RS, QIDO-RS, WADO-RS chạy, frame đọc theo khoảng; xem [apps/dicomweb/docs/architecture.md](../apps/dicomweb/docs/architecture.md)) |
 | `fhir-worker` | chưa quyết | cùng binary `fhir-server` | schema `fhir` | | hàng đợi job | A (cần số đo, D-DB-3) |
 
 Quy tắc đếm: thư mục mới trong `apps/` chỉ khi lên bậc 3 của thang ở mục 1. Một vai trò chạy từ image có sẵn **không** thêm thư mục.

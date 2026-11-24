@@ -1,9 +1,9 @@
 // Package dicomretrieve là QIDO-RS (PS3.18 10.6) và WADO-RS (10.4) trên dữ liệu do dicomstow ghi: tìm study và series, trả metadata của series và các frame
 // ảnh. Không biết HTTP: trả cấu trúc hoặc ghi vào io.Writer, lỗi có mã trạng thái (*Error).
 //
-// Frame được lấy trực tiếp từ nội dung DICOM đã lưu (kho đối tượng chỉ có Open, không đọc theo khoảng): một lượt quét tìm vị trí frame rồi một lượt chép, đều theo luồng
-// với bộ nhớ hằng số. Chi phí là O(kích thước tệp tới frame) cho mỗi yêu cầu (với ảnh nén là cả tệp ở lượt quét); worker D5 sẽ tách sẵn từng frame ra Binary riêng
-// (DicomInstance.pixelData) để bỏ chi phí đó, và khi có pixelData thì dùng nó (chưa làm ở D4).
+// Frame được lấy trực tiếp từ nội dung DICOM đã lưu, không nhân đôi dung lượng. Vị trí frame lấy từ chỉ mục lập lúc STOW (extension dicomweb.FrameIndexURL của DicomInstance):
+// kho đọc được theo khoảng (binarystore.RangeOpener: FS, S3, Memory) thì mỗi frame là một lần đọc O(kích thước frame). Không có chỉ mục (instance cũ, quá nhiều frame, nhiều
+// fragment không tách được) hoặc kho không đọc theo khoảng thì quay về cách của D4: quét tìm vị trí rồi chép, O(vị trí frame). Mọi đường đều theo luồng, bộ nhớ hằng số.
 package dicomretrieve
 
 import (
@@ -273,23 +273,31 @@ func OpenFrames(ctx context.Context, c Config, studyUID, seriesUID, instanceUID 
 	}
 	open := func() (io.ReadCloser, error) { return c.Blobs.Open(ctx, key) }
 
-	rc, err := open()
-	if err != nil {
-		return nil, internalErr(ctx, "mở nội dung", err)
-	}
-	scan, err := dicomweb.Scan(rc, dicomweb.ScanOptions{})
-	_ = rc.Close()
-	if err != nil || !scan.HasPixelData {
-		return nil, internalErr(ctx, "quét nội dung", fmt.Errorf("instance %s: %v", inst.ID, err))
+	// vị trí frame: ưu tiên chỉ mục lập lúc STOW (extension của DicomInstance); không có hoặc không khớp thì quét nội dung đã lưu
+	var all []dicomweb.FrameRange
+	transferSyntax := ""
+	if idx := frameIndexOf(ctx, inst); idx != nil && len(idx.Frames) == total {
+		all, transferSyntax = idx.Frames, idx.TransferSyntax
+	} else {
+		rc, err := open()
+		if err != nil {
+			return nil, internalErr(ctx, "mở nội dung", err)
+		}
+		scan, err := dicomweb.Scan(rc, dicomweb.ScanOptions{})
+		_ = rc.Close()
+		if err != nil || !scan.HasPixelData {
+			return nil, internalErr(ctx, "quét nội dung", fmt.Errorf("instance %s: %v", inst.ID, err))
+		}
+		all, transferSyntax = scan.Frames, scan.TransferSyntax
 	}
 	ranges := make([]dicomweb.FrameRange, len(frames))
 	for i, f := range frames {
-		if f > len(scan.Frames) {
+		if f > len(all) {
 			return nil, &Error{http.StatusRequestedRangeNotSatisfiable, "Requested frame number exceeds total frames available"}
 		}
-		ranges[i] = scan.Frames[f-1]
+		ranges[i] = all[f-1]
 	}
-	partType := dicomweb.FrameContentType(scan.TransferSyntax)
+	partType := dicomweb.FrameContentType(transferSyntax)
 	boundary := newBoundary()
 	var length int64
 	for _, rg := range ranges {
@@ -297,31 +305,88 @@ func OpenFrames(ctx context.Context, c Config, studyUID, seriesUID, instanceUID 
 	}
 	length += int64(len(closing(boundary)))
 
+	// Kho đọc được theo khoảng thì mỗi frame (hoặc fragment) là một lần đọc O(kích thước frame); không thì mở và bỏ qua các byte đứng trước. Với kho đọc theo khoảng, mở
+	// sẵn phần đầu tiên ngay bây giờ để nội dung mất hoặc khoảng hỏng trả 500 trước khi ghi byte nào.
+	ro, _ := c.Blobs.(binarystore.RangeOpener)
+	var first io.ReadCloser
+	if ro != nil {
+		p := ranges[0]
+		if len(p.Parts) > 0 {
+			p = p.Parts[0]
+		}
+		if first, err = ro.OpenRange(ctx, key, p.Offset, p.Length); err != nil {
+			return nil, internalErr(ctx, "đọc khoảng nội dung", err)
+		}
+	}
 	return &Frames{
-		ContentType: fmt.Sprintf(`multipart/related; type="%s"; boundary=%s`, dicomweb.FrameMediaType(scan.TransferSyntax), boundary),
+		ContentType: fmt.Sprintf(`multipart/related; type="%s"; boundary=%s`, dicomweb.FrameMediaType(transferSyntax), boundary),
 		Length:      length,
 		Write: func(w io.Writer) error {
 			for _, rg := range ranges {
 				if _, err := w.Write(partHeader(boundary, partType)); err != nil {
 					return err
 				}
-				rc, err := open()
-				if err != nil {
-					return err
-				}
-				_, err = dicomweb.CopyFrame(rc, rg, w)
-				_ = rc.Close()
-				if err != nil {
-					return err
+				if ro != nil {
+					parts := rg.Parts
+					if len(parts) == 0 {
+						parts = []dicomweb.FrameRange{rg}
+					}
+					for _, p := range parts {
+						rc := first
+						first = nil
+						if rc == nil {
+							var err error
+							if rc, err = ro.OpenRange(ctx, key, p.Offset, p.Length); err != nil {
+								return err
+							}
+						}
+						n, err := io.Copy(w, rc)
+						_ = rc.Close()
+						if err == nil && n != p.Length {
+							err = fmt.Errorf("%w: nhận %d byte, cần %d", dicomweb.ErrMalformed, n, p.Length)
+						}
+						if err != nil {
+							return err
+						}
+					}
+				} else {
+					rc, err := open()
+					if err != nil {
+						return err
+					}
+					_, err = dicomweb.CopyFrame(rc, rg, w)
+					_ = rc.Close()
+					if err != nil {
+						return err
+					}
 				}
 				if _, err := io.WriteString(w, "\r\n"); err != nil {
 					return err
 				}
 			}
+			if first != nil { // không có phần nào dùng tới (không xảy ra), vẫn đóng
+				_ = first.Close()
+			}
 			_, err := w.Write(closing(boundary))
 			return err
 		},
 	}, nil
+}
+
+// frameIndexOf đọc chỉ mục frame lưu ở DicomInstance; hỏng thì bỏ qua (và ghi log) để quay về quét nội dung.
+func frameIndexOf(ctx context.Context, inst *fhir.DicomInstance) *dicomweb.FrameIndex {
+	for _, ex := range inst.Extension {
+		if ex.URL != dicomweb.FrameIndexURL {
+			continue
+		}
+		idx, err := dicomweb.ParseFrameIndex(ex.ValueString)
+		if err != nil {
+			slog.WarnContext(ctx, "dicomretrieve: bỏ qua chỉ mục frame hỏng", "instance", inst.ID, "error", err)
+			return nil
+		}
+		return idx
+	}
+	return nil
 }
 
 func newBoundary() string {

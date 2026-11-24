@@ -52,7 +52,8 @@ func TestScanHeaderOnlyStopsAtPixelData(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !r.HasPixelData || r.Frames != nil || r.PixelHeaderOffset <= 0 || r.PixelOffset <= r.PixelHeaderOffset || r.PixelLength != 64*64*2*2 {
+	// ảnh không nén: frame tính được từ phần đầu nên HeaderOnly cũng trả Frames (không đọc pixel)
+	if !r.HasPixelData || len(r.Frames) != 2 || r.Frames[0].Offset != r.PixelOffset || r.Frames[1].Offset != r.PixelOffset+64*64*2 || r.PixelHeaderOffset <= 0 || r.PixelOffset <= r.PixelHeaderOffset || r.PixelLength != 64*64*2*2 {
 		t.Errorf("%+v", r)
 	}
 	// phần cần giữ để đọc metadata là b[:PixelHeaderOffset]; scanner không được đọc hết tệp (đọc trước tối đa một bộ đệm)
@@ -109,7 +110,7 @@ func TestScanEncapsulatedFrames(t *testing.T) {
 	bad := dicomtest.Build(with(uids, func(m *dicomtest.Meta) {
 		m.TransferSyntax, m.Bits, m.Frames, m.Fragments = dicomtest.JPEGBaseline, 8, 2, frames
 	}))
-	if _, err := scan(t, bad, dicomweb.ScanOptions{}); !errors.Is(err, dicomweb.ErrMalformed) {
+	if _, err := scan(t, bad, dicomweb.ScanOptions{}); !errors.Is(err, dicomweb.ErrUnsplittable) {
 		t.Errorf("3 fragment cho 2 frame: %v", err)
 	}
 	// một frame gồm nhiều fragment: trả khoảng bao

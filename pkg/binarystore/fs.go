@@ -132,6 +132,43 @@ func (f *FS) Open(ctx context.Context, key string) (io.ReadCloser, error) {
 	return file, nil
 }
 
+// limited đọc tối đa n byte rồi đóng tệp khi Close.
+type limited struct {
+	io.Reader
+	f *os.File
+}
+
+func (l limited) Close() error { return l.f.Close() }
+
+// OpenRange: xem RangeOpener. Seek thẳng tới offset, không đọc phần đứng trước.
+func (f *FS) OpenRange(ctx context.Context, key string, offset, length int64) (io.ReadCloser, error) {
+	if offset < 0 || length <= 0 {
+		if _, err := relPath(key); err != nil {
+			return nil, err
+		}
+		return nil, ErrInvalidRange
+	}
+	rc, err := f.Open(ctx, key)
+	if err != nil {
+		return nil, err
+	}
+	file := rc.(*os.File)
+	if st, err := file.Stat(); err != nil || offset >= st.Size() {
+		_ = file.Close()
+		if err != nil {
+			return nil, err
+		}
+		return nil, ErrInvalidRange
+	}
+	if _, err := file.Seek(offset, io.SeekStart); err != nil {
+		_ = file.Close()
+		return nil, err
+	}
+	return limited{io.LimitReader(file, length), file}, nil
+}
+
+var _ RangeOpener = (*FS)(nil)
+
 // Copy đọc src và ghi dst qua tệp tạm (không thấy dst dở).
 func (f *FS) Copy(ctx context.Context, srcKey, dstKey string) error {
 	if _, err := relPath(dstKey); err != nil {

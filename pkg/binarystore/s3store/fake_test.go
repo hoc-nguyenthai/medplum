@@ -35,6 +35,8 @@ type fakeS3 struct {
 	times    map[string]time.Time
 	token    string // nếu đặt: bắt buộc X-Amz-Security-Token
 	hook     func(w http.ResponseWriter, r *http.Request) bool
+	// ignoreRange: giả lập máy chủ/proxy bỏ qua header Range và trả 200 với cả nội dung
+	ignoreRange bool
 }
 
 func newFakeS3(t *testing.T) *fakeS3 {
@@ -131,6 +133,22 @@ func (f *fakeS3) serve(w http.ResponseWriter, r *http.Request) {
 		b, ok := f.objects[rest]
 		if !ok {
 			s3Err(w, 404, "NoSuchKey", "The specified key does not exist.")
+			return
+		}
+		if rng := r.Header.Get("Range"); rng != "" && !f.ignoreRange {
+			var from, to int64
+			if _, err := fmt.Sscanf(rng, "bytes=%d-%d", &from, &to); err != nil {
+				s3Err(w, 400, "InvalidArgument", "range")
+				return
+			}
+			if from >= int64(len(b)) {
+				s3Err(w, 416, "InvalidRange", "The requested range is not satisfiable")
+				return
+			}
+			to = min(to, int64(len(b))-1)
+			w.Header().Set("Content-Range", fmt.Sprintf("bytes %d-%d/%d", from, to, len(b)))
+			w.WriteHeader(http.StatusPartialContent)
+			_, _ = w.Write(b[from : to+1])
 			return
 		}
 		_, _ = w.Write(b)
