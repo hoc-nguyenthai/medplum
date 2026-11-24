@@ -28,6 +28,7 @@ func registerAdmin(e *echo.Echo, dep Deps) {
 	g.POST("/:projectId/client", h.adminClient, bearer)
 	g.POST("/:projectId/client/:clientId/rotate-secret", h.adminRotateClientSecret, append([]echo.MiddlewareFunc{bearer}, slow...)...)
 	g.POST("/:projectId/sites", h.adminSites, bearer)
+	g.POST("/:projectId/secrets", h.adminSecrets, append([]echo.MiddlewareFunc{bearer}, slow...)...)
 	g.POST("/:projectId/invite", h.adminInvite, append([]echo.MiddlewareFunc{bearer}, slow...)...)
 	g.GET("/:projectId/members/:membershipId", h.adminGetMember, bearer)
 	g.POST("/:projectId/members/:membershipId", h.adminUpdateMember, bearer)
@@ -476,5 +477,33 @@ func (h *authHandlers) adminSites(c echo.Context) error {
 	if err != nil {
 		return writeError(c, err)
 	}
+	return c.JSON(http.StatusOK, AdminProjectResponse{Project: v})
+}
+
+// adminSecrets godoc
+//
+//	@Summary		Đặt các secret của project
+//	@Description	Body là mảng ProjectSetting; thay TOÀN BỘ Project.secret (`[]` xóa hết). Mỗi mục có tên (chữ cái đầu, chữ, số, `_.-`, tối đa 64), không trùng, đúng một value[x] (string tối đa 4096). Phản hồi che giá trị (`********`); gửi lại đúng giá trị che nghĩa là giữ giá trị hiện có của secret cùng tên. Secret `smtp*` chỉ nhận khi máy chủ bật SMTP riêng của project.
+//	@Tags			admin
+//	@Security		BearerAuth
+//	@Accept			json
+//	@Produce		application/json,application/fhir+json
+//	@Param			projectId	path		string					true	"id project"
+//	@Param			body		body		[]fhir.ProjectSetting	true	"Danh sách secret"
+//	@Success		200			{object}	AdminProjectResponse
+//	@Failure		400			{object}	fhir.OperationOutcome
+//	@Failure		401			{object}	fhir.OperationOutcome
+//	@Failure		403			{object}	fhir.OperationOutcome
+//	@Router			/admin/projects/{projectId}/secrets [post]
+func (h *authHandlers) adminSecrets(c echo.Context) error {
+	var in []fhir.ProjectSetting
+	if err := json.NewDecoder(c.Request().Body).Decode(&in); err != nil || in == nil {
+		return writeError(c, domain.BadRequest("Content could not be parsed"))
+	}
+	v, err := h.svc.AdminReplaceSecrets(c.Request().Context(), authState(c), c.Param("projectId"), in)
+	if err != nil {
+		return writeError(c, err)
+	}
+	c.Response().Header().Set("Cache-Control", "no-store")
 	return c.JSON(http.StatusOK, AdminProjectResponse{Project: v})
 }

@@ -61,7 +61,7 @@ Kế hoạch: [modules/p17-async-batch-download-autodisable.md](modules/p17-asyn
 - [x] `ClientApplication/:id/$rotate-secret` — xong 2026-11-24 ở `auth`: `POST /admin/projects/{projectId}/client/{clientId}/rotate-secret` (khác Medplum về đường dẫn; `secret` cũ thành `retiringSecret`, `retireOnly`)
 - [ ] `ClientApplication/:id/$smart-launch`
 - [ ] `/admin/projects/:id/bot` — chặn bởi **M1**
-- [ ] `/admin/projects/:projectId/secrets`
+- [x] `/admin/projects/:projectId/secrets` (auth, 2026-11-24: `POST` thay toàn bộ `Project.secret`; giá trị che `********` giữ secret cũ)
 - [ ] Lệnh CLI thay `/admin/super/*`: reindex, purge, vacuum, valuesets, searchparameters, structuredefinitions, setpassword, tablesettings, rebuildprojectid, migrations, reconcile-db-schema-drift
 
 ## 6. Module HTTP ngoài FHIR

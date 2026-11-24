@@ -24,7 +24,7 @@ Các route `/admin/projects/*` không có đường nào xuyên project (super-a
 
 1. Route có hay không (`AUTH_ADMIN_ENABLED`): `404`.
 2. Middleware toàn cục: body tối đa 1 MiB (`413`, thông điệp `Request body too large`), hạn mức IP `AUTH_RATE_LIMIT` (`429`).
-3. Bearer (`401`). Sau bước này mới tới hạn mức bước đăng nhập `AUTH_LOGIN_RATE_LIMIT` (`429`) ở **năm route**: `setpassword`, `invite`, `resetpassword`, `mfa/reset`, `client/{clientId}/rotate-secret` (các route admin khác không có hạn mức này).
+3. Bearer (`401`). Sau bước này mới tới hạn mức bước đăng nhập `AUTH_LOGIN_RATE_LIMIT` (`429`) ở **sáu route**: `setpassword`, `invite`, `resetpassword`, `mfa/reset`, `client/{clientId}/rotate-secret`, `secrets` (các route admin khác không có hạn mức này).
 4. **Handler đọc/parse body và validator của route** (`400`): xảy ra **trước** kiểm quyền admin ở bước 5. Nghĩa là người không phải admin gửi body hỏng vẫn nhận `400`, không phải `403`.
 5. Use case: kiểm admin hoạt động của project và `:projectId` (`403`), rồi nghiệp vụ, rồi ghi.
 
@@ -54,7 +54,7 @@ Setting ngoài allowlist **đang có** trong project (ví dụ do vận hành đ
 
 | Dữ liệu | Khi đọc (GET project, phản hồi settings/sites) | Gửi lại |
 |---|---|---|
-| `project.secret[]` | mỗi mục chỉ còn `name`; nếu mục có giá trị thì `valueString` = `********` (các loại giá trị khác bị bỏ) | không có route ghi `secret` ở auth |
+| `project.secret[]` | mỗi mục chỉ còn `name`; nếu mục có giá trị thì `valueString` = `********` (các loại giá trị khác bị bỏ) | `POST .../secrets` thay toàn bộ danh sách; gửi đúng `********` nghĩa là **giữ giá trị hiện có của secret cùng tên** (không có giá trị cũ thì `400`) |
 | `site[].googleClientSecret`, `site[].recaptchaSecretKey` | `********` khi có giá trị | gửi đúng `********` trong `POST .../sites` nghĩa là **giữ secret hiện có của site cùng tên**; không có giá trị cũ thì `400` |
 | `project.setting[]` | **không che** (trả như đã lưu; allowlist không chứa bí mật) | |
 | `ClientApplication.secret` | trả **một lần** ở phản hồi tạo client | không đọc lại được |
@@ -308,6 +308,52 @@ Cache-Control: no-store
 ```
 
 **Quy trình xoay không gián đoạn:** gọi route (R1) → cập nhật nơi dùng sang secret mới (secret cũ vẫn dùng được) → gọi `{"retireOnly": true}` (R2) để vô hiệu secret cũ. Xoay lần nữa trước khi retire thì secret cũ nhất mất hiệu lực ngay. Khác Medplum: đường dẫn là `/admin/projects/{projectId}/client/{clientId}/rotate-secret`, không phải `/fhir/R4/ClientApplication/{id}/$rotate-secret`; tên tham số `secret` và `retireOnly` là thiết kế của port này (chưa đối chiếu với `$rotate-secret` của Medplum).
+
+---
+
+<a id="post-admin-projects-projectid-secrets"></a>
+## `POST /admin/projects/{projectId}/secrets`
+
+Thay **toàn bộ** `Project.secret` (cặp tên/giá trị bí mật của project, ví dụ khóa API hay cấu hình SMTP riêng). [Tham chiếu trường](../reference/admin.md#post-admin-projects-projectid-secrets)
+
+**Cờ bật:** `AUTH_ADMIN_ENABLED`; secret `smtp*` cần thêm `AUTH_EMAIL_ALLOW_PROJECT_SMTP` (cờ cho phép SMTP riêng của project).
+
+**Thứ tự kiểm tra:** Bearer (401) → hạn mức bước đăng nhập (429) → parse mảng (400) → admin và `projectId` (403) → số mục tối đa 50 → với từng mục theo thứ tự mảng: tên (`^[A-Za-z][A-Za-z0-9_.-]{0,63}$`), trùng tên, đúng một `value[x]`, độ dài `valueString` (tối đa 4096), tiền tố `smtp` khi máy chủ chưa cho phép → **ghi**: `Projects.Mutate` thay `Project.secret`, giải `********` thành giá trị cũ cùng tên (400 nếu không có) → log kiểm toán → trả project (giá trị che).
+
+| # | Trường hợp | Điều kiện | HTTP | Header phản hồi riêng | Body | Tác dụng phụ |
+|---|---|---|---|---|---|---|
+| C1 | Thành công | mảng hợp lệ (có thể rỗng để xóa hết) | 200 | `Cache-Control: no-store` | `{"project":...}` giá trị đã che | thay toàn bộ `secret`; WARN `audit=true` chỉ có TÊN secret |
+| C2 | Body không đọc được | JSON hỏng, không phải mảng, `null`, kiểu giá trị sai | 400 | - | `Content could not be parsed` | không |
+| C3 | Quá nhiều secret | hơn 50 | 400 | - | `Too many secrets`, `expression` `secret` | không |
+| C4 | Tên sai | rỗng, bắt đầu không phải chữ cái, ký tự ngoài `A-Za-z0-9_.-`, hơn 64 | 400 | - | `Secret name must start with a letter and use only letters, digits, '_', '.' or '-' (up to 64 characters)` | không |
+| C5 | Trùng tên | | 400 | - | `Duplicate secret: <tên>` | không |
+| C6 | Sai số giá trị | không có hoặc có hơn một trong `valueString`, `valueBoolean`, `valueInteger`, `valueDecimal` | 400 | - | `Secret <tên> must have exactly one value` | không |
+| C7 | Giá trị quá dài | `valueString` hơn 4096 ký tự | 400 | - | `Secret value too long: <tên>` | không |
+| C8 | SMTP chưa bật | tên bắt đầu `smtp` mà máy chủ không cho SMTP riêng | 400 | - | `SMTP secrets are not enabled on this server: <tên>` | không |
+| C9 | Giữ secret không có gì để giữ | gửi `********` nhưng secret cùng tên chưa tồn tại | 400 | - | `Secret <tên> has no existing value to keep` | không |
+| C10 | Chưa xác thực | | 401 | `WWW-Authenticate` | `Unauthorized` | không |
+| C11 | Không phải admin / project khác | | 403 | - | `Forbidden` | không |
+| C12 | Quá hạn mức bước đăng nhập | | 429 | `Retry-After: 1` | `Too many requests` | không |
+
+**Ví dụ**
+
+```http
+POST /admin/projects/0192f3a4-7b1c-7d2e-9a10-3c5e8f1b2a44/secrets HTTP/1.1
+Authorization: Bearer eyJhbGciOi...
+Content-Type: application/json
+
+[ { "name": "OPENAI_KEY", "valueString": "********" }, { "name": "retries", "valueInteger": 3 } ]
+```
+
+```http
+HTTP/1.1 200 OK
+Cache-Control: no-store
+Content-Type: application/json
+
+{ "project": { "id": "0192f3a4-7b1c-7d2e-9a10-3c5e8f1b2a44", "name": "Bệnh viện A", "secret": [ { "name": "OPENAI_KEY", "valueString": "********" }, { "name": "retries", "valueString": "********" } ] } }
+```
+
+**Lưu ý tích hợp:** giá trị không bao giờ đọc lại được; để đổi MỘT secret, gửi lại cả danh sách với `********` ở các secret giữ nguyên và giá trị thật ở secret đổi (secret không có trong danh sách bị xóa). Giữ bằng `********` hoạt động với cả secret kiểu số và boolean (phản hồi che chúng cũng thành chuỗi `********`). Port này chỉ lưu secret; nơi dùng duy nhất hiện nay là SMTP riêng của project (`smtp*`), Bot ngoài phạm vi (M1).
 
 ---
 
@@ -745,7 +791,7 @@ Cache-Control: no-store
 | Vị trí trong common.md | Điều đúng theo mã |
 |---|---|
 | Mục 7, cột "Phạm vi" của hạn mức toàn cục `AUTH_RATE_LIMIT` (`/auth/`, `/oauth2/`, `/.well-known/`, `/admin/`) | Bộ lọc dùng danh sách tiền tố CORS nên **cũng áp cho `/scim/` và `/email/`** |
-| Mục 7, hạn mức bước đăng nhập liệt kê "admin ghi" | Chỉ bốn route admin có hạn mức này: `setpassword`, `invite`, `resetpassword`, `mfa/reset`. `settings`, `client`, `sites`, `members` (POST/DELETE) chỉ chịu hạn mức IP chung |
+| Mục 7, hạn mức bước đăng nhập liệt kê "admin ghi" | Chỉ sáu route admin có hạn mức này: `setpassword`, `invite`, `resetpassword`, `mfa/reset`, `client/{clientId}/rotate-secret`, `secrets`. `settings`, `client`, `sites`, `members` (POST/DELETE) chỉ chịu hạn mức IP chung |
 | Mục 3 và 5: `/email/*` luôn OperationOutcome, `/scim/*` luôn SCIM Error | Chỉ lỗi do handler sinh. Lỗi do khung (`404` route tắt, `413` vượt 1 MiB toàn cục, `429`, `403 cannot identify caller`) ở `/scim/*` và `/email/*` có dạng JSON `{"error":"..."}` vì `fhirPath` chỉ gồm `/auth` và `/admin` (suy ra từ `errorHandler`, test chỉ kiểm mã HTTP) |
 | Mục 3: "500, 502 → thông điệp chung `Internal server error`" | `502` của email giữ thông điệp riêng: `Failed to send email`, `Failed to read attachment` (test `TestHTTPEmailSMTPFailureIs502WithoutDetails`). Chỉ `500` là chung |
 | Mục 3, "Thành công không nội dung" (`id` `ok`, không `diagnostics`) | Các route admin và email trả OperationOutcome thành công **không có `id`** và **có** `diagnostics` `All OK` (dùng `outcome(...)`, không dùng `allOK()`) |

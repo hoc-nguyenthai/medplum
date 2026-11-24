@@ -806,6 +806,74 @@
                 }
             }
         },
+        "/admin/projects/{projectId}/secrets": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Body là mảng ProjectSetting; thay TOÀN BỘ Project.secret (`[]` xóa hết). Mỗi mục có tên (chữ cái đầu, chữ, số, `_.-`, tối đa 64), không trùng, đúng một value[x] (string tối đa 4096). Phản hồi che giá trị (`********`); gửi lại đúng giá trị che nghĩa là giữ giá trị hiện có của secret cùng tên. Secret `smtp*` chỉ nhận khi máy chủ bật SMTP riêng của project.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json",
+                    "application/fhir+json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Đặt các secret của project",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "id project",
+                        "name": "projectId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Danh sách secret",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/fhir.ProjectSetting"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.AdminProjectResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/fhir.OperationOutcome"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/fhir.OperationOutcome"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/fhir.OperationOutcome"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/projects/{projectId}/settings": {
             "post": {
                 "security": [

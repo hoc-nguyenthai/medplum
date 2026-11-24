@@ -18,6 +18,7 @@ Quản trị project qua HTTP (tắt mặc định, AUTH_ADMIN_ENABLED): project
 | [`DELETE /admin/projects/{projectId}/members/{membershipId}`](#delete-admin-projects-projectid-members-membershipid) | Xóa membership |
 | [`POST /admin/projects/{projectId}/members/{membershipId}/mfa/reset`](#post-admin-projects-projectid-members-membershipid-mfa-reset) | Gỡ một yếu tố MFA của member |
 | [`POST /admin/projects/{projectId}/members/{membershipId}/resetpassword`](#post-admin-projects-projectid-members-membershipid-resetpassword) | Gửi thư đặt lại mật khẩu cho một member |
+| [`POST /admin/projects/{projectId}/secrets`](#post-admin-projects-projectid-secrets) | Đặt các secret của project |
 | [`POST /admin/projects/{projectId}/settings`](#post-admin-projects-projectid-settings) | Đặt các setting của project (allowlist) |
 | [`POST /admin/projects/{projectId}/sites`](#post-admin-projects-projectid-sites) | Đặt các site của project (Google, reCAPTCHA) |
 | [`POST /admin/super/projects`](#post-admin-super-projects) | Tạo project mới (Project/$init) |
@@ -831,6 +832,88 @@ Schema: `fhir.OperationOutcome` (cấu trúc dùng chung, xem [common.md mục 3
 Schema: `fhir.OperationOutcome` (cấu trúc dùng chung, xem [common.md mục 3](../common.md#3-operationoutcome)).
 
 **`429`** Too Many Requests
+
+Schema: `fhir.OperationOutcome` (cấu trúc dùng chung, xem [common.md mục 3](../common.md#3-operationoutcome)).
+
+---
+
+<a id="post-admin-projects-projectid-secrets"></a>
+## `POST /admin/projects/{projectId}/secrets`
+
+**Đặt các secret của project**
+
+Body là mảng ProjectSetting; thay TOÀN BỘ Project.secret (`[]` xóa hết). Mỗi mục có tên (chữ cái đầu, chữ, số, `_.-`, tối đa 64), không trùng, đúng một value[x] (string tối đa 4096). Phản hồi che giá trị (`********`); gửi lại đúng giá trị che nghĩa là giữ giá trị hiện có của secret cùng tên. Secret `smtp*` chỉ nhận khi máy chủ bật SMTP riêng của project.
+
+Các trường hợp phản hồi: [../cases/admin.md#post-admin-projects-projectid-secrets](../cases/admin.md#post-admin-projects-projectid-secrets)
+
+| Thuộc tính | Giá trị |
+|---|---|
+| Xác thực | bắt buộc: header `Authorization: Bearer <access_token>` (BearerAuth) |
+| Content-Type yêu cầu | `application/json` |
+| Content-Type phản hồi | `application/json`, `application/fhir+json` |
+
+**Header yêu cầu**
+
+| Header | Bắt buộc | Mô tả |
+|---|---|---|
+| `Authorization` | có | `Bearer <access_token>` |
+| `Content-Type` | có | `application/json` |
+| `Accept` | không | nên khớp Content-Type phản hồi |
+
+**Tham số**
+
+| Tên | Vị trí | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|---|
+| `projectId` | đường dẫn | string | có | id project |
+
+**Body yêu cầu** (Danh sách secret)
+
+Mảng các phần tử `fhir.ProjectSetting`.
+
+| Trường | Kiểu | Bắt buộc | Ràng buộc | Mô tả | Ví dụ |
+|---|---|---|---|---|---|
+| `name` | string | không |  | name (bắt buộc) |  |
+| `valueBoolean` | boolean | không |  | value[x] (bắt buộc) |  |
+| `valueDecimal` | number | không |  | value[x] (bắt buộc) |  |
+| `valueInteger` | integer | không |  | value[x] (bắt buộc) |  |
+| `valueString` | string | không |  | value[x] (bắt buộc) |  |
+
+**Phản hồi**
+
+**`200`** OK
+
+Schema: `httpapi.AdminProjectResponse`
+
+| Trường | Kiểu | Bắt buộc | Ràng buộc | Mô tả | Ví dụ |
+|---|---|---|---|---|---|
+| `project` | object `application.AdminProjectView` | có |  | project của người gọi (secret và khóa bí mật của site đã bị che) |  |
+| `project.id` | string | có |  | id của Project (UUID) | `"0192f3a4-7b1c-7d2e-9a10-3c5e8f1b2a44"` |
+| `project.name` | string | có |  | tên Project | `"Bệnh viện A"` |
+| `project.secret` | mảng `fhir.ProjectSetting` | không |  | các secret của Project; giá trị luôn bị che (maskValue), chỉ có khi có secret |  |
+| `project.setting` | mảng `fhir.ProjectSetting` | không |  | cấu hình Project; giá trị bí mật bị che, chỉ có khi Project có cấu hình |  |
+| `project.site` | mảng `fhir.ProjectSite` | không |  | các site của Project; googleClientSecret bị che, chỉ có khi Project có site |  |
+
+```json
+{
+  "project": {
+    "id": "0192f3a4-7b1c-7d2e-9a10-3c5e8f1b2a44",
+    "name": "Bệnh viện A",
+    "secret": [],
+    "setting": [],
+    "site": []
+  }
+}
+```
+
+**`400`** Bad Request
+
+Schema: `fhir.OperationOutcome` (cấu trúc dùng chung, xem [common.md mục 3](../common.md#3-operationoutcome)).
+
+**`401`** Unauthorized
+
+Schema: `fhir.OperationOutcome` (cấu trúc dùng chung, xem [common.md mục 3](../common.md#3-operationoutcome)).
+
+**`403`** Forbidden
 
 Schema: `fhir.OperationOutcome` (cấu trúc dùng chung, xem [common.md mục 3](../common.md#3-operationoutcome)).
 
