@@ -61,6 +61,8 @@ type Config struct {
 	MaxInstanceBytes int64
 	// MaxHeaderBytes là trần phần đầu DICOM. Mặc định 1 MiB.
 	MaxHeaderBytes int64
+	// TempDir là thư mục tạm cho bulkdata của STOW dạng metadata (rỗng: os.TempDir, đổi bằng TMPDIR). Cần chỗ cho tổng bulkdata của một yêu cầu (tối đa DICOMWEB_MAX_REQUEST_BYTES).
+	TempDir string
 }
 
 // Request là một yêu cầu STOW.
@@ -136,7 +138,11 @@ func Store(ctx context.Context, cfg Config, req Request) (*Outcome, error) {
 			break
 		}
 		parts++
-		st, fail, fatal := s.storeOne(ctx, part)
+		if parts == 1 && isMetadataPart(part) {
+			// STOW dạng metadata (PS3.18 10.5.1.2): phần đầu là DICOM JSON, các phần sau là bulkdata
+			return s.storeMetadata(ctx, out, mr, part)
+		}
+		st, fail, fatal := s.storeOne(ctx, part.Header.Get("Content-Type"), part)
 		_ = part.Close()
 		if fatal != nil {
 			s.cleanupAggregates(ctx)
@@ -154,6 +160,11 @@ func Store(ctx context.Context, cfg Config, req Request) (*Outcome, error) {
 	if parts == 0 {
 		return nil, &RequestError{http.StatusBadRequest, "Yêu cầu không có instance nào"}
 	}
+	return s.conclude(ctx, out)
+}
+
+// conclude cập nhật số liệu tổng hợp, chọn mã trạng thái theo kết quả từng instance và dựng phản hồi.
+func (s *service) conclude(ctx context.Context, out *Outcome) (*Outcome, error) {
 	s.updateAggregates(ctx)
 	out.Status = http.StatusOK
 	switch {
@@ -162,7 +173,7 @@ func Store(ctx context.Context, cfg Config, req Request) (*Outcome, error) {
 	case len(out.Failed) > 0:
 		out.Status = http.StatusConflict
 	}
-	out.Response = response(out, req)
+	out.Response = response(out, s.req)
 	return out, nil
 }
 
@@ -291,13 +302,14 @@ func fatalOf(err error) *RequestError {
 	return nil
 }
 
-func (s *service) storeOne(ctx context.Context, part *multipart.Part) (*Stored, *Failed, *RequestError) {
-	if ct := part.Header.Get("Content-Type"); ct != "" {
+// storeOne lưu một tệp DICOM Part 10 đọc từ r (contentType là của phần chứa nó, có thể rỗng).
+func (s *service) storeOne(ctx context.Context, contentType string, r io.Reader) (*Stored, *Failed, *RequestError) {
+	if ct := contentType; ct != "" {
 		if mt, _, err := mime.ParseMediaType(ct); err != nil || (mt != "application/dicom" && mt != "application/octet-stream") {
 			return nil, fail(ReasonCannotUnderstand, "Phần phải có Content-Type application/dicom", nil), nil
 		}
 	}
-	src := &sourceReader{r: part}
+	src := &sourceReader{r: r}
 	var head bytes.Buffer
 	scan, err := dicomweb.Scan(io.TeeReader(src, &head), dicomweb.ScanOptions{HeaderOnly: true, MaxHeaderBytes: s.cfg.MaxHeaderBytes})
 	if isTooLarge(src.err) {

@@ -2,6 +2,10 @@
 
 Cập nhật 2026-11-24 (D8: lệnh reindex). Cấu hình: [config.md](config.md).
 
+## Đĩa tạm cho STOW dạng metadata
+
+STOW dạng metadata (`application/dicom+json` kèm bulkdata) ghi bulkdata ra thư mục tạm (đổi bằng biến môi trường `TMPDIR`; mặc định `/tmp`) trước khi lưu vào kho, rồi xóa. Cần chỗ trống cỡ tổng bulkdata của các yêu cầu đang chạy song song (tối đa `DICOMWEB_MAX_REQUEST_BYTES` mỗi yêu cầu). Image distroless chạy user không phải root: mount một volume có quyền ghi vào `TMPDIR` nếu `/tmp` chỉ đọc. STOW tệp thường (`application/dicom`) không dùng đĩa tạm. Thư mục lỗi thời `dicomstow-*` (tiến trình bị kill giữa chừng) an toàn để xóa khi không có yêu cầu nào đang chạy.
+
 ## Lập lại chỉ mục frame (instance cũ)
 
 Instance lưu trước D5, hoặc có chỉ mục hỏng hay sai số frame, vẫn được WADO-RS phục vụ đúng nhưng chậm (quay về quét tệp, chi phí tỉ lệ với vị trí frame). Lập lại chỉ mục bằng lệnh vận hành, cùng cấu hình với server (DATABASE_URL, FHIR_BINARY_STORAGE...), duyệt mọi project:
