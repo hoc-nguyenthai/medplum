@@ -4,7 +4,7 @@ Trạng thái: **đề xuất; hướng tách đã chốt theo yêu cầu của 
 
 > **Thay đổi so với bản trước của tài liệu này:** bản trước đề xuất bậc 2 của thang tách (cùng binary, vai trò `FHIR_ROLE`). Theo chỉ đạo, kế hoạch nay đi thẳng bậc 3 (`apps/<tên>` riêng, image riêng). Đây là **lệch có chủ ý** khỏi mục 1 của nguyên tắc ("chỉ lên bậc 3 khi bậc 2 không đủ"); hệ quả về chi phí ở mục 6 và 8.
 
-**Phạm vi bằng chứng:** đã đọc mã lắp ráp (`internal/bootstrap/container.go`), `pkg/fhirrouter`, `pkg/fhirsub`, `pkg/fhirbinary`, `pkg/messaging`, `pkg/fhirdownload`, các kế hoạch hiện có. **Chưa có số đo tải thật** (mục 9): nhận định "đáng tách" là suy luận từ mã. Câu ghi "(chưa kiểm)" là chưa chạy hoặc chưa đọc tới mã.
+**Phạm vi bằng chứng:** đã đọc mã lắp ráp (`internal/bootstrap/container.go`), `pkg/fhirrouter`, `pkg/fhirsub`, `pkg/fhirbinary`, `pkg/messaging`, `pkg/fhirdownload`, các kế hoạch hiện có. **Số đo tải còn rất hạn chế** (mục 9): chỉ có một lần đo #12c (export song song với API, 20.000 resource, một máy) cho `fhir-worker`; chưa có số đo nào cho `fhir-downloader`, `fhir-notifier`, Binary hay terminology, nên nhận định "đáng tách" của các cụm đó là suy luận từ mã. Câu ghi "(chưa kiểm)" là chưa chạy hoặc chưa đọc tới mã.
 
 ## 0. Kết luận
 
@@ -12,7 +12,7 @@ Trạng thái: **đề xuất; hướng tách đã chốt theo yêu cầu của 
 |---|---|---|---|---|---|---|
 | **`fhir-downloader`** | `apps/fhir-downloader` | `:8009` (chỉ probe) | tự tải attachment URL ngoài về kho Binary (`pkg/fhirdownload`) | **C mạnh** (bề mặt SSRF, ra Internet), A | thấp | 1 |
 | **`fhir-notifier`** | `apps/fhir-notifier` | `:8010` (chỉ probe) | giao rest-hook, khớp sự kiện cho websocket (`fhirsub.Manager`) | C, A | trung bình | 2 (kèm làm rest-hook bền) |
-| **`fhir-worker`** | `apps/fhir-worker` | `:8011` (chỉ probe) | job nền: bulk export, `$reindex`, batch async, vòng bảo trì job | C một phần, A chưa đo | trung bình đến thấp | 3 (sau khi sửa P0-2, P0-3) |
+| **`fhir-worker`** | `apps/fhir-worker` | `:8011` (chỉ probe) | job nền: bulk export, `$reindex`, batch async, vòng bảo trì job | C một phần; A **chưa xác nhận** (đo #12c: API không bị ảnh hưởng ở 20.000 resource, xem 3.3) | trung bình đến thấp | 3, **ưu tiên thấp nhất** (sau P0-2, P0-3) |
 | **`fhir-server` = API** (giữ nguyên tên, xem 3.0) | `apps/fhir-server` | `:8005` | **API FHIR**: REST, tìm kiếm, xác thực, terminology, Binary, GraphQL; sở hữu migration; **phát** sự kiện; nhận yêu cầu tạo job | lõi | | không đổi |
 
 **Không tách:** terminology (nằm trong đường tìm kiếm), Binary và `/storage` (chưa), REST, kho, tìm kiếm, xác thực (không tách theo loại resource). Websocket đã là `ws-gateway`.
@@ -21,7 +21,7 @@ Trạng thái: **đề xuất; hướng tách đã chốt theo yêu cầu của 
 
 ## 0.1 Thống kê đề xuất
 
-Số liệu lấy từ tài liệu này và đếm trực tiếp trong mã ngày 2026-11-24 (quy mô mã đếm bỏ dòng trống và dòng chú thích). **Không phải số đo tải**: chưa có số đo cho điều kiện A của service nào.
+Số liệu lấy từ tài liệu này và đếm trực tiếp trong mã ngày 2026-11-24 (quy mô mã đếm bỏ dòng trống và dòng chú thích). **Không phải số đo tải.** Số đo tải duy nhất là #12c (mục 3.3), chỉ cho `fhir-worker`: chưa có số đo cho điều kiện A của service nào khác.
 
 **Số lượng**
 
@@ -41,9 +41,9 @@ Số liệu lấy từ tài liệu này và đếm trực tiếp trong mã ngày
 |---|---|---|---|
 | Vai trò | tự tải attachment URL ngoài | giao rest-hook, khớp sự kiện websocket | job nền: export, `$reindex`, batch async |
 | Thư mục, cổng (đề xuất) | `apps/fhir-downloader`, `:8009` | `apps/fhir-notifier`, `:8010` | `apps/fhir-worker`, `:8011` |
-| Điều kiện tách | C mạnh, A | C, A | C một phần, A chưa đo |
+| Điều kiện tách | C mạnh, A | C, A | C một phần, A chưa xác nhận (đo #12c) |
 | Mức gắn kết | thấp | trung bình | trung bình đến thấp |
-| Thứ tự | 1 | 2 | 3 (sau đo tải) |
+| Thứ tự | 1 | 2 | 3 (có thể hoãn; #12c chưa cho thấy API bị ảnh hưởng) |
 | Mã dùng lại (dòng, không tính test) | khoảng 395 (`pkg/fhirdownload`) | khoảng 1.637 (`pkg/fhirsub`, gồm Hub và token websocket) | khoảng 1.267 (`jobs*`, `bulk`, `batch_async`) cộng 98 (`pkg/workflow`) |
 | Test hiện có của phần mã đó (dòng) | 409 | 2.172 | chưa đếm |
 | Biến cấu hình liên quan | 6 (`FHIR_AUTO_DOWNLOAD*`) | khoảng 17 (webhook, Subscription, broker, websocket) | khoảng 8 (job, export retention, batch async) |
@@ -58,12 +58,12 @@ Số liệu lấy từ tài liệu này và đếm trực tiếp trong mã ngày
 
 | Cỡ | Việc |
 |---|---|
-| S | P0-3, P0-4; S0, S6 |
-| S đến M | P0-5 |
-| M | P0-1, P0-2; S1, S2, S4 |
+| S | P0-3, P0-4, P0-5; S0, S6 |
+| S đến M | S4 (đã xong một phần) |
+| M | P0-1, P0-2; S1, S2 |
 | L | S3 (`fhir-notifier`), S5 (`fhir-worker`) |
 
-Mỗi service mới phải thỏa danh sách kiểm 10 mục của [service-principles.md](../service-principles.md) mục 7. Cách đọc số: số dòng của `fhir-notifier` gồm cả phần websocket nhúng nên phần thật sự chuyển sang service mới nhỏ hơn con số trên; số biến cấu hình là ước lượng theo tiền tố tên biến trong `config.md` (khoảng 87 biến tổng, một số dùng chung giữa các cụm); `pkg/fhirdownload` còn đang sửa dở (chưa commit) nên số dòng có thể đổi.
+Mỗi service mới phải thỏa danh sách kiểm 10 mục của [service-principles.md](../service-principles.md) mục 7. Cách đọc số: số dòng của `fhir-notifier` gồm cả phần websocket nhúng nên phần thật sự chuyển sang service mới nhỏ hơn con số trên; số biến cấu hình là ước lượng theo tiền tố tên biến trong `config.md` (khoảng 87 biến tổng, một số dùng chung giữa các cụm); `pkg/fhirdownload` đã commit (`b709f7e`), số dòng đếm trên bản đã commit.
 
 ## 0.2 Thống kê toàn hệ thống (hiện có và đề xuất)
 
@@ -127,7 +127,7 @@ Mỗi service mới phải thỏa danh sách kiểm 10 mục của [service-prin
 | Giao rest-hook | `FHIR_SUBSCRIPTIONS` | `fhirsub.NewManager(store, ...)` đọc Subscription từ **kho gốc**; hàng đợi giao là `chan` trong tiến trình, **sức chứa 1024, đầy thì bỏ (`Dropped`)**, 4 worker mặc định, thử lại `FHIR_WEBHOOK_MAX_ATTEMPTS` (5) bằng hẹn giờ trong bộ nhớ | `pkg/fhirsub/manager.go:106,116,366`; `config.md` |
 | Khớp sự kiện websocket | `FHIR_WS_MODE` | `embedded`: Hub trong tiến trình; `issuer`: `Manager.AttachRemote` (khớp một lần cho cả cụm, đẩy lên kênh Redis; cần `BROKER_DRIVER=redis`) | `container.go` |
 | Binary thô | `FHIR_BINARY_STORAGE` | `fhirbinary.Wrap(store, blobs, ...)` **bọc ghi Binary, nằm dưới sự kiện Subscription**; `RawBinary` bọc cả router FHIR; `/storage` là handler riêng đọc kho gốc | `container.go` |
-| Tự tải attachment | `FHIR_AUTO_DOWNLOAD` (cần `FHIR_BINARY_STORAGE`) | `fhirdownload.New(...)`; `Register(broker)` nghe `fhirsub.EventType`, tải URL ngoài qua `pkg/safehttp`, ghi `Binary` rồi đổi `url` attachment thành `Binary/<id>`; `Async` khi broker là `memory` (hàng đợi trong tiến trình, thử lại 3 lần lùi 1 giây, 2 giây) | `container.go`; `pkg/fhirdownload/download.go` (**đang làm dở, chưa commit khi viết tài liệu này**) |
+| Tự tải attachment | `FHIR_AUTO_DOWNLOAD` (cần `FHIR_BINARY_STORAGE`) | `fhirdownload.New(...)`; `Register(broker)` nghe `fhirsub.EventType`, tải URL ngoài qua `pkg/safehttp`, ghi `Binary` rồi đổi `url` attachment thành `Binary/<id>`; `Async` khi broker là `memory` (hàng đợi trong tiến trình, thử lại 3 lần lùi 1 giây, 2 giây) | `container.go`; `pkg/fhirdownload/download.go` (đã commit ở `b709f7e`; 9 test trong `download_test.go`) |
 | Terminology | luôn | `resolveTerminology` nằm **trong đường tìm kiếm** (`:below`, `:above`, `:in`); `$expand`, `$lookup`... dùng bảng dẫn xuất `fhir_coding*` cùng schema | `pkg/fhirrouter/chain.go:37`, `termsearch.go` |
 | Kết quả bulk export | luôn | `Binary` base64 **trong CSDL** (không vào kho `file:`/`s3:` dù đã bật), mỗi tệp khoảng 8 MiB | `pkg/fhirrouter/bulk.go:178`; `container.go` |
 
@@ -137,7 +137,7 @@ Mỗi service mới phải thỏa danh sách kiểm 10 mục của [service-prin
 |---|---|---|---|---|
 | `fhir-downloader` | Có thể: tải tệp lớn, I/O ra ngoài (chưa đo) | không (cùng schema; cần ghi `Binary` và đọc kho) | **Có**: API không nên có đường ra Internet; sự cố máy chủ ngoài không ảnh hưởng API | không |
 | `fhir-notifier` | Có thể: tải theo số sự kiện × số Subscription, chờ I/O ngoài (chưa đo) | không (nhưng giữ `subscription-secret` và `channel.header`: tách khỏi API) | **Có một phần**: webhook chậm chiếm worker và bộ nhớ của API; restart API mất hàng đợi | không |
-| `fhir-worker` | chưa đo | không | **Một phần**: export lớn có thể làm API chậm (chưa quan sát) | không |
+| `fhir-worker` | **chưa xác nhận**: đo #12c ở 20.000 resource cho p95 API ×1,04 khi export song song | không | Một phần: chưa quan sát API bị chậm ở cỡ đã đo; chưa đo cỡ lớn hơn | không |
 
 ## 3. Từng service
 
@@ -177,7 +177,10 @@ Tách thành công nghĩa là: một lần ghi hồ sơ trả lời nhanh (`201`
 
 ### 3.3 `fhir-worker` (ưu tiên số 3)
 
-- **Trạng thái:** D-DB-3 đã chốt "chưa tách, chờ đo". Kết luận P3a còn đúng: job `AsyncJob` đã bền nhờ lease trong DB (nhận bằng If-Match, gia hạn, tiếp quản sau `JobRecoveryGrace` và lease hết hạn), nên **thiếu động lực kỹ thuật cấp bách**; điều kiện A chưa có số đo. Theo chỉ đạo, kế hoạch vẫn đặt service này; **thứ tự giữ sau S4 (đo #12c)** để mục "Vì sao tách" có bằng chứng (DoD 7.1, 7.10). Nếu quyết định tách vì lý do vận hành mà không đo, phải ghi rõ đó không phải điều kiện A.
+- **Trạng thái:** D-DB-3 đã chốt "chưa tách, chờ đo". Kết luận P3a còn đúng: job `AsyncJob` đã bền nhờ lease trong DB (nhận bằng If-Match, gia hạn, tiếp quản sau `JobRecoveryGrace` và lease hết hạn), nên **thiếu động lực kỹ thuật cấp bách**.
+- **Kết quả đo #12c (một lần, 2026-11-24; theo `task-list.md`):** 20.000 resource (4.000 Patient và 16.000 Observation), 16 client, `FHIR_JOB_CONCURRENCY=2`, PostgreSQL 16 trong Docker, server, PG và bộ tạo tải chung một máy phát triển. Khi export chạy song song với tải API: p95 API ×1,04, p99 ×1,01, thông lượng ×0,98 so với đường cơ sở không có export; export mất 6,5 giây khi song song so với 3,6 giây một mình (export nhường CPU, API không chậm); RSS server đỉnh từ 73 MB lên 220 MB (tăng khoảng 150 MB). Ngưỡng "bị ảnh hưởng" đã dùng: p95 hoặc p99 > 1,5× đường cơ sở. **Kết luận tạm của #12c: chưa cần mở `fhir-worker`.**
+- **Chưa kiểm:** cỡ dữ liệu lớn hơn (lần chạy 200.000 resource bị hủy giữa chừng, chưa có số), máy riêng cho server và PG, nhiều job `$export` đồng thời, resource lớn (Binary, DocumentReference). Bộ nhớ đỉnh tăng khoảng 150 MB ở cỡ này cần xem lại khi dữ liệu lớn hơn nhiều.
+- **Hệ quả cho kế hoạch:** điều kiện A và C của `fhir-worker` **không được số đo xác nhận** ở cỡ đã đo. Theo chỉ đạo, kế hoạch vẫn đặt service này (D-SP-1), nhưng nên là việc **cuối cùng và có thể hoãn**: chỉ làm khi đo ở cỡ lớn cho thấy API bị ảnh hưởng, hoặc vì lý do vận hành (ví dụ cô lập bộ nhớ đỉnh của export) mà ghi rõ không phải điều kiện A (DoD 7.1, 7.10).
 - **Hai việc phải xong trước:**
   1. Kết quả export đang là `Binary` base64 trong CSDL (`bulk.go:178`): đưa job sang service khác **không giảm tải DB**, và CSDL phình theo `FHIR_EXPORT_RETENTION`. Cần ghi kết quả ra kho đối tượng (P0-2).
   2. `$reindex` cả loại dùng kho thô (`operation.go:298`: `reindexType` dùng `r.repo`, trong khi `reindexOne` dùng `repoOf(ctx)`): admin một project khởi động được reindex mọi project. Sửa trước (P0-3), nếu không `fhir-worker` thực thi lỗi này.
@@ -216,30 +219,30 @@ Các việc dưới đây độc lập với chuyện tách nhưng **làm việc
 | P0-2 | Kết quả bulk export ghi ra kho đối tượng | `fhir-worker` không giảm tải DB; CSDL phình theo retention | M |
 | P0-3 | `$reindex` cả loại dùng kho đã tách project, kiểm AccessPolicy ở đường tạo job | `fhir-worker` thực thi lỗi xuyên project | S |
 | P0-4 | Cấm broker `memory` khi bật phía nghe bên ngoài | Các service tách chỉ hoạt động qua Redis | S |
-| P0-5 | Chốt và commit `pkg/fhirdownload`, mô tả đủ biến cấu hình (`IGNORED_PREFIXES`...) | `fhir-downloader` là việc đầu tiên nhưng mã còn dở | S đến M |
+| P0-5 | Hoàn thiện `pkg/fhirdownload`: mã và test **đã commit** (`b709f7e`); còn thiếu mô tả `FHIR_AUTO_DOWNLOAD_IGNORED_PREFIXES` (`config.md` vẫn ghi "chưa có mô tả trong mã") và một test nhận lại cùng sự kiện (idempotency) | `fhir-downloader` là việc đầu tiên; còn hai việc nhỏ trước khi tách | S |
 
 ## 6. Quyết định
 
 | Mã | Câu hỏi | Quyết định / đề xuất | Hệ quả nếu chọn khác |
 |---|---|---|---|
 | D-SP-1 **[đã chốt 2026-11-24 theo yêu cầu của người dùng]** | Tách bằng gì? | **Các service riêng (`apps/fhir-downloader`, `apps/fhir-notifier`, `apps/fhir-worker`), mỗi service một vai trò**; không dùng `FHIR_ROLE` | Vai trò trong cùng image rẻ hơn (một image, một CI) và đủ cho điều kiện C, nhưng không cho image, network policy và vòng đời deploy riêng |
-| D-SP-2 | Thứ tự | `fhir-downloader`, rồi `fhir-notifier` (kèm P0-1), rồi `fhir-worker` (sau S4 và P0-2, P0-3) | `fhir-notifier` không có P0-1 chuyển nơi mất dữ liệu; `fhir-worker` trước khi đo thì thiếu bằng chứng điều kiện A |
+| D-SP-2 | Thứ tự | `fhir-downloader`, rồi `fhir-notifier` (kèm P0-1), rồi `fhir-worker` (sau P0-2, P0-3; **có thể hoãn** vì #12c chưa cho thấy API bị ảnh hưởng) | `fhir-notifier` không có P0-1 chuyển nơi mất dữ liệu; `fhir-worker` trước khi đo thì thiếu bằng chứng điều kiện A |
 | D-SP-3 | Redis | **Bắt buộc** cho `fhir-downloader` và `fhir-notifier`; broker `memory` bị cấm khi phía nghe ở ngoài (P0-4) | Broker `memory` chỉ chạy một tiến trình |
 | D-SP-4 | Cách làm rest-hook bền | (a) giao đồng bộ trong handler Redis Stream, ACK sau khi giao | (b) outbox (thêm bảng, thêm bảo trì); (c) `asynq` (thêm phụ thuộc vận hành, đã có adapter chưa nối) |
 | D-SP-5 | Role DB của các service mới | **Dùng chung `fhir_app`** như `dicomweb` (D-DW-1): kho tài liệu chung nên không cấp hẹp theo loại resource được | Role riêng cùng quyền chỉ giúp thống kê kết nối và thu hồi riêng: có thể làm sau, cần sửa `01-schemas.sh` |
 | D-SP-6 | Binary và `/storage`, terminology | Không tách (3.4) | Thêm API nội bộ và một bước mạng vào đường tìm kiếm |
-| D-SP-7 | Đo trước khi tách `fhir-worker` (#12c)? | Có (khớp D-DB-3) | Bỏ đo thì phải ghi đó là lý do vận hành, không phải điều kiện A |
+| D-SP-7 | Đo trước khi tách `fhir-worker` (#12c)? | **Đã đo một lần** (xem 3.3): API không bị ảnh hưởng ở 20.000 resource. Đo thêm ở cỡ lớn (200.000 resource, máy riêng, nhiều job đồng thời) trước khi quyết; khớp D-DB-3 | Tách mà không có số đo cỡ lớn thì phải ghi đó là lý do vận hành, không phải điều kiện A |
 | D-SP-8 | Dùng chung schema `fhir` cho 5 app (`fhir-server`, `dicomweb`, `fhir-notifier`, `fhir-downloader`, `fhir-worker`) | Chấp nhận như ngoại lệ D-DW-1 (cùng một miền dữ liệu), kèm quy tắc đổi schema ở mục 8 | Một schema chia cho nhiều app làm mọi thay đổi `fhirstore` ảnh hưởng cả năm |
 
 ## 7. Các bước
 
 | Bước | Việc | Cỡ | Tiêu chí hoàn thành | Phụ thuộc |
 |---|---|---|---|---|
-| S0 | P0-3 (sửa `$reindex` xuyên project) và P0-5 (chốt `fhirdownload`) | S | test chặn `$reindex` xuyên project (token một project không ghi lại chỉ mục project khác); `fhirdownload` có test và tài liệu cấu hình đủ | không |
+| S0 | P0-3 (sửa `$reindex` xuyên project) và P0-5 (mô tả `IGNORED_PREFIXES`, test nhận lại sự kiện cho `fhirdownload`) | S | test chặn `$reindex` xuyên project (token một project không ghi lại chỉ mục project khác); `fhirdownload` có test idempotency và mô tả đủ biến cấu hình | không |
 | S1 | Chuẩn bị `fhir-server`: công tắc tắt phía nghe/giao (rest-hook và tự tải) ở API, mặc định như cũ; tùy chọn `fhirrouter.Options` để API không tự chạy job (cho S5); P0-4; thống nhất tên biến dùng chung | M | không bật công tắc thì hành vi và test cũ không đổi; từ chối khởi động nếu tắt phía nghe nội bộ mà broker là `memory` | S0 |
 | S2 | **`apps/fhir-downloader`** theo khuôn mục 4 | M | e2e: `fhir-server` (tắt phía tải) và `fhir-downloader` ở tiến trình khác; attachment ngoài thành `Binary/<id>`; giết `fhir-downloader` giữa chừng rồi chạy lại vẫn xử lý phần còn trong PEL; API không có đường ra Internet trong cấu hình e2e | S1 |
 | S3 | P0-1, rồi **`apps/fhir-notifier`** theo khuôn mục 4 | L | e2e: giết `fhir-notifier` giữa chừng, sự kiện chưa giao được giao lại sau khi chạy lại; webhook chậm không làm chậm API (đo p95); websocket vẫn nhận thông báo qua `ws-gateway` | S1, P0-1 |
-| S4 | Đo tải #12c (export lớn song song với tải API: p95 và p99 của API, CPU, bộ nhớ) | M | số đo ghi vào tài liệu này; chốt D-SP-7 | S1 |
+| S4 | Đo tải #12c: **một phần đã xong** (công cụ `make bench-export`, một lần đo 20.000 resource ở 3.3); còn: 200.000 resource, máy riêng, nhiều job đồng thời, resource lớn (chạy lại `EXPORT_LOAD_RESOURCES=200000 make bench-export`) | S đến M | số đo cỡ lớn ghi vào tài liệu này; chốt D-SP-7 | không |
 | S5 | P0-2, rồi **`apps/fhir-worker`** theo khuôn mục 4 | L | e2e: tạo export ở `fhir-server`, `fhir-worker` chạy job, API không thực thi job; giết `fhir-worker` giữa chừng thì job được tiếp quản; job-seal sai không chạy | S1, S4, P0-2 |
 | S6 | Tài liệu: bản đồ service (`service-principles.md` mục 2 và 8), `fhir-server/docs/architecture.md` ("không còn làm" gì), runbook, compose, Makefile (`run-<tên>`), `docs/erd` nếu đổi dữ liệu; cập nhật `task-list.md` | S | | các bước trên |
 
@@ -255,10 +258,10 @@ Các việc dưới đây độc lập với chuyện tách nhưng **làm việc
 | Service nghe sự kiện sập | API vẫn nhận ghi và phát sự kiện lên Redis; sự kiện tích trong stream tới khi service chạy lại. Cần giới hạn độ dài stream và cảnh báo (chưa quy định) |
 | Cửa sổ trễ Subscription | Replica khác thấy Subscription mới sau tối đa 30 giây (cache danh sách); `fhir-notifier` giữ nguyên hành vi |
 | Không có chính sách mạng riêng | Nếu `fhir-downloader` không được đặt ở vùng mạng có egress khác API thì lợi ích an ninh chính của S2 chưa đạt (chỉ còn tách tải) |
-| Không có số đo | Mọi ưu tiên ở mục 0 dựa trên suy luận từ mã; S4 là chỗ duy nhất có số đo |
+| Số đo hạn chế | Mọi ưu tiên ở mục 0 dựa trên suy luận từ mã; chỗ duy nhất có số đo là #12c (một lần, 20.000 resource, một máy) và nó **không** ủng hộ việc tách `fhir-worker` |
 
 ## 9. Chưa làm hoặc chưa kiểm
 
-- **Chưa đo tải:** export song song với API, webhook chậm, tải Binary lớn, `$expand` lớn (task #12c còn mở).
-- **Chưa kiểm:** `fhirdownload` có idempotent khi nhận lại sự kiện; cách (a) giao rest-hook trong handler Stream có chịu được webhook chậm không (PEL, `ClaimInterval`); tùy chọn "API không tự chạy job" chưa tồn tại trong `fhirrouter`; công tắc tắt phía nghe ở `fhir-server` chưa tồn tại; cổng `:8009` đến `:8011` chỉ là đề xuất (chưa kiểm xung đột trong `Makefile` và compose); hành vi `$expunge` có phát sự kiện Subscription không.
-- **Tài liệu liên quan chưa cập nhật:** `service-principles.md` mục 2 vẫn liệt kê `fhir-worker` là "chưa quyết"; `apps/fhir-server/docs/business` chưa nói tới `FHIR_AUTO_DOWNLOAD` (mã chưa commit); `task-list.md` chưa có các bước S0 đến S6.
+- **Chưa đo tải:** webhook chậm, tải Binary lớn, `$expand` lớn. Export song song với API đã đo **một lần** (#12c, 20.000 resource); còn thiếu cỡ 200.000 resource, máy riêng, nhiều job đồng thời, resource lớn.
+- **Chưa kiểm:** `fhirdownload` có idempotent khi nhận lại sự kiện (sau khi tải xong `url` đã thành `Binary/<id>` nên về mã sự kiện nhận lại không còn URL ngoài để tải; chưa có test riêng, chỉ có test dọn rồi thử lại khi xung đột phiên bản); cách (a) giao rest-hook trong handler Stream có chịu được webhook chậm không (PEL, `ClaimInterval`); tùy chọn "API không tự chạy job" chưa tồn tại trong `fhirrouter`; công tắc tắt phía nghe ở `fhir-server` chưa tồn tại; cổng `:8009` đến `:8011` chỉ là đề xuất (chưa kiểm xung đột trong `Makefile` và compose); hành vi `$expunge` có phát sự kiện Subscription không.
+- **Tài liệu liên quan chưa cập nhật:** `service-principles.md` mục 2 vẫn liệt kê `fhir-worker` là "chưa quyết"; `apps/fhir-server/docs/business` chưa nói tới `FHIR_AUTO_DOWNLOAD` (mã đã commit từ `b709f7e`, tài liệu nghiệp vụ chưa cập nhật); `task-list.md` chưa có các bước S0 đến S6.
