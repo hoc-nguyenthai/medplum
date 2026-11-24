@@ -347,6 +347,7 @@ func (r *Router) registerOperations() {
 	r.registerCodeSystemImport()
 	r.registerConceptMapImport()
 	r.registerGraphQL()
+	r.registerClinical()
 	r.RegisterJob("reindex", func(ctx context.Context, repo Repository, in *Input) (*fhir.Parameters, error) {
 		ri, ok := repo.(Reindexer)
 		if !ok {

@@ -234,3 +234,35 @@ func (r *Repo) DeleteMappings(ctx context.Context, id string) (int, error) {
 }
 
 var _ fhirrouter.MappingStore = (*Repo)(nil)
+
+var _ fhirrouter.SubscriptionResender = (*Repo)(nil)
+
+// ResendSubscriptions phát lại sự kiện ghi (không ghi gì vào kho): bản hiện tại, hoặc phiên bản versionID. interaction "delete" phát lại phiên bản cuối trước lần xóa gần nhất (resource
+// phải đang ở trạng thái đã xóa). Người nhận (Manager) xử lý như một lần ghi mới nên Subscription khớp sẽ giao lại.
+func (r *Repo) ResendSubscriptions(ctx context.Context, rt, id, versionID, interaction string) error {
+	var res fhir.Resource
+	var err error
+	switch {
+	case interaction == "delete":
+		hist, herr := r.Repository.ReadHistory(ctx, rt, id)
+		if herr != nil {
+			return herr
+		}
+		if len(hist) < 2 || !hist[0].Deleted || hist[1].Resource == nil {
+			return fhirrouter.PreconditionFailed("Resource chưa bị xóa nên không gửi lại được sự kiện xóa")
+		}
+		if versionID != "" && versionID != hist[1].VersionID {
+			return fhirrouter.BadRequest("versionId phải là phiên bản cuối trước lần xóa")
+		}
+		res = hist[1].Resource
+	case versionID != "":
+		res, err = r.Repository.ReadVersion(ctx, rt, id, versionID)
+	default:
+		res, err = r.Repository.ReadResource(ctx, rt, id)
+	}
+	if err != nil {
+		return err
+	}
+	r.emit(ctx, interaction, res)
+	return nil
+}

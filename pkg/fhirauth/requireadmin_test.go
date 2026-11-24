@@ -6,6 +6,7 @@ import (
 	"errors"
 	"testing"
 
+	"trivita-fhir/pkg/fhir"
 	"trivita-fhir/pkg/fhirauth"
 	"trivita-fhir/pkg/fhirrouter"
 )
@@ -132,4 +133,61 @@ func TestConceptMapImportRespectsRoleAndProject(t *testing.T) {
 			t.Error("project khác không được đọc ánh xạ")
 		}
 	})
+}
+
+type recordingResender struct {
+	fhirrouter.Repository
+	calls []string
+}
+
+func (r *recordingResender) ResendSubscriptions(_ context.Context, rt, id, vid, interaction string) error {
+	r.calls = append(r.calls, rt+"/"+id+"|"+vid+"|"+interaction)
+	return nil
+}
+
+// $resend chỉ cho quản trị project (không bị chính sách thu hẹp), chỉ với resource của project mình, rồi mới chuyển cho repository bên trong.
+func TestResendSubscriptionsRespectsRoleAndProject(t *testing.T) {
+	inner := &recordingResender{Repository: fhirrouter.NewMemoryRepository()}
+	repo := fhirauth.Scope(inner)
+	admin := fhirauth.WithPrincipal(context.Background(), &fhirauth.Principal{Subject: "a", Project: "A", Role: fhirauth.RoleAdmin})
+	if _, err := repo.CreateResource(admin, &fhir.Patient{ID: "p1"}); err != nil {
+		t.Fatal(err)
+	}
+	status := func(err error) int {
+		var fe *fhirrouter.Error
+		if errors.As(err, &fe) {
+			return fe.Status
+		}
+		return 0
+	}
+	rs := repo
+	for name, p := range map[string]*fhirauth.Principal{
+		"write":        {Subject: "w", Project: "A", Role: fhirauth.RoleWrite},
+		"admin+policy": {Subject: "a", Project: "A", Role: fhirauth.RoleAdmin, Policy: &fhirauth.Policy{}},
+	} {
+		if err := rs.ResendSubscriptions(fhirauth.WithPrincipal(context.Background(), p), "Patient", "p1", "", "update"); status(err) != 403 {
+			t.Errorf("%s phải 403: %v", name, err)
+		}
+	}
+	if err := rs.ResendSubscriptions(context.Background(), "Patient", "p1", "", "update"); status(err) != 403 {
+		t.Errorf("không Principal phải 403")
+	}
+	other := fhirauth.WithPrincipal(context.Background(), &fhirauth.Principal{Subject: "o", Project: "B", Role: fhirauth.RoleAdmin})
+	if err := rs.ResendSubscriptions(other, "Patient", "p1", "", "update"); status(err) != 404 {
+		t.Errorf("admin project khác phải 404: %v", err)
+	}
+	if len(inner.calls) != 0 {
+		t.Fatalf("repository bên trong bị gọi khi bị từ chối: %v", inner.calls)
+	}
+	if err := rs.ResendSubscriptions(admin, "Patient", "p1", "v1", "create"); err != nil || len(inner.calls) != 1 || inner.calls[0] != "Patient/p1|v1|create" {
+		t.Errorf("admin: %v %v", err, inner.calls)
+	}
+	// repository bên trong không hỗ trợ: 501
+	plain := fhirauth.Scope(fhirrouter.NewMemoryRepository())
+	if _, err := plain.CreateResource(admin, &fhir.Patient{ID: "p2"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := plain.ResendSubscriptions(admin, "Patient", "p2", "", "update"); status(err) != 501 {
+		t.Errorf("không hỗ trợ: %v", err)
+	}
 }

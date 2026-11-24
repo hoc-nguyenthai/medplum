@@ -27,11 +27,12 @@ type Repo struct{ inner fhirrouter.Repository }
 func Scope(inner fhirrouter.Repository) *Repo { return &Repo{inner: inner} }
 
 var (
-	_ fhirrouter.Repository    = (*Repo)(nil)
-	_ fhirrouter.Transactional = (*Repo)(nil)
-	_ fhirrouter.Reindexer     = (*Repo)(nil)
-	_ fhirrouter.Expunger      = (*Repo)(nil)
-	_ fhirrouter.AdminChecker  = (*Repo)(nil)
+	_ fhirrouter.Repository           = (*Repo)(nil)
+	_ fhirrouter.Transactional        = (*Repo)(nil)
+	_ fhirrouter.Reindexer            = (*Repo)(nil)
+	_ fhirrouter.SubscriptionResender = (*Repo)(nil)
+	_ fhirrouter.Expunger             = (*Repo)(nil)
+	_ fhirrouter.AdminChecker         = (*Repo)(nil)
 )
 
 func projectOf(ctx context.Context) (string, error) {
@@ -442,6 +443,29 @@ func (r *Repo) Reindex(ctx context.Context, rt, id string, progress func(int)) (
 		}
 	}
 	return ri.Reindex(ctx, rt, id, progress)
+}
+
+// ResendSubscriptions chỉ cho quản trị project (hoặc super-admin) và chỉ với resource thuộc project của người gọi; phát lại do repository bên trong thực hiện.
+func (r *Repo) ResendSubscriptions(ctx context.Context, rt, id, versionID, interaction string) error {
+	project, err := projectOf(ctx)
+	if err != nil {
+		return err
+	}
+	if err := r.RequireAdmin(ctx); err != nil {
+		return err
+	}
+	rs, ok := r.inner.(fhirrouter.SubscriptionResender)
+	if !ok {
+		return fhirrouter.NotImplemented("Repository không hỗ trợ gửi lại Subscription")
+	}
+	if interaction == "delete" {
+		if err := r.ownedByHistory(ctx, project, rt, id); err != nil {
+			return err
+		}
+	} else if err := r.owned(ctx, project, rt, id); err != nil {
+		return err
+	}
+	return rs.ResendSubscriptions(ctx, rt, id, versionID, interaction)
 }
 
 func (r *Repo) Expunge(ctx context.Context, rt, id string) error {

@@ -159,10 +159,10 @@ Mỗi dòng một tính năng hoặc operation. Cột: ID, tên và vị trí Me
 | J-11 | Worker `reindex` cho cả loại (`workers/reindex.ts`, qua `admin/super`) | CÓ | `POST /{type}/$reindex` chạy nền (`operation.go:288-295`), `suite.go:819`; Go **vượt**: lộ qua REST cho admin | — | vừa | — |
 | J-12 | `$expunge` một resource, `everything=true` và `Project` chạy nền (`operations/expunge.ts:33-72`, `Expunger` dòng 74-219) | MỘT PHẦN | `operation.go:313-323`: chỉ một resource, trả 200; không `everything`, không Project (`go-port-status.md` 6a); `suite.go:882`. Dọn Binary kèm theo chưa có | Storage (cho Binary ngoài) | thấp | M |
 | J-13 | `$set-accounts` (có `propagate`, chạy nền, trần 1000 resource) (`operations/set-accounts.ts:82-254`, `workers/set-accounts.ts`) | CHƯA | grep `set-accounts`, `accounts` trong Go: 0 | `meta.account` (H-07), hàng đợi | thấp | M |
-| J-14 | `$refresh-reference-display` (`operations/refresh-reference-display.ts:9-48`) | CHƯA | grep: 0 | — | thấp | S |
+| J-14 | `$refresh-reference-display` (`operations/refresh-reference-display.ts:9-48`) | **XONG 2026-11-24** | `pkg/fhirrouter/clinical_ops.go` (`refreshReferenceDisplay`), `display.go` (getDisplayString); test `clinical_ops_test.go` | — | thấp | S |
 | J-15 | Worker `download`: tải URL ngoài trong `Attachment` về Binary (`workers/download.ts`) | CHƯA | grep: 0 | safe HTTP (`pkg/fhirsub/ssrf.go` cần trích), Storage | thấp | M |
-| J-16 | `$resend` Subscription, bản hiện tại và bản lịch sử (`routes.ts:463,473`, `repo.ts:1553`) | CHƯA | grep `resend`: 0 | `pkg/fhirsub` | thấp | S |
-| J-17 | `$graph` theo `GraphDefinition` (`operations/resourcegraph.ts:41-337`) | CHƯA | grep `$graph` (ngoài `$graphql`): 0 | — | vừa | M |
+| J-16 | `$resend` Subscription, bản hiện tại và bản lịch sử (`routes.ts:463,473`, `repo.ts:1553`) | **XONG 2026-11-24** | `fhirrouter.SubscriptionResender`; `pkg/fhirsub/repo.go` (`ResendSubscriptions`), `pkg/fhirauth/scope.go` (chỉ admin, đúng project); cần bật `FHIR_SUBSCRIPTIONS` hoặc `FHIR_AUTO_DOWNLOAD` (có broker), không thì 501 | `pkg/fhirsub` | thấp | S |
+| J-17 | `$graph` theo `GraphDefinition` (`operations/resourcegraph.ts:41-337`) | **XONG 2026-11-24** | `pkg/fhirrouter/graph.go`; test `clinical_ops_test.go` | — | vừa | M |
 
 ### Nhóm A. Quyền truy cập, SMART, AccessPolicy
 
@@ -243,7 +243,7 @@ Mỗi dòng một tính năng hoặc operation. Cột: ID, tên và vị trí Me
 | T-07 | `CodeSystem/$import` nạp hàng loạt mã và thuộc tính (`codesystemimport.ts:93-288`, `routes.ts:287-288`) | CHƯA | grep `$import`: 0 | — | cao nếu cần SNOMED, LOINC | M |
 | T-08 | `ConceptMap/$import` (`conceptmapimport.ts:117-390`, `routes.ts:277-278`) | CHƯA | grep: 0 | — | vừa | M |
 | T-09 | Bảng tra mã cho CodeSystem lớn (`Coding`, `Coding_Property`, `ConceptMapping`) và `:above/:below` theo thuộc tính (`lookups/coding.ts:1-211`, `lookups/conceptmapping.ts:1-125`, `operations/utils/terminology.ts:1-321`) | CHƯA | Go giữ cây concept trong bộ nhớ từ resource `CodeSystem` (`termsearch.go:116-161`) | cùng T-07 | cao nếu dùng thuật ngữ lớn | L |
-| T-10 | `StructureDefinition/$expand-profile` (`structuredefinitionexpandprofile.ts:16-117`) | CHƯA | grep `expand-profile`: 0 | V-12 | thấp | S |
+| T-10 | `StructureDefinition/$expand-profile` (`structuredefinitionexpandprofile.ts:16-117`) | **XONG 2026-11-24** | `pkg/fhirrouter/clinical_ops.go` (`expandProfile`) | V-12 | thấp | S |
 | T-11 | `PackageRelease/$install` (`packageinstall.ts:29-81`) | CHƯA | grep `$install`: 0; kiểu `PackageRelease` có sẵn (`pkg/fhir/resource_packagerelease.go`) | Storage | thấp | M |
 
 ### Nhóm P. Operation lâm sàng

@@ -32,11 +32,11 @@ Kế hoạch: [modules/p17-async-batch-download-autodisable.md](modules/p17-asyn
 - [ ] `Patient/$summary` (IPS)
 - [ ] `Patient/$match`
 - [ ] `QuestionnaireResponse/$extract`
-- [ ] `:type/:id/$graph` (cần GraphDefinition)
-- [ ] `:type/$csv`
-- [ ] `$refresh-reference-display`
-- [ ] `:type/:id/$resend`
-- [ ] `StructureDefinition/$expand-profile`
+- [x] `:type/:id/$graph` (cần GraphDefinition) — xong 2026-11-24
+- [x] `:type/$csv` — xong 2026-11-24
+- [x] `$refresh-reference-display` — xong 2026-11-24
+- [x] `:type/:id/$resend` — xong 2026-11-24 (admin, cần broker)
+- [x] `StructureDefinition/$expand-profile` — xong 2026-11-24
 - [ ] `Measure/$evaluate-measure`
 - [ ] `PlanDefinition/$apply`
 - [ ] `Patient/$ccda-export` — chặn bởi **M3**
