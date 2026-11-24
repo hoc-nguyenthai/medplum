@@ -3,6 +3,8 @@
 //	dicomweb               chạy HTTP server
 //	dicomweb reindex [--dry-run] [--force] [--limit N]
 //	                       lập chỉ mục frame cho instance chưa có (lưu trước D5, chỉ mục hỏng); an toàn khi chạy lại
+//	dicomweb pixeldata [--dry-run] [--force] [--limit N]
+//	                       dựng DicomInstance.pixelData (mỗi frame một Binary) cho instance còn thiếu; gấp đôi dung lượng ảnh
 //	dicomweb healthcheck   GET /healthz (cho HEALTHCHECK của Docker, image distroless không có curl)
 //
 // dicomweb không có lệnh migrate: schema do fhir-server sở hữu (chạy `fhir-server migrate up`).
@@ -50,8 +52,10 @@ func run(ctx context.Context, args []string) error {
 		return httpserve.HealthCheck(ctx, settings.Addr)
 	case args[0] == "reindex":
 		return reindex(ctx, settings, args[1:])
+	case args[0] == "pixeldata":
+		return pixeldata(ctx, settings, args[1:])
 	}
-	return fmt.Errorf("cách dùng: dicomweb [healthcheck | reindex [--dry-run] [--force] [--limit N]]")
+	return fmt.Errorf("cách dùng: dicomweb [healthcheck | reindex [--dry-run] [--force] [--limit N] | pixeldata [--dry-run] [--force] [--limit N]]")
 }
 
 func serve(ctx context.Context, settings config.Settings) error {
@@ -80,6 +84,22 @@ func reindex(ctx context.Context, settings config.Settings, args []string) error
 	}
 	rep, err := bootstrap.Reindex(ctx, settings, dicomretrieve.ReindexOptions{DryRun: *dry, Force: *force, Limit: *limit})
 	fmt.Printf("đã duyệt %d, lập chỉ mục %d, đã đủ %d, không có ảnh %d, không lập được %d, lỗi %d (dry-run=%v)\n", rep.Scanned, rep.Indexed, rep.UpToDate, rep.NoPixels, rep.Unindexed, rep.Failed, *dry)
+	if err == nil && rep.Failed > 0 {
+		err = fmt.Errorf("%d instance lỗi: chạy lại sau khi xem log", rep.Failed)
+	}
+	return err
+}
+
+func pixeldata(ctx context.Context, settings config.Settings, args []string) error {
+	fs := flag.NewFlagSet("pixeldata", flag.ContinueOnError)
+	dry := fs.Bool("dry-run", false, "chỉ đếm, không ghi")
+	force := fs.Bool("force", false, "dựng lại cả instance đã đủ pixelData (tạo Binary mới rồi xóa Binary cũ)")
+	limit := fs.Int("limit", 0, "dừng sau chừng ấy instance cần dựng (0: không giới hạn)")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	rep, err := bootstrap.SweepPixelData(ctx, settings, dicomretrieve.PixelDataSweepOptions{PixelDataOptions: dicomretrieve.PixelDataOptions{Force: *force}, DryRun: *dry, Limit: *limit})
+	fmt.Printf("đã duyệt %d, dựng %d instance (%d frame), đã đủ %d, không có ảnh %d, lỗi %d (dry-run=%v)\n", rep.Scanned, rep.Built, rep.Frames, rep.UpToDate, rep.NoPixels, rep.Failed, *dry)
 	if err == nil && rep.Failed > 0 {
 		err = fmt.Errorf("%d instance lỗi: chạy lại sau khi xem log", rep.Failed)
 	}

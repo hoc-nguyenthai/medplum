@@ -36,6 +36,8 @@ type Container struct {
 	// Blobs là kho nội dung DICOM (trùng với kho Binary của fhir-server).
 	Blobs    binarystore.Store
 	Verifier *fhirauth.Verifier
+	// Pixels dựng DicomInstance.pixelData sau STOW; nil khi DICOMWEB_PIXELDATA_FRAMES tắt.
+	Pixels *pixelWorker
 
 	draining atomic.Bool
 	closers  []func(context.Context) error
@@ -92,6 +94,10 @@ func (c *Container) build(ctx context.Context) (err error) {
 		return err
 	}
 	c.Repo = fhirauth.Scope(c.Store)
+	if s.PixelDataFrames {
+		c.Pixels = newPixelWorker(c, s.PixelDataWorkers)
+		c.onStop(c.Pixels.shutdown)
+	}
 	return nil
 }
 

@@ -2,6 +2,19 @@
 
 Cập nhật 2026-11-24 (D8: lệnh reindex). Cấu hình: [config.md](config.md).
 
+## `DicomInstance.pixelData` (tùy chọn, gấp đôi dung lượng ảnh)
+
+Bật `DICOMWEB_PIXELDATA_FRAMES=true` nếu có client đọc frame thẳng từ `DicomInstance.pixelData` qua API FHIR (`Binary/{id}`); WADO-RS không cần. Mỗi frame được lưu thêm một lần: tính dung lượng kho gấp đôi cho ảnh mới. Worker chạy nền ngay sau STOW (hàng đợi trong bộ nhớ, thử lại 3 lần); **không bền**: tiến trình tắt hoặc hàng đợi đầy (log `hàng đợi pixelData đầy`) hay lỗi sau 3 lần (log `không dựng được pixelData`) làm instance thiếu pixelData cho tới khi chạy bù:
+
+```
+dicomweb pixeldata --dry-run      # đếm instance còn thiếu
+dicomweb pixeldata                # dựng (cũng dùng cho instance có từ trước khi bật tính năng)
+dicomweb pixeldata --limit 500    # chia đợt
+dicomweb pixeldata --force        # dựng lại (Binary mới, xóa Binary cũ)
+```
+
+Lệnh in `đã duyệt, dựng (số frame), đã đủ, không có ảnh, lỗi` và thoát khác 0 nếu có lỗi; chạy lại an toàn và chạy được khi server đang phục vụ. Mỗi frame cần một lượt đọc và một lượt ghi kho (S3: tính phí theo số request). Xóa `DicomInstance` không xóa các Binary frame của nó. Muốn tắt tính năng: đặt lại `false`; pixelData đã dựng vẫn còn.
+
 ## Đĩa tạm cho STOW dạng metadata
 
 STOW dạng metadata (`application/dicom+json` kèm bulkdata) ghi bulkdata ra thư mục tạm (đổi bằng biến môi trường `TMPDIR`; mặc định `/tmp`) trước khi lưu vào kho, rồi xóa. Cần chỗ trống cỡ tổng bulkdata của các yêu cầu đang chạy song song (tối đa `DICOMWEB_MAX_REQUEST_BYTES` mỗi yêu cầu). Image distroless chạy user không phải root: mount một volume có quyền ghi vào `TMPDIR` nếu `/tmp` chỉ đọc. STOW tệp thường (`application/dicom`) không dùng đĩa tạm. Thư mục lỗi thời `dicomstow-*` (tiến trình bị kill giữa chừng) an toàn để xóa khi không có yêu cầu nào đang chạy.

@@ -17,6 +17,8 @@ Tệp này **được sinh từ `internal/config/config.go`** (xem `docs_test.go
 | `DICOMWEB_MAX_HEADER_BYTES` | `1048576` | là trần phần đầu (mọi phần tử trước PixelData) được nạp vào bộ nhớ để đọc metadata; vượt thì instance bị từ chối (0xA700). Cùng với giới hạn độ sâu SQ (16 lớp, cố định) chống tệp độc (docs/plans/cds-dicom/d0-spike.md 3.1). |
 | `DICOMWEB_MAX_INSTANCE_BYTES` | `1073741824` | là trần kích thước một phần (một instance) của STOW: vượt thì instance đó bị từ chối riêng (FailureReason 0xA700) và không để lại gì; MaxRequestBytes là trần cả yêu cầu (nhiều phần): vượt thì 413 (các instance đã xong trước đó vẫn được giữ). |
 | `DICOMWEB_MAX_REQUEST_BYTES` | `4294967296` | trần cả yêu cầu STOW (nhiều phần); xem MaxInstanceBytes |
+| `DICOMWEB_PIXELDATA_FRAMES` | `false` | bật tạo `DicomInstance.pixelData` (mỗi frame một Binary) sau khi STOW lưu instance, như worker của Medplum, để client đọc frame thẳng qua API FHIR. TỐN GẤP ĐÔI dung lượng ảnh (mỗi frame lưu hai lần) và WADO-RS không dùng chúng, nên mặc định tắt. Việc dựng chạy nền trong tiến trình (hàng đợi trong bộ nhớ, thử lại 3 lần); instance chưa kịp dựng (tiến trình tắt, hàng đợi đầy, lỗi) được bù bằng `dicomweb pixeldata`. |
+| `DICOMWEB_PIXELDATA_WORKERS` | `2` | là số goroutine dựng pixelData chạy song song (chỉ có tác dụng khi PixelDataFrames bật). |
 | `DICOMWEB_RATE_BURST` | `0` | là cỡ đợt của hạn mức (<=0: gấp đôi RateLimit, tối thiểu 1). |
 | `DICOMWEB_RATE_LIMIT` | `0 (tắt ở local; 20 ở staging/production)` | là số yêu cầu mỗi giây mỗi IP (0: tắt). Không đặt: tắt ở local, 20 ở staging/production. Đếm theo từng instance. |
 | `DICOMWEB_TRUSTED_PROXIES` | `(rỗng)` | là CIDR của proxy được tin header X-Forwarded-For (cách nhau bằng dấu phẩy); rỗng: không tin header nào. |

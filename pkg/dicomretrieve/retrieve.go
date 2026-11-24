@@ -288,42 +288,12 @@ func openFrames(ctx context.Context, c Config, studyUID, seriesUID, instanceUID 
 		}
 	}
 
-	binID := strings.TrimPrefix(inst.Raw.Reference, "Binary/")
-	br, err := c.Repo.ReadResource(ctx, "Binary", binID)
-	if err != nil {
-		var fe *fhirrouter.Error
-		if errors.As(err, &fe) && (fe.Status == http.StatusNotFound || fe.Status == http.StatusGone) {
-			return nil, notFound("Pixel data not found for instance")
-		}
-		return nil, internalErr(ctx, "đọc Binary", err)
-	}
-	bin, ok := br.(*fhir.Binary)
-	if !ok || bin.Meta == nil {
-		return nil, internalErr(ctx, "Binary không hợp lệ", errors.New(binID))
-	}
-	key, err := binarystore.Key(bin.ID, bin.Meta.VersionId)
-	if err != nil {
-		return nil, internalErr(ctx, "khóa kho", err)
+	key, transferSyntax, all, e := c.locateFrames(ctx, inst, total)
+	if e != nil {
+		return nil, e
 	}
 	open := func() (io.ReadCloser, error) { return c.Blobs.Open(ctx, key) }
 
-	// vị trí frame: ưu tiên chỉ mục lập lúc STOW (extension của DicomInstance); không có hoặc không khớp thì quét nội dung đã lưu
-	var all []dicomweb.FrameRange
-	transferSyntax := ""
-	if idx := frameIndexOf(ctx, inst); idx != nil && len(idx.Frames) == total {
-		all, transferSyntax = idx.Frames, idx.TransferSyntax
-	} else {
-		rc, err := open()
-		if err != nil {
-			return nil, internalErr(ctx, "mở nội dung", err)
-		}
-		scan, err := dicomweb.Scan(rc, dicomweb.ScanOptions{})
-		_ = rc.Close()
-		if err != nil || !scan.HasPixelData {
-			return nil, internalErr(ctx, "quét nội dung", fmt.Errorf("instance %s: %v", inst.ID, err))
-		}
-		all, transferSyntax = scan.Frames, scan.TransferSyntax
-	}
 	ranges := make([]dicomweb.FrameRange, len(frames))
 	for i, f := range frames {
 		if f > len(all) {
@@ -428,6 +398,31 @@ func openFrames(ctx context.Context, c Config, studyUID, seriesUID, instanceUID 
 	}, nil
 }
 
+// locateFrames tìm khóa kho của nội dung DICOM của instance, transfer syntax và vị trí mọi frame: ưu tiên chỉ mục lập lúc STOW (extension của DicomInstance), không có hoặc không khớp
+// số frame thì quét nội dung đã lưu. total là số frame theo metadata.
+func (c Config) locateFrames(ctx context.Context, inst *fhir.DicomInstance, total int) (key, transferSyntax string, all []dicomweb.FrameRange, e *Error) {
+	key, e = c.rawKey(ctx, inst)
+	if e != nil {
+		if e.Status == http.StatusNotFound {
+			return "", "", nil, notFound("Pixel data not found for instance")
+		}
+		return "", "", nil, e
+	}
+	if idx := frameIndexOf(ctx, inst); idx != nil && len(idx.Frames) == total {
+		return key, idx.TransferSyntax, idx.Frames, nil
+	}
+	rc, err := c.Blobs.Open(ctx, key)
+	if err != nil {
+		return "", "", nil, internalErr(ctx, "mở nội dung", err)
+	}
+	scan, err := dicomweb.Scan(rc, dicomweb.ScanOptions{})
+	_ = rc.Close()
+	if err != nil || !scan.HasPixelData {
+		return "", "", nil, internalErr(ctx, "quét nội dung", fmt.Errorf("instance %s: %v", inst.ID, err))
+	}
+	return key, scan.TransferSyntax, scan.Frames, nil
+}
+
 // frameIndexOf đọc chỉ mục frame lưu ở DicomInstance; hỏng thì bỏ qua (và ghi log) để quay về quét nội dung.
 func frameIndexOf(ctx context.Context, inst *fhir.DicomInstance) *dicomweb.FrameIndex {
 	for _, ex := range inst.Extension {
@@ -442,6 +437,14 @@ func frameIndexOf(ctx context.Context, inst *fhir.DicomInstance) *dicomweb.Frame
 		return idx
 	}
 	return nil
+}
+
+func newUUID() string {
+	var b [16]byte
+	_, _ = rand.Read(b[:])
+	b[6] = b[6]&0x0f | 0x40
+	b[8] = b[8]&0x3f | 0x80
+	return fmt.Sprintf("%x-%x-%x-%x-%x", b[0:4], b[4:6], b[6:8], b[8:10], b[10:])
 }
 
 func newBoundary() string {

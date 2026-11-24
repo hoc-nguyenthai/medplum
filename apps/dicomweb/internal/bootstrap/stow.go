@@ -24,5 +24,12 @@ func (s stower) Stow(ctx context.Context, req httpapi.StowRequest) (httpapi.Stow
 	if err != nil {
 		return httpapi.StowResult{}, err
 	}
+	if s.c.Pixels != nil {
+		for _, st := range out.Stored {
+			if !st.AlreadyStored {
+				s.c.Pixels.enqueue(ctx, st.InstanceID)
+			}
+		}
+	}
 	return httpapi.StowResult{Status: out.Status, Body: out.Response}, nil
 }

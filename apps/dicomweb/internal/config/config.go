@@ -80,6 +80,13 @@ type Settings struct {
 	// (16 lớp, cố định) chống tệp độc (docs/plans/cds-dicom/d0-spike.md 3.1).
 	MaxHeaderBytes int
 
+	// PixelDataFrames bật tạo `DicomInstance.pixelData` (mỗi frame một Binary) sau khi STOW lưu instance, như worker của Medplum, để client đọc frame thẳng qua API FHIR. TỐN GẤP ĐÔI dung lượng ảnh
+	// (mỗi frame lưu hai lần) và WADO-RS không dùng chúng, nên mặc định tắt. Việc dựng chạy nền trong tiến trình (hàng đợi trong bộ nhớ, thử lại 3 lần); instance chưa kịp dựng (tiến trình tắt,
+	// hàng đợi đầy, lỗi) được bù bằng `dicomweb pixeldata`.
+	PixelDataFrames bool
+	// PixelDataWorkers là số goroutine dựng pixelData chạy song song (chỉ có tác dụng khi PixelDataFrames bật).
+	PixelDataWorkers int
+
 	// AllowedOrigins là origin được gọi API từ trình duyệt (CORS); rỗng: không origin nào. Mặc định http://localhost:3000 ở local.
 	AllowedOrigins string
 	// TrustedProxies là CIDR của proxy được tin header X-Forwarded-For (cách nhau bằng dấu phẩy); rỗng: không tin header nào.
@@ -99,7 +106,7 @@ func Default() Settings {
 		DatabaseURL:       "sqlite://./fhir.db", DatabaseMaxOpenConns: 20, DatabaseMaxIdleConns: 5, DatabaseConnLifetime: 30 * time.Minute,
 		BaseURL:         "http://localhost:8008",
 		JWTProjectClaim: "fhir_project", JWTScopeClaim: "scope", JWTPolicyClaim: "fhir_access_policy",
-		MaxInstanceBytes: 1 << 30, MaxRequestBytes: 4 << 30, MaxHeaderBytes: 1 << 20,
+		MaxInstanceBytes: 1 << 30, MaxRequestBytes: 4 << 30, MaxHeaderBytes: 1 << 20, PixelDataWorkers: 2,
 	}
 }
 
@@ -148,6 +155,8 @@ func FromEnv(get func(string) string) (Settings, error) {
 	r.Int(&s.MaxInstanceBytes, "DICOMWEB_MAX_INSTANCE_BYTES")
 	r.Int(&s.MaxRequestBytes, "DICOMWEB_MAX_REQUEST_BYTES")
 	r.Int(&s.MaxHeaderBytes, "DICOMWEB_MAX_HEADER_BYTES")
+	r.Bool(&s.PixelDataFrames, "DICOMWEB_PIXELDATA_FRAMES")
+	r.Int(&s.PixelDataWorkers, "DICOMWEB_PIXELDATA_WORKERS")
 	r.String(&s.AllowedOrigins, "DICOMWEB_ALLOWED_ORIGINS")
 	if s.AllowedOrigins == "" && s.Environment == "local" {
 		s.AllowedOrigins = DevAllowedOrigin
@@ -267,6 +276,9 @@ func (s Settings) validate() error {
 		errs = append(errs, errors.New("DICOMWEB_MAX_INSTANCE_BYTES, DICOMWEB_MAX_REQUEST_BYTES, DICOMWEB_MAX_HEADER_BYTES: phải dương"))
 	} else if s.MaxInstanceBytes > s.MaxRequestBytes {
 		errs = append(errs, errors.New("DICOMWEB_MAX_INSTANCE_BYTES: không được lớn hơn DICOMWEB_MAX_REQUEST_BYTES"))
+	}
+	if s.PixelDataWorkers < 1 || s.PixelDataWorkers > 64 {
+		errs = append(errs, errors.New("DICOMWEB_PIXELDATA_WORKERS: phải từ 1 đến 64"))
 	}
 	if _, err := s.AllowedOriginList(); err != nil {
 		errs = append(errs, fmt.Errorf("DICOMWEB_ALLOWED_ORIGINS: %w", err))

@@ -17,3 +17,13 @@ func Reindex(ctx context.Context, s config.Settings, o dicomretrieve.ReindexOpti
 	defer func() { _ = c.Stop(context.Background()) }()
 	return dicomretrieve.Reindex(ctx, dicomretrieve.Config{Repo: c.Store, Blobs: c.Blobs}, o)
 }
+
+// SweepPixelData dựng DicomInstance.pixelData cho mọi instance còn thiếu, mọi project (cùng lý do dùng kho chưa tách project như Reindex).
+func SweepPixelData(ctx context.Context, s config.Settings, o dicomretrieve.PixelDataSweepOptions) (dicomretrieve.PixelDataReport, error) {
+	c, err := New(ctx, s)
+	if err != nil {
+		return dicomretrieve.PixelDataReport{}, err
+	}
+	defer func() { _ = c.Stop(context.Background()) }()
+	return dicomretrieve.SweepPixelData(ctx, dicomretrieve.Config{Repo: c.Store, Blobs: c.Blobs}, o)
+}

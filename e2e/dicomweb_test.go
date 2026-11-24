@@ -368,3 +368,59 @@ func TestDicomwebReindexCommand(t *testing.T) {
 		t.Errorf("frame sau reindex: %d", r.status)
 	}
 }
+
+// `dicomweb pixeldata` dựng DicomInstance.pixelData ở tiến trình riêng; fhir-server (tiến trình khác) đọc lại pixelData và nội dung từng Binary frame đúng byte trong đúng project, project khác
+// không thấy; WADO-RS vẫn đúng.
+func TestDicomwebPixelDataCommand(t *testing.T) {
+	d := newDicomStack(t)
+	adminA := d.signIn("a@example.org", d.clientA)["access_token"].(string)
+	px := make([]byte, 8*8*2*2)
+	for i := range px {
+		px[i] = byte(i*13 + 7)
+	}
+	file := dcm("1", "1", "1", func(m *dicomtest.Meta) { m.Rows, m.Cols, m.Bits, m.Frames, m.Pixel = 8, 8, 16, 2, px })
+	if r := d.stow(adminA, "/dicomweb/studies", file, dcm("1", "1", "2", func(m *dicomtest.Meta) { m.NoPixelData = true; m.Modality = "SR" })); r.status != 200 {
+		t.Fatalf("STOW: %d %s", r.status, r.body)
+	}
+	clientB := d.clientCredentials(d.clientB, d.secretB, "")
+	env := map[string]string{}
+	for k, v := range d.dicomEnv {
+		env[k] = v
+	}
+	env["HTTP_ADDR"] = fmt.Sprintf("127.0.0.1:%d", freePort(t))
+	instQuery := "/DicomInstance?sop-instance-uid:exact=" + dicomtest.UID("1", "1", "1")
+	pixelData := func() []any {
+		inst := d.fhirGet(adminA, instQuery).json(t)["entry"].([]any)[0].(map[string]any)["resource"].(map[string]any)
+		p, _ := inst["pixelData"].([]any)
+		return p
+	}
+	if len(pixelData()) != 0 {
+		t.Fatal("chưa chạy lệnh mà đã có pixelData")
+	}
+	if out, err := runOnce(d.dicomBin, env, "pixeldata", "--dry-run"); err != nil || !strings.Contains(out, "dựng 1 instance (0 frame)") || len(pixelData()) != 0 {
+		t.Fatalf("dry-run: %v %s", err, out)
+	}
+	if out, err := runOnce(d.dicomBin, env, "pixeldata"); err != nil || !strings.Contains(out, "dựng 1 instance (2 frame)") || !strings.Contains(out, "lỗi 0") {
+		t.Fatalf("pixeldata: %v %s", err, out)
+	}
+	pd := pixelData()
+	if len(pd) != 2 {
+		t.Fatalf("pixelData: %v", pd)
+	}
+	for i, ref := range pd {
+		id := strings.TrimPrefix(ref.(map[string]any)["reference"].(string), "Binary/")
+		if r := do(t, "GET", d.fhir+"/fhir/R4/Binary/"+id, adminA, "", nil); r.status != 200 || !bytes.Equal(r.body, px[i*128:(i+1)*128]) {
+			t.Errorf("Binary frame %d qua fhir-server: %d, %d byte", i+1, r.status, len(r.body))
+		}
+		if r := do(t, "GET", d.fhir+"/fhir/R4/Binary/"+id, clientB, "", nil); r.status != 404 {
+			t.Errorf("project B đọc frame của project A: %d, muốn 404", r.status)
+		}
+	}
+	// chạy lại: không còn gì để dựng; WADO-RS vẫn đúng
+	if out, err := runOnce(d.dicomBin, env, "pixeldata"); err != nil || !strings.Contains(out, "dựng 0 instance") || !strings.Contains(out, "đã đủ 1") {
+		t.Errorf("chạy lại: %v %s", err, out)
+	}
+	if fr := parseFrames(t, d.get(adminA, "/dicomweb/studies/"+dicomtest.UID("1")+"/series/"+dicomtest.UID("1", "1")+"/instances/"+dicomtest.UID("1", "1", "1")+"/frames/2")); len(fr) != 1 || !bytes.Equal(fr[0], px[128:]) {
+		t.Error("WADO frame 2 sai")
+	}
+}

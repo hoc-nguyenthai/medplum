@@ -68,6 +68,8 @@ func TestInvalidConfigIsRejectedWithTheVariableName(t *testing.T) {
 		{"trần không dương", with(base(), "DICOMWEB_MAX_HEADER_BYTES", "0"), "DICOMWEB_MAX_HEADER_BYTES"},
 		{"proxy sai", with(base(), "DICOMWEB_TRUSTED_PROXIES", "not-a-cidr"), "DICOMWEB_TRUSTED_PROXIES"},
 		{"origin sai", with(base(), "DICOMWEB_ALLOWED_ORIGINS", "ftp://x"), "DICOMWEB_ALLOWED_ORIGINS"},
+		{"workers pixelData bằng 0", with(base(), "DICOMWEB_PIXELDATA_WORKERS", "0"), "DICOMWEB_PIXELDATA_WORKERS"},
+		{"workers pixelData quá nhiều", with(base(), "DICOMWEB_PIXELDATA_WORKERS", "100"), "DICOMWEB_PIXELDATA_WORKERS"},
 		{"hạn mức âm", with(base(), "DICOMWEB_RATE_LIMIT", "-1"), "DICOMWEB_RATE_LIMIT"},
 		{"schema riêng với sqlite", with(base(), "DATABASE_REQUIRE_SCHEMA", "true"), "DATABASE_REQUIRE_SCHEMA"},
 		{"giá trị không phải số", with(base(), "DICOMWEB_MAX_HEADER_BYTES", "abc"), "DICOMWEB_MAX_HEADER_BYTES"},
