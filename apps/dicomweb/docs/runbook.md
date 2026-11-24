@@ -1,6 +1,19 @@
 # dicomweb: vận hành
 
-Cập nhật 2026-11-24 (D7: bộ lọc QIDO, instance, tải tệp, rendered). Cấu hình: [config.md](config.md).
+Cập nhật 2026-11-24 (D8: lệnh reindex). Cấu hình: [config.md](config.md).
+
+## Lập lại chỉ mục frame (instance cũ)
+
+Instance lưu trước D5, hoặc có chỉ mục hỏng hay sai số frame, vẫn được WADO-RS phục vụ đúng nhưng chậm (quay về quét tệp, chi phí tỉ lệ với vị trí frame). Lập lại chỉ mục bằng lệnh vận hành, cùng cấu hình với server (DATABASE_URL, FHIR_BINARY_STORAGE...), duyệt mọi project:
+
+```
+dicomweb reindex --dry-run      # chỉ đếm: bao nhiêu instance cần lập
+dicomweb reindex                # lập chỉ mục
+dicomweb reindex --force        # lập lại cả chỉ mục đã đủ (ví dụ sau khi sửa lỗi bộ lập chỉ mục)
+dicomweb reindex --limit 1000   # chia nhỏ theo đợt
+```
+
+Lệnh in `đã duyệt, lập chỉ mục, đã đủ, không có ảnh, không lập được, lỗi` và thoát khác 0 nếu có `lỗi`. Chạy lại bao nhiêu lần cũng an toàn (instance đã đủ bị bỏ qua) và có thể chạy khi server đang phục vụ: ghi dùng If-Match theo phiên bản đã đọc nên không ghi đè thay đổi song song (instance đó tính là lỗi, chạy lại là xong). `không lập được` là ảnh đóng gói không tách được frame hoặc chỉ mục quá 256 KB (WADO-RS vẫn đúng nhờ quét). `lỗi` thường là mất nội dung trong kho (xem log `không lập được chỉ mục frame`), tệp hỏng hoặc số frame trong metadata khác tệp. Mỗi instance cần lập tốn một lượt đọc toàn bộ tệp từ kho (với S3 là một lần tải cả tệp), nên với kho lớn chạy theo đợt `--limit` ngoài giờ cao điểm. Lệnh dùng kết nối cơ sở dữ liệu trực tiếp, không qua token, và cũng từ chối chạy nếu schema chưa migrate.
 
 ## Triển khai
 

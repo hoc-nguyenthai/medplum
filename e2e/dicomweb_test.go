@@ -311,8 +311,8 @@ func TestDicomwebRefusesUnmigratedDatabase(t *testing.T) {
 }
 
 // runOnce chạy binary tới khi thoát (tối đa 20 giây) và trả đầu ra gộp.
-func runOnce(bin string, env map[string]string) (string, error) {
-	cmd := exec.Command(bin)
+func runOnce(bin string, env map[string]string, args ...string) (string, error) {
+	cmd := exec.Command(bin, args...)
 	cmd.Env = envList(env)
 	var buf lockedBuf
 	cmd.Stdout, cmd.Stderr = &buf, &buf
@@ -328,5 +328,43 @@ func runOnce(bin string, env map[string]string) (string, error) {
 		_ = cmd.Process.Kill()
 		<-done
 		return buf.String(), fmt.Errorf("không thoát sau 20 giây")
+	}
+}
+
+// `dicomweb reindex` chạy như lệnh riêng trên cùng cơ sở dữ liệu và kho với server đang chạy: dữ liệu STOW đã có chỉ mục nên không còn gì để lập; sai cờ thì lỗi; chưa migrate thì từ chối.
+func TestDicomwebReindexCommand(t *testing.T) {
+	d := newDicomStack(t)
+	adminA := d.signIn("a@example.org", d.clientA)["access_token"].(string)
+	if r := d.stow(adminA, "/dicomweb/studies", dcm("1", "1", "1"), dcm("1", "1", "2")); r.status != 200 {
+		t.Fatalf("STOW: %d %s", r.status, r.body)
+	}
+	env := map[string]string{}
+	for k, v := range d.dicomEnv {
+		env[k] = v
+	}
+	env["HTTP_ADDR"] = fmt.Sprintf("127.0.0.1:%d", freePort(t))
+	for _, args := range [][]string{{"reindex"}, {"reindex", "--dry-run"}, {"reindex", "--force", "--limit", "1"}} {
+		out, err := runOnce(d.dicomBin, env, args...)
+		if err != nil {
+			t.Fatalf("%v: %v\n%s", args, err, out)
+		}
+		want := "đã duyệt 2, lập chỉ mục 0, đã đủ 2"
+		if args[len(args)-1] == "1" {
+			want = "đã duyệt 2, lập chỉ mục 1, đã đủ 0"
+		}
+		if !strings.Contains(out, want) || !strings.Contains(out, "lỗi 0") {
+			t.Errorf("%v: %s (muốn chứa %q)", args, out, want)
+		}
+	}
+	if out, err := runOnce(d.dicomBin, env, "reindex", "--bogus"); err == nil {
+		t.Errorf("cờ sai phải lỗi: %s", out)
+	}
+	env["DATABASE_URL"] = "sqlite://" + filepath.Join(d.dir, "trong.db")
+	if out, err := runOnce(d.dicomBin, env, "reindex"); err == nil || !strings.Contains(out, "migrate") {
+		t.Errorf("chưa migrate phải từ chối: err=%v %s", err, out)
+	}
+	// server vẫn phục vụ đúng sau khi chạy lệnh
+	if r := d.get(adminA, "/dicomweb/studies/"+dicomtest.UID("1")+"/series/"+dicomtest.UID("1", "1")+"/instances/"+dicomtest.UID("1", "1", "1")+"/frames/1"); r.status != 200 {
+		t.Errorf("frame sau reindex: %d", r.status)
 	}
 }
