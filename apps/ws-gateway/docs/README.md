@@ -4,6 +4,8 @@
 |---|---|
 | [api-contract.md](api-contract.md) | **Hợp đồng API**: bảng route (sinh từ swagger, có test chống lệch), giao thức WebSocket, mã đóng, Hub FHIRcast |
 | `swagger.json`, `swagger.yaml`, `docs.go` | OpenAPI do swaggo sinh (`make swagger APP=ws-gateway`): probe, Hub FHIRcast và route nâng cấp WebSocket; service không phục vụ `/swagger` |
+| [business/](business/README.md) | **Tài liệu nghiệp vụ**: chức năng F-01..F-16, luật BR, luồng, kịch bản chấp nhận, truy vết test, điểm lệch |
+| [api-contract/](api-contract/common.md) | Hợp đồng API chi tiết: quy ước chung, tham chiếu từng trường (sinh từ swagger), từng trường hợp |
 | [architecture.md](architecture.md) | Làm gì, không làm gì, các thành phần, luồng dữ liệu, hành vi khi lỗi |
 | [config.md](config.md) | Mọi biến môi trường, mặc định và ý nghĩa (**sinh từ mã**, có test chống lỗi thời) |
 | [testing.md](testing.md) | Bốn tầng test, cách chạy, yêu cầu Docker |

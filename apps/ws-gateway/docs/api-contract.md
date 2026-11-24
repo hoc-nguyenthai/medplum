@@ -1,5 +1,7 @@
 # ws-gateway: hợp đồng API
 
+> Hợp đồng chi tiết từng route (quy ước chung, bảng trường sinh từ swagger, từng trường hợp phản hồi): [api-contract/common.md](api-contract/common.md), [api-contract/reference/](api-contract/reference/), [api-contract/cases/](api-contract/cases/). Khi lệch, mã và bộ đó thắng; điểm lệch đã biết ở [business/04-luat-va-phan-quyen.md](business/04-luat-va-phan-quyen.md) mục 4.4.
+
 Cập nhật 2026-11-23. `ws-gateway` giữ kết nối WebSocket cho Subscription R4 và (tùy chọn) Hub FHIRcast. **Chỉ mô tả phần `ws-gateway` đang phục vụ.** Cấu hình ở [config.md](config.md); kiến trúc ở [architecture.md](architecture.md); vận hành ở [../README.md](../README.md).
 
 | Nguồn | Vai trò |
