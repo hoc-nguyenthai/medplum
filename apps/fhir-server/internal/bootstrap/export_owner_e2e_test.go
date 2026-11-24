@@ -1,6 +1,7 @@
 package bootstrap_test
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -233,5 +234,40 @@ func TestOwnerDeletingFinishedExportRemovesItsFiles(t *testing.T) {
 				t.Errorf("job còn sau khi xóa: %s", r.body)
 			}
 		})
+	}
+}
+
+// Job hết hạn bị Expunge khỏi kho SQL: không còn dòng nào trong fhir_resource lẫn fhir_history (xóa mềm giữ lại mọi phiên bản của job).
+func TestExpiredJobIsExpungedFromTheStoreWithItsHistory(t *testing.T) {
+	c, srv := newServer(t, jwtSettings(func(s *config.Settings) { s.ExportRetention = 50 * time.Millisecond }))
+	alice := tok(t, "A", "fhir.read", func(cl jwt.MapClaims) { cl["sub"] = "alice" })
+	writer := tok(t, "A", "fhir.write")
+	want(t, call(t, srv, "POST", "/fhir/R4/Patient", writer, patient("Expire")), 201)
+	acc := callWith(t, srv, "GET", "/fhir/R4/$export?_type=Patient", alice, "Prefer", "respond-async")
+	bulk := strings.TrimPrefix(acc.header.Get("Content-Location"), "http://fhir.test")
+	id := bulk[strings.Index(bulk, "bulkdata/")+len("bulkdata/") : strings.LastIndex(bulk, "/status")]
+	for i := 0; i < 300; i++ {
+		if callWith(t, srv, "GET", bulk, alice).status != 202 {
+			break
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	ctx := context.Background()
+	hist, err := c.Store.ReadHistory(ctx, "AsyncJob", id)
+	if err != nil || len(hist) < 2 {
+		t.Fatalf("trước khi hết hạn job phải có nhiều phiên bản trong lịch sử: %d, %v", len(hist), err)
+	}
+	time.Sleep(120 * time.Millisecond)
+	if n, err := c.Router.ExpireJobs(ctx); err != nil || n != 1 {
+		t.Fatalf("ExpireJobs = %d, %v", n, err)
+	}
+	if h, err := c.Store.ReadHistory(ctx, "AsyncJob", id); err == nil && len(h) > 0 {
+		t.Errorf("lịch sử AsyncJob còn %d phiên bản sau khi hết hạn (xóa mềm thay vì Expunge)", len(h))
+	}
+	if _, err := c.Store.ReadResource(ctx, "AsyncJob", id); err == nil {
+		t.Error("job còn đọc được")
+	}
+	if r := callWith(t, srv, "GET", bulk, alice); r.status != 404 {
+		t.Errorf("trạng thái của export hết hạn: %d, muốn 404", r.status)
 	}
 }

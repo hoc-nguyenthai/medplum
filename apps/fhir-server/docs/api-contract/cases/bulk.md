@@ -124,7 +124,8 @@ Hỏi trạng thái export; khi xong trả manifest các file NDJSON. [Tham chi�
 | S2 | Xong | `status=completed` | 200 | `Content-Type: application/json` | manifest: `transactionTime`, `request`, `requiresAccessToken: true`, `output[]`, `error: []` | không |
 | S3 | Xong nhưng không có dữ liệu | job completed, không loại nào có resource | 200 | như S2 | như S2 với `output: []` | không |
 | S4 | Job lỗi | `status=error` | 500 | `Content-Type: application/fhir+json` | OperationOutcome `exception`, `diagnostics` = lỗi của job (ví dụ `tìm Patient: ...`, `ghi file Patient: ...`, `Group <id> không liệt kê thành viên (actual=false)`) | không; file đã ghi bị dọn lúc job lỗi |
-| S5 | Đã hủy hoặc đã xóa | `status=cancelled`, hoặc AsyncJob đã bị xóa (DELETE, hết hạn) | 410 | - | OperationOutcome `deleted`, `Gone` | không |
+| S5 | Đã hủy | `status=cancelled` (chưa bị xóa) | 410 | - | OperationOutcome `deleted`, `Gone` | không |
+| S5b | Đã xóa (DELETE) hoặc hết hạn | AsyncJob đã bị Expunge (từ 2026-11-24; trước đó xóa mềm nên 410) | 404 | - | OperationOutcome `not-found`, `Not found` | không |
 | S6 | Không có job | id không tồn tại, hoặc thuộc project khác | 404 | - | OperationOutcome `not-found` (`Not found` hoặc thông điệp của repository, chưa kiểm nguyên văn) | không |
 | S7 | Không phải job export | id là job loại khác | 404 | - | `Not found` | không |
 | S8 | Thiếu hoặc sai token | - | 401 | `WWW-Authenticate: Bearer realm="fhir"` | `Thiếu hoặc sai bearer token` | không |
@@ -187,7 +188,7 @@ Hủy export đang chạy, hoặc xóa kết quả export đã xong, đã lỗi,
 1. Hạn mức IP (429) -> xác thực (401) -> vai trò read (403).
 2. Đọc `AsyncJob/{id}` bằng repository của người gọi: không có hoặc project khác -> 404; đã xóa -> 410. Không phải job export -> 404 `Not found`.
 3. Job `accepted` (chờ hàng đợi hoặc đang chạy): ghi `status=cancelled` (GHI: cập nhật AsyncJob, không If-Match), gọi hủy ngữ cảnh nếu job đang chạy trong CHÍNH tiến trình này -> 202 `Cancelled`.
-4. Job `completed`, `error` hoặc `cancelled`: xóa các Binary kết quả (ưu tiên Expunge xóa hẳn; không đủ quyền thì xóa mềm; không xóa được thì chỉ ghi log WARN `không xóa được file kết quả`, vẫn tiếp tục), rồi xóa AsyncJob -> 202 `Deleted`. Lỗi xóa AsyncJob -> lỗi của repository.
+4. Job `completed`, `error` hoặc `cancelled`: xóa các Binary kết quả (ưu tiên Expunge xóa hẳn; không đủ quyền thì xóa mềm; không xóa được thì chỉ ghi log WARN `không xóa được file kết quả`, vẫn tiếp tục), rồi **Expunge** AsyncJob (từ 2026-11-24, `removeJob`; lỗi Expunge không phải 404/410 thì rơi về xóa mềm) -> 202 `Deleted`. Lỗi xóa AsyncJob -> lỗi của repository.
 
 **Độ trễ hủy.** Trạng thái `cancelled` có hiệu lực ngay trong DB: `GET status` trả 410 ngay. Việc dừng job: cùng tiến trình thì hủy ngữ cảnh tức thì; job chạy ở replica khác thì phải chờ nhịp heartbeat của job đó (mỗi `FHIR_JOB_LEASE/3`, mặc định khoảng 100 giây) mới thấy `cancelled` và dừng. Khi job dừng hoặc xong, kết quả bị bỏ và file đã tạo bị xóa, nên không để lại file của job đã hủy. Test: `TestExportCancelWhileRunningAndDelete`.
 

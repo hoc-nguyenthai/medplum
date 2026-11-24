@@ -261,8 +261,8 @@ func TestExportCancelWhileRunningAndDelete(t *testing.T) {
 	if w := do(h, "DELETE", status); w.Code != 202 {
 		t.Errorf("xóa job đã hủy: %d", w.Code)
 	}
-	if w := do(h, "GET", status); w.Code != 410 {
-		t.Errorf("trạng thái sau khi xóa: %d, muốn 410", w.Code)
+	if w := do(h, "GET", status); w.Code != 404 { // job đã bị Expunge (xóa hẳn cả lịch sử): không còn dấu vết để trả 410
+		t.Errorf("trạng thái sau khi xóa: %d, muốn 404", w.Code)
 	}
 	if w := do(h, "DELETE", "bulkdata/none/status"); w.Code != 404 {
 		t.Errorf("hủy job không có: %d", w.Code)
@@ -312,8 +312,8 @@ func TestExpireJobs(t *testing.T) {
 	if _, err := repo.ReadResource(context.Background(), "AsyncJob", "reindexed"); err == nil {
 		t.Error("job reindex hết hạn phải bị xóa")
 	}
-	if w := do(h, "GET", status); w.Code != 410 {
-		t.Errorf("export hết hạn: %d, muốn 410", w.Code)
+	if w := do(h, "GET", status); w.Code != 404 { // job hết hạn bị Expunge: không còn dấu vết để trả 410
+		t.Errorf("export hết hạn: %d, muốn 404", w.Code)
 	}
 	if res, _ := repo.Search(context.Background(), mustSearch(t, "Binary")); len(res.Matches) != 0 {
 		t.Error("file của export hết hạn phải bị xóa")

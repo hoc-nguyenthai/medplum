@@ -146,7 +146,7 @@ stateDiagram-v2
     cancelled --> [*] : DELETE hoac ExpireJobs
 ```
 
-Điều không thấy trong hình: "đang chạy" không phải một trạng thái; đó là `accepted` mà `transactionTime` (lease) còn hạn. `transactionTime` của job đã xong đổi nghĩa thành thời điểm hoàn tất. Chỉ job export và batch bị `ExpireJobs` xóa; job `reindex` kết thúc ở `completed` hoặc `error` và nằm lại. Hủy một job đang chạy ở replica khác chỉ có hiệu lực ở nhịp heartbeat kế tiếp.
+Điều không thấy trong hình: "đang chạy" không phải một trạng thái; đó là `accepted` mà `transactionTime` (lease) còn hạn. `transactionTime` của job đã xong đổi nghĩa thành thời điểm hoàn tất. `ExpireJobs` xóa hẳn (Expunge, cả lịch sử và file kết quả, từ 2026-11-24) job export, batch và `reindex` đã quá `FHIR_EXPORT_RETENTION`; sau đó trạng thái của chúng trả `404`. Hủy một job đang chạy ở replica khác chỉ có hiệu lực ở nhịp heartbeat kế tiếp.
 
 ```mermaid
 flowchart TD

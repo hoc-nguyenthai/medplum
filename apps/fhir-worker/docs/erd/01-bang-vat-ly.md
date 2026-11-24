@@ -7,7 +7,7 @@
 | Bảng | Worker dùng? | Ghi chú riêng của worker |
 |---|---|---|
 | `fhir_resource` | **Có, là nơi chứa mọi dữ liệu** | `AsyncJob` (hàng đợi và kết quả job), `Binary` kết quả, và dữ liệu lâm sàng mà job đọc hoặc ghi ([02](02-mo-hinh-logic.md)). Dòng `AsyncJob` được ghi lại nhiều lần trong đời một job (lease, checkpoint, kết quả) |
-| `fhir_history` | **Có (tự động)** | Mỗi lần ghi `AsyncJob` thêm một dòng; **giữ nội dung cũ kể cả sau khi job bị xóa mềm** (mục 1.4) |
+| `fhir_history` | **Có (tự động)** | Mỗi lần ghi `AsyncJob` thêm một dòng; job hết hạn nay bị Expunge nên lịch sử của nó cũng bị xóa (từ 2026-11-24; trước đó xóa mềm giữ nội dung cũ, mục 1.4) |
 | `fhir_idx_token` | **Có** | Chỉ mục `status` (và `type`) của `AsyncJob`: vòng nhận job tìm `AsyncJob?status=accepted`, vòng dọn tìm `status=completed,error,cancelled` |
 | `fhir_idx_reference` | Có, rất ít | `AsyncJob.requester` không bao giờ được router đặt nên không có dòng; dòng chỉ có từ resource lâm sàng mà batch ghi |
 | `fhir_idx_string`, `_date`, `_number`, `_quantity`, `_uri` | Chỉ từ **resource lâm sàng** mà batch async ghi hoặc `$reindex` lập lại | `AsyncJob` và `Binary` không có tham số thuộc các loại này |
@@ -24,7 +24,7 @@
 | Chế độ mặc định (dev) | SQLite hoặc một role sở hữu schema; worker **không** tự migrate |
 | Từ chối khởi động | `fhirstore.Pending > 0` (`schema chưa được migrate`), hoặc `DATABASE_REQUIRE_SCHEMA=true` mà `search_path` không phải đúng một schema riêng |
 | Backend khác | SQLite (dev, cột `content` là text, không schema); MySQL: **chưa hỗ trợ** cho `fhirstore` |
-| Dọn dẹp | vòng bảo trì của worker xóa job hết hạn (`FHIR_EXPORT_RETENTION`): Binary kết quả bị Expunge, **`AsyncJob` bị xóa mềm** (mục 1.4, [03](03-quan-he-va-toan-ven.md) mục 3.4) |
+| Dọn dẹp | vòng bảo trì của worker xóa job hết hạn (`FHIR_EXPORT_RETENTION`): Binary kết quả và **dòng `AsyncJob` đều bị Expunge** (từ 2026-11-24; trước đó `AsyncJob` bị xóa mềm; mục 1.4, [03](03-quan-he-va-toan-ven.md) mục 3.4) |
 
 ## 1.3 Đường ghi của một job
 
@@ -47,7 +47,7 @@ sequenceDiagram
     W->>DB: "POST Binary (metadata, meta.project)"
     W->>DB: "PUT AsyncJob completed + output: version cuối"
     Note over DB: "mỗi PUT/POST là một transaction: fhir_resource + fhir_history + xóa và ghi lại fhir_idx_*"
-    W->>DB: "hết hạn: Expunge Binary (dòng, lịch sử, chỉ mục) rồi DeleteResource AsyncJob (tombstone + version DELETE)"
+    W->>DB: "hết hạn: Expunge Binary (dòng, lịch sử, chỉ mục) rồi Expunge AsyncJob (từ 2026-11-24; trước đó DeleteResource: tombstone + version DELETE)"
     W->>K: "xóa nội dung các phiên bản của Binary"
 ```
 
@@ -70,7 +70,7 @@ Quy luật suy ra từ mã (job dài chưa đo): phiên bản = 2 (tạo, nhận
 
 | Bảng | Vì sao lớn | Hệ quả |
 |---|---|---|
-| `fhir_history` | mỗi lần ghi `AsyncJob` thêm một dòng chứa **cả nội dung** (kèm `output`, chữ ký quyền, checkpoint); xóa mềm không xóa dòng cũ | job hết hạn vẫn để lại toàn bộ lịch sử; muốn giải phóng phải Expunge `AsyncJob` (hiện **chưa làm**, [03](03-quan-he-va-toan-ven.md) mục 3.4) |
-| `fhir_resource` | dòng `AsyncJob` đã xóa mềm còn lại dạng tombstone `{resourceType}` (nhỏ) | tích lũy theo số job |
+| `fhir_history` | mỗi lần ghi `AsyncJob` thêm một dòng chứa **cả nội dung** (kèm `output`, chữ ký quyền, checkpoint); job hết hạn nay bị Expunge nên lịch sử cũng bị xóa (từ 2026-11-24; trước đó xóa mềm không xóa dòng cũ) | lịch sử chỉ tồn tại trong đời job (tới `FHIR_EXPORT_RETENTION`); job hết hạn từ trước bản sửa còn lại lịch sử ([03](03-quan-he-va-toan-ven.md) mục 3.4) |
+| `fhir_resource` | job hết hạn nay bị Expunge (không còn tombstone, từ 2026-11-24); job hết hạn từ trước còn tombstone `{resourceType}` (nhỏ) | không tích lũy thêm |
 | `fhir_idx_token` | mỗi `AsyncJob` có dòng `status` (và `type` nếu đặt); bị xóa khi xóa mềm | nhỏ, tự dọn |
 | `Binary` (trong `fhir_resource`, nếu không dùng kho) | file export tới 8 MiB base64 mỗi dòng | dùng `FHIR_BINARY_STORAGE` để đưa nội dung ra kho; xóa hết hạn bằng Expunge nên giải phóng được |

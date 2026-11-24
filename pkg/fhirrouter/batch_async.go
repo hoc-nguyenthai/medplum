@@ -298,7 +298,7 @@ func (r *Router) cancelJob(ctx context.Context, id, prefix string) (*Response, e
 	// Người gọi đã qua kiểm chủ sở hữu (jobVisible) nên được dọn kết quả của chính job này, dù token chỉ có quyền read: xóa bằng repository của job (id lấy từ
 	// output của job, không do người gọi chọn), nếu không file bị bỏ lại mà không ai dọn được.
 	deleteBinaries(ctx, r.jobRepo(), jobBinaryIDs(job))
-	if err := repo.DeleteResource(ctx, "AsyncJob", job.ID); err != nil {
+	if err := removeJob(ctx, r.jobRepo(), job.ID); err != nil {
 		return nil, err
 	}
 	return &Response{Status: 202, Resource: informational("Deleted")}, nil

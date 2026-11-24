@@ -57,14 +57,14 @@ Cột **Toàn vẹn** nêu *ai kiểm và ở đâu*; "không ai" nghĩa là kh�
 | Bước | `AsyncJob` | `Binary` kết quả |
 |---|---|---|
 | Job xong | `fhir_resource` giữ nội dung đầy đủ (`output`, `job-seal`); `fhir_history` có 3 dòng (export) hoặc 8 dòng (batch 35 entry) | dòng và nội dung (kho hoặc base64) |
-| Hết `FHIR_EXPORT_RETENTION` | `DeleteResource` (**xóa mềm**): dòng `fhir_resource` thành tombstone `{"resourceType":"AsyncJob"}` với `deleted=true`, chỉ mục bị xóa, **thêm** một dòng `fhir_history` kiểu `DELETE`; **các dòng cũ giữ nguyên nội dung** (4 dòng sau export, 9 sau batch) | **Expunge**: xóa dòng, lịch sử, chỉ mục và nội dung ở kho (0 còn lại) |
+| Hết `FHIR_EXPORT_RETENTION` | **[ĐÃ SỬA 2026-11-24] `Expunge`** dòng `AsyncJob` (`removeJob` trong `pkg/fhirrouter/jobs_maint.go`): xóa dòng, lịch sử và chỉ mục, không còn tombstone; Expunge lỗi không phải 404/410 (ví dụ không đủ quyền) thì rơi về xóa mềm. Trước đó là `DeleteResource` (**xóa mềm**): tombstone `{"resourceType":"AsyncJob"}` với `deleted=true`, **thêm** một dòng `fhir_history` kiểu `DELETE`, **các dòng cũ giữ nguyên nội dung** (4 dòng sau export, 9 sau batch) | **Expunge**: xóa dòng, lịch sử, chỉ mục và nội dung ở kho (0 còn lại) |
 
 Hệ quả:
 
 - **Dữ liệu về job không bao giờ biến mất khỏi `fhir_history`**, kể cả sau hết hạn: `output` (id Binary và số lượng), `request` (tham số export, gồm `_typeFilter` có thể chứa điều kiện nhạy cảm), chữ ký quyền (id người gọi, grants, AccessPolicy) và mọi checkpoint (id các entry).
 - **Dung lượng lịch sử tăng vô hạn** theo số job; với batch lớn tăng gần bình phương theo số entry ([01](01-bang-vat-ly.md) mục 1.4).
-- **Chỉ Binary kết quả được giải phóng thật.** Muốn giải phóng cả `AsyncJob`, cần Expunge (`POST /AsyncJob/{id}/$expunge` bằng quản trị, hoặc đổi vòng dọn dùng Expunge): **hiện chưa làm**; ghi nhận là rủi ro và đề xuất sửa, không tự đổi mã.
-- Vì `AsyncJob` bị xóa mềm nên `GET job/{id}/status` của job đã dọn trả `410 Gone` (không phải `404`).
+- **[ĐÃ SỬA 2026-11-24] Cả `AsyncJob` lẫn Binary kết quả được giải phóng thật khi hết hạn** (Expunge; xem hàng trên). Trước đó chỉ Binary kết quả được giải phóng, còn `AsyncJob` bị xóa mềm và để lại tombstone cùng toàn bộ lịch sử.
+- Vì `AsyncJob` hết hạn bị Expunge (từ 2026-11-24) nên `GET job/{id}/status` và `bulkdata/{id}/status` của job đã dọn trả `404`, không còn dấu vết để trả `410 Gone` (trước đó là `410` vì xóa mềm).
 
 ## 3.5 Mồ côi và dọn dẹp
 
@@ -74,7 +74,7 @@ Hệ quả:
 | `Binary` kết quả bị mồ côi do kẽ hở hủy (mục 3.3) | API ghi `cancelled` đè `completed` | không ai | như trên |
 | Blob ở kho không có dòng `Binary` | chết giữa lúc ghi kho và CSDL (hoặc bù trừ lỗi) | `fhir-server sweep-binary` (chỉ khóa quá ân hạn mà CSDL trả `404`) | — |
 | Dòng `Binary` không còn blob | blob bị xóa tay | không ai | — |
-| `AsyncJob` đã xóa mềm | mọi job hết hạn | không ai (xem 3.4) | tombstone và lịch sử |
+| ~~`AsyncJob` đã xóa mềm~~ (đã hết từ 2026-11-24: job hết hạn bị Expunge) | job hết hạn từ trước bản sửa còn tombstone và lịch sử | không ai dọn (cần `$expunge` tay) | tombstone và lịch sử |
 | `AsyncJob` ở `accepted` không bao giờ được chạy (không có worker) | `FHIR_JOB_EXECUTION=false` mà không có worker | không ai | job nằm mãi ở `accepted` |
 
 Không có công cụ nào liệt kê `Binary` mồ côi theo "không có `AsyncJob` nào trỏ tới" (`Binary` không có tham số tìm kiếm riêng).

@@ -184,10 +184,10 @@ stateDiagram-v2
     accepted --> completed : chay xong
     accepted --> error : chay loi
     accepted --> cancelled : API huy
-    completed --> Da_xoa_mem : het han FHIR_EXPORT_RETENTION (xoa mem AsyncJob, Expunge Binary)
-    error --> Da_xoa_mem : het han
-    cancelled --> Da_xoa_mem : het han
-    Da_xoa_mem --> [*] : lich su o lai vo han
+    completed --> Da_xoa : het han FHIR_EXPORT_RETENTION hoac chu xoa job (Expunge AsyncJob va Binary, tu 2026-11-24)
+    error --> Da_xoa : het han
+    cancelled --> Da_xoa : het han
+    Da_xoa --> [*] : khong con dong, lich su hay chi muc
 ```
 
 ## 3.5 Rủi ro (từ mã, chưa sửa)

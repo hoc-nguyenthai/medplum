@@ -137,6 +137,22 @@ func jobBinaryIDs(job *fhir.AsyncJob) []string {
 	return ids
 }
 
+// removeJob xóa hẳn dòng AsyncJob cùng toàn bộ lịch sử (Expunge). Xóa mềm giữ nguyên mọi phiên bản trong lịch sử, mà mỗi job ghi nhiều phiên bản (nhận, lease và các lần gia hạn,
+// checkpoint, kết quả), nên chỉ xóa mềm thì lịch sử AsyncJob phình mãi dù job đã "dọn". Repository không hỗ trợ Expunge, hoặc Expunge lỗi không phải 404/410 (ví dụ không đủ
+// quyền), thì xóa mềm để job không nằm lại mãi. Hệ quả: trạng thái của job đã hết hạn trả 404 thay vì 410 (không còn dấu vết xóa).
+func removeJob(ctx context.Context, repo Repository, id string) error {
+	if ex, ok := repo.(Expunger); ok {
+		err := ex.Expunge(ctx, "AsyncJob", id)
+		if err == nil {
+			return nil
+		}
+		if e, ok := err.(*Error); ok && (e.Status == 404 || e.Status == 410) {
+			return err // đã bị replica khác xóa
+		}
+	}
+	return repo.DeleteResource(ctx, "AsyncJob", id)
+}
+
 // deleteBinaries xóa file kết quả của job. Ưu tiên Expunge (xóa hẳn dòng, lịch sử và nội dung ở kho đối tượng) vì xóa mềm giữ nguyên nội dung: kết quả export
 // nằm trong CSDL (base64) hoặc kho đối tượng sẽ không bao giờ được giải phóng. Repository không hỗ trợ hoặc người gọi không đủ quyền Expunge thì xóa mềm.
 func deleteBinaries(ctx context.Context, repo Repository, ids []string) {
@@ -221,7 +237,7 @@ func (r *Router) ExpireJobs(ctx context.Context) (int, error) {
 				continue
 			}
 			deleteBinaries(ctx, repo, jobBinaryIDs(job))
-			if err := repo.DeleteResource(ctx, "AsyncJob", job.ID); err == nil {
+			if err := removeJob(ctx, repo, job.ID); err == nil {
 				removed++
 			}
 		}
