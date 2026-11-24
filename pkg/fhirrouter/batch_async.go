@@ -279,7 +279,7 @@ func (r *Router) cancelJob(ctx context.Context, id, prefix string) (*Response, e
 		return nil, err
 	}
 	job, ok := res.(*fhir.AsyncJob)
-	if !ok || !strings.HasPrefix(job.Request, prefix) {
+	if !ok || !strings.HasPrefix(job.Request, prefix) || !r.jobVisible(ctx, job) {
 		return nil, NotFound()
 	}
 	if job.Status == "accepted" {

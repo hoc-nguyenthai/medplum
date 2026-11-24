@@ -152,6 +152,11 @@ type Options struct {
 	DisableJobExecution bool
 	// ExportRetention là thời gian giữ kết quả bulk export và batch async (mặc định 24 giờ; âm = không bao giờ xóa).
 	ExportRetention time.Duration
+	// JobOwner (tùy chọn) trả định danh của người gọi, ghi vào AsyncJob.requester lúc tạo job; rỗng thì job không có chủ. JobAllowed
+	// (tùy chọn) cho biết người gọi hiện tại có được xem trạng thái, hủy hoặc xóa job của owner đó không (chủ sở hữu hoặc quản trị).
+	// Job bị từ chối trả 404 như không tồn tại (không lộ job của người khác). JobAllowed nil: mọi người gọi đều được (chỉ test hoặc dev).
+	JobOwner   func(ctx context.Context) string
+	JobAllowed func(ctx context.Context, owner string) bool
 	// AuthorizeEntry (tùy chọn) kiểm quyền cho TỪNG entry của Bundle batch/transaction theo method và đường dẫn tương đối của entry
 	// (ví dụ "Patient/$reindex"), bằng đúng quy tắc mà tầng HTTP áp cho yêu cầu ngoài. Cần vì cổng HTTP chỉ thấy `POST /` (quyền ghi):
 	// nếu không kiểm, entry `$reindex`/`$expunge` lọt tới handler với quyền của Bundle. Lỗi trả về thành 403 của entry (batch) hoặc của
@@ -289,6 +294,7 @@ func (r *Router) Handle(ctx context.Context, req *Request) (*Response, error) {
 	if err != nil {
 		return nil, asError(err)
 	}
+	r.scrubJobs(ctx, res)
 	if hook := r.opts.ResponseHook; hook != nil && res != nil && res.Resource != nil && res.Status < 300 {
 		out := *res // không sửa Response gốc (handler có thể giữ lại)
 		out.Resource = hook(ctx, res.Resource)

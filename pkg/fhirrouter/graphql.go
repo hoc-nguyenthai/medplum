@@ -298,6 +298,10 @@ func (e *gqlExec) load(rt, id string, path []any) (map[string]any, bool) {
 		e.fail(path, "truy vấn vượt giới hạn %d resource", maxGraphQLResources)
 		return nil, false
 	}
+	if e.jobsDenied(rt) {
+		e.fail(path, "AsyncJob không truy vấn được bằng GraphQL")
+		return nil, false
+	}
 	e.remaining--
 	res, err := e.repo.ReadResource(e.ctx, rt, id)
 	if err != nil {
@@ -330,7 +334,16 @@ func errMessage(err error) string {
 }
 
 // search chạy TypeList/TypeConnection. reverse (khác nil) là resource hiện tại cho OtherList(_reference: param).
+// jobsDenied: truy vấn loại AsyncJob chỉ dành cho người xem được mọi job (quản trị); người khác dùng route trạng thái có kiểm chủ sở hữu.
+func (e *gqlExec) jobsDenied(rt string) bool {
+	return rt == "AsyncJob" && !e.r.jobsAll(e.ctx)
+}
+
 func (e *gqlExec) search(rt string, conn bool, s *gqlSel, reverse map[string]any, path []any) (any, bool) {
+	if e.jobsDenied(rt) {
+		e.fail(path, "AsyncJob không truy vấn được bằng GraphQL")
+		return nil, false
+	}
 	q := url.Values{}
 	count, offset := graphQLListDefault, 0
 	reverseSet := false

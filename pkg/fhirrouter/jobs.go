@@ -88,6 +88,11 @@ func (r *Router) startJob(ctx context.Context, kind string, q url.Values, prepar
 		RequestTime: time.Now().UTC().Format(time.RFC3339),
 		Request:     kind + "?" + q.Encode(),
 	}
+	if r.opts.JobOwner != nil {
+		if owner := r.opts.JobOwner(ctx); owner != "" {
+			job.Requester = &fhir.Reference{Identifier: &fhir.Identifier{System: JobOwnerSystem, Value: owner}}
+		}
+	}
 	if r.opts.JobSeal != nil {
 		sealed, err := r.opts.JobSeal(ctx, job.ID, job.Request)
 		if err != nil {
@@ -252,7 +257,7 @@ func (r *Router) jobStatus(ctx context.Context, req *Request) (*Response, error)
 		return nil, err
 	}
 	job, ok := res.(*fhir.AsyncJob)
-	if !ok {
+	if !ok || !r.jobVisible(ctx, job) {
 		return nil, NotFound()
 	}
 	switch job.Status {
@@ -274,6 +279,70 @@ func (r *Router) jobStatus(ctx context.Context, req *Request) (*Response, error)
 		return nil, Gone()
 	}
 	return &Response{Status: 202, Resource: job}, nil
+}
+
+// JobOwnerSystem là identifier.system của AsyncJob.requester, nơi lưu định danh người tạo job.
+const JobOwnerSystem = "urn:trivita:job-owner"
+
+// jobOwner lấy người tạo job ("" nếu job không có chủ, ví dụ tạo trước khi có kiểm chủ sở hữu).
+func jobOwner(job *fhir.AsyncJob) string {
+	if job.Requester != nil && job.Requester.Identifier != nil && job.Requester.Identifier.System == JobOwnerSystem {
+		return job.Requester.Identifier.Value
+	}
+	return ""
+}
+
+// jobVisible cho biết người gọi có được xem, hủy hoặc xóa job này không.
+func (r *Router) jobVisible(ctx context.Context, job *fhir.AsyncJob) bool {
+	return r.opts.JobAllowed == nil || r.opts.JobAllowed(ctx, jobOwner(job))
+}
+
+// jobsAll cho biết người gọi xem được mọi job (quản trị), tức JobAllowed đồng ý với job không có chủ.
+func (r *Router) jobsAll(ctx context.Context) bool {
+	return r.opts.JobAllowed == nil || r.opts.JobAllowed(ctx, "")
+}
+
+// scrubJobs bỏ khỏi Bundle kết quả (tìm kiếm cấp hệ thống không giới hạn loại, _type=AsyncJob...) các AsyncJob mà người gọi không được xem, để
+// không đi vòng kiểm chủ sở hữu của route trạng thái. Bundle được sao chép nông trước khi sửa (handler có thể giữ bản gốc).
+func (r *Router) scrubJobs(ctx context.Context, res *Response) {
+	if r.opts.JobAllowed == nil || res == nil {
+		return
+	}
+	b, ok := res.Resource.(*fhir.Bundle)
+	if !ok || b == nil {
+		return
+	}
+	hidden := func(e fhir.BundleEntry) bool {
+		if e.Resource == nil {
+			return false
+		}
+		job, ok := e.Resource.Value.(*fhir.AsyncJob)
+		return ok && !r.jobVisible(ctx, job)
+	}
+	n := 0
+	for _, e := range b.Entry {
+		if hidden(e) {
+			n++
+		}
+	}
+	if n == 0 {
+		return
+	}
+	out := *b
+	out.Entry = make([]fhir.BundleEntry, 0, len(b.Entry)-n)
+	for _, e := range b.Entry {
+		if !hidden(e) {
+			out.Entry = append(out.Entry, e)
+		}
+	}
+	if out.Total != nil {
+		t := *out.Total - n
+		if t < 0 {
+			t = 0
+		}
+		out.Total = &t
+	}
+	res.Resource = &out
 }
 
 // jobSeal lấy chuỗi ký của job ("" nếu không có).

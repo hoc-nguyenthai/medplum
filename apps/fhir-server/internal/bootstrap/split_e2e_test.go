@@ -114,7 +114,7 @@ func TestJobExecutionOffLeavesJobAccepted(t *testing.T) {
 			path := strings.TrimPrefix(acc.header.Get("Content-Location"), "http://fhir.test")
 			var st resp
 			for i := 0; i < 50; i++ {
-				if st = call(t, srv, "GET", path, readSecret, nil); st.status != 202 {
+				if st = call(t, srv, "GET", path, adminSecret, nil); st.status != 202 {
 					break
 				}
 				time.Sleep(10 * time.Millisecond)

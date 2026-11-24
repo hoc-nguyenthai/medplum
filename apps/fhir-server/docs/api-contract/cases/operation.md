@@ -429,7 +429,7 @@ Content-Type: application/fhir+json; charset=utf-8
 
 Đọc trạng thái một job nền do `$reindex` (và `$export`, batch async) tạo. Chi tiết vòng đời ở [Job bất đồng bộ](#job-bất-đồng-bộ). [Tham chiếu trường](../reference/operation.md#get-fhir-r4-job-id-status)
 
-**Vai trò:** `read` (không phải `admin`): mọi token đọc được trong cùng project xem được mọi job. Chỉ có `GET` ở route này cho vai trò `read`; `DELETE job/{id}/status` là route hủy của batch async (bulk.md) cần vai trò `write`, `POST` cũng `write` (đã đo `POST` và `DELETE` với token `read` ra `403` `Token không đủ quyền cho thao tác này`).
+**Vai trò:** `read` (không phải `admin`) **và là người tạo job hoặc quản trị** (từ 2026-11-24; trước đó mọi token đọc cùng project xem được mọi job). Người khác nhận `404` như job không tồn tại; job không có chủ chỉ quản trị xem được.
 
 **Thứ tự kiểm tra:**
 1. Hạn mức, xác thực, vai trò `read`.

@@ -105,9 +105,10 @@ func RequiredRole(method, path string) Role {
 	// tĩnh cổng này là chốt duy nhất.
 	case strings.HasSuffix(p, "/$import") || strings.HasSuffix(p, "/$install"):
 		return RoleAdmin
-	// Ghi trực tiếp AsyncJob (kể cả điều kiện, qua Bundle): chỉ quản trị. Job do router tự tạo, client không có lý do ghi; ở chế độ token tĩnh
-	// không có chữ ký quyền nên RecoverJobs sẽ chạy bản ghi thô với quyền hệ thống. Đọc job vẫn là read.
-	case isAsyncJobWrite(method, p):
+	// Truy cập trực tiếp loại AsyncJob (đọc, tìm kiếm, ghi; kể cả điều kiện, qua Bundle): chỉ quản trị. Ghi: job do router tự tạo, và ở chế độ token
+	// tĩnh không có chữ ký quyền nên RecoverJobs sẽ chạy bản ghi thô với quyền hệ thống. Đọc: job có chủ sở hữu, xem qua route trạng thái; đọc thẳng
+	// sẽ đi vòng kiểm chủ sở hữu và lộ danh sách file kết quả.
+	case isAsyncJobPath(p):
 		return RoleAdmin
 	case strings.HasSuffix(p, "/$validate") || strings.HasSuffix(p, "/$everything") || strings.HasSuffix(p, "/$expand") ||
 		strings.HasSuffix(p, "/$lookup") || strings.HasSuffix(p, "/$validate-code") || strings.HasSuffix(p, "/$graphql") || strings.HasSuffix(p, "/$get-ws-binding-token") || strings.HasSuffix(p, "/$subsumes") || strings.HasSuffix(p, "/$translate"):
@@ -124,6 +125,27 @@ func RequiredRole(method, path string) Role {
 	return RoleWrite
 }
 
+// JobOwner là định danh ghi vào AsyncJob.requester: subject của token (JWT) hoặc tên token (token tĩnh); rỗng khi không có người gọi.
+func JobOwner(ctx context.Context) string {
+	if p, ok := fhirauth.PrincipalFrom(ctx); ok && p != nil {
+		return p.Subject
+	}
+	return ""
+}
+
+// JobAllowed cho phép người tạo job và quản trị (hoặc super-admin) xem, hủy, xóa job. Job không có chủ (tạo trước khi có kiểm chủ sở hữu)
+// chỉ quản trị đụng được. Không có người gọi (xác thực tắt, dev) thì cho qua như Guard.
+func JobAllowed(ctx context.Context, owner string) bool {
+	p, ok := fhirauth.PrincipalFrom(ctx)
+	if !ok || p == nil {
+		return true
+	}
+	if p.Role >= RoleAdmin || p.Super {
+		return true
+	}
+	return owner != "" && owner == p.Subject
+}
+
 // AuthorizeEntry kiểm quyền cho một entry của Bundle batch/transaction bằng đúng quy tắc RequiredRole mà Guard áp cho yêu cầu ngoài
 // (nối vào fhirrouter.Options.AuthorizeEntry). Không có người gọi trong ngữ cảnh (xác thực tắt, dev) thì cho qua như Guard.
 func AuthorizeEntry(ctx context.Context, method, path string) error {
@@ -137,12 +159,9 @@ func AuthorizeEntry(ctx context.Context, method, path string) error {
 	return nil
 }
 
-// isAsyncJobWrite: yêu cầu ghi (khác GET/HEAD/OPTIONS) vào chính loại AsyncJob, với hoặc không có tiền tố /fhir/R4.
-func isAsyncJobWrite(method, path string) bool {
-	switch method {
-	case http.MethodGet, http.MethodHead, http.MethodOptions:
-		return false
-	}
+// isAsyncJobPath: yêu cầu nhằm chính loại AsyncJob (đọc, tìm kiếm hay ghi), với hoặc không có tiền tố /fhir/R4. Client theo dõi job bằng
+// bulkdata/{id}/status và job/{id}/status (có kiểm chủ sở hữu), không cần đọc AsyncJob trực tiếp.
+func isAsyncJobPath(path string) bool {
 	seg := strings.TrimLeft(strings.TrimPrefix(strings.TrimLeft(path, "/"), strings.TrimLeft(Prefix, "/")), "/")
 	first, _, _ := strings.Cut(seg, "/")
 	return first == "AsyncJob"

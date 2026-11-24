@@ -28,8 +28,10 @@ func TestRequiredRole(t *testing.T) {
 		{"PUT", "/fhir/R4/AsyncJob", httpapi.RoleAdmin},
 		{"PATCH", "/AsyncJob/j", httpapi.RoleAdmin},
 		{"DELETE", "/fhir/R4/AsyncJob/j", httpapi.RoleAdmin},
-		{"GET", "/AsyncJob/j", httpapi.RoleRead},
-		{"GET", "/fhir/R4/AsyncJob", httpapi.RoleRead},
+		{"GET", "/AsyncJob/j", httpapi.RoleAdmin},
+		{"GET", "/fhir/R4/AsyncJob", httpapi.RoleAdmin},
+		{"POST", "/fhir/R4/AsyncJob/_search", httpapi.RoleAdmin},
+		{"GET", "/job/j/status", httpapi.RoleRead},
 		{"POST", "/AsyncJobs", httpapi.RoleWrite},
 		{"POST", "/Patient/AsyncJob", httpapi.RoleWrite},
 		{"HEAD", "/Patient", httpapi.RoleRead},
@@ -221,5 +223,38 @@ func TestAuthorizeEntryAppliesRequiredRole(t *testing.T) {
 	}
 	if err := httpapi.AuthorizeEntry(context.Background(), "POST", "Patient/$reindex"); err != nil {
 		t.Errorf("không có người gọi (xác thực tắt) phải cho qua: %v", err)
+	}
+}
+
+func TestJobOwnerAndAccess(t *testing.T) {
+	as := func(sub string, role httpapi.Role, super bool) context.Context {
+		return fhirauth.WithPrincipal(context.Background(), &fhirauth.Principal{Subject: sub, Role: role, Super: super})
+	}
+	if got := httpapi.JobOwner(as("alice", httpapi.RoleRead, false)); got != "alice" {
+		t.Errorf("JobOwner = %q", got)
+	}
+	if got := httpapi.JobOwner(context.Background()); got != "" {
+		t.Errorf("không có người gọi thì không có chủ: %q", got)
+	}
+	cases := []struct {
+		name  string
+		ctx   context.Context
+		owner string
+		ok    bool
+	}{
+		{"chủ sở hữu", as("alice", httpapi.RoleRead, false), "alice", true},
+		{"người khác", as("bob", httpapi.RoleRead, false), "alice", false},
+		{"người khác có quyền write", as("bob", httpapi.RoleWrite, false), "alice", false},
+		{"admin", as("root", httpapi.RoleAdmin, false), "alice", true},
+		{"super-admin", as("su", httpapi.RoleRead, true), "alice", true},
+		{"job không chủ, người thường", as("bob", httpapi.RoleWrite, false), "", false},
+		{"job không chủ, subject rỗng", as("", httpapi.RoleRead, false), "", false},
+		{"job không chủ, admin", as("root", httpapi.RoleAdmin, false), "", true},
+		{"xác thực tắt", context.Background(), "alice", true},
+	}
+	for _, c := range cases {
+		if got := httpapi.JobAllowed(c.ctx, c.owner); got != c.ok {
+			t.Errorf("%s: JobAllowed = %v, muốn %v", c.name, got, c.ok)
+		}
 	}
 }

@@ -39,8 +39,9 @@ func TestStaticTokenCannotRunAdminOnlyOperations(t *testing.T) {
 		t.Errorf("AsyncJob bị tạo dù bị từ chối: %s", r.body)
 	}
 
-	// đọc job vẫn được (client cần theo dõi job của mình) và admin vẫn làm được
-	want(t, call(t, srv, "GET", "/fhir/R4/AsyncJob", readSecret, nil), 200)
+	// đọc AsyncJob trực tiếp chỉ cho admin (client theo dõi job qua route trạng thái, có kiểm chủ sở hữu); admin vẫn làm được
+	want(t, call(t, srv, "GET", "/fhir/R4/AsyncJob", readSecret, nil), 403)
+	want(t, call(t, srv, "GET", "/fhir/R4/AsyncJob", adminSecret, nil), 200)
 	if r := call(t, srv, "POST", "/fhir/R4/CodeSystem/$import", adminSecret, csImport); r.status == 403 {
 		t.Errorf("admin bị chặn $import: %s", r.body)
 	}

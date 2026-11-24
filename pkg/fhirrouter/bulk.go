@@ -305,7 +305,7 @@ func (r *Router) exportStatus(ctx context.Context, req *Request) (*Response, err
 		return nil, err
 	}
 	job, ok := res.(*fhir.AsyncJob)
-	if !ok || !strings.HasPrefix(job.Request, "export?") {
+	if !ok || !strings.HasPrefix(job.Request, "export?") || !r.jobVisible(ctx, job) {
 		return nil, NotFound()
 	}
 	switch job.Status {

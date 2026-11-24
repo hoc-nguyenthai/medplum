@@ -365,7 +365,8 @@ func TestOperationsAndAdminRole(t *testing.T) {
 	path := strings.TrimPrefix(loc, "http://fhir.test")
 	var st resp
 	for i := 0; i < 200; i++ {
-		if st = call(t, srv, "GET", path, readSecret, nil); st.status != 202 {
+		// theo dõi bằng chính token đã tạo job: job thuộc người tạo (hoặc admin)
+		if st = call(t, srv, "GET", path, adminSecret, nil); st.status != 202 {
 			break
 		}
 		time.Sleep(10 * time.Millisecond)
@@ -515,10 +516,10 @@ func TestOrphanedExportResumesAfterRestart(t *testing.T) {
 	}
 	_ = c1.Stop(context.Background())
 
-	_, srv2 := newServer(t, settings(mut))
+	_, srv2 := newServer(t, settings(mut, withAdmin))
 	var st resp
 	for i := 0; i < 300; i++ {
-		if st = call(t, srv2, "GET", "/fhir/R4/bulkdata/orphan-export/status", readSecret, nil); st.status != 202 {
+		if st = call(t, srv2, "GET", "/fhir/R4/bulkdata/orphan-export/status", adminSecret, nil); st.status != 202 {
 			break
 		}
 		time.Sleep(10 * time.Millisecond)
@@ -529,7 +530,7 @@ func TestOrphanedExportResumesAfterRestart(t *testing.T) {
 	if out := st.json(t)["output"].([]any); len(out) != 1 || out[0].(map[string]any)["count"] != float64(1) {
 		t.Errorf("output: %s", st.body)
 	}
-	want(t, call(t, srv2, "DELETE", "/fhir/R4/bulkdata/orphan-export/status", readSecret, nil), 202) // quyền đọc đủ để dọn
+	want(t, call(t, srv2, "DELETE", "/fhir/R4/bulkdata/orphan-export/status", adminSecret, nil), 202) // job không có chủ: chỉ admin xem và dọn được
 }
 
 func fhirUnmarshal(raw []byte) (fhir.Resource, error) { return fhir.UnmarshalResource(raw) }

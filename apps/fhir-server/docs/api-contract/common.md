@@ -53,8 +53,8 @@ Chế độ production là JWT do `auth` ký (`FHIR_JWKS_URL`, `FHIR_JWT_ISSUER`
 
 | Vai trò | Route |
 |---|---|
-| `read` | `GET`/`HEAD`/`OPTIONS`, `POST .../_search`, `$validate`, `$everything`, `$expand`, `$lookup`, `$validate-code`, `$subsumes`, `$translate`, `$graphql`, `$get-ws-binding-token`, mọi method của `bulkdata/{id}/status` (kể cả `DELETE`: hủy export của chính mình) |
-| `admin` | `$reindex`, `$expunge`, `$import`, `$install`, và mọi thao tác **ghi trực tiếp vào loại `AsyncJob`** (`POST`/`PUT`/`PATCH`/`DELETE`, kể cả điều kiện; đọc `AsyncJob` vẫn là `read`) |
+| `read` | `GET`/`HEAD`/`OPTIONS`, `POST .../_search`, `$validate`, `$everything`, `$expand`, `$lookup`, `$validate-code`, `$subsumes`, `$translate`, `$graphql`, `$get-ws-binding-token`, mọi method của `bulkdata/{id}/status` (kể cả `DELETE`: hủy export; chỉ người tạo job hoặc admin, xem `cases/bulk.md`) |
+| `admin` | `$reindex`, `$expunge`, `$import`, `$install`, và mọi truy cập **trực tiếp vào loại `AsyncJob`** (đọc, tìm kiếm, `POST`/`PUT`/`PATCH`/`DELETE`, kể cả điều kiện). Theo dõi, hủy job dùng `bulkdata/{id}/status` và `job/{id}/status` (vai trò `read`, và phải là **người tạo job hoặc admin**, người khác `404`) |
 | `write` | mọi thao tác còn lại,
 
 `HEAD` được `Guard` xếp vào vai trò `read` nhưng router FHIR trả `405` cho `HEAD /{resourceType}/{id}` (chưa có handler). `Location` chỉ có ở `201`, không có ở `PUT`/`PATCH` trả `200`.
