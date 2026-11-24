@@ -166,7 +166,7 @@ erDiagram
       bool granted
       bool revoked
       string codeHash
-      string refreshSecretHash
+      string refreshSecret_ban_ro
     }
     PROJECT_MEMBERSHIP {
       bool admin
@@ -182,4 +182,4 @@ erDiagram
     }
 ```
 
-Sự thật cần nhớ: (1) bí mật (hash mật khẩu, secret MFA, secret refresh/code) chỉ ở `identity`, role `fhir_app` không đọc được; (2) không có khóa ngoại sang schema `fhir`; (3) Patient trong `identity` và Patient lâm sàng ở `fhir-server` là **hai bản ghi cùng id**, hiện tạo thủ công (xem [runbook §12](../runbook.md), điểm còn hở).
+Sự thật cần nhớ: (1) bí mật (hash mật khẩu, secret MFA, secret refresh, hash code) chỉ ở `identity` (lưu ý: **secret refresh lưu bản rõ**, chỉ `code`, `cookie` và secret của yêu cầu qua thư được băm: xem [erd/02-mo-hinh-logic.md](../erd/02-mo-hinh-logic.md)), role `fhir_app` không đọc được; (2) không có khóa ngoại sang schema `fhir`; (3) Patient trong `identity` và Patient lâm sàng ở `fhir-server` là **hai bản ghi cùng id**, hiện tạo thủ công (xem [runbook §12](../runbook.md), điểm còn hở).
