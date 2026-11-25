@@ -22,6 +22,7 @@ func registerSuperAdmin(e *echo.Echo, dep Deps) {
 	}
 	g := e.Group("/admin/super")
 	g.POST("/projects", h.superInitProject, append([]echo.MiddlewareFunc{bearer}, slow...)...)
+	g.POST("/users/:userId/rescope", h.superRescopeUser, append([]echo.MiddlewareFunc{bearer}, slow...)...)
 }
 
 // SuperProjectBody là body của POST /admin/super/projects (Project/$init).
@@ -86,4 +87,59 @@ func (h *authHandlers) superInitProject(c echo.Context) error {
 		ProjectID: res.Project.ID, Name: res.Project.Name, Owner: res.Project.Owner.Reference, MembershipID: res.Membership.ID,
 		ClientID: res.Client.ID, ClientSecret: res.Client.Secret,
 	})
+}
+
+// SuperRescopeBody là body của POST /admin/super/users/{userId}/rescope.
+type SuperRescopeBody struct {
+	ProjectID string `json:"projectId" binding:"required" example:"0192f3a4-7b1c-7d2e-9a10-3c5e8f1b2a44"` // project đích: user trở thành user của project này
+}
+
+// SuperRescopeResponse là body của POST /admin/super/users/{userId}/rescope.
+type SuperRescopeResponse struct {
+	UserID    string `json:"userId" binding:"required"`    // id user vừa chuyển
+	ProjectID string `json:"projectId" binding:"required"` // project mà user giờ thuộc về
+}
+
+// superRescopeUser godoc
+//
+//	@Summary		Chuyển user toàn cục sang phạm vi một project (User/$rescope)
+//	@Description	Chỉ admin của project superAdmin. User phải không gắn project nào, có ít nhất một membership và MỌI membership đều thuộc project đích (còn membership ở project khác là 400); không chuyển chính người gọi; project đích đã có user khác cùng email là 409. Ghi User.project, thu hồi mọi login trong một transaction. Chỉ chiều server sang project. Ghi log kiểm toán. Tắt mặc định (AUTH_SUPER_ADMIN_ENABLED).
+//	@Tags			admin
+//	@Security		BearerAuth
+//	@Accept			json
+//	@Produce		application/json,application/fhir+json
+//	@Param			userId	path		string				true	"id user"
+//	@Param			body	body		SuperRescopeBody	true	"Project đích"
+//	@Success		200		{object}	SuperRescopeResponse
+//	@Failure		400		{object}	fhir.OperationOutcome
+//	@Failure		401		{object}	fhir.OperationOutcome
+//	@Failure		403		{object}	fhir.OperationOutcome
+//	@Failure		404		{object}	fhir.OperationOutcome
+//	@Failure		409		{object}	fhir.OperationOutcome
+//	@Failure		429		{object}	fhir.OperationOutcome
+//	@Router			/admin/super/users/{userId}/rescope [post]
+func (h *authHandlers) superRescopeUser(c echo.Context) error {
+	b, err := readBody(c)
+	if err != nil {
+		return writeError(c, err)
+	}
+	var unknown []string
+	for k := range b {
+		if k != "projectId" {
+			unknown = append(unknown, k)
+		}
+	}
+	if len(unknown) > 0 {
+		sort.Strings(unknown)
+		return writeError(c, domain.BadRequestAt("Unsupported field: "+strings.Join(unknown, ", "), unknown[0]))
+	}
+	pid, ok := b["projectId"].(string)
+	if !ok {
+		return writeError(c, domain.BadRequestAt("projectId is required", "projectId"))
+	}
+	u, err := h.svc.SuperRescopeUser(c.Request().Context(), authState(c), c.Param("userId"), pid)
+	if err != nil {
+		return writeError(c, err)
+	}
+	return c.JSON(http.StatusOK, SuperRescopeResponse{UserID: u.ID, ProjectID: pid})
 }

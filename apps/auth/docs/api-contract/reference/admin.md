@@ -23,6 +23,7 @@ Quản trị project qua HTTP (tắt mặc định, AUTH_ADMIN_ENABLED): project
 | [`POST /admin/projects/{projectId}/settings`](#post-admin-projects-projectid-settings) | Đặt các setting của project (allowlist) |
 | [`POST /admin/projects/{projectId}/sites`](#post-admin-projects-projectid-sites) | Đặt các site của project (Google, reCAPTCHA) |
 | [`POST /admin/super/projects`](#post-admin-super-projects) | Tạo project mới (Project/$init) |
+| [`POST /admin/super/users/{userId}/rescope`](#post-admin-super-users-userid-rescope) | Chuyển user toàn cục sang phạm vi một project (User/$rescope) |
 
 ---
 
@@ -1238,5 +1239,85 @@ Schema: `fhir.OperationOutcome` (cấu trúc dùng chung, xem [common.md mục 3
 Schema: `fhir.OperationOutcome` (cấu trúc dùng chung, xem [common.md mục 3](../common.md#3-operationoutcome)).
 
 **`403`** Forbidden
+
+Schema: `fhir.OperationOutcome` (cấu trúc dùng chung, xem [common.md mục 3](../common.md#3-operationoutcome)).
+
+---
+
+<a id="post-admin-super-users-userid-rescope"></a>
+## `POST /admin/super/users/{userId}/rescope`
+
+**Chuyển user toàn cục sang phạm vi một project (User/$rescope)**
+
+Chỉ admin của project superAdmin. User phải không gắn project nào, có ít nhất một membership và MỌI membership đều thuộc project đích (còn membership ở project khác là 400); không chuyển chính người gọi; project đích đã có user khác cùng email là 409. Ghi User.project, thu hồi mọi login trong một transaction. Chỉ chiều server sang project. Ghi log kiểm toán. Tắt mặc định (AUTH_SUPER_ADMIN_ENABLED).
+
+Các trường hợp phản hồi: [../cases/admin.md#post-admin-super-users-userid-rescope](../cases/admin.md#post-admin-super-users-userid-rescope)
+
+| Thuộc tính | Giá trị |
+|---|---|
+| Xác thực | bắt buộc: header `Authorization: Bearer <access_token>` (BearerAuth) |
+| Content-Type yêu cầu | `application/json` |
+| Content-Type phản hồi | `application/json`, `application/fhir+json` |
+
+**Header yêu cầu**
+
+| Header | Bắt buộc | Mô tả |
+|---|---|---|
+| `Authorization` | có | `Bearer <access_token>` |
+| `Content-Type` | có | `application/json` |
+| `Accept` | không | nên khớp Content-Type phản hồi |
+
+**Tham số**
+
+| Tên | Vị trí | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|---|
+| `userId` | đường dẫn | string | có | id user |
+
+**Body yêu cầu** (Project đích)
+
+Schema: `httpapi.SuperRescopeBody`
+
+| Trường | Kiểu | Bắt buộc | Ràng buộc | Mô tả | Ví dụ |
+|---|---|---|---|---|---|
+| `projectId` | string | có |  | project đích: user trở thành user của project này | `"0192f3a4-7b1c-7d2e-9a10-3c5e8f1b2a44"` |
+
+```json
+{
+  "projectId": "0192f3a4-7b1c-7d2e-9a10-3c5e8f1b2a44"
+}
+```
+
+**Phản hồi**
+
+**`200`** OK
+
+Schema: `httpapi.SuperRescopeResponse`
+
+| Trường | Kiểu | Bắt buộc | Ràng buộc | Mô tả | Ví dụ |
+|---|---|---|---|---|---|
+| `projectId` | string | có |  | project mà user giờ thuộc về |  |
+| `userId` | string | có |  | id user vừa chuyển |  |
+
+**`400`** Bad Request
+
+Schema: `fhir.OperationOutcome` (cấu trúc dùng chung, xem [common.md mục 3](../common.md#3-operationoutcome)).
+
+**`401`** Unauthorized
+
+Schema: `fhir.OperationOutcome` (cấu trúc dùng chung, xem [common.md mục 3](../common.md#3-operationoutcome)).
+
+**`403`** Forbidden
+
+Schema: `fhir.OperationOutcome` (cấu trúc dùng chung, xem [common.md mục 3](../common.md#3-operationoutcome)).
+
+**`404`** Not Found
+
+Schema: `fhir.OperationOutcome` (cấu trúc dùng chung, xem [common.md mục 3](../common.md#3-operationoutcome)).
+
+**`409`** Conflict
+
+Schema: `fhir.OperationOutcome` (cấu trúc dùng chung, xem [common.md mục 3](../common.md#3-operationoutcome)).
+
+**`429`** Too Many Requests
 
 Schema: `fhir.OperationOutcome` (cấu trúc dùng chung, xem [common.md mục 3](../common.md#3-operationoutcome)).

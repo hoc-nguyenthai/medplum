@@ -8,7 +8,7 @@ Trạng thái (cập nhật 2026-11-24 cho khớp code; mục 1, 5.2, 5.4, 5.5 �
 |---|---|---|---|---|
 | `auth` | 3858 | A | **Xong P0 đến P7**: đăng nhập, đăng ký, mật khẩu, MFA, đăng nhập ngoài, `exchange`/`google`/`preauthorize`, `/admin/projects/*`, CLI. P8 (compartment Patient) **xong** (M0 đến M5, sau cờ `AUTH_PATIENT_COMPARTMENT_ENABLED`) | [auth/](../../apps/auth/docs/plans/README.md); chi tiết route: [auth api-contract](../../apps/auth/docs/api-contract.md) |
 | `oauth` | 4267 | A | **Xong** (`auth` P3, B1 đến B9): authorize, token (`authorization_code`, `refresh_token`, `client_credentials`, `private_key_jwt`, `pre-authorized_code`), userinfo, introspect, logout, register, well-known | `auth` P3 |
-| `admin` | 1926 | A | **Một phần**: `/admin/projects/*` (project, client, invite, members, settings, sites, secrets, update-email, rotate-secret, setpassword, resetpassword, mfa/reset; tắt mặc định `AUTH_ADMIN_ENABLED`) và CLI; `/admin/super/projects`; **chưa** `/:id/bot` | `auth` P7 |
+| `admin` | 1926 | A | **Một phần**: `/admin/projects/*` (project, client, invite, members, settings, sites, secrets, update-email, rotate-secret, setpassword, resetpassword, mfa/reset; tắt mặc định `AUTH_ADMIN_ENABLED`) và CLI; `/admin/super/projects`, `/admin/super/users/{id}/rescope`; **chưa** `/:id/bot` | `auth` P7 |
 | `cds` | 82 | A | Chưa | [cds-dicom/cds.md](cds-dicom/cds.md); chặn bởi quyết định runtime Bot |
 | `dicom` (+ worker `dicom`) | 934 (+246) | A | **Xong D0 đến D12** (2026-11-24): `apps/dicomweb` (STOW-RS, QIDO-RS, WADO-RS, bulkdata, WADO-URI, rendered, `reindex`; `pkg/dicom*`), kiểm trên PostgreSQL 16 và S3 thật; không cần worker; compose chưa chạy thử Docker | [cds-dicom/dicom.md](cds-dicom/dicom.md) |
 | `email` | 548 | A | **Xong** (phần cần thiết): `pkg/mailer` (SMTP), `POST /email/v1/send` kèm đính kèm URL và `Binary/<id>`, SMTP riêng theo project (tắt mặc định); chưa SES | [email-storage.md](modules/email-storage.md); dùng chung với `Mailer` của `auth` |
@@ -95,7 +95,7 @@ Cập nhật 2026-11-23 cho khớp code hiện tại (đối chiếu lại từn
 | Thanh toán | `Claim/$submit`, `Claim/$export`, `CoverageEligibilityRequest/$submit`, `ChargeItemDefinition/$apply`, `$set-accounts` | M1, Q-F5 |
 | Nạp định nghĩa | `PackageRelease/$install`, `CodeSystem/$import`, `ConceptMap/$import` **có** (2026-11-23 và 2026-11-24). Chưa có: `$rebuild-base-definitions` | không; kế hoạch [modules/definitions-import.md](modules/definitions-import.md) |
 | SMART Health Cards/Links | `$generate-smart-health-card`, `$generate-smart-health-link`, `$verify-smart-health-card`, `$resolve-smart-health-link`, route `/shl/` | không |
-| Quản trị qua FHIR | (`Project/$init` và `ClientApplication/$rotate-secret` **xong** ở `auth` 2026-11-24 dạng `POST /admin/super/projects` và `POST /admin/projects/{id}/client/{clientId}/rotate-secret`) `$clone`, `$archive`, `/$restore`, `Project/:id/$rate-limits`, `User/$rescope`, `ClientApplication/$smart-launch` | ranh giới với `auth` |
+| Quản trị qua FHIR | (`Project/$init` và `ClientApplication/$rotate-secret` **xong** ở `auth` 2026-11-24 dạng `POST /admin/super/projects` và `POST /admin/projects/{id}/client/{clientId}/rotate-secret`) `$clone`, `$archive`, `/$restore`, `Project/:id/$rate-limits`, `ClientApplication/$smart-launch` | ranh giới với `auth` |
 | Bot | `Bot/$execute` (4 biến thể), `Bot/$deploy`, `Bot/$init` | M1 |
 | Agent | `Agent/$push`, `$status`, `$bulk-status`, `$reload-config`, `$upgrade`, `$fetch-logs`, `$stats` | M3 |
 | AI | `$ai`, `$aws-textract` | M4 |

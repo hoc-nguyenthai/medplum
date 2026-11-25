@@ -94,7 +94,7 @@ Mỗi nhóm là một `tag` của swagger. Cột "Yêu cầu" cho tên schema c�
 
 <!-- BEGIN GENERATED ROUTES (từ swagger.json; chạy UPDATE_DOCS=1 go test để sinh lại, đừng sửa tay) -->
 
-### Nhóm `admin` (15 route)
+### Nhóm `admin` (16 route)
 
 | Route | Mô tả | Xác thực | Yêu cầu | Phản hồi thành công | Mã lỗi |
 |---|---|---|---|---|---|
@@ -113,6 +113,7 @@ Mỗi nhóm là một `tag` của swagger. Cột "Yêu cầu" cho tên schema c�
 | `POST /admin/projects/{projectId}/settings` | Đặt các setting của project (allowlist) | Bearer | body `[]fhir.ProjectSetting` | 200 `httpapi.AdminProjectResponse` | 400, 401, 403 |
 | `POST /admin/projects/{projectId}/sites` | Đặt các site của project (Google, reCAPTCHA) | Bearer | body `[]fhir.ProjectSite` | 200 `httpapi.AdminProjectResponse` | 400, 401, 403, 409 |
 | `POST /admin/super/projects` | Tạo project mới (Project/$init) | Bearer | body `httpapi.SuperProjectBody` | 201 `httpapi.SuperProjectResponse` | 400, 401, 403 |
+| `POST /admin/super/users/{userId}/rescope` | Chuyển user toàn cục sang phạm vi một project (User/$rescope) | Bearer | body `httpapi.SuperRescopeBody` | 200 `httpapi.SuperRescopeResponse` | 400, 401, 403, 404, 409, 429 |
 
 ### Nhóm `auth` (28 route)
 

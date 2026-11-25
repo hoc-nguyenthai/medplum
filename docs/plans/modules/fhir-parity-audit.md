@@ -324,7 +324,7 @@ Tất cả dùng chung `operations/utils/scheduling.ts` (1088 dòng), `schedulin
 | Q-04 | `POST /$restore` (`projectrestore.ts:35-149`, `routes.ts:256`) | KHÔNG ÁP DỤNG | như Q-03 | — | — | — |
 | Q-05 | `Project/{id}/$rate-limits` (`project-rate-limits.ts:54-198`, `routes.ts:259`) | CHƯA | phụ thuộc H-02 (chưa có hạn mức) | H-02 | thấp | S |
 | Q-06 | `User/{id}/$update-email` (`update-user-email.ts:90-239`, `routes.ts:265`) | XONG ở `auth` 2026-11-25 (route khác đường dẫn, theo membership) | `POST /admin/projects/{projectId}/members/{membershipId}/update-email` | auth, Mailer | thấp | M |
-| Q-07 | `User/{id}/$rescope` (`rescope.ts:43-237`, `routes.ts:268`) | CHƯA | grep `$rescope`: 0 | auth | thấp | M |
+| Q-07 | `User/{id}/$rescope` (`rescope.ts:43-237`, `routes.ts:268`) | XONG ở `auth` 2026-11-25 (route khác đường dẫn; chỉ server → project, điều kiện là thiết kế của port) | `POST /admin/super/users/{userId}/rescope` | auth | thấp | M |
 | Q-08 | `ClientApplication/{id}/$rotate-secret` (`rotatesecret.ts:38-78`, `routes.ts:431`) | CHƯA | grep `rotate-secret`: 0 | auth | vừa | S |
 | Q-09 | `ClientApplication/{id}/$smart-launch` tạo `SmartAppLaunch`, chuyển hướng (`launch.ts:28-59`, `routes.ts:428`) | CHƯA | grep `smart-launch`: 0; kiểu `SmartAppLaunch` có (`pkg/fhir/resource_smartapplaunch.go`) | auth P3 | vừa | S |
 

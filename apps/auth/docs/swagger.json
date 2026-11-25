@@ -1152,6 +1152,89 @@
                 }
             }
         },
+        "/admin/super/users/{userId}/rescope": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Chỉ admin của project superAdmin. User phải không gắn project nào, có ít nhất một membership và MỌI membership đều thuộc project đích (còn membership ở project khác là 400); không chuyển chính người gọi; project đích đã có user khác cùng email là 409. Ghi User.project, thu hồi mọi login trong một transaction. Chỉ chiều server sang project. Ghi log kiểm toán. Tắt mặc định (AUTH_SUPER_ADMIN_ENABLED).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json",
+                    "application/fhir+json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Chuyển user toàn cục sang phạm vi một project (User/$rescope)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "id user",
+                        "name": "userId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Project đích",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.SuperRescopeBody"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.SuperRescopeResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/fhir.OperationOutcome"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/fhir.OperationOutcome"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/fhir.OperationOutcome"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/fhir.OperationOutcome"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/fhir.OperationOutcome"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/fhir.OperationOutcome"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/changepassword": {
             "post": {
                 "security": [
@@ -7797,6 +7880,36 @@
                     "description": "id project mới",
                     "type": "string",
                     "example": "0192f3a4-7b1c-7d2e-9a10-3c5e8f1b2a44"
+                }
+            }
+        },
+        "httpapi.SuperRescopeBody": {
+            "type": "object",
+            "required": [
+                "projectId"
+            ],
+            "properties": {
+                "projectId": {
+                    "description": "project đích: user trở thành user của project này",
+                    "type": "string",
+                    "example": "0192f3a4-7b1c-7d2e-9a10-3c5e8f1b2a44"
+                }
+            }
+        },
+        "httpapi.SuperRescopeResponse": {
+            "type": "object",
+            "required": [
+                "projectId",
+                "userId"
+            ],
+            "properties": {
+                "projectId": {
+                    "description": "project mà user giờ thuộc về",
+                    "type": "string"
+                },
+                "userId": {
+                    "description": "id user vừa chuyển",
+                    "type": "string"
                 }
             }
         },

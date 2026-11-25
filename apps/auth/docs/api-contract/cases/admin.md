@@ -827,6 +827,54 @@ Cache-Control: no-store
 
 ---
 
+<a id="post-admin-super-users-userid-rescope"></a>
+
+## `POST /admin/super/users/{userId}/rescope`
+
+Chuyển một user toàn cục sang phạm vi đúng một project (tương ứng `User/$rescope`). [Tham chiếu trường](../reference/admin.md#post-admin-super-users-userid-rescope)
+
+**Cờ bật và người gọi:** như `POST /admin/super/projects` (`AUTH_SUPER_ADMIN_ENABLED`, admin của project `superAdmin`). Tác dụng: user thành user của project (admin project quản trị được: đặt mật khẩu, đổi email, gỡ MFA), mọi login bị thu hồi. Chỉ chiều server → project; chiều ngược lại không hỗ trợ.
+
+**Thứ tự kiểm tra:** Bearer (401) → hạn mức bước đăng nhập (429) → parse object (400) → trường ngoài `projectId` (400) → `projectId` là chuỗi (400) → super-admin (403) → `projectId` không rỗng (400) → không phải chính người gọi (400) → project đích tồn tại (400) → user tồn tại (404) → user chưa gắn project (400) → **transaction**: khóa `user-email:<project>:<email>` → trùng email trong project đích (409) → user có membership (400) → mọi membership thuộc project đích (400) → ghi `User.project`, `meta.project` → thu hồi mọi login.
+
+| # | Trường hợp | Điều kiện | HTTP | Header phản hồi riêng | Body | Tác dụng phụ |
+|---|---|---|---|---|---|---|
+| U1 | Thành công | các điều kiện đều đủ | 200 | - | `{"userId":"...","projectId":"..."}` | `User.project` và `meta.project` đặt; tra theo email toàn cục không còn thấy user; mọi login bị thu hồi; log WARN `audit=true` |
+| U2 | Body không đọc được | JSON hỏng, không phải object | 400 | - | `Content could not be parsed` | không |
+| U3 | Trường lạ | khác `projectId` | 400 | - | `Unsupported field: <tên>` | không |
+| U4 | Thiếu `projectId` | thiếu, không phải chuỗi hoặc chỉ khoảng trắng | 400 | - | `projectId is required`, `expression` `projectId` | không |
+| U5 | Chính người gọi | `userId` là user của người gọi | 400 | - | `Cannot rescope the caller` | không |
+| U6 | Project đích sai | không tồn tại | 400 | - | `Invalid projectId`, `expression` `projectId` | không |
+| U7 | User không có | | 404 | - | `Not found` | không |
+| U8 | Đã gắn project | `User.project` có (kể cả đúng project đích) | 400 | - | `User is already scoped to a project` | không |
+| U9 | Trùng email | project đích đã có user khác cùng email | 409 | - | `A user with this email already exists in the project` | không (hoàn tác) |
+| U10 | Không có membership | user không có membership nào | 400 | - | `User has no membership to scope the user to` | không |
+| U11 | Còn membership project khác | có membership ngoài project đích | 400 | - | `User has memberships in other projects` | không |
+| U12 | Chưa xác thực | | 401 | `WWW-Authenticate` | `Unauthorized` | không |
+| U13 | Không phải super-admin | | 403 | - | `Forbidden` | không |
+| U14 | Quá hạn mức | IP hoặc bước đăng nhập | 429 | `Retry-After` | `Too many requests` | không |
+
+**Ví dụ**
+
+```http
+POST /admin/super/users/0192f3a4-7b1c-7d2e-9a10-3c5e8f1b2a45/rescope HTTP/1.1
+Authorization: Bearer eyJhbGciOi...
+Content-Type: application/json
+
+{ "projectId": "0192f3a4-7b1c-7d2e-9a10-3c5e8f1b2a44" }
+```
+
+```http
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{ "userId": "0192f3a4-7b1c-7d2e-9a10-3c5e8f1b2a45", "projectId": "0192f3a4-7b1c-7d2e-9a10-3c5e8f1b2a44" }
+```
+
+**Lưu ý tích hợp:** sau khi chuyển, user chỉ đăng nhập qua client của project đích (đăng nhập không kèm project không còn thấy user). Khác Medplum: đường dẫn là `/admin/super/users/{userId}/rescope`, không phải `/fhir/R4/User/{id}/$rescope`; điều kiện (mọi membership thuộc project đích, chỉ chiều server → project) là thiết kế của port này, chưa đối chiếu với `rescope.ts` của Medplum.
+
+---
+
 ## Phát hiện lệch với common.md
 
 Đối chiếu `common.md` với mã (`httpapi.go`, `errors.go`, `scim.go`, `email.go`, `application/email.go`). Không sửa `common.md`.
