@@ -22,6 +22,8 @@ func registerSuperAdmin(e *echo.Echo, dep Deps) {
 	}
 	g := e.Group("/admin/super")
 	g.POST("/projects", h.superInitProject, append([]echo.MiddlewareFunc{bearer}, slow...)...)
+	g.POST("/projects/:projectId/archive", h.superArchiveProject, append([]echo.MiddlewareFunc{bearer}, slow...)...)
+	g.POST("/projects/:projectId/restore", h.superRestoreProject, append([]echo.MiddlewareFunc{bearer}, slow...)...)
 	g.POST("/users/:userId/rescope", h.superRescopeUser, append([]echo.MiddlewareFunc{bearer}, slow...)...)
 }
 
@@ -142,4 +144,51 @@ func (h *authHandlers) superRescopeUser(c echo.Context) error {
 		return writeError(c, err)
 	}
 	return c.JSON(http.StatusOK, SuperRescopeResponse{UserID: u.ID, ProjectID: pid})
+}
+
+// SuperProjectStateResponse là body của POST /admin/super/projects/{projectId}/archive và /restore.
+type SuperProjectStateResponse struct {
+	ProjectID string `json:"projectId" binding:"required"` // id project
+	Active    bool   `json:"active"`                       // false sau archive, true sau restore
+}
+
+// superArchiveProject godoc
+//
+//	@Summary		Lưu trữ mềm project (Project/$archive)
+//	@Description	Chỉ admin của project superAdmin. Đặt Project.active=false: đăng nhập, cấp và làm mới token, userinfo, bearer của /admin và SCIM đều bị chặn ngay (`Project not active`, kể cả token đang dùng). Dữ liệu FHIR giữ nguyên; login không bị thu hồi nên `restore` phục hồi nguyên trạng. Không archive project của chính người gọi (400); đã lưu trữ rồi vẫn 200; project không tồn tại 404. Body bỏ qua. Ghi log kiểm toán. Tắt mặc định (AUTH_SUPER_ADMIN_ENABLED).
+//	@Tags			admin
+//	@Security		BearerAuth
+//	@Produce		application/json,application/fhir+json
+//	@Param			projectId	path		string	true	"id project"
+//	@Success		200			{object}	SuperProjectStateResponse
+//	@Failure		400			{object}	fhir.OperationOutcome
+//	@Failure		401			{object}	fhir.OperationOutcome
+//	@Failure		403			{object}	fhir.OperationOutcome
+//	@Failure		404			{object}	fhir.OperationOutcome
+//	@Failure		429			{object}	fhir.OperationOutcome
+//	@Router			/admin/super/projects/{projectId}/archive [post]
+func (h *authHandlers) superArchiveProject(c echo.Context) error { return h.superSetProject(c, false) }
+
+// superRestoreProject godoc
+//
+//	@Summary		Khôi phục project đã lưu trữ (Project/$restore)
+//	@Description	Chỉ admin của project superAdmin. Đặt Project.active=true; token và login cũ dùng lại được nếu chưa hết hạn. Project đang hoạt động vẫn 200; project không tồn tại 404. Body bỏ qua. Ghi log kiểm toán. Tắt mặc định (AUTH_SUPER_ADMIN_ENABLED).
+//	@Tags			admin
+//	@Security		BearerAuth
+//	@Produce		application/json,application/fhir+json
+//	@Param			projectId	path		string	true	"id project"
+//	@Success		200			{object}	SuperProjectStateResponse
+//	@Failure		401			{object}	fhir.OperationOutcome
+//	@Failure		403			{object}	fhir.OperationOutcome
+//	@Failure		404			{object}	fhir.OperationOutcome
+//	@Failure		429			{object}	fhir.OperationOutcome
+//	@Router			/admin/super/projects/{projectId}/restore [post]
+func (h *authHandlers) superRestoreProject(c echo.Context) error { return h.superSetProject(c, true) }
+
+func (h *authHandlers) superSetProject(c echo.Context, active bool) error {
+	pid := c.Param("projectId")
+	if err := h.svc.SuperSetProjectActive(c.Request().Context(), authState(c), pid, active); err != nil {
+		return writeError(c, err)
+	}
+	return c.JSON(http.StatusOK, SuperProjectStateResponse{ProjectID: pid, Active: active})
 }

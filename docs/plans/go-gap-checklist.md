@@ -53,8 +53,8 @@ Kế hoạch: [modules/p17-async-batch-download-autodisable.md](modules/p17-asyn
 
 - [x] `Project/$init` — xong 2026-11-24 ở `auth`: `POST /admin/super/projects` (khác Medplum về đường dẫn; `AUTH_SUPER_ADMIN_ENABLED`, `auth project super`)
 - [ ] `Project/:id/$clone`
-- [ ] `Project/:id/$archive`
-- [ ] `/$restore`
+- [x] `Project/:id/$archive` (auth, 2026-11-25: LƯU TRỮ MỀM `POST /admin/super/projects/{id}/archive` đặt `active=false`; không xuất dữ liệu ra kho ngoài như Medplum)
+- [x] `/$restore` (auth, 2026-11-25: `POST /admin/super/projects/{id}/restore` đặt `active=true`)
 - [ ] `Project/:id/$rate-limits`
 - [x] `User/:id/$rescope` (auth, 2026-11-25: `POST /admin/super/users/{userId}/rescope`, chỉ server → project)
 - [x] `User/:id/$update-email` (auth, 2026-11-25: `POST /admin/projects/{projectId}/members/{membershipId}/update-email`)

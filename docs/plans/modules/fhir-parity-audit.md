@@ -320,8 +320,8 @@ Tất cả dùng chung `operations/utils/scheduling.ts` (1088 dòng), `schedulin
 |---|---|---|---|---|---|---|
 | Q-01 | `Project/$init` (`projectinit.ts:65-209`, `routes.ts:262`) | CHƯA | grep `$init`: 0; `auth` có CLI `seed project` (`apps/auth/docs/plans/README.md`, bước 7.0) | auth | vừa | M |
 | Q-02 | `Project/{id}/$clone` (`projectclone.ts:18-175`, `routes.ts:252`) | CHƯA | grep `$clone`: 0 | auth, Storage | thấp | M |
-| Q-03 | `Project/{id}/$archive` (`projectarchive.ts:54-209`, `routes.ts:255`) | KHÔNG ÁP DỤNG | dùng `workers/bulk-export`, kho đối tượng và CSDL Medplum; sao lưu của Go là sao lưu PostgreSQL (`docs/runbook.md`, `go-port-status.md` 22a, chưa diễn tập). Đề xuất, xem Q-F14 | — | — | — |
-| Q-04 | `POST /$restore` (`projectrestore.ts:35-149`, `routes.ts:256`) | KHÔNG ÁP DỤNG | như Q-03 | — | — | — |
+| Q-03 | `Project/{id}/$archive` (`projectarchive.ts:54-209`, `routes.ts:255`) | KHÔNG ÁP DỤNG cho lưu trữ dữ liệu (bản MỀM xem Q-04) | dùng `workers/bulk-export`, kho đối tượng và CSDL Medplum; sao lưu của Go là sao lưu PostgreSQL (`docs/runbook.md`, `go-port-status.md` 22a, chưa diễn tập). Đề xuất, xem Q-F14 | — | — | — |
+| Q-04 | `POST /$restore` (`projectrestore.ts:35-149`, `routes.ts:256`) | KHÔNG ÁP DỤNG cho lưu trữ dữ liệu; bản MỀM đã làm ở `auth` 2026-11-25 (`POST /admin/super/projects/{id}/restore` đặt `active=true`) | như Q-03 | — | — | — |
 | Q-05 | `Project/{id}/$rate-limits` (`project-rate-limits.ts:54-198`, `routes.ts:259`) | CHƯA | phụ thuộc H-02 (chưa có hạn mức) | H-02 | thấp | S |
 | Q-06 | `User/{id}/$update-email` (`update-user-email.ts:90-239`, `routes.ts:265`) | XONG ở `auth` 2026-11-25 (route khác đường dẫn, theo membership) | `POST /admin/projects/{projectId}/members/{membershipId}/update-email` | auth, Mailer | thấp | M |
 | Q-07 | `User/{id}/$rescope` (`rescope.ts:43-237`, `routes.ts:268`) | XONG ở `auth` 2026-11-25 (route khác đường dẫn; chỉ server → project, điều kiện là thiết kế của port) | `POST /admin/super/users/{userId}/rescope` | auth | thấp | M |

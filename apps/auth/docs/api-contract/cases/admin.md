@@ -875,6 +875,53 @@ Content-Type: application/json
 
 ---
 
+<a id="post-admin-super-projects-projectid-archive"></a>
+
+## `POST /admin/super/projects/{projectId}/archive`
+
+Lưu trữ **mềm** project (tương ứng `Project/$archive`): đặt `Project.active=false`. [Tham chiếu trường](../reference/admin.md#post-admin-super-projects-projectid-archive)
+
+**Cờ bật và người gọi:** như `POST /admin/super/projects`. Body bỏ qua. Project không hoạt động bị chặn ở **mọi đường** vì `active` được đọc lại mỗi lần: đăng nhập và chọn membership, cấp và làm mới token (mọi grant), userinfo, bearer của `/admin` và SCIM đều trả `Project not active`; token đang dùng ngừng có hiệu lực ngay. Dữ liệu FHIR và login giữ nguyên (không thu hồi) nên `restore` phục hồi nguyên trạng.
+
+**Thứ tự kiểm tra:** Bearer (401) → hạn mức bước đăng nhập (429) → super-admin (403) → không phải project của người gọi (400) → project tồn tại (404) → ghi `active=false` (đã `false` thì không ghi, vẫn 200).
+
+| # | Trường hợp | Điều kiện | HTTP | Header phản hồi riêng | Body | Tác dụng phụ |
+|---|---|---|---|---|---|---|
+| A1 | Thành công | project đang hoạt động | 200 | - | `{"projectId":"...","active":false}` | `Project.active=false`; log WARN `audit=true` |
+| A2 | Đã lưu trữ | `active` đã `false` | 200 | - | như A1 | không ghi, không log |
+| A3 | Project của chính người gọi | `projectId` là project của token | 400 | - | `Cannot archive the project of the caller` | không |
+| A4 | Project không có | | 404 | - | `Not found` | không |
+| A5 | Chưa xác thực | | 401 | `WWW-Authenticate` | `Unauthorized` | không |
+| A6 | Không phải super-admin | | 403 | - | `Forbidden` | không |
+| A7 | Quá hạn mức | IP hoặc bước đăng nhập | 429 | `Retry-After` | `Too many requests` | không |
+
+**Lưu ý tích hợp:** khác Medplum (xuất dữ liệu project ra kho ngoài rồi xóa, gắn bulk-export và object store), đây chỉ là vô hiệu hóa có đảo ngược; muốn lưu trữ dữ liệu thật dùng sao lưu PostgreSQL (`docs/runbook.md`). Đường dẫn là `/admin/super/projects/{projectId}/archive`, không phải `/fhir/R4/Project/{id}/$archive`.
+
+---
+
+<a id="post-admin-super-projects-projectid-restore"></a>
+
+## `POST /admin/super/projects/{projectId}/restore`
+
+Khôi phục project đã lưu trữ (tương ứng `Project/$restore`): đặt `Project.active=true`. [Tham chiếu trường](../reference/admin.md#post-admin-super-projects-projectid-restore)
+
+**Cờ bật và người gọi:** như `archive`. Body bỏ qua. Token và login cũ dùng lại được nếu chưa hết hạn.
+
+**Thứ tự kiểm tra:** Bearer (401) → hạn mức (429) → super-admin (403) → project tồn tại (404) → ghi `active=true` (đang hoạt động, kể cả chưa từng đặt `active`, thì không ghi, vẫn 200).
+
+| # | Trường hợp | Điều kiện | HTTP | Header phản hồi riêng | Body | Tác dụng phụ |
+|---|---|---|---|---|---|---|
+| R1 | Thành công | project đang lưu trữ | 200 | - | `{"projectId":"...","active":true}` | `Project.active=true`; log WARN `audit=true` |
+| R2 | Đang hoạt động | `active` đúng hoặc chưa đặt | 200 | - | như R1 | không ghi, không log |
+| R3 | Project không có | | 404 | - | `Not found` | không |
+| R4 | Chưa xác thực | | 401 | `WWW-Authenticate` | `Unauthorized` | không |
+| R5 | Không phải super-admin | | 403 | - | `Forbidden` | không |
+| R6 | Quá hạn mức | IP hoặc bước đăng nhập | 429 | `Retry-After` | `Too many requests` | không |
+
+**Lưu ý tích hợp:** project superAdmin cuối cùng không thể tự `archive` (A3) nên không có đường tự khóa; nếu project bị lưu trữ nhầm khi không còn super admin hoạt động, đặt lại `active` bằng cơ sở dữ liệu.
+
+---
+
 ## Phát hiện lệch với common.md
 
 Đối chiếu `common.md` với mã (`httpapi.go`, `errors.go`, `scim.go`, `email.go`, `application/email.go`). Không sửa `common.md`.

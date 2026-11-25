@@ -2931,6 +2931,17 @@ definitions:
     - owner
     - projectId
     type: object
+  httpapi.SuperProjectStateResponse:
+    properties:
+      active:
+        description: false sau archive, true sau restore
+        type: boolean
+      projectId:
+        description: id project
+        type: string
+    required:
+    - projectId
+    type: object
   httpapi.SuperRescopeBody:
     properties:
       projectId:
@@ -3982,6 +3993,93 @@ paths:
       security:
       - BearerAuth: []
       summary: Tạo project mới (Project/$init)
+      tags:
+      - admin
+  /admin/super/projects/{projectId}/archive:
+    post:
+      description: 'Chỉ admin của project superAdmin. Đặt Project.active=false: đăng
+        nhập, cấp và làm mới token, userinfo, bearer của /admin và SCIM đều bị chặn
+        ngay (`Project not active`, kể cả token đang dùng). Dữ liệu FHIR giữ nguyên;
+        login không bị thu hồi nên `restore` phục hồi nguyên trạng. Không archive
+        project của chính người gọi (400); đã lưu trữ rồi vẫn 200; project không tồn
+        tại 404. Body bỏ qua. Ghi log kiểm toán. Tắt mặc định (AUTH_SUPER_ADMIN_ENABLED).'
+      parameters:
+      - description: id project
+        in: path
+        name: projectId
+        required: true
+        type: string
+      produces:
+      - application/json
+      - application/fhir+json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpapi.SuperProjectStateResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+      security:
+      - BearerAuth: []
+      summary: Lưu trữ mềm project (Project/$archive)
+      tags:
+      - admin
+  /admin/super/projects/{projectId}/restore:
+    post:
+      description: Chỉ admin của project superAdmin. Đặt Project.active=true; token
+        và login cũ dùng lại được nếu chưa hết hạn. Project đang hoạt động vẫn 200;
+        project không tồn tại 404. Body bỏ qua. Ghi log kiểm toán. Tắt mặc định (AUTH_SUPER_ADMIN_ENABLED).
+      parameters:
+      - description: id project
+        in: path
+        name: projectId
+        required: true
+        type: string
+      produces:
+      - application/json
+      - application/fhir+json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpapi.SuperProjectStateResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/fhir.OperationOutcome'
+      security:
+      - BearerAuth: []
+      summary: Khôi phục project đã lưu trữ (Project/$restore)
       tags:
       - admin
   /admin/super/users/{userId}/rescope:

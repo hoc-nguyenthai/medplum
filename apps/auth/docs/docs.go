@@ -1159,6 +1159,130 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/super/projects/{projectId}/archive": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Chỉ admin của project superAdmin. Đặt Project.active=false: đăng nhập, cấp và làm mới token, userinfo, bearer của /admin và SCIM đều bị chặn ngay (` + "`" + `Project not active` + "`" + `, kể cả token đang dùng). Dữ liệu FHIR giữ nguyên; login không bị thu hồi nên ` + "`" + `restore` + "`" + ` phục hồi nguyên trạng. Không archive project của chính người gọi (400); đã lưu trữ rồi vẫn 200; project không tồn tại 404. Body bỏ qua. Ghi log kiểm toán. Tắt mặc định (AUTH_SUPER_ADMIN_ENABLED).",
+                "produces": [
+                    "application/json",
+                    "application/fhir+json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Lưu trữ mềm project (Project/$archive)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "id project",
+                        "name": "projectId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.SuperProjectStateResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/fhir.OperationOutcome"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/fhir.OperationOutcome"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/fhir.OperationOutcome"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/fhir.OperationOutcome"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/fhir.OperationOutcome"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/super/projects/{projectId}/restore": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Chỉ admin của project superAdmin. Đặt Project.active=true; token và login cũ dùng lại được nếu chưa hết hạn. Project đang hoạt động vẫn 200; project không tồn tại 404. Body bỏ qua. Ghi log kiểm toán. Tắt mặc định (AUTH_SUPER_ADMIN_ENABLED).",
+                "produces": [
+                    "application/json",
+                    "application/fhir+json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Khôi phục project đã lưu trữ (Project/$restore)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "id project",
+                        "name": "projectId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.SuperProjectStateResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/fhir.OperationOutcome"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/fhir.OperationOutcome"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/fhir.OperationOutcome"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/fhir.OperationOutcome"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/super/users/{userId}/rescope": {
             "post": {
                 "security": [
@@ -7887,6 +8011,22 @@ const docTemplate = `{
                     "description": "id project mới",
                     "type": "string",
                     "example": "0192f3a4-7b1c-7d2e-9a10-3c5e8f1b2a44"
+                }
+            }
+        },
+        "httpapi.SuperProjectStateResponse": {
+            "type": "object",
+            "required": [
+                "projectId"
+            ],
+            "properties": {
+                "active": {
+                    "description": "false sau archive, true sau restore",
+                    "type": "boolean"
+                },
+                "projectId": {
+                    "description": "id project",
+                    "type": "string"
                 }
             }
         },

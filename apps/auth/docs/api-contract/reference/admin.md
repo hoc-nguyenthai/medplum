@@ -23,6 +23,8 @@ Quản trị project qua HTTP (tắt mặc định, AUTH_ADMIN_ENABLED): project
 | [`POST /admin/projects/{projectId}/settings`](#post-admin-projects-projectid-settings) | Đặt các setting của project (allowlist) |
 | [`POST /admin/projects/{projectId}/sites`](#post-admin-projects-projectid-sites) | Đặt các site của project (Google, reCAPTCHA) |
 | [`POST /admin/super/projects`](#post-admin-super-projects) | Tạo project mới (Project/$init) |
+| [`POST /admin/super/projects/{projectId}/archive`](#post-admin-super-projects-projectid-archive) | Lưu trữ mềm project (Project/$archive) |
+| [`POST /admin/super/projects/{projectId}/restore`](#post-admin-super-projects-projectid-restore) | Khôi phục project đã lưu trữ (Project/$restore) |
 | [`POST /admin/super/users/{userId}/rescope`](#post-admin-super-users-userid-rescope) | Chuyển user toàn cục sang phạm vi một project (User/$rescope) |
 
 ---
@@ -1239,6 +1241,124 @@ Schema: `fhir.OperationOutcome` (cấu trúc dùng chung, xem [common.md mục 3
 Schema: `fhir.OperationOutcome` (cấu trúc dùng chung, xem [common.md mục 3](../common.md#3-operationoutcome)).
 
 **`403`** Forbidden
+
+Schema: `fhir.OperationOutcome` (cấu trúc dùng chung, xem [common.md mục 3](../common.md#3-operationoutcome)).
+
+---
+
+<a id="post-admin-super-projects-projectid-archive"></a>
+## `POST /admin/super/projects/{projectId}/archive`
+
+**Lưu trữ mềm project (Project/$archive)**
+
+Chỉ admin của project superAdmin. Đặt Project.active=false: đăng nhập, cấp và làm mới token, userinfo, bearer của /admin và SCIM đều bị chặn ngay (`Project not active`, kể cả token đang dùng). Dữ liệu FHIR giữ nguyên; login không bị thu hồi nên `restore` phục hồi nguyên trạng. Không archive project của chính người gọi (400); đã lưu trữ rồi vẫn 200; project không tồn tại 404. Body bỏ qua. Ghi log kiểm toán. Tắt mặc định (AUTH_SUPER_ADMIN_ENABLED).
+
+Các trường hợp phản hồi: [../cases/admin.md#post-admin-super-projects-projectid-archive](../cases/admin.md#post-admin-super-projects-projectid-archive)
+
+| Thuộc tính | Giá trị |
+|---|---|
+| Xác thực | bắt buộc: header `Authorization: Bearer <access_token>` (BearerAuth) |
+| Content-Type yêu cầu | không có body |
+| Content-Type phản hồi | `application/json`, `application/fhir+json` |
+
+**Header yêu cầu**
+
+| Header | Bắt buộc | Mô tả |
+|---|---|---|
+| `Authorization` | có | `Bearer <access_token>` |
+| `Accept` | không | nên khớp Content-Type phản hồi |
+
+**Tham số**
+
+| Tên | Vị trí | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|---|
+| `projectId` | đường dẫn | string | có | id project |
+
+**Phản hồi**
+
+**`200`** OK
+
+Schema: `httpapi.SuperProjectStateResponse`
+
+| Trường | Kiểu | Bắt buộc | Ràng buộc | Mô tả | Ví dụ |
+|---|---|---|---|---|---|
+| `projectId` | string | có |  | id project |  |
+| `active` | boolean | không |  | false sau archive, true sau restore |  |
+
+**`400`** Bad Request
+
+Schema: `fhir.OperationOutcome` (cấu trúc dùng chung, xem [common.md mục 3](../common.md#3-operationoutcome)).
+
+**`401`** Unauthorized
+
+Schema: `fhir.OperationOutcome` (cấu trúc dùng chung, xem [common.md mục 3](../common.md#3-operationoutcome)).
+
+**`403`** Forbidden
+
+Schema: `fhir.OperationOutcome` (cấu trúc dùng chung, xem [common.md mục 3](../common.md#3-operationoutcome)).
+
+**`404`** Not Found
+
+Schema: `fhir.OperationOutcome` (cấu trúc dùng chung, xem [common.md mục 3](../common.md#3-operationoutcome)).
+
+**`429`** Too Many Requests
+
+Schema: `fhir.OperationOutcome` (cấu trúc dùng chung, xem [common.md mục 3](../common.md#3-operationoutcome)).
+
+---
+
+<a id="post-admin-super-projects-projectid-restore"></a>
+## `POST /admin/super/projects/{projectId}/restore`
+
+**Khôi phục project đã lưu trữ (Project/$restore)**
+
+Chỉ admin của project superAdmin. Đặt Project.active=true; token và login cũ dùng lại được nếu chưa hết hạn. Project đang hoạt động vẫn 200; project không tồn tại 404. Body bỏ qua. Ghi log kiểm toán. Tắt mặc định (AUTH_SUPER_ADMIN_ENABLED).
+
+Các trường hợp phản hồi: [../cases/admin.md#post-admin-super-projects-projectid-restore](../cases/admin.md#post-admin-super-projects-projectid-restore)
+
+| Thuộc tính | Giá trị |
+|---|---|
+| Xác thực | bắt buộc: header `Authorization: Bearer <access_token>` (BearerAuth) |
+| Content-Type yêu cầu | không có body |
+| Content-Type phản hồi | `application/json`, `application/fhir+json` |
+
+**Header yêu cầu**
+
+| Header | Bắt buộc | Mô tả |
+|---|---|---|
+| `Authorization` | có | `Bearer <access_token>` |
+| `Accept` | không | nên khớp Content-Type phản hồi |
+
+**Tham số**
+
+| Tên | Vị trí | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|---|
+| `projectId` | đường dẫn | string | có | id project |
+
+**Phản hồi**
+
+**`200`** OK
+
+Schema: `httpapi.SuperProjectStateResponse`
+
+| Trường | Kiểu | Bắt buộc | Ràng buộc | Mô tả | Ví dụ |
+|---|---|---|---|---|---|
+| `projectId` | string | có |  | id project |  |
+| `active` | boolean | không |  | false sau archive, true sau restore |  |
+
+**`401`** Unauthorized
+
+Schema: `fhir.OperationOutcome` (cấu trúc dùng chung, xem [common.md mục 3](../common.md#3-operationoutcome)).
+
+**`403`** Forbidden
+
+Schema: `fhir.OperationOutcome` (cấu trúc dùng chung, xem [common.md mục 3](../common.md#3-operationoutcome)).
+
+**`404`** Not Found
+
+Schema: `fhir.OperationOutcome` (cấu trúc dùng chung, xem [common.md mục 3](../common.md#3-operationoutcome)).
+
+**`429`** Too Many Requests
 
 Schema: `fhir.OperationOutcome` (cấu trúc dùng chung, xem [common.md mục 3](../common.md#3-operationoutcome)).
 
