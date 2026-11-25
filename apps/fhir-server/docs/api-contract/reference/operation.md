@@ -2,7 +2,7 @@
 
 > **Tệp này được SINH từ `swagger.json`** (Trivita FHIR Server API); đừng sửa tay. Cập nhật: `UPDATE_DOCS=1 go test` ở thư mục `docs`. Điều kiện nào ra phản hồi nào (từng trường hợp, ví dụ JSON, header) ở [../cases/operation.md](../cases/operation.md).
 
-Operation FHIR ($validate, $everything, $reindex, $expunge, PackageRelease/$install, CodeSystem/$import, ConceptMap/$import) và trạng thái job nền. $reindex, $expunge, $install và $import cần quyền admin.
+Operation FHIR ($validate, $everything, $reindex, $expunge, Project/$rate-limits, PackageRelease/$install, CodeSystem/$import, ConceptMap/$import) và trạng thái job nền. $reindex, $expunge, $install và $import cần quyền admin.
 
 **Header phản hồi chung (mọi route):** `Cache-Control: no-store, no-cache, must-revalidate`, `Pragma: no-cache`, `Content-Security-Policy: default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none';`, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`, `X-Request-Id`. Định dạng lỗi, xác thực, hạn mức: [../common.md](../common.md).
 
@@ -14,6 +14,7 @@ Operation FHIR ($validate, $everything, $reindex, $expunge, PackageRelease/$inst
 | [`POST /fhir/R4/ConceptMap/{id}/$import`](#post-fhir-r4-conceptmap-id-import) | ConceptMap/$import (nạp ánh xạ cho bảng ánh xạ lớn) |
 | [`POST /fhir/R4/PackageRelease/{id}/$install`](#post-fhir-r4-packagerelease-id-install) | PackageRelease/$install (nạp gói định nghĩa) |
 | [`GET /fhir/R4/Patient/{id}/$everything`](#get-fhir-r4-patient-id-everything) | Patient/$everything |
+| [`GET /fhir/R4/Project/{id}/$rate-limits`](#get-fhir-r4-project-id-rate-limits) | Tình trạng hạn mức điểm của project (Project/$rate-limits) |
 | [`GET /fhir/R4/job/{id}/status`](#get-fhir-r4-job-id-status) | Trạng thái job nền |
 | [`POST /fhir/R4/{resourceType}/$reindex`](#post-fhir-r4-resourcetype-reindex) | $reindex cả loại resource (job nền) |
 | [`POST /fhir/R4/{resourceType}/$validate`](#post-fhir-r4-resourcetype-validate) | $validate |
@@ -546,6 +547,65 @@ Schema: `fhir.OperationOutcome` (cấu trúc dùng chung, xem [common.md mục 3
 Schema: `fhir.OperationOutcome` (cấu trúc dùng chung, xem [common.md mục 3](../common.md#3-định-dạng-lỗi)).
 
 **`404`** Patient không tồn tại
+
+Schema: `fhir.OperationOutcome` (cấu trúc dùng chung, xem [common.md mục 3](../common.md#3-định-dạng-lỗi)).
+
+---
+
+<a id="get-fhir-r4-project-id-rate-limits"></a>
+## `GET /fhir/R4/Project/{id}/$rate-limits`
+
+**Tình trạng hạn mức điểm của project (Project/$rate-limits)**
+
+Cần quyền admin và id phải là project của chính người gọi (403 nếu khác). KHÔNG trừ điểm. Trả Parameters: `enabled` (boolean) và, khi FHIR_QUOTA_USER hoặc FHIR_QUOTA_PROJECT bật, `windowSeconds` cùng `userLimit`, `userRemaining`, `userResetSeconds` (của chính người gọi) và `projectLimit`, `projectRemaining`, `projectResetSeconds` (cả project) cho hạn mức đang bật.
+
+Các trường hợp phản hồi: [../cases/operation.md#get-fhir-r4-project-id-rate-limits](../cases/operation.md#get-fhir-r4-project-id-rate-limits)
+
+| Thuộc tính | Giá trị |
+|---|---|
+| Xác thực | bắt buộc: header `Authorization: Bearer <access_token>` (BearerAuth) |
+| Content-Type yêu cầu | không có body |
+| Content-Type phản hồi | `application/fhir+json` |
+
+**Header yêu cầu**
+
+| Header | Bắt buộc | Mô tả |
+|---|---|---|
+| `Authorization` | có | `Bearer <access_token>` |
+| `Accept` | không | nên khớp Content-Type phản hồi |
+
+**Tham số**
+
+| Tên | Vị trí | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|---|
+| `id` | đường dẫn | string | có | id project (phải là project của người gọi) |
+
+**Phản hồi**
+
+**`200`** OK
+
+Schema: `fhir.Parameters`
+
+| Trường | Kiểu | Bắt buộc | Ràng buộc | Mô tả | Ví dụ |
+|---|---|---|---|---|---|
+| `id` | string | không |  | Logical id of this artifact |  |
+| `implicitRules` | string | không |  | A set of rules under which this content was created |  |
+| `language` | string | không |  | Language of the resource content |  |
+| `meta` | object `fhir.Meta` | không |  | Metadata about the resource |  |
+| `parameter` | mảng object | không |  | Operation Parameter |  |
+| `resourceType` | string | không |  |  |  |
+
+```json
+{
+  "parameter": []
+}
+```
+
+**`401`** Thiếu hoặc sai Bearer token
+
+Schema: `fhir.OperationOutcome` (cấu trúc dùng chung, xem [common.md mục 3](../common.md#3-định-dạng-lỗi)).
+
+**`403`** Không phải admin, hoặc id khác project của người gọi
 
 Schema: `fhir.OperationOutcome` (cấu trúc dùng chung, xem [common.md mục 3](../common.md#3-định-dạng-lỗi)).
 

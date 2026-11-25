@@ -55,7 +55,7 @@ Kế hoạch: [modules/p17-async-batch-download-autodisable.md](modules/p17-asyn
 - [ ] `Project/:id/$clone`
 - [x] `Project/:id/$archive` (auth, 2026-11-25: LƯU TRỮ MỀM `POST /admin/super/projects/{id}/archive` đặt `active=false`; không xuất dữ liệu ra kho ngoài như Medplum)
 - [x] `/$restore` (auth, 2026-11-25: `POST /admin/super/projects/{id}/restore` đặt `active=true`)
-- [ ] `Project/:id/$rate-limits`
+- [x] `Project/:id/$rate-limits` (fhir-server, 2026-11-25: `GET /fhir/R4/Project/{id}/$rate-limits`; kèm hạn mức điểm H-02 `FHIR_QUOTA_USER/PROJECT/WINDOW`, mặc định tắt)
 - [x] `User/:id/$rescope` (auth, 2026-11-25: `POST /admin/super/users/{userId}/rescope`, chỉ server → project)
 - [x] `User/:id/$update-email` (auth, 2026-11-25: `POST /admin/projects/{projectId}/members/{membershipId}/update-email`)
 - [x] `ClientApplication/:id/$rotate-secret` — xong 2026-11-24 ở `auth`: `POST /admin/projects/{projectId}/client/{clientId}/rotate-secret` (khác Medplum về đường dẫn; `secret` cũ thành `retiringSecret`, `retireOnly`)

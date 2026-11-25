@@ -3,6 +3,7 @@ package config_test
 import (
 	"strings"
 	"testing"
+	"time"
 
 	"trivita-fhir/apps/fhir-server/internal/config"
 )
@@ -79,5 +80,24 @@ func TestRateLimitDefaultsOnInProduction(t *testing.T) {
 	}
 	if s, _ = config.FromEnv(env(map[string]string{"ENVIRONMENT": "development"})); s.RateLimit != 0 {
 		t.Errorf("ngoài staging/production vẫn tắt: %v", s.RateLimit)
+	}
+}
+
+func TestQuotaSettings(t *testing.T) {
+	s, err := config.FromEnv(env(nil))
+	if err != nil || s.QuotaUser != 0 || s.QuotaProject != 0 || s.QuotaWindow != time.Minute {
+		t.Fatalf("mặc định phải tắt, cửa sổ 1 phút: %+v %v", s, err)
+	}
+	s, err = config.FromEnv(env(map[string]string{"FHIR_QUOTA_USER": "500", "FHIR_QUOTA_PROJECT": "5000", "FHIR_QUOTA_WINDOW": "30s"}))
+	if err != nil || s.QuotaUser != 500 || s.QuotaProject != 5000 || s.QuotaWindow != 30*time.Second {
+		t.Fatalf("đọc: %+v %v", s, err)
+	}
+	for name, vars := range map[string]map[string]string{
+		"user âm": {"FHIR_QUOTA_USER": "-1"}, "project âm": {"FHIR_QUOTA_PROJECT": "-1"},
+		"cửa sổ 0": {"FHIR_QUOTA_WINDOW": "0s"}, "cửa sổ âm": {"FHIR_QUOTA_WINDOW": "-1m"}, "không phải số": {"FHIR_QUOTA_USER": "nhieu"},
+	} {
+		if _, err := config.FromEnv(env(vars)); err == nil {
+			t.Errorf("%s: phải bị từ chối", name)
+		}
 	}
 }

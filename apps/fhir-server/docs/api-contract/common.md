@@ -74,6 +74,7 @@ Quyền chi tiết theo loại resource, compartment, `AccessPolicy` và `hidden
 | Hạn mức theo IP dưới `/fhir/R4` | `FHIR_RATE_LIMIT` yêu cầu/giây/IP; staging/production không đặt thì mặc định **20**; `0` tắt; burst mặc định gấp đôi, tối thiểu 1 | `429` OperationOutcome `quá nhiều yêu cầu, thử lại sau`, `Retry-After: 1`; `403` `không xác định được người gọi` nếu không xác định được IP |
 | Phạm vi hạn mức | đứng **trước** xác thực (chặn cả việc dò token); không áp cho `/healthz`, `/readyz`, `/swagger/*`, WebSocket; `/storage/*` có bộ đếm riêng ("storage") | |
 | Cách đếm | bộ nhớ từng replica; `FHIR_RATE_LIMIT_SHARED=true` thì dùng chung qua Redis (Redis lỗi: tạm rơi về bộ đếm riêng của replica) | |
+| Hạn mức ĐIỂM theo người gọi và project | `FHIR_QUOTA_USER`, `FHIR_QUOTA_PROJECT` điểm mỗi `FHIR_QUOTA_WINDOW` (mặc định tắt, cửa sổ 1 phút); đọc 1, ghi 2, tìm kiếm/history 5, operation 10, Bundle 20 | `429` OperationOutcome `vượt hạn mức, thử lại sau`, `Retry-After`; mọi phản hồi có Principal mang `RateLimit-Limit`, `RateLimit-Remaining`, `RateLimit-Reset`; đứng SAU xác thực; xem `GET /Project/{id}/$rate-limits` ở [cases/operation.md](cases/operation.md) |
 | Thân yêu cầu | tối đa **16 MiB** (`BodyLimit`); POST/PUT `Binary` và `/storage/*` khi bật kho ngoài tự đặt trần riêng | `413` OperationOutcome `Body quá lớn` |
 
 ## 6. Mã HTTP chung

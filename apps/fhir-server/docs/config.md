@@ -48,6 +48,9 @@ Tệp này **được sinh từ `internal/config/config.go`** (xem `docs_test.go
 | `FHIR_JWT_SCOPE_CLAIM` | `scope` | Tên claim chứa scope của token (mặc định `scope`); không được rỗng. |
 | `FHIR_JWT_SUPER_ADMIN` | `false` | bật scope fhir.super (super-admin xuyên project, có nhật ký kiểm toán) |
 | `FHIR_PROFILE_UNKNOWN_ERROR` | `false` | ProfileUnknownError: meta.profile trỏ tới profile không có trong kho bị từ chối (mặc định chỉ cảnh báo); cần FHIR_VALIDATE_PROFILES. |
+| `FHIR_QUOTA_PROJECT` | `0` | QuotaProject: hạn mức điểm mỗi cửa sổ QuotaWindow cho cả project (mọi người gọi cộng lại; 0: tắt). Cùng bảng điểm với QuotaUser. |
+| `FHIR_QUOTA_USER` | `0` | QuotaUser: hạn mức ĐIỂM mỗi cửa sổ QuotaWindow cho mỗi người gọi (project và subject) trên /fhir/R4 (0: tắt). Mỗi yêu cầu tốn điểm theo loại thao tác (đọc 1, ghi 2, tìm kiếm và history 5, operation 10, Bundle 20); hết điểm là 429 kèm `Retry-After` và header `RateLimit-*`. Đếm trên Redis khi RateLimitShared. Mặc định tắt (cần hiệu chỉnh theo tải thật). |
+| `FHIR_QUOTA_WINDOW` | `1m0s` | QuotaWindow: độ dài cửa sổ của hạn mức điểm (mặc định 1 phút). |
 | `FHIR_RATE_BURST` | `0` | Cỡ đợt của hạn mức mỗi IP (mặc định gấp đôi FHIR_RATE_LIMIT, tối thiểu 1; không được âm). |
 | `FHIR_RATE_LIMIT` | `tắt ở local; staging/production: 20` | là số yêu cầu mỗi giây cho mỗi IP trên /fhir/R4 (0: tắt; không đặt thì ở staging/production là DefaultProdRateLimit); RateBurst là cỡ đợt (mặc định gấp đôi RateLimit, tối thiểu 1). |
 | `FHIR_RATE_LIMIT_SHARED` | `false` | RateLimitShared: đếm hạn mức trên Redis (REDIS_URL) để N replica dùng chung một hạn mức thay vì mỗi replica một hạn mức. Redis lỗi: tạm rơi về bộ đếm riêng của replica. |

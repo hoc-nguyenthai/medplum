@@ -666,6 +666,52 @@ const docTemplate = `{
                 }
             }
         },
+        "/fhir/R4/Project/{id}/$rate-limits": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Cần quyền admin và id phải là project của chính người gọi (403 nếu khác). KHÔNG trừ điểm. Trả Parameters: ` + "`" + `enabled` + "`" + ` (boolean) và, khi FHIR_QUOTA_USER hoặc FHIR_QUOTA_PROJECT bật, ` + "`" + `windowSeconds` + "`" + ` cùng ` + "`" + `userLimit` + "`" + `, ` + "`" + `userRemaining` + "`" + `, ` + "`" + `userResetSeconds` + "`" + ` (của chính người gọi) và ` + "`" + `projectLimit` + "`" + `, ` + "`" + `projectRemaining` + "`" + `, ` + "`" + `projectResetSeconds` + "`" + ` (cả project) cho hạn mức đang bật.",
+                "produces": [
+                    "application/fhir+json"
+                ],
+                "tags": [
+                    "operation"
+                ],
+                "summary": "Tình trạng hạn mức điểm của project (Project/$rate-limits)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "id project (phải là project của người gọi)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/fhir.Parameters"
+                        }
+                    },
+                    "401": {
+                        "description": "Thiếu hoặc sai Bearer token",
+                        "schema": {
+                            "$ref": "#/definitions/fhir.OperationOutcome"
+                        }
+                    },
+                    "403": {
+                        "description": "Không phải admin, hoặc id khác project của người gọi",
+                        "schema": {
+                            "$ref": "#/definitions/fhir.OperationOutcome"
+                        }
+                    }
+                }
+            }
+        },
         "/fhir/R4/ValueSet/$expand": {
             "get": {
                 "security": [
@@ -7274,7 +7320,7 @@ const docTemplate = `{
             "name": "fhir"
         },
         {
-            "description": "Operation FHIR ($validate, $everything, $reindex, $expunge, PackageRelease/$install, CodeSystem/$import, ConceptMap/$import) và trạng thái job nền. $reindex, $expunge, $install và $import cần quyền admin.",
+            "description": "Operation FHIR ($validate, $everything, $reindex, $expunge, Project/$rate-limits, PackageRelease/$install, CodeSystem/$import, ConceptMap/$import) và trạng thái job nền. $reindex, $expunge, $install và $import cần quyền admin.",
             "name": "operation"
         },
         {

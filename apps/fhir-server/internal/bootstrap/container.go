@@ -389,6 +389,9 @@ func (c *Container) Handler(instrument func(*echo.Echo) error) (*echo.Echo, erro
 		FHIR: fhirHandler, Storage: storageHandler, Auth: c.Auth, Ready: c.Readiness, Instrument: instrument, Debug: c.Settings.Debug,
 		BaseURL: c.Settings.BaseURL, AllowedOrigins: origins, RateLimit: c.Settings.RateLimit, RateBurst: c.Settings.RateBurst,
 	}
+	if c.Settings.QuotaUser > 0 || c.Settings.QuotaProject > 0 {
+		dep.Quota = httpapi.QuotaOptions{Store: ratelimit.NewMemoryQuota(), User: c.Settings.QuotaUser, Project: c.Settings.QuotaProject, Window: c.Settings.QuotaWindow}
+	}
 	if c.Settings.RateLimitShared {
 		cli, err := ratelimit.NewRedisClient(c.Settings.RedisURL)
 		if err != nil {
@@ -397,6 +400,9 @@ func (c *Container) Handler(instrument func(*echo.Echo) error) (*echo.Echo, erro
 		c.onStop(func(context.Context) error { return cli.Close() })
 		dep.NewRateStore = func(name string, rps float64, burst int) ratelimit.Store {
 			return ratelimit.NewRedis(cli, "fhir:rl:"+name+":", rps, burst)
+		}
+		if dep.Quota.Store != nil {
+			dep.Quota.Store = ratelimit.NewRedisQuota(cli, "fhir:quota:")
 		}
 	}
 	if len(nets) > 0 {

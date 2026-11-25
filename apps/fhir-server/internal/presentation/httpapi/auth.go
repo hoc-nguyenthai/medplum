@@ -99,7 +99,7 @@ func RequiredRole(method, path string) Role {
 	switch {
 	case strings.Contains(p, "/bulkdata/") && strings.HasSuffix(p, "/status"):
 		return RoleRead // theo dõi hoặc hủy export của chính mình, mọi method
-	case strings.HasSuffix(p, "/$reindex") || strings.HasSuffix(p, "/$expunge"):
+	case strings.HasSuffix(p, "/$reindex") || strings.HasSuffix(p, "/$expunge") || strings.HasSuffix(p, rateLimitsSuffix):
 		return RoleAdmin
 	// Nạp hàng loạt và cài gói: chỉ quản trị. Handler cũng gọi RequireAdmin, nhưng chỉ khi repo là fhirauth.Repo (chế độ JWT); ở chế độ token
 	// tĩnh cổng này là chốt duy nhất.

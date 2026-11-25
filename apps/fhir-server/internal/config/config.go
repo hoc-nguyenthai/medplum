@@ -135,7 +135,13 @@ type Settings struct {
 	RateLimit float64
 	RateBurst int
 	// RateLimitShared: đếm hạn mức trên Redis (REDIS_URL) để N replica dùng chung một hạn mức thay vì mỗi replica một hạn mức. Redis lỗi: tạm rơi về bộ đếm riêng của replica.
-	RateLimitShared     bool
+	RateLimitShared bool
+	// QuotaUser: hạn mức ĐIỂM mỗi cửa sổ QuotaWindow cho mỗi người gọi (project và subject) trên /fhir/R4 (0: tắt). Mỗi yêu cầu tốn điểm theo loại thao tác (đọc 1, ghi 2, tìm kiếm và history 5, operation 10, Bundle 20); hết điểm là 429 kèm `Retry-After` và header `RateLimit-*`. Đếm trên Redis khi RateLimitShared. Mặc định tắt (cần hiệu chỉnh theo tải thật).
+	QuotaUser int
+	// QuotaProject: hạn mức điểm mỗi cửa sổ QuotaWindow cho cả project (mọi người gọi cộng lại; 0: tắt). Cùng bảng điểm với QuotaUser.
+	QuotaProject int
+	// QuotaWindow: độ dài cửa sổ của hạn mức điểm (mặc định 1 phút).
+	QuotaWindow         time.Duration
 	BrokerDriver        string
 	RedisURL            string
 	WebhookWorkers      int
@@ -270,7 +276,7 @@ func Default() Settings {
 		BrokerDriver: "memory", RedisURL: "redis://localhost:6379/0",
 		WebhookWorkers: 4, WebhookMaxAttempts: 5, WebhookTimeout: 10 * time.Second, AutoDownloadTimeout: 30 * time.Second,
 		StorageURLTTL: time.Hour, StorageMaxUploadBytes: 256 << 20, Base64BinaryMaxBytes: 1 << 20,
-		WSMaxConnections: 1000, WSMaxBindingsPerUser: 20, WSHeartbeat: 30 * time.Second,
+		WSMaxConnections: 1000, WSMaxBindingsPerUser: 20, WSHeartbeat: 30 * time.Second, QuotaWindow: time.Minute,
 	}
 }
 
@@ -354,6 +360,9 @@ func FromEnv(get func(string) string) (Settings, error) {
 	}
 	r.Int(&s.RateBurst, "FHIR_RATE_BURST")
 	r.Bool(&s.RateLimitShared, "FHIR_RATE_LIMIT_SHARED")
+	r.Int(&s.QuotaUser, "FHIR_QUOTA_USER")
+	r.Int(&s.QuotaProject, "FHIR_QUOTA_PROJECT")
+	r.Duration(&s.QuotaWindow, "FHIR_QUOTA_WINDOW")
 	r.String(&s.BrokerDriver, "BROKER_DRIVER")
 	r.String(&s.RedisURL, "REDIS_URL")
 	r.Int(&s.WebhookWorkers, "FHIR_WEBHOOK_WORKERS")
@@ -530,6 +539,9 @@ func (s Settings) validate() error {
 	errs = append(errs, s.validateStorage()...)
 	if s.RateLimit < 0 || s.RateBurst < 0 {
 		errs = append(errs, errors.New("FHIR_RATE_LIMIT và FHIR_RATE_BURST: không được âm"))
+	}
+	if s.QuotaUser < 0 || s.QuotaProject < 0 || s.QuotaWindow <= 0 {
+		errs = append(errs, errors.New("FHIR_QUOTA_USER và FHIR_QUOTA_PROJECT không được âm, FHIR_QUOTA_WINDOW phải > 0"))
 	}
 	read, err := ParseTokens(s.ReadTokens)
 	if err != nil {

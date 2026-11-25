@@ -64,6 +64,8 @@ type Deps struct {
 	// NewRateStore tạo kho đếm cho hạn mức (name phân biệt các bộ); nil: bộ nhớ trong từng replica.
 	// Truyền kho Redis để hạn mức dùng chung mọi replica.
 	NewRateStore func(name string, rps float64, burst int) ratelimit.Store
+	// Quota là hạn mức ĐIỂM theo người gọi và project (xem QuotaOptions); mặc định (Store nil hoặc cả hai hạn mức 0) là tắt: không trừ điểm, không header RateLimit-*.
+	Quota QuotaOptions
 }
 
 // New dựng Echo với route, middleware và error handler.
@@ -129,7 +131,11 @@ func New(dep Deps) (*echo.Echo, error) {
 	if dep.RateLimit > 0 {
 		mws = append([]echo.MiddlewareFunc{rateLimiter(dep.rateStore("api", dep.RateLimit, dep.RateBurst))}, mws...)
 	}
+	if dep.Quota.enabled() {
+		mws = append(mws, quotaMiddleware(dep.Quota))
+	}
 	g := e.Group(Prefix, mws...)
+	g.GET("/Project/:id"+rateLimitsSuffix, rateLimitsHandler(dep.Quota))
 	g.Any("", fhir)
 	g.Any("/*", fhir)
 	return e, nil

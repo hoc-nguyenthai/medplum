@@ -92,7 +92,7 @@ Mỗi nhóm là một `tag` của swagger. Loại resource là tham số đườ
 | `GET /healthz` | Liveness probe | công khai | - | 200 `httpapi.HealthResponse` | - |
 | `GET /readyz` | Readiness probe (kiểm tra phụ thuộc) | công khai | - | 200 `httpapi.ReadyResponse` | 503 |
 
-### Nhóm `operation` (11 route)
+### Nhóm `operation` (12 route)
 
 | Route | Mô tả | Xác thực | Yêu cầu | Phản hồi thành công | Mã lỗi |
 |---|---|---|---|---|---|
@@ -102,6 +102,7 @@ Mỗi nhóm là một `tag` của swagger. Loại resource là tham số đườ
 | `POST /fhir/R4/ConceptMap/{id}/$import` | ConceptMap/$import (nạp ánh xạ cho bảng ánh xạ lớn) | Bearer | body `fhir.Parameters` | 200 `fhir.ConceptMap` | 400, 401, 403, 404 |
 | `POST /fhir/R4/PackageRelease/{id}/$install` | PackageRelease/$install (nạp gói định nghĩa) | Bearer | - | 200 `fhir.Bundle` | 400, 401, 403, 404 |
 | `GET /fhir/R4/Patient/{id}/$everything` | Patient/$everything | Bearer | query: _count, _since, _type | 200 `fhir.Bundle` | 401, 403, 404 |
+| `GET /fhir/R4/Project/{id}/$rate-limits` | Tình trạng hạn mức điểm của project (Project/$rate-limits) | Bearer | - | 200 `fhir.Parameters` | 401, 403 |
 | `GET /fhir/R4/job/{id}/status` | Trạng thái job nền | Bearer | - | 200 `fhir.Parameters` | 401, 403, 404 |
 | `POST /fhir/R4/{resourceType}/$reindex` | $reindex cả loại resource (job nền) | Bearer | - | 202 `fhir.OperationOutcome` | 401, 403 |
 | `POST /fhir/R4/{resourceType}/$validate` | $validate | Bearer | body `httpapi.PatientBody` | 200 `fhir.OperationOutcome` | 400, 401, 403 |

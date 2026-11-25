@@ -1,6 +1,6 @@
 # Trường hợp phản hồi: nhóm `operation`
 
-Nhóm này có **11 route** của các operation FHIR và việc nền: nạp bảng mã và bảng ánh xạ lớn (`$import`), cài gói định nghĩa (`$install`), xuất hồ sơ theo bệnh nhân (`$everything`), kiểm tra resource (`$validate`), lập lại chỉ mục (`$reindex`), xóa vĩnh viễn (`$expunge`) và đọc trạng thái job nền (`job/{id}/status`). Quy ước chung (header bảo mật, `X-Request-Id`, định dạng `OperationOutcome`, xác thực, hạn mức, kích thước thân) ở [common.md](../common.md); bảng trường ở [reference/operation.md](../reference/operation.md). Mục này chỉ nêu điều kiện, phản hồi và tác dụng phụ. Việc nền xuất dữ liệu (`$export`, `bulkdata/{id}/status`) và batch bất đồng bộ nằm ở [bulk.md](bulk.md); chúng dùng chung cơ chế job ở mục "Job bất đồng bộ" dưới đây.
+Nhóm này có **12 route** của các operation FHIR và việc nền: nạp bảng mã và bảng ánh xạ lớn (`$import`), cài gói định nghĩa (`$install`), xuất hồ sơ theo bệnh nhân (`$everything`), kiểm tra resource (`$validate`), lập lại chỉ mục (`$reindex`), đọc hạn mức (`Project/$rate-limits`), xóa vĩnh viễn (`$expunge`) và đọc trạng thái job nền (`job/{id}/status`). Quy ước chung (header bảo mật, `X-Request-Id`, định dạng `OperationOutcome`, xác thực, hạn mức, kích thước thân) ở [common.md](../common.md); bảng trường ở [reference/operation.md](../reference/operation.md). Mục này chỉ nêu điều kiện, phản hồi và tác dụng phụ. Việc nền xuất dữ liệu (`$export`, `bulkdata/{id}/status`) và batch bất đồng bộ nằm ở [bulk.md](bulk.md); chúng dùng chung cơ chế job ở mục "Job bất đồng bộ" dưới đây.
 
 Điều kiện có route: luôn có (router FHIR luôn đăng ký các operation này). Riêng nhánh phụ thuộc kho: `$reindex` cần kho cài `Reindexer`, `$expunge` cần `Expunger`, `$import` cần `ConceptStore`/`MappingStore`; kho không cài thì `501` (kho PostgreSQL và SQLite của fhir-server đều cài đủ, nên nhánh `501` chỉ gặp với kho tự cắm).
 
@@ -364,6 +364,44 @@ Content-Type: application/fhir+json; charset=utf-8
 ```
 
 **Lưu ý tích hợp:** chỉ dùng cho một resource (đồng bộ, trong thời gian của yêu cầu HTTP); dùng khi sửa tay dữ liệu trong CSDL hoặc kiểm tra một resource bị lệch chỉ mục. Cả loại: `POST /{type}/$reindex`.
+
+---
+
+<a id="get-fhir-r4-project-id-rate-limits"></a>
+## `GET /fhir/R4/Project/{id}/$rate-limits`
+
+Đọc tình trạng hạn mức ĐIỂM theo người gọi và theo project (tương ứng `Project/$rate-limits`). [Tham chiếu trường](../reference/operation.md#get-fhir-r4-project-id-rate-limits)
+
+**Điều kiện có route:** luôn có (do tầng HTTP phục vụ, không qua router FHIR; entry `GET Project/{id}/$rate-limits` trong Bundle không dùng được). Cần `admin` ở cổng HTTP (`RequiredRole`) và `id` phải là project của Principal; chế độ token tĩnh không có project nên luôn `403`. KHÔNG trừ điểm.
+
+**Hạn mức điểm** (`FHIR_QUOTA_USER`, `FHIR_QUOTA_PROJECT`, `FHIR_QUOTA_WINDOW`; mặc định tắt): mọi yêu cầu dưới `/fhir/R4` có Principal tốn điểm theo HÌNH DẠNG yêu cầu: đọc theo id **1**; create/update/patch/delete **2**; tìm kiếm (GET loại resource, `_search`), `_history` và đọc phiên bản **5**; operation `$...` **10**; POST Bundle ở gốc **20**; `metadata`, OPTIONS và route này **0**. Điểm trừ cả ở lượt trả 4xx/5xx (chỉ cần đã qua xác thực). Khóa đếm: người gọi `(project, subject)` và cả `project`; thao tác nặng hơn cả hạn mức vẫn chạy được một lần mỗi cửa sổ. Hết điểm: `429` OperationOutcome `vượt hạn mức, thử lại sau` kèm `Retry-After` (giây, tối thiểu 1). Mọi phản hồi có Principal mang `RateLimit-Limit`, `RateLimit-Remaining`, `RateLimit-Reset` (giây) của hạn mức còn ít điểm hơn. Redis hoặc bộ nhớ như `FHIR_RATE_LIMIT_SHARED`; kho lỗi thì cho qua. Điểm của người gọi đã trừ khi project hết điểm không được hoàn lại.
+
+**Thứ tự kiểm tra:** hạn mức IP (429) → Bearer (401) → vai trò `admin` (403) → `id` là project của Principal (403) → đọc `Peek` các hạn mức đang bật.
+
+| # | Trường hợp | Điều kiện | HTTP | Header phản hồi riêng | Body | Tác dụng phụ |
+|---|---|---|---|---|---|---|
+| L1 | Hạn mức đang bật | admin, đúng project, `FHIR_QUOTA_USER` hoặc `FHIR_QUOTA_PROJECT` > 0 | 200 | `Cache-Control: no-store` | `Parameters`: `enabled=true`, `windowSeconds`, và cho mỗi hạn mức bật: `userLimit`/`userRemaining`/`userResetSeconds` (của chính người gọi), `projectLimit`/`projectRemaining`/`projectResetSeconds` | không |
+| L2 | Hạn mức tắt | cả hai bằng 0 | 200 | như L1 | `Parameters` chỉ có `enabled=false` | không |
+| L3 | Chưa xác thực | | 401 | `WWW-Authenticate` | `Thiếu hoặc sai bearer token` | không |
+| L4 | Không phải admin | token `read` hoặc `write` | 403 | - | `Token không đủ quyền cho thao tác này` | không |
+| L5 | Project khác | `id` khác project của Principal (kể cả token tĩnh) | 403 | - | `Chỉ quản trị của chính project này được xem hạn mức` | không |
+
+**Ví dụ**
+
+```http
+GET /fhir/R4/Project/A/$rate-limits HTTP/1.1
+Authorization: Bearer <access_token_admin>
+```
+
+```http
+HTTP/1.1 200 OK
+Content-Type: application/fhir+json; charset=utf-8
+Cache-Control: no-store
+
+{"resourceType":"Parameters","parameter":[{"name":"enabled","valueBoolean":true},{"name":"windowSeconds","valueInteger":60},{"name":"userLimit","valueInteger":500},{"name":"userRemaining","valueInteger":487},{"name":"userResetSeconds","valueInteger":41},{"name":"projectLimit","valueInteger":5000},{"name":"projectRemaining","valueInteger":4800},{"name":"projectResetSeconds","valueInteger":41}]}
+```
+
+**Lưu ý tích hợp:** bảng điểm cố định theo hình dạng yêu cầu (không đo thời gian xử lý, không cấu hình được) và cửa sổ cố định (không trượt): tải dồn ở đầu cửa sổ có thể gấp đôi trung bình quanh ranh giới. Khác Medplum: nội dung Parameters và tên tham số là thiết kế của port này (chưa đối chiếu với `project-rate-limits.ts`); hạn mức theo người dùng/project của Medplum có thể đặt riêng từng project, ở đây một giá trị chung cho mọi project.
 
 ---
 

@@ -198,6 +198,7 @@ Biến môi trường (hoặc `.env`); danh sách đầy đủ ở [`.env.exampl
 | `FHIR_TRUSTED_PROXIES` | (rỗng) | CIDR reverse proxy được tin khi đọc IP từ `X-Forwarded-For`; rỗng: dùng IP kết nối (đứng sau proxy mà không khai thì mọi người gọi chung một hạn mức) |
 | `FHIR_RATE_LIMIT` | `0` (tắt); **`20` ở staging/production nếu không đặt** (đặt `0` rõ ràng mới tắt) | số yêu cầu/giây mỗi IP dưới `/fhir/R4`, trước xác thực (chặn cả dò token); vượt thì 429 + `Retry-After`. Đếm trong bộ nhớ từng instance. Đứng sau proxy thì khai `FHIR_TRUSTED_PROXIES`, nếu không mọi người gọi chung một hạn mức 20 rps |
 | `FHIR_RATE_BURST` | `2 × FHIR_RATE_LIMIT` | cỡ đợt |
+| `FHIR_QUOTA_USER`, `FHIR_QUOTA_PROJECT` | `0` (tắt) | hạn mức ĐIỂM mỗi `FHIR_QUOTA_WINDOW` (mặc định `1m`) cho mỗi người gọi và cho cả project: đọc 1 điểm, ghi 2, tìm kiếm/history 5, operation 10, Bundle 20; hết điểm thì 429 + `Retry-After`, mọi phản hồi có `RateLimit-Limit/Remaining/Reset`. Đứng sau xác thực. Admin xem tình trạng bằng `GET /fhir/R4/Project/{id}/$rate-limits`. Đếm trên Redis khi `FHIR_RATE_LIMIT_SHARED=true` |
 | `FHIR_JWT_SUPER_ADMIN` | `false` | bật scope `fhir.super` (super-admin xuyên project, xem dưới) |
 | `FHIR_JWT_POLICY_CLAIM` | `fhir_access_policy` | tên claim chứa AccessPolicy (mảng rule, xem bên dưới) |
 | `FHIR_JWT_HMAC_SECRET` | trống | CHỈ dev/test: khóa HS256 thay cho JWKS; bị từ chối ở staging/production |

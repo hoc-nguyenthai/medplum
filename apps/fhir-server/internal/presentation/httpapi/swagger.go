@@ -15,7 +15,7 @@ var _ = fhir.Bundle{} // để swag phân giải kiểu pkg/fhir
 // @tag.name					fhir
 // @tag.description			FHIR R4 REST: CRUD, search, history, batch/transaction, GraphQL, metadata (CapabilityStatement). Lỗi trả OperationOutcome (application/fhir+json).
 // @tag.name					operation
-// @tag.description			Operation FHIR ($validate, $everything, $reindex, $expunge, PackageRelease/$install, CodeSystem/$import, ConceptMap/$import) và trạng thái job nền. $reindex, $expunge, $install và $import cần quyền admin.
+// @tag.description			Operation FHIR ($validate, $everything, $reindex, $expunge, Project/$rate-limits, PackageRelease/$install, CodeSystem/$import, ConceptMap/$import) và trạng thái job nền. $reindex, $expunge, $install và $import cần quyền admin.
 // @tag.name					terminology
 // @tag.description			Terminology cơ bản: ValueSet/$expand và CodeSystem/$lookup.
 // @tag.name					bulk
@@ -431,6 +431,20 @@ func validate() {}
 //	@Failure		404		{object}	fhir.OperationOutcome	"Patient không tồn tại"
 //	@Router			/fhir/R4/Patient/{id}/$everything [get]
 func everything() {}
+
+// rateLimits godoc
+//
+//	@Summary		Tình trạng hạn mức điểm của project (Project/$rate-limits)
+//	@Description	Cần quyền admin và id phải là project của chính người gọi (403 nếu khác). KHÔNG trừ điểm. Trả Parameters: `enabled` (boolean) và, khi FHIR_QUOTA_USER hoặc FHIR_QUOTA_PROJECT bật, `windowSeconds` cùng `userLimit`, `userRemaining`, `userResetSeconds` (của chính người gọi) và `projectLimit`, `projectRemaining`, `projectResetSeconds` (cả project) cho hạn mức đang bật.
+//	@Tags			operation
+//	@Security		BearerAuth
+//	@Produce		application/fhir+json
+//	@Param			id	path		string	true	"id project (phải là project của người gọi)"
+//	@Success		200	{object}	fhir.Parameters
+//	@Failure		401	{object}	fhir.OperationOutcome	"Thiếu hoặc sai Bearer token"
+//	@Failure		403	{object}	fhir.OperationOutcome	"Không phải admin, hoặc id khác project của người gọi"
+//	@Router			/fhir/R4/Project/{id}/$rate-limits [get]
+func rateLimits() {}
 
 // reindex godoc
 //
