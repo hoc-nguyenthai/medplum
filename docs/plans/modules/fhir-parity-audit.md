@@ -326,7 +326,7 @@ Tất cả dùng chung `operations/utils/scheduling.ts` (1088 dòng), `schedulin
 | Q-06 | `User/{id}/$update-email` (`update-user-email.ts:90-239`, `routes.ts:265`) | XONG ở `auth` 2026-11-25 (route khác đường dẫn, theo membership) | `POST /admin/projects/{projectId}/members/{membershipId}/update-email` | auth, Mailer | thấp | M |
 | Q-07 | `User/{id}/$rescope` (`rescope.ts:43-237`, `routes.ts:268`) | XONG ở `auth` 2026-11-25 (route khác đường dẫn; chỉ server → project, điều kiện là thiết kế của port) | `POST /admin/super/users/{userId}/rescope` | auth | thấp | M |
 | Q-08 | `ClientApplication/{id}/$rotate-secret` (`rotatesecret.ts:38-78`, `routes.ts:431`) | CHƯA | grep `rotate-secret`: 0 | auth | vừa | S |
-| Q-09 | `ClientApplication/{id}/$smart-launch` tạo `SmartAppLaunch`, chuyển hướng (`launch.ts:28-59`, `routes.ts:428`) | CHƯA | grep `smart-launch`: 0; kiểu `SmartAppLaunch` có (`pkg/fhir/resource_smartapplaunch.go`) | auth P3 | vừa | S |
+| Q-09 | `ClientApplication/{id}/$smart-launch` tạo `SmartAppLaunch`, chuyển hướng (`launch.ts:28-59`, `routes.ts:428`) | **XONG ở `auth` 2026-11-25** (`POST /admin/projects/{projectId}/client/{clientId}/smart-launch`, trả JSON thay vì chuyển hướng) | grep `smart-launch`: 0; kiểu `SmartAppLaunch` có (`pkg/fhir/resource_smartapplaunch.go`) | auth P3 | vừa | S |
 
 ### Nhóm D. Vận hành CSDL của Medplum (đề xuất KHÔNG ÁP DỤNG, xem mục 5)
 

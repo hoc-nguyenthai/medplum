@@ -167,6 +167,7 @@ type AdminClientRequest struct {
 	Name         string
 	Description  string
 	RedirectURIs []string
+	LaunchURI    string // tùy chọn: URL khởi chạy EHR launch (http hoặc https tuyệt đối, không fragment, tối đa 2048 ký tự)
 	PkceOptional bool
 	GrantTypes   []string
 	AccessPolicy *fhir.Reference
@@ -201,7 +202,13 @@ func (s *Service) AdminCreateClient(ctx context.Context, a *AuthState, projectID
 			return nil, domain.BadRequestAt("Invalid redirect URI", "redirectUris")
 		}
 	}
-	return s.CreateClient(ctx, p.ID, NewClient{Name: req.Name, Description: req.Description, RedirectURIs: req.RedirectURIs, PkceOptional: req.PkceOptional,
+	if req.LaunchURI != "" {
+		parsed, err := url.Parse(req.LaunchURI)
+		if err != nil || len(req.LaunchURI) > 2048 || !parsed.IsAbs() || parsed.Host == "" || parsed.Fragment != "" || (parsed.Scheme != "https" && parsed.Scheme != "http") {
+			return nil, domain.BadRequestAt("Invalid launch URI", "launchUri")
+		}
+	}
+	return s.CreateClient(ctx, p.ID, NewClient{Name: req.Name, Description: req.Description, RedirectURIs: req.RedirectURIs, LaunchURI: req.LaunchURI, PkceOptional: req.PkceOptional,
 		GrantTypes: req.GrantTypes, AccessPolicy: req.AccessPolicy, Secret: req.Secret})
 }
 

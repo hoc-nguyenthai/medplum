@@ -30,6 +30,7 @@ func specOptions() apicontract.Options {
 			"httpapi.InviteMembershipBody": "toàn bộ là ghi đè tùy chọn lên membership được tạo",
 			"httpapi.MFAResetBody":         "body tùy chọn; bỏ trống là gỡ mọi yếu tố",
 			"httpapi.RotateSecretBody":     "body tùy chọn; bỏ trống là xoay với secret server sinh",
+			"httpapi.SmartLaunchBody":      "cần ít nhất một trong patient, encounter, fhirContext; không trường nào luôn bắt buộc",
 			"scim.Name":                    "SCIM name: mọi thành phần đều tùy chọn",
 		},
 		ContentType: func(def string) string {

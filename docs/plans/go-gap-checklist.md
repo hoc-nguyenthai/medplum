@@ -59,7 +59,7 @@ Kế hoạch: [modules/p17-async-batch-download-autodisable.md](modules/p17-asyn
 - [x] `User/:id/$rescope` (auth, 2026-11-25: `POST /admin/super/users/{userId}/rescope`, chỉ server → project)
 - [x] `User/:id/$update-email` (auth, 2026-11-25: `POST /admin/projects/{projectId}/members/{membershipId}/update-email`)
 - [x] `ClientApplication/:id/$rotate-secret` — xong 2026-11-24 ở `auth`: `POST /admin/projects/{projectId}/client/{clientId}/rotate-secret` (khác Medplum về đường dẫn; `secret` cũ thành `retiringSecret`, `retireOnly`)
-- [ ] `ClientApplication/:id/$smart-launch`
+- [x] `ClientApplication/:id/$smart-launch` (auth, 2026-11-25: `POST /admin/projects/{projectId}/client/{clientId}/smart-launch` trả JSON `launchUrl`, không phải GET chuyển hướng; `launchUri` đặt khi tạo client)
 - [ ] `/admin/projects/:id/bot` — chặn bởi **M1**
 - [x] `/admin/projects/:projectId/secrets` (auth, 2026-11-24: `POST` thay toàn bộ `Project.secret`; giá trị che `********` giữ secret cũ)
 - [ ] Lệnh CLI thay `/admin/super/*`: reindex, purge, vacuum, valuesets, searchparameters, structuredefinitions, setpassword, tablesettings, rebuildprojectid, migrations, reconcile-db-schema-drift

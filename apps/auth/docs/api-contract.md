@@ -94,7 +94,7 @@ Mỗi nhóm là một `tag` của swagger. Cột "Yêu cầu" cho tên schema c�
 
 <!-- BEGIN GENERATED ROUTES (từ swagger.json; chạy UPDATE_DOCS=1 go test để sinh lại, đừng sửa tay) -->
 
-### Nhóm `admin` (18 route)
+### Nhóm `admin` (19 route)
 
 | Route | Mô tả | Xác thực | Yêu cầu | Phản hồi thành công | Mã lỗi |
 |---|---|---|---|---|---|
@@ -102,6 +102,7 @@ Mỗi nhóm là một `tag` của swagger. Cột "Yêu cầu" cho tên schema c�
 | `GET /admin/projects/{projectId}` | Đọc project của chính mình (admin) | Bearer | - | 200 `httpapi.AdminProjectResponse` | 401, 403 |
 | `POST /admin/projects/{projectId}/client` | Tạo ClientApplication trong project | Bearer | body `httpapi.AdminClientBody` | 201 `fhir.ClientApplication` | 400, 401, 403 |
 | `POST /admin/projects/{projectId}/client/{clientId}/rotate-secret` | Xoay secret của client (ClientApplication/$rotate-secret) | Bearer | body `httpapi.RotateSecretBody` | 200 `httpapi.RotateSecretResponse` | 400, 401, 403, 429 |
+| `POST /admin/projects/{projectId}/client/{clientId}/smart-launch` | Tạo launch SMART cho client (ClientApplication/$smart-launch) | Bearer | body `httpapi.SmartLaunchBody` | 201 `httpapi.SmartLaunchResponse` | 400, 401, 403, 429 |
 | `POST /admin/projects/{projectId}/invite` | Mời user vào project | Bearer | body `httpapi.InviteBody` | 200 `fhir.ProjectMembership` | 400, 401, 403, 409, 429 |
 | `GET /admin/projects/{projectId}/members/{membershipId}` | Đọc một membership của project | Bearer | - | 200 `fhir.ProjectMembership` | 401, 403 |
 | `POST /admin/projects/{projectId}/members/{membershipId}` | Sửa membership | Bearer | body `fhir.ProjectMembership` | 200 `fhir.ProjectMembership` | 400, 401, 403, 409 |

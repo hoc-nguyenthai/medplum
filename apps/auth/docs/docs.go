@@ -408,6 +408,84 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/projects/{projectId}/client/{clientId}/smart-launch": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Tạo SmartAppLaunch mang bệnh nhân, lượt khám, ngữ cảnh FHIR khác và trả ` + "`" + `launchUrl` + "`" + ` (launchUri của client kèm ` + "`" + `iss` + "`" + ` và ` + "`" + `launch` + "`" + `). Client phải thuộc project và có launchUri; cần AUTH_FHIR_BASE_URL; phải có ít nhất một ngữ cảnh. Tham chiếu chỉ được kiểm dạng, không kiểm resource tồn tại. Launch không gắn client, không hết hạn. Client ngoài project hoặc không tồn tại là 403 chung. Trường lạ là 400.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json",
+                    "application/fhir+json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Tạo launch SMART cho client (ClientApplication/$smart-launch)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "id project",
+                        "name": "projectId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "id client",
+                        "name": "clientId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Ngữ cảnh launch",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.SmartLaunchBody"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/httpapi.SmartLaunchResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/fhir.OperationOutcome"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/fhir.OperationOutcome"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/fhir.OperationOutcome"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/fhir.OperationOutcome"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/projects/{projectId}/invite": {
             "post": {
                 "security": [
@@ -6796,6 +6874,11 @@ const docTemplate = `{
                         "client_credentials"
                     ]
                 },
+                "launchUri": {
+                    "description": "URL khởi chạy EHR launch (http hoặc https tuyệt đối, không fragment, tối đa 2048 ký tự); cần để dùng smart-launch; sai là 400",
+                    "type": "string",
+                    "example": "https://app.example.org/launch"
+                },
                 "name": {
                     "description": "tên client; bắt buộc, rỗng hoặc chỉ khoảng trắng là 400",
                     "type": "string",
@@ -7943,6 +8026,48 @@ const docTemplate = `{
                     "description": "Secret trong link thư; bắt buộc, không rỗng, dùng một lần",
                     "type": "string",
                     "example": "s3cr3t-from-email-link"
+                }
+            }
+        },
+        "httpapi.SmartLaunchBody": {
+            "type": "object",
+            "properties": {
+                "encounter": {
+                    "description": "lượt khám của ngữ cảnh, dạng Encounter/\u003cid\u003e",
+                    "type": "string",
+                    "example": "Encounter/0192f3a4-7b1c-7d2e-9a10-3c5e8f1b2a46"
+                },
+                "fhirContext": {
+                    "description": "ngữ cảnh FHIR khác dạng Type/\u003cid\u003e, tối đa 20",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "DiagnosticReport/0192f3a4-7b1c-7d2e-9a10-3c5e8f1b2a47"
+                    ]
+                },
+                "patient": {
+                    "description": "bệnh nhân của ngữ cảnh, dạng Patient/\u003cid\u003e",
+                    "type": "string",
+                    "example": "Patient/0192f3a4-7b1c-7d2e-9a10-3c5e8f1b2a45"
+                }
+            }
+        },
+        "httpapi.SmartLaunchResponse": {
+            "type": "object",
+            "required": [
+                "launchId",
+                "launchUrl"
+            ],
+            "properties": {
+                "launchId": {
+                    "description": "id SmartAppLaunch vừa tạo (giá trị ` + "`" + `launch` + "`" + ` của /oauth2/authorize)",
+                    "type": "string"
+                },
+                "launchUrl": {
+                    "description": "launchUri của client kèm iss (AUTH_FHIR_BASE_URL) và launch; ứng dụng mở URL này (chuyển hướng trình duyệt) để bắt đầu EHR launch",
+                    "type": "string"
                 }
             }
         },

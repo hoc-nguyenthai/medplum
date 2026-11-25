@@ -239,6 +239,8 @@ type NewClient struct {
 	Name         string
 	Description  string
 	RedirectURIs []string
+	// LaunchURI (tùy chọn) là URL khởi chạy EHR launch (ClientApplication.launchUri).
+	LaunchURI    string
 	PkceOptional bool
 	GrantTypes   []string
 	// AccessPolicy (tùy chọn) là policy của membership client; mặc định là policy ClientApplication của project.
@@ -253,7 +255,7 @@ func (s *Service) createClient(ctx context.Context, w ResourceWriter, req NewCli
 	c := &fhir.ClientApplication{
 		ResourceType: "ClientApplication", Meta: &fhir.Meta{Project: req.Project.ID},
 		Name: req.Name, Description: req.Description, Secret: clientSecret(req.Secret),
-		RedirectUris: req.RedirectURIs, GrantType: req.GrantTypes,
+		RedirectUris: req.RedirectURIs, GrantType: req.GrantTypes, LaunchUri: req.LaunchURI,
 	}
 	if req.PkceOptional {
 		c.PkceOptional = ptrTrue()

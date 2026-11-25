@@ -24,7 +24,7 @@ Các route `/admin/projects/*` không có đường nào xuyên project (super-a
 
 1. Route có hay không (`AUTH_ADMIN_ENABLED`): `404`.
 2. Middleware toàn cục: body tối đa 1 MiB (`413`, thông điệp `Request body too large`), hạn mức IP `AUTH_RATE_LIMIT` (`429`).
-3. Bearer (`401`). Sau bước này mới tới hạn mức bước đăng nhập `AUTH_LOGIN_RATE_LIMIT` (`429`) ở **bảy route**: `setpassword`, `invite`, `resetpassword`, `mfa/reset`, `update-email`, `client/{clientId}/rotate-secret`, `secrets` (các route admin khác không có hạn mức này).
+3. Bearer (`401`). Sau bước này mới tới hạn mức bước đăng nhập `AUTH_LOGIN_RATE_LIMIT` (`429`) ở **tám route**: `setpassword`, `invite`, `resetpassword`, `mfa/reset`, `update-email`, `client/{clientId}/rotate-secret`, `client/{clientId}/smart-launch`, `secrets` (các route admin khác không có hạn mức này).
 4. **Handler đọc/parse body và validator của route** (`400`): xảy ra **trước** kiểm quyền admin ở bước 5. Nghĩa là người không phải admin gửi body hỏng vẫn nhận `400`, không phải `403`.
 5. Use case: kiểm admin hoạt động của project và `:projectId` (`403`), rồi nghiệp vụ, rồi ghi.
 
@@ -226,18 +226,19 @@ Tạo `ClientApplication` và membership của nó trong project. [Tham chiếu 
 
 **Cờ bật:** `AUTH_ADMIN_ENABLED`.
 
-**Thứ tự kiểm tra:** Bearer (401) → parse JSON object (400) → trường lạ (400, liệt kê theo thứ tự chữ cái, `expression` là tên đầu) → ép kiểu vào DTO (400 `Invalid client body`) → admin và `projectId` (403) → `name` không rỗng → độ dài `secret` → từng `grantType` → từng `redirectUris` → `accessPolicy` thuộc project → **một transaction**: tạo ClientApplication rồi ProjectMembership (user = profile = client; policy = `accessPolicy` hoặc policy mặc định `ClientApplication` của project). Phản hồi `201`.
+**Thứ tự kiểm tra:** Bearer (401) → parse JSON object (400) → trường lạ (400, liệt kê theo thứ tự chữ cái, `expression` là tên đầu) → ép kiểu vào DTO (400 `Invalid client body`) → admin và `projectId` (403) → `name` không rỗng → độ dài `secret` → từng `grantType` → từng `redirectUris` → `launchUri` → `accessPolicy` thuộc project → **một transaction**: tạo ClientApplication rồi ProjectMembership (user = profile = client; policy = `accessPolicy` hoặc policy mặc định `ClientApplication` của project). Phản hồi `201`.
 
 | # | Trường hợp | Điều kiện | HTTP | Header phản hồi riêng | Body | Tác dụng phụ |
 |---|---|---|---|---|---|---|
 | C1 | Thành công | body hợp lệ | 201 | `Cache-Control: no-store` | ClientApplication kèm `secret` (do người gọi đặt hoặc server sinh 64 ký tự hex) | tạo client + membership (một transaction) |
 | C2 | Body không đọc được | JSON hỏng hoặc không phải object | 400 | - | `Content could not be parsed` | không |
-| C3 | Trường lạ | khác `name`, `description`, `redirectUris`, `pkceOptional`, `grantType`, `secret`, `accessPolicy` (ví dụ `identityProvider`, `meta`, `status`) | 400 | - | `Unsupported field: <các tên>` | không |
+| C3 | Trường lạ | khác `name`, `description`, `redirectUris`, `launchUri`, `pkceOptional`, `grantType`, `secret`, `accessPolicy` (ví dụ `identityProvider`, `meta`, `status`) | 400 | - | `Unsupported field: <các tên>` | không |
 | C4 | Sai kiểu | ví dụ `redirectUris` là chuỗi | 400 | - | `Invalid client body` | không |
 | C5 | Thiếu tên | `name` vắng, rỗng, chỉ khoảng trắng | 400 | - | `Client name is required`, `expression` `name` | không |
 | C6 | Secret sai độ dài | có `secret` ngoài 32 đến 256 ký tự | 400 | - | `secret must be between 32 and 256 characters` | không |
 | C7 | Grant lạ | ngoài `authorization_code`, `client_credentials`, `refresh_token`, token-exchange, `pre-authorized_code` | 400 | - | `Unsupported grantType: <giá trị>` | không |
 | C8 | Redirect URI sai | không tuyệt đối, thiếu host, có fragment, scheme khác http/https | 400 | - | `Invalid redirect URI` | không |
+| C8b | launchUri sai | không tuyệt đối, thiếu host, có fragment, scheme khác http/https, hơn 2048 ký tự | 400 | - | `Invalid launch URI`, `expression` `launchUri` | không |
 | C9 | AccessPolicy sai | không tồn tại hoặc thuộc project khác | 400 | - | `Invalid access policy`, `expression` `accessPolicy` | không |
 | C10 | Chưa xác thực | | 401 | `WWW-Authenticate` | `Unauthorized` | không |
 | C11 | Không phải admin / project khác | | 403 | - | `Forbidden` | không |
@@ -264,6 +265,55 @@ Cache-Control: no-store
 (Rút gọn: phản hồi thật còn `meta` và các trường khác của ClientApplication.)
 
 **Lưu ý tích hợp:** lưu `secret` ngay, không đọc lại được. Trường lạ bị báo **trước** kiểm quyền. Để client gọi được `/admin` hay SCIM, nâng membership của nó lên `admin=true` bằng `POST .../members/{id}` (tìm id membership qua `GET /auth/me` của token client).
+
+---
+
+<a id="post-admin-projects-projectid-client-clientid-smart-launch"></a>
+## `POST /admin/projects/{projectId}/client/{clientId}/smart-launch`
+
+Tạo launch SMART (EHR launch) cho một client (tương ứng `ClientApplication/$smart-launch`). [Tham chiếu trường](../reference/admin.md#post-admin-projects-projectid-client-clientid-smart-launch)
+
+**Cờ bật:** `AUTH_ADMIN_ENABLED`; cần `AUTH_FHIR_BASE_URL` (làm `iss`); client cần `launchUri` (đặt khi tạo client bằng trường `launchUri`).
+
+**Luồng:** EHR gọi route này khi người dùng mở ứng dụng trong ngữ cảnh một bệnh nhân → nhận `launchUrl` → chuyển hướng trình duyệt tới đó → ứng dụng gọi `/oauth2/authorize` với `launch=<launchId>` và `iss` → auth đọc lại launch khi phát token (`patient`, `encounter`, `fhirContext`).
+
+**Thứ tự kiểm tra:** Bearer (401) → hạn mức bước đăng nhập (429) → parse object (400) → trường lạ (400) → ép kiểu (400 `Invalid smart-launch body`) → admin và `projectId` (403) → client thuộc project (403 chung kể cả không tồn tại) → client có `launchUri` (400) → có `AUTH_FHIR_BASE_URL` (400) → có ít nhất một ngữ cảnh (400) → số `fhirContext` ≤ 20 → dạng `patient`, `encounter`, từng `fhirContext` (400) → `launchUri` hợp lệ (400) → ghi SmartAppLaunch → log kiểm toán.
+
+| # | Trường hợp | Điều kiện | HTTP | Header phản hồi riêng | Body | Tác dụng phụ |
+|---|---|---|---|---|---|---|
+| L1 | Thành công | các điều kiện đều đủ | 201 | `Cache-Control: no-store` | `{"launchId":"...","launchUrl":"<launchUri>?...&iss=<AUTH_FHIR_BASE_URL bỏ dấu / cuối>&launch=<launchId>"}`; query sẵn có của `launchUri` được giữ | tạo `SmartAppLaunch` (`meta.project` = project); mỗi lần gọi một launch mới; WARN `audit=true` |
+| L2 | Body không đọc được | JSON hỏng, không phải object | 400 | - | `Content could not be parsed` | không |
+| L3 | Trường lạ | khác `patient`, `encounter`, `fhirContext` | 400 | - | `Unsupported field: <tên>` | không |
+| L4 | Sai kiểu | ví dụ `patient` là số | 400 | - | `Invalid smart-launch body` | không |
+| L5 | Client không có launchUri | | 400 | - | `Client application does not have a launch URI`, `expression` `clientId` | không |
+| L6 | Chưa cấu hình iss | `AUTH_FHIR_BASE_URL` rỗng | 400 | - | `AUTH_FHIR_BASE_URL is not configured` | không |
+| L7 | Không có ngữ cảnh | cả ba trường vắng | 400 | - | `patient, encounter or fhirContext is required` | không |
+| L8 | Quá nhiều ngữ cảnh | hơn 20 `fhirContext` | 400 | - | `Too many fhirContext references`, `expression` `fhirContext` | không |
+| L9 | Tham chiếu sai dạng | `patient` không phải `Patient/<id>`, `encounter` không phải `Encounter/<id>`, `fhirContext` không phải `Type/<id>` (id gồm chữ, số, `-`, `.`, tối đa 64) | 400 | - | `patient must be Patient/<id>` / `encounter must be Encounter/<id>` / `Invalid reference`, `expression` là tên trường | không |
+| L10 | launchUri hỏng | không tuyệt đối hoặc scheme khác http/https (dữ liệu cũ) | 400 | - | `Client launch URI is invalid` | không |
+| L11 | Chưa xác thực | | 401 | `WWW-Authenticate` | `Unauthorized` | không |
+| L12 | Không phải admin / project khác / client ngoài project hoặc không tồn tại | | 403 | - | `Forbidden` | không |
+| L13 | Quá hạn mức bước đăng nhập | | 429 | `Retry-After: 1` | `Too many requests` | không |
+
+**Ví dụ**
+
+```http
+POST /admin/projects/0192f3a4-7b1c-7d2e-9a10-3c5e8f1b2a44/client/0192f3b0-1111-7000-8000-00000000c1ie/smart-launch HTTP/1.1
+Authorization: Bearer eyJhbGciOi...
+Content-Type: application/json
+
+{ "patient": "Patient/0192f3a4-7b1c-7d2e-9a10-3c5e8f1b2a45", "encounter": "Encounter/0192f3a4-7b1c-7d2e-9a10-3c5e8f1b2a46" }
+```
+
+```http
+HTTP/1.1 201 Created
+Content-Type: application/json
+Cache-Control: no-store
+
+{ "launchId": "0192f3c0-aaaa-7000-8000-000000000001", "launchUrl": "https://app.example.org/launch?iss=https%3A%2F%2Ffhir.example.org%2Ffhir%2FR4&launch=0192f3c0-aaaa-7000-8000-000000000001" }
+```
+
+**Lưu ý tích hợp:** (1) tham chiếu chỉ được kiểm DẠNG: auth không có đường đọc resource lâm sàng nên không kiểm resource tồn tại hay thuộc project; (2) launch **không gắn client, không hết hạn, không bị dọn** (`SmartAppLaunch` không có các trường đó): id ngẫu nhiên khó đoán nhưng ai có id đều dùng được cho login có quyền của họ; (3) `launchUri` chỉ đặt được khi tạo client (chưa có route sửa client). Khác Medplum: là `POST` trả JSON thay vì `GET` chuyển hướng 302, đường dẫn nằm dưới `/admin/projects/...` thay vì `/fhir/R4/ClientApplication/{id}/$smart-launch`, nhận ngữ cảnh trong body thay vì query; chưa đối chiếu với `launch.ts` của Medplum.
 
 ---
 
@@ -929,7 +979,7 @@ Khôi phục project đã lưu trữ (tương ứng `Project/$restore`): đặt 
 | Vị trí trong common.md | Điều đúng theo mã |
 |---|---|
 | Mục 7, cột "Phạm vi" của hạn mức toàn cục `AUTH_RATE_LIMIT` (`/auth/`, `/oauth2/`, `/.well-known/`, `/admin/`) | Bộ lọc dùng danh sách tiền tố CORS nên **cũng áp cho `/scim/` và `/email/`** |
-| Mục 7, hạn mức bước đăng nhập liệt kê "admin ghi" | Chỉ bảy route admin có hạn mức này: `setpassword`, `invite`, `resetpassword`, `mfa/reset`, `update-email`, `client/{clientId}/rotate-secret`, `secrets`. `settings`, `client`, `sites`, `members` (POST/DELETE) chỉ chịu hạn mức IP chung |
+| Mục 7, hạn mức bước đăng nhập liệt kê "admin ghi" | Chỉ tám route admin có hạn mức này: `setpassword`, `invite`, `resetpassword`, `mfa/reset`, `update-email`, `client/{clientId}/rotate-secret`, `client/{clientId}/smart-launch`, `secrets`. `settings`, `client`, `sites`, `members` (POST/DELETE) chỉ chịu hạn mức IP chung |
 | Mục 3 và 5: `/email/*` luôn OperationOutcome, `/scim/*` luôn SCIM Error | Chỉ lỗi do handler sinh. Lỗi do khung (`404` route tắt, `413` vượt 1 MiB toàn cục, `429`, `403 cannot identify caller`) ở `/scim/*` và `/email/*` có dạng JSON `{"error":"..."}` vì `fhirPath` chỉ gồm `/auth` và `/admin` (suy ra từ `errorHandler`, test chỉ kiểm mã HTTP) |
 | Mục 3: "500, 502 → thông điệp chung `Internal server error`" | `502` của email giữ thông điệp riêng: `Failed to send email`, `Failed to read attachment` (test `TestHTTPEmailSMTPFailureIs502WithoutDetails`). Chỉ `500` là chung |
 | Mục 3, "Thành công không nội dung" (`id` `ok`, không `diagnostics`) | Các route admin và email trả OperationOutcome thành công **không có `id`** và **có** `diagnostics` `All OK` (dùng `outcome(...)`, không dùng `allOK()`) |

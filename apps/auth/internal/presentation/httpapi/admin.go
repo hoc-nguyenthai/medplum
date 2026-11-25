@@ -27,6 +27,7 @@ func registerAdmin(e *echo.Echo, dep Deps) {
 	g.POST("/:projectId/settings", h.adminSettings, bearer)
 	g.POST("/:projectId/client", h.adminClient, bearer)
 	g.POST("/:projectId/client/:clientId/rotate-secret", h.adminRotateClientSecret, append([]echo.MiddlewareFunc{bearer}, slow...)...)
+	g.POST("/:projectId/client/:clientId/smart-launch", h.adminSmartLaunch, append([]echo.MiddlewareFunc{bearer}, slow...)...)
 	g.POST("/:projectId/sites", h.adminSites, bearer)
 	g.POST("/:projectId/secrets", h.adminSecrets, append([]echo.MiddlewareFunc{bearer}, slow...)...)
 	g.POST("/:projectId/invite", h.adminInvite, append([]echo.MiddlewareFunc{bearer}, slow...)...)
@@ -95,13 +96,14 @@ type AdminClientBody struct {
 	Name         string          `json:"name" binding:"required" example:"Ứng dụng bệnh nhân"`                                                                       // tên client; bắt buộc, rỗng hoặc chỉ khoảng trắng là 400
 	Description  string          `json:"description,omitempty" example:"Ứng dụng di động cho bệnh nhân"`                                                             // mô tả client (tùy chọn)
 	RedirectURIs []string        `json:"redirectUris,omitempty" example:"https://app.example.org/callback"`                                                          // các redirect URI hợp lệ cho luồng authorization_code; mỗi URI phải hợp lệ, không thì 400
+	LaunchURI    string          `json:"launchUri,omitempty" example:"https://app.example.org/launch"`                                                               // URL khởi chạy EHR launch (http hoặc https tuyệt đối, không fragment, tối đa 2048 ký tự); cần để dùng smart-launch; sai là 400
 	PkceOptional bool            `json:"pkceOptional,omitempty" example:"false"`                                                                                     // true: không bắt buộc PKCE cho client này (mặc định false)
 	GrantType    []string        `json:"grantType,omitempty" enums:"authorization_code,client_credentials,refresh_token" example:"client_credentials"`               // các grant client được dùng (ngoài ba giá trị này server còn nhận token-exchange và pre-authorized_code); giá trị khác là 400
 	Secret       string          `json:"secret,omitempty" minLength:"32" maxLength:"256" example:"0f3c9a1e7b5d4c2a8e6f1b3d5a7c9e0f2b4d6f8a1c3e5b7d9f0a2c4e6b8d0f1a"` // secret do người gọi đặt (32-256 ký tự); bỏ trống thì server sinh 64 ký tự hex; chỉ trả trong phản hồi tạo
 	AccessPolicy *fhir.Reference `json:"accessPolicy,omitempty"`                                                                                                     // AccessPolicy áp cho client; phải thuộc project
 }
 
-var adminClientFields = map[string]bool{"name": true, "description": true, "redirectUris": true, "pkceOptional": true, "grantType": true, "secret": true, "accessPolicy": true}
+var adminClientFields = map[string]bool{"name": true, "description": true, "redirectUris": true, "launchUri": true, "pkceOptional": true, "grantType": true, "secret": true, "accessPolicy": true}
 
 // adminClient godoc
 //
@@ -139,7 +141,7 @@ func (h *authHandlers) adminClient(c echo.Context) error {
 		return writeError(c, domain.BadRequest("Invalid client body"))
 	}
 	client, err := h.svc.AdminCreateClient(c.Request().Context(), authState(c), c.Param("projectId"), application.AdminClientRequest{
-		Name: in.Name, Description: in.Description, RedirectURIs: in.RedirectURIs, PkceOptional: in.PkceOptional, GrantTypes: in.GrantType, AccessPolicy: in.AccessPolicy, Secret: in.Secret,
+		Name: in.Name, Description: in.Description, RedirectURIs: in.RedirectURIs, LaunchURI: in.LaunchURI, PkceOptional: in.PkceOptional, GrantTypes: in.GrantType, AccessPolicy: in.AccessPolicy, Secret: in.Secret,
 	})
 	if err != nil {
 		return writeError(c, err)
@@ -554,4 +556,65 @@ func (h *authHandlers) adminUpdateEmail(c echo.Context) error {
 		return writeError(c, err)
 	}
 	return writeOutcome(c, http.StatusOK, outcome("information", "informational", "All OK"))
+}
+
+// SmartLaunchBody là body của POST /admin/projects/{projectId}/client/{clientId}/smart-launch; phải có ít nhất một trường.
+type SmartLaunchBody struct {
+	Patient     string   `json:"patient,omitempty" example:"Patient/0192f3a4-7b1c-7d2e-9a10-3c5e8f1b2a45"`              // bệnh nhân của ngữ cảnh, dạng Patient/<id>
+	Encounter   string   `json:"encounter,omitempty" example:"Encounter/0192f3a4-7b1c-7d2e-9a10-3c5e8f1b2a46"`          // lượt khám của ngữ cảnh, dạng Encounter/<id>
+	FhirContext []string `json:"fhirContext,omitempty" example:"DiagnosticReport/0192f3a4-7b1c-7d2e-9a10-3c5e8f1b2a47"` // ngữ cảnh FHIR khác dạng Type/<id>, tối đa 20
+}
+
+// SmartLaunchResponse là body của POST /admin/projects/{projectId}/client/{clientId}/smart-launch.
+type SmartLaunchResponse struct {
+	LaunchID  string `json:"launchId" binding:"required"`  // id SmartAppLaunch vừa tạo (giá trị `launch` của /oauth2/authorize)
+	LaunchURL string `json:"launchUrl" binding:"required"` // launchUri của client kèm iss (AUTH_FHIR_BASE_URL) và launch; ứng dụng mở URL này (chuyển hướng trình duyệt) để bắt đầu EHR launch
+}
+
+var smartLaunchFields = map[string]bool{"patient": true, "encounter": true, "fhirContext": true}
+
+// adminSmartLaunch godoc
+//
+//	@Summary		Tạo launch SMART cho client (ClientApplication/$smart-launch)
+//	@Description	Tạo SmartAppLaunch mang bệnh nhân, lượt khám, ngữ cảnh FHIR khác và trả `launchUrl` (launchUri của client kèm `iss` và `launch`). Client phải thuộc project và có launchUri; cần AUTH_FHIR_BASE_URL; phải có ít nhất một ngữ cảnh. Tham chiếu chỉ được kiểm dạng, không kiểm resource tồn tại. Launch không gắn client, không hết hạn. Client ngoài project hoặc không tồn tại là 403 chung. Trường lạ là 400.
+//	@Tags			admin
+//	@Security		BearerAuth
+//	@Accept			json
+//	@Produce		application/json,application/fhir+json
+//	@Param			projectId	path		string			true	"id project"
+//	@Param			clientId	path		string			true	"id client"
+//	@Param			body		body		SmartLaunchBody	true	"Ngữ cảnh launch"
+//	@Success		201			{object}	SmartLaunchResponse
+//	@Failure		400			{object}	fhir.OperationOutcome
+//	@Failure		401			{object}	fhir.OperationOutcome
+//	@Failure		403			{object}	fhir.OperationOutcome
+//	@Failure		429			{object}	fhir.OperationOutcome
+//	@Router			/admin/projects/{projectId}/client/{clientId}/smart-launch [post]
+func (h *authHandlers) adminSmartLaunch(c echo.Context) error {
+	b, err := readBody(c)
+	if err != nil {
+		return writeError(c, err)
+	}
+	var unknown []string
+	for k := range b {
+		if !smartLaunchFields[k] {
+			unknown = append(unknown, k)
+		}
+	}
+	if len(unknown) > 0 {
+		sort.Strings(unknown)
+		return writeError(c, domain.BadRequestAt("Unsupported field: "+strings.Join(unknown, ", "), unknown[0]))
+	}
+	raw, _ := json.Marshal(b)
+	var in SmartLaunchBody
+	if err := json.Unmarshal(raw, &in); err != nil {
+		return writeError(c, domain.BadRequest("Invalid smart-launch body"))
+	}
+	res, err := h.svc.AdminSmartLaunch(c.Request().Context(), authState(c), c.Param("projectId"), c.Param("clientId"),
+		application.SmartLaunchRequest{Patient: in.Patient, Encounter: in.Encounter, FhirContext: in.FhirContext})
+	if err != nil {
+		return writeError(c, err)
+	}
+	c.Response().Header().Set("Cache-Control", "no-store")
+	return c.JSON(http.StatusCreated, SmartLaunchResponse{LaunchID: res.LaunchID, LaunchURL: res.LaunchURL})
 }

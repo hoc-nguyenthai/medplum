@@ -12,6 +12,7 @@ Quản trị project qua HTTP (tắt mặc định, AUTH_ADMIN_ENABLED): project
 | [`GET /admin/projects/{projectId}`](#get-admin-projects-projectid) | Đọc project của chính mình (admin) |
 | [`POST /admin/projects/{projectId}/client`](#post-admin-projects-projectid-client) | Tạo ClientApplication trong project |
 | [`POST /admin/projects/{projectId}/client/{clientId}/rotate-secret`](#post-admin-projects-projectid-client-clientid-rotate-secret) | Xoay secret của client (ClientApplication/$rotate-secret) |
+| [`POST /admin/projects/{projectId}/client/{clientId}/smart-launch`](#post-admin-projects-projectid-client-clientid-smart-launch) | Tạo launch SMART cho client (ClientApplication/$smart-launch) |
 | [`POST /admin/projects/{projectId}/invite`](#post-admin-projects-projectid-invite) | Mời user vào project |
 | [`GET /admin/projects/{projectId}/members/{membershipId}`](#get-admin-projects-projectid-members-membershipid) | Đọc một membership của project |
 | [`POST /admin/projects/{projectId}/members/{membershipId}`](#post-admin-projects-projectid-members-membershipid) | Sửa membership |
@@ -196,6 +197,7 @@ Schema: `httpapi.AdminClientBody`
 | `accessPolicy` | object `fhir.Reference` | không |  | AccessPolicy áp cho client; phải thuộc project |  |
 | `description` | string | không |  | mô tả client (tùy chọn) | `"Ứng dụng di động cho bệnh nhân"` |
 | `grantType` | mảng string | không | mỗi phần tử một trong: `authorization_code`, `client_credentials`, `refresh_token` | các grant client được dùng (ngoài ba giá trị này server còn nhận token-exchange và pre-authorized_code); giá trị khác là 400 | `["client_credentials"]` |
+| `launchUri` | string | không |  | URL khởi chạy EHR launch (http hoặc https tuyệt đối, không fragment, tối đa 2048 ký tự); cần để dùng smart-launch; sai là 400 | `"https://app.example.org/launch"` |
 | `pkceOptional` | boolean | không |  | true: không bắt buộc PKCE cho client này (mặc định false) | `false` |
 | `redirectUris` | mảng string | không |  | các redirect URI hợp lệ cho luồng authorization_code; mỗi URI phải hợp lệ, không thì 400 | `["https://app.example.org/callback"]` |
 | `secret` | string | không | độ dài tối thiểu 32; độ dài tối đa 256 | secret do người gọi đặt (32-256 ký tự); bỏ trống thì server sinh 64 ký tự hex; chỉ trả trong phản hồi tạo | `"0f3c9a1e7b5d4c2a8e6f1b3d5a7c9e0f2b4d6f8a1c3e5b7d9f0a2c4e6b8d0f1a"` |
@@ -206,6 +208,7 @@ Schema: `httpapi.AdminClientBody`
   "grantType": [
     "client_credentials"
   ],
+  "launchUri": "https://app.example.org/launch",
   "name": "Ứng dụng bệnh nhân",
   "pkceOptional": false,
   "redirectUris": [
@@ -332,6 +335,85 @@ Schema: `httpapi.RotateSecretResponse`
 | `clientId` | string | có |  | id client |  |
 | `retiring` | boolean | có |  | true: secret cũ vẫn dùng được song song (retiringSecret) cho tới lần xoay kế tiếp hoặc retireOnly |  |
 | `clientSecret` | string | không |  | secret MỚI, chỉ hiện trong phản hồi này; không có khi retireOnly |  |
+
+**`400`** Bad Request
+
+Schema: `fhir.OperationOutcome` (cấu trúc dùng chung, xem [common.md mục 3](../common.md#3-operationoutcome)).
+
+**`401`** Unauthorized
+
+Schema: `fhir.OperationOutcome` (cấu trúc dùng chung, xem [common.md mục 3](../common.md#3-operationoutcome)).
+
+**`403`** Forbidden
+
+Schema: `fhir.OperationOutcome` (cấu trúc dùng chung, xem [common.md mục 3](../common.md#3-operationoutcome)).
+
+**`429`** Too Many Requests
+
+Schema: `fhir.OperationOutcome` (cấu trúc dùng chung, xem [common.md mục 3](../common.md#3-operationoutcome)).
+
+---
+
+<a id="post-admin-projects-projectid-client-clientid-smart-launch"></a>
+## `POST /admin/projects/{projectId}/client/{clientId}/smart-launch`
+
+**Tạo launch SMART cho client (ClientApplication/$smart-launch)**
+
+Tạo SmartAppLaunch mang bệnh nhân, lượt khám, ngữ cảnh FHIR khác và trả `launchUrl` (launchUri của client kèm `iss` và `launch`). Client phải thuộc project và có launchUri; cần AUTH_FHIR_BASE_URL; phải có ít nhất một ngữ cảnh. Tham chiếu chỉ được kiểm dạng, không kiểm resource tồn tại. Launch không gắn client, không hết hạn. Client ngoài project hoặc không tồn tại là 403 chung. Trường lạ là 400.
+
+Các trường hợp phản hồi: [../cases/admin.md#post-admin-projects-projectid-client-clientid-smart-launch](../cases/admin.md#post-admin-projects-projectid-client-clientid-smart-launch)
+
+| Thuộc tính | Giá trị |
+|---|---|
+| Xác thực | bắt buộc: header `Authorization: Bearer <access_token>` (BearerAuth) |
+| Content-Type yêu cầu | `application/json` |
+| Content-Type phản hồi | `application/json`, `application/fhir+json` |
+
+**Header yêu cầu**
+
+| Header | Bắt buộc | Mô tả |
+|---|---|---|
+| `Authorization` | có | `Bearer <access_token>` |
+| `Content-Type` | có | `application/json` |
+| `Accept` | không | nên khớp Content-Type phản hồi |
+
+**Tham số**
+
+| Tên | Vị trí | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|---|
+| `projectId` | đường dẫn | string | có | id project |
+| `clientId` | đường dẫn | string | có | id client |
+
+**Body yêu cầu** (Ngữ cảnh launch)
+
+Schema: `httpapi.SmartLaunchBody`
+
+| Trường | Kiểu | Bắt buộc | Ràng buộc | Mô tả | Ví dụ |
+|---|---|---|---|---|---|
+| `encounter` | string | không |  | lượt khám của ngữ cảnh, dạng Encounter/<id> | `"Encounter/0192f3a4-7b1c-7d2e-9a10-3c5e8f1b2a46"` |
+| `fhirContext` | mảng string | không |  | ngữ cảnh FHIR khác dạng Type/<id>, tối đa 20 | `["DiagnosticReport/0192f3a4-7b1c-7d2e-9a10-3c5e8f1b2a47"]` |
+| `patient` | string | không |  | bệnh nhân của ngữ cảnh, dạng Patient/<id> | `"Patient/0192f3a4-7b1c-7d2e-9a10-3c5e8f1b2a45"` |
+
+```json
+{
+  "encounter": "Encounter/0192f3a4-7b1c-7d2e-9a10-3c5e8f1b2a46",
+  "fhirContext": [
+    "DiagnosticReport/0192f3a4-7b1c-7d2e-9a10-3c5e8f1b2a47"
+  ],
+  "patient": "Patient/0192f3a4-7b1c-7d2e-9a10-3c5e8f1b2a45"
+}
+```
+
+**Phản hồi**
+
+**`201`** Created
+
+Schema: `httpapi.SmartLaunchResponse`
+
+| Trường | Kiểu | Bắt buộc | Ràng buộc | Mô tả | Ví dụ |
+|---|---|---|---|---|---|
+| `launchId` | string | có |  | id SmartAppLaunch vừa tạo (giá trị `launch` của /oauth2/authorize) |  |
+| `launchUrl` | string | có |  | launchUri của client kèm iss (AUTH_FHIR_BASE_URL) và launch; ứng dụng mở URL này (chuyển hướng trình duyệt) để bắt đầu EHR launch |  |
 
 **`400`** Bad Request
 

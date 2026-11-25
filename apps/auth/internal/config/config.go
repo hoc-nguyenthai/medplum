@@ -65,7 +65,7 @@ type Settings struct {
 	AccessTTL, RefreshTTL, IDTTL time.Duration
 	// AppBaseURL là địa chỉ ứng dụng đăng nhập (D-12): /oauth2/authorize chuyển người dùng tới <AppBaseURL>/oauth để đăng nhập, chọn profile và
 	// scope bằng /auth/*. Rỗng thì KHÔNG có /oauth2/authorize (mặc định ENVIRONMENT=local: http://localhost:3000). FHIRBaseURL (tùy chọn) là
-	// địa chỉ fhir-server, được chấp nhận làm `aud` (SMART) ở /oauth2/authorize.
+	// địa chỉ fhir-server, được chấp nhận làm `aud` (SMART) ở /oauth2/authorize và là `iss` trong `launchUrl` của route smart-launch (rỗng thì route đó là 400).
 	AppBaseURL, FHIRBaseURL string
 	// OAuthRegisterEnabled bật POST /oauth2/register (tra client dựng sẵn theo redirect_uri, mặc định tắt). AllowPrivateJWKS cho phép jwks_uri của
 	// client là http hoặc trỏ vào dải nội bộ (chỉ dev/test, cấm ở staging/production). RedisURL (tùy chọn) là nơi nhớ jti của client assertion
