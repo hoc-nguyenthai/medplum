@@ -13,7 +13,8 @@
 #   docker compose -f docker-compose.full.yml --env-file .env.full up --build
 # Đã chạy thử bằng Docker (OrbStack, 2026-11-25): 9 container healthy; token client_credentials của auth -> tạo và tìm Patient ở fhir-server; $export do
 # fhir-worker chạy và Binary kết quả đọc được qua fhir-server; GET /dicomweb/studies 200; Subscription websocket -> binding token -> ws-gateway nhận
-# event-notification (notifier khớp). Chưa thử: fhir-downloader tải URL ngoài, STOW DICOM, giao rest-hook.
+# event-notification (notifier khớp); webhook rest-hook do fhir-notifier giao, attachment ngoài do fhir-downloader tải, STOW/QIDO/WADO đúng từng byte.
+# Kiểm lại tự động: make smoke-full (tests/full_smoke).
 #
 # Điểm cần đúng (giải thích chi tiết ở các file chồng tương ứng):
 #  - Xác thực bằng JWT của auth (không token tĩnh). issuer/audience là địa chỉ CÔNG KHAI của auth, JWKS tải qua mạng compose (http://auth:8000).

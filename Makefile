@@ -19,7 +19,7 @@ FHIR_WORKER_PORT ?= :8011
 comma := ,
 
 .DEFAULT_GOAL := help
-.PHONY: help swagger tidy build run run-fhir-server run-auth run-ws-gateway run-dicomweb run-fhir-downloader run-fhir-notifier run-fhir-worker test-unit test-db test-integration test-service test-app test-e2e test-load-dicomweb bench-ws bench-export smoke-split test-auth-pg migrate test test-race test-pg bench cover lint fmt ci docker up down up-full down-full
+.PHONY: help swagger tidy build run run-fhir-server run-auth run-ws-gateway run-dicomweb run-fhir-downloader run-fhir-notifier run-fhir-worker test-unit test-db test-integration test-service test-app test-e2e test-load-dicomweb bench-ws bench-export smoke-split smoke-full test-auth-pg migrate test test-race test-pg bench cover lint fmt ci docker up down up-full down-full
 
 help: ## Liệt kê các lệnh
 	@grep -E '^[a-zA-Z0-9_-]+:.*##' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}'
@@ -125,6 +125,9 @@ bench-export: ## Đo ảnh hưởng của $export lớn lên API (#12c; cần Do
 
 smoke-split: ## Smoke test bộ service tách (docker-compose.split.yml: fhir-server + fhir-downloader + fhir-notifier + fhir-worker thật, cần Docker và host.docker.internal): make smoke-split
 	tests/split_smoke/run.sh
+
+smoke-full: ## Smoke test TOÀN BỘ hệ thống (docker-compose.full.yml, 9 service, JWT thật): token, FHIR, webhook, export, tải attachment, STOW/QIDO/WADO, websocket; cần Docker, cổng 8005-8011 trống
+	tests/full_smoke/run.sh
 
 bench-ws: ## Đo tải ws-gateway thật (cần Docker cho Redis): WS_LOAD_CONNS=4000 make bench-ws (RSS mỗi socket và độ trễ fan-out; kết quả in bằng t.Log)
 	TRIVITA_E2E_LOAD=1 WS_LOAD_CONNS=$(WS_LOAD_CONNS) go test -count=1 -timeout 20m -run TestWSLoadFanOutAndMemory -v ./apps/ws-gateway/tests/load/

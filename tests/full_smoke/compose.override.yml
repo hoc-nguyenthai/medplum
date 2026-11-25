@@ -1,0 +1,9 @@
+# Chỉ cho smoke test chạy ở máy dev: máy chủ ngoài và máy nhận webhook giả nằm ở máy chạy test (địa chỉ nội bộ với container), nên tắt chống SSRF.
+# Production KHÔNG đặt hai biến này (cấu hình từ chối ở staging/production).
+services:
+  fhir-downloader:
+    environment:
+      FHIR_AUTO_DOWNLOAD_ALLOW_PRIVATE: "true"
+  fhir-notifier:
+    environment:
+      FHIR_WEBHOOK_ALLOW_PRIVATE: "true"

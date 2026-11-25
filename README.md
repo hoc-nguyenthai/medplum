@@ -91,6 +91,7 @@ make build APP=fhir-cli && bin/fhir-cli help       # build một app bất kỳ 
 | `make swagger APP=<app>` | sinh lại OpenAPI (`fhir-server`, `auth`) |
 | `make docker APP=<app>` / `up` / `down` | build image / compose fhir-server + PostgreSQL / dừng và xóa volume |
 | `make up-full` / `down-full` | chạy toàn bộ 9 service bằng `docker-compose.full.yml` (khóa ký tự sinh vào `.env.full`) / dừng và xóa volume |
+| `make smoke-full` | dựng `docker-compose.full.yml` ở project compose riêng, kiểm đầu-cuối cả 9 service bằng JWT thật (token, FHIR, webhook, `$export`, tải attachment, STOW/QIDO/WADO, websocket), rồi dọn (`tests/full_smoke`) |
 
 ## Docker
 
