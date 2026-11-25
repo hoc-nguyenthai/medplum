@@ -18,6 +18,7 @@ Quản trị project qua HTTP (tắt mặc định, AUTH_ADMIN_ENABLED): project
 | [`DELETE /admin/projects/{projectId}/members/{membershipId}`](#delete-admin-projects-projectid-members-membershipid) | Xóa membership |
 | [`POST /admin/projects/{projectId}/members/{membershipId}/mfa/reset`](#post-admin-projects-projectid-members-membershipid-mfa-reset) | Gỡ một yếu tố MFA của member |
 | [`POST /admin/projects/{projectId}/members/{membershipId}/resetpassword`](#post-admin-projects-projectid-members-membershipid-resetpassword) | Gửi thư đặt lại mật khẩu cho một member |
+| [`POST /admin/projects/{projectId}/members/{membershipId}/update-email`](#post-admin-projects-projectid-members-membershipid-update-email) | Đổi email đăng nhập của member (User/$update-email) |
 | [`POST /admin/projects/{projectId}/secrets`](#post-admin-projects-projectid-secrets) | Đặt các secret của project |
 | [`POST /admin/projects/{projectId}/settings`](#post-admin-projects-projectid-settings) | Đặt các setting của project (allowlist) |
 | [`POST /admin/projects/{projectId}/sites`](#post-admin-projects-projectid-sites) | Đặt các site của project (Google, reCAPTCHA) |
@@ -812,6 +813,74 @@ Các trường hợp phản hồi: [../cases/admin.md#post-admin-projects-projec
 |---|---|---|---|---|
 | `projectId` | đường dẫn | string | có | id project |
 | `membershipId` | đường dẫn | string | có | id membership |
+
+**Phản hồi**
+
+**`200`** OK
+
+Schema: `fhir.OperationOutcome` (cấu trúc dùng chung, xem [common.md mục 3](../common.md#3-operationoutcome)).
+
+**`400`** Bad Request
+
+Schema: `fhir.OperationOutcome` (cấu trúc dùng chung, xem [common.md mục 3](../common.md#3-operationoutcome)).
+
+**`401`** Unauthorized
+
+Schema: `fhir.OperationOutcome` (cấu trúc dùng chung, xem [common.md mục 3](../common.md#3-operationoutcome)).
+
+**`403`** Forbidden
+
+Schema: `fhir.OperationOutcome` (cấu trúc dùng chung, xem [common.md mục 3](../common.md#3-operationoutcome)).
+
+**`429`** Too Many Requests
+
+Schema: `fhir.OperationOutcome` (cấu trúc dùng chung, xem [common.md mục 3](../common.md#3-operationoutcome)).
+
+---
+
+<a id="post-admin-projects-projectid-members-membershipid-update-email"></a>
+## `POST /admin/projects/{projectId}/members/{membershipId}/update-email`
+
+**Đổi email đăng nhập của member (User/$update-email)**
+
+Chỉ user thuộc đúng project của người gọi (user ở phạm vi server hay project khác là 403 chung). Email mới không trùng trong project (400); Practitioner chịu danh sách chặn và allowedPractitionerEmailDomain. Ghi email, đặt emailVerified=false, vô hiệu mọi security request và thu hồi mọi login trong một transaction; thư báo gửi tới địa chỉ cũ nếu đã cấu hình thư. Không đổi telecom của hồ sơ.
+
+Các trường hợp phản hồi: [../cases/admin.md#post-admin-projects-projectid-members-membershipid-update-email](../cases/admin.md#post-admin-projects-projectid-members-membershipid-update-email)
+
+| Thuộc tính | Giá trị |
+|---|---|
+| Xác thực | bắt buộc: header `Authorization: Bearer <access_token>` (BearerAuth) |
+| Content-Type yêu cầu | `application/json` |
+| Content-Type phản hồi | `application/json`, `application/fhir+json` |
+
+**Header yêu cầu**
+
+| Header | Bắt buộc | Mô tả |
+|---|---|---|
+| `Authorization` | có | `Bearer <access_token>` |
+| `Content-Type` | có | `application/json` |
+| `Accept` | không | nên khớp Content-Type phản hồi |
+
+**Tham số**
+
+| Tên | Vị trí | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|---|
+| `projectId` | đường dẫn | string | có | id project |
+| `membershipId` | đường dẫn | string | có | id membership |
+
+**Body yêu cầu** (Email mới)
+
+Schema: `httpapi.UpdateEmailBody`
+
+| Trường | Kiểu | Bắt buộc | Ràng buộc | Mô tả | Ví dụ |
+|---|---|---|---|---|---|
+| `email` | string | có |  | email đăng nhập mới; hạ chữ thường, phải đúng định dạng, khác email hiện tại, không trùng trong project | `"an.nguyen@benhvien-a.vn"` |
+
+```json
+{
+  "email": "an.nguyen@benhvien-a.vn"
+}
+```
 
 **Phản hồi**
 

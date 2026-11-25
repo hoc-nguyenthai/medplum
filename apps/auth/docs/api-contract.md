@@ -94,7 +94,7 @@ Mỗi nhóm là một `tag` của swagger. Cột "Yêu cầu" cho tên schema c�
 
 <!-- BEGIN GENERATED ROUTES (từ swagger.json; chạy UPDATE_DOCS=1 go test để sinh lại, đừng sửa tay) -->
 
-### Nhóm `admin` (14 route)
+### Nhóm `admin` (15 route)
 
 | Route | Mô tả | Xác thực | Yêu cầu | Phản hồi thành công | Mã lỗi |
 |---|---|---|---|---|---|
@@ -108,6 +108,7 @@ Mỗi nhóm là một `tag` của swagger. Cột "Yêu cầu" cho tên schema c�
 | `DELETE /admin/projects/{projectId}/members/{membershipId}` | Xóa membership | Bearer | - | 200 `fhir.OperationOutcome` | 400, 401, 403 |
 | `POST /admin/projects/{projectId}/members/{membershipId}/mfa/reset` | Gỡ một yếu tố MFA của member | Bearer | body `httpapi.MFAResetBody` | 200 `fhir.OperationOutcome` | 400, 401, 403, 429 |
 | `POST /admin/projects/{projectId}/members/{membershipId}/resetpassword` | Gửi thư đặt lại mật khẩu cho một member | Bearer | - | 200 `fhir.OperationOutcome` | 400, 401, 403, 429 |
+| `POST /admin/projects/{projectId}/members/{membershipId}/update-email` | Đổi email đăng nhập của member (User/$update-email) | Bearer | body `httpapi.UpdateEmailBody` | 200 `fhir.OperationOutcome` | 400, 401, 403, 429 |
 | `POST /admin/projects/{projectId}/secrets` | Đặt các secret của project | Bearer | body `[]fhir.ProjectSetting` | 200 `httpapi.AdminProjectResponse` | 400, 401, 403 |
 | `POST /admin/projects/{projectId}/settings` | Đặt các setting của project (allowlist) | Bearer | body `[]fhir.ProjectSetting` | 200 `httpapi.AdminProjectResponse` | 400, 401, 403 |
 | `POST /admin/projects/{projectId}/sites` | Đặt các site của project (Google, reCAPTCHA) | Bearer | body `[]fhir.ProjectSite` | 200 `httpapi.AdminProjectResponse` | 400, 401, 403, 409 |

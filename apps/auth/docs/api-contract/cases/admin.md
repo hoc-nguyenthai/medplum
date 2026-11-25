@@ -24,7 +24,7 @@ Các route `/admin/projects/*` không có đường nào xuyên project (super-a
 
 1. Route có hay không (`AUTH_ADMIN_ENABLED`): `404`.
 2. Middleware toàn cục: body tối đa 1 MiB (`413`, thông điệp `Request body too large`), hạn mức IP `AUTH_RATE_LIMIT` (`429`).
-3. Bearer (`401`). Sau bước này mới tới hạn mức bước đăng nhập `AUTH_LOGIN_RATE_LIMIT` (`429`) ở **sáu route**: `setpassword`, `invite`, `resetpassword`, `mfa/reset`, `client/{clientId}/rotate-secret`, `secrets` (các route admin khác không có hạn mức này).
+3. Bearer (`401`). Sau bước này mới tới hạn mức bước đăng nhập `AUTH_LOGIN_RATE_LIMIT` (`429`) ở **bảy route**: `setpassword`, `invite`, `resetpassword`, `mfa/reset`, `update-email`, `client/{clientId}/rotate-secret`, `secrets` (các route admin khác không có hạn mức này).
 4. **Handler đọc/parse body và validator của route** (`400`): xảy ra **trước** kiểm quyền admin ở bước 5. Nghĩa là người không phải admin gửi body hỏng vẫn nhận `400`, không phải `403`.
 5. Use case: kiểm admin hoạt động của project và `:projectId` (`403`), rồi nghiệp vụ, rồi ghi.
 
@@ -688,6 +688,49 @@ Content-Type: application/fhir+json; charset=utf-8
 
 ---
 
+<a id="post-admin-projects-projectid-members-membershipid-update-email"></a>
+## `POST /admin/projects/{projectId}/members/{membershipId}/update-email`
+
+Đổi email đăng nhập của user thuộc membership (tương ứng `User/$update-email` của Medplum). [Tham chiếu trường](../reference/admin.md#post-admin-projects-projectid-members-membershipid-update-email)
+
+**Cờ bật:** `AUTH_ADMIN_ENABLED`; thư báo tới địa chỉ cũ cần cấu hình thư (`AUTH_MAIL_PROVIDER`, `AUTH_APP_BASE_URL`), không có thì bỏ qua thư.
+
+**Thứ tự kiểm tra:** Bearer (401) → hạn mức bước đăng nhập (429) → body (JSON hỏng hoặc không phải object 400; trường ngoài `email` 400 `Unsupported field: ...`; `email` không phải chuỗi 400) → admin và `projectId` (403) → membership thuộc project và user của nó thuộc **đúng project** (403 chung; user phạm vi server cũng 403) → định dạng email (400) → khác email hiện tại (400) → Practitioner: danh sách chặn và `allowedPractitionerEmailDomain` (400) → **transaction**: khóa `user-email:<project>:<email>` → trùng user khác trong project (400) → ghi email, `emailVerified=false`, vô hiệu mọi security request, thu hồi mọi login → log kiểm toán → thư báo tới địa chỉ **cũ** (lỗi gửi chỉ ghi log).
+
+| # | Trường hợp | Điều kiện | HTTP | Header phản hồi riêng | Body | Tác dụng phụ |
+|---|---|---|---|---|---|---|
+| C1 | Thành công | email hợp lệ, chưa dùng trong project | 200 | - | OperationOutcome `All OK` | email thành chữ thường, `emailVerified=false`; mọi login bị thu hồi, mọi security request bị vô hiệu (kể cả link đặt lại mật khẩu đã gửi tới địa chỉ cũ); thư báo tới địa chỉ cũ; WARN `audit=true` (không chứa email) |
+| C2 | Body không đọc được | JSON hỏng, không phải object, `null` | 400 | - | `Content could not be parsed` | không |
+| C3 | Trường lạ | khác `email`, liệt kê theo thứ tự chữ cái | 400 | - | `Unsupported field: <tên>` | không |
+| C4 | Email sai | thiếu, không phải chuỗi, sai định dạng | 400 | - | `Valid email address is required`, `expression` `email` | không |
+| C5 | Không đổi gì | bằng email hiện tại (không phân biệt hoa thường) | 400 | - | `New email is the same as the current email` | không |
+| C6 | Tên miền bị chặn | Practitioner; miền nằm trong `AUTH_BLOCKED_EMAIL_DOMAINS` hoặc ngoài `allowedPractitionerEmailDomain` | 400 | - | `Email domain is not allowed for this project` | không |
+| C7 | Trùng | đã có user khác dùng email này trong project | 400 | - | `Email already registered`, `expression` `email` | không (transaction hoàn tác) |
+| C8 | Chưa xác thực | | 401 | `WWW-Authenticate` | `Unauthorized` | không |
+| C9 | Không phải admin / project khác / membership ngoài phạm vi / user phạm vi server | | 403 | - | `Forbidden` | không |
+| C10 | Quá hạn mức bước đăng nhập | | 429 | `Retry-After: 1` | `Too many requests` | không |
+
+**Ví dụ**
+
+```http
+POST /admin/projects/0192f3a4-7b1c-7d2e-9a10-3c5e8f1b2a44/members/0192f3b0-2222-7000-8000-00000000aa01/update-email HTTP/1.1
+Authorization: Bearer eyJhbGciOi...
+Content-Type: application/json
+
+{ "email": "an.nguyen@benhvien-a.vn" }
+```
+
+```http
+HTTP/1.1 200 OK
+Content-Type: application/fhir+json; charset=utf-8
+
+{ "resourceType": "OperationOutcome", "issue": [ { "severity": "information", "code": "informational", "details": { "text": "All OK" } } ] }
+```
+
+**Lưu ý tích hợp:** route **không** đổi `telecom` của hồ sơ Practitioner/Patient (thuộc fhir-server) và **không** kiểm miền có đăng nhập ngoài (IdP): user chuyển sang miền đó sẽ bị chuyển sang đăng nhập ngoài. Khác Medplum: đường dẫn theo membership chứ không phải `/fhir/R4/User/{id}/$update-email`, và chỉ admin project (không có super admin) đổi được user thuộc project của mình.
+
+---
+
 <a id="post-admin-projects-projectid-members-membershipid-mfa-reset"></a>
 ## `POST /admin/projects/{projectId}/members/{membershipId}/mfa/reset`
 
@@ -791,7 +834,7 @@ Cache-Control: no-store
 | Vị trí trong common.md | Điều đúng theo mã |
 |---|---|
 | Mục 7, cột "Phạm vi" của hạn mức toàn cục `AUTH_RATE_LIMIT` (`/auth/`, `/oauth2/`, `/.well-known/`, `/admin/`) | Bộ lọc dùng danh sách tiền tố CORS nên **cũng áp cho `/scim/` và `/email/`** |
-| Mục 7, hạn mức bước đăng nhập liệt kê "admin ghi" | Chỉ sáu route admin có hạn mức này: `setpassword`, `invite`, `resetpassword`, `mfa/reset`, `client/{clientId}/rotate-secret`, `secrets`. `settings`, `client`, `sites`, `members` (POST/DELETE) chỉ chịu hạn mức IP chung |
+| Mục 7, hạn mức bước đăng nhập liệt kê "admin ghi" | Chỉ bảy route admin có hạn mức này: `setpassword`, `invite`, `resetpassword`, `mfa/reset`, `update-email`, `client/{clientId}/rotate-secret`, `secrets`. `settings`, `client`, `sites`, `members` (POST/DELETE) chỉ chịu hạn mức IP chung |
 | Mục 3 và 5: `/email/*` luôn OperationOutcome, `/scim/*` luôn SCIM Error | Chỉ lỗi do handler sinh. Lỗi do khung (`404` route tắt, `413` vượt 1 MiB toàn cục, `429`, `403 cannot identify caller`) ở `/scim/*` và `/email/*` có dạng JSON `{"error":"..."}` vì `fhirPath` chỉ gồm `/auth` và `/admin` (suy ra từ `errorHandler`, test chỉ kiểm mã HTTP) |
 | Mục 3: "500, 502 → thông điệp chung `Internal server error`" | `502` của email giữ thông điệp riêng: `Failed to send email`, `Failed to read attachment` (test `TestHTTPEmailSMTPFailureIs502WithoutDetails`). Chỉ `500` là chung |
 | Mục 3, "Thành công không nội dung" (`id` `ok`, không `diagnostics`) | Các route admin và email trả OperationOutcome thành công **không có `id`** và **có** `diagnostics` `All OK` (dùng `outcome(...)`, không dùng `allOK()`) |

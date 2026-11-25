@@ -57,7 +57,7 @@ Kế hoạch: [modules/p17-async-batch-download-autodisable.md](modules/p17-asyn
 - [ ] `/$restore`
 - [ ] `Project/:id/$rate-limits`
 - [ ] `User/:id/$rescope`
-- [ ] `User/:id/$update-email`
+- [x] `User/:id/$update-email` (auth, 2026-11-25: `POST /admin/projects/{projectId}/members/{membershipId}/update-email`)
 - [x] `ClientApplication/:id/$rotate-secret` — xong 2026-11-24 ở `auth`: `POST /admin/projects/{projectId}/client/{clientId}/rotate-secret` (khác Medplum về đường dẫn; `secret` cũ thành `retiringSecret`, `retireOnly`)
 - [ ] `ClientApplication/:id/$smart-launch`
 - [ ] `/admin/projects/:id/bot` — chặn bởi **M1**

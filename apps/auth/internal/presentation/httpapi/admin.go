@@ -34,6 +34,7 @@ func registerAdmin(e *echo.Echo, dep Deps) {
 	g.POST("/:projectId/members/:membershipId", h.adminUpdateMember, bearer)
 	g.DELETE("/:projectId/members/:membershipId", h.adminDeleteMember, bearer)
 	g.POST("/:projectId/members/:membershipId/resetpassword", h.adminResetPassword, append([]echo.MiddlewareFunc{bearer}, slow...)...)
+	g.POST("/:projectId/members/:membershipId/update-email", h.adminUpdateEmail, append([]echo.MiddlewareFunc{bearer}, slow...)...)
 	g.POST("/:projectId/members/:membershipId/mfa/reset", h.adminResetMFA, append([]echo.MiddlewareFunc{bearer}, slow...)...)
 }
 
@@ -506,4 +507,51 @@ func (h *authHandlers) adminSecrets(c echo.Context) error {
 	}
 	c.Response().Header().Set("Cache-Control", "no-store")
 	return c.JSON(http.StatusOK, AdminProjectResponse{Project: v})
+}
+
+// UpdateEmailBody là body của POST /admin/projects/{projectId}/members/{membershipId}/update-email.
+type UpdateEmailBody struct {
+	Email string `json:"email" binding:"required" example:"an.nguyen@benhvien-a.vn"` // email đăng nhập mới; hạ chữ thường, phải đúng định dạng, khác email hiện tại, không trùng trong project
+}
+
+// adminUpdateEmail godoc
+//
+//	@Summary		Đổi email đăng nhập của member (User/$update-email)
+//	@Description	Chỉ user thuộc đúng project của người gọi (user ở phạm vi server hay project khác là 403 chung). Email mới không trùng trong project (400); Practitioner chịu danh sách chặn và allowedPractitionerEmailDomain. Ghi email, đặt emailVerified=false, vô hiệu mọi security request và thu hồi mọi login trong một transaction; thư báo gửi tới địa chỉ cũ nếu đã cấu hình thư. Không đổi telecom của hồ sơ.
+//	@Tags			admin
+//	@Security		BearerAuth
+//	@Accept			json
+//	@Produce		application/json,application/fhir+json
+//	@Param			projectId		path		string			true	"id project"
+//	@Param			membershipId	path		string			true	"id membership"
+//	@Param			body			body		UpdateEmailBody	true	"Email mới"
+//	@Success		200				{object}	fhir.OperationOutcome
+//	@Failure		400				{object}	fhir.OperationOutcome
+//	@Failure		401				{object}	fhir.OperationOutcome
+//	@Failure		403				{object}	fhir.OperationOutcome
+//	@Failure		429				{object}	fhir.OperationOutcome
+//	@Router			/admin/projects/{projectId}/members/{membershipId}/update-email [post]
+func (h *authHandlers) adminUpdateEmail(c echo.Context) error {
+	b, err := readBody(c)
+	if err != nil {
+		return writeError(c, err)
+	}
+	var unknown []string
+	for k := range b {
+		if k != "email" {
+			unknown = append(unknown, k)
+		}
+	}
+	if len(unknown) > 0 {
+		sort.Strings(unknown)
+		return writeError(c, domain.BadRequestAt("Unsupported field: "+strings.Join(unknown, ", "), unknown[0]))
+	}
+	email, ok := b["email"].(string)
+	if !ok {
+		return writeError(c, domain.BadRequestAt("Valid email address is required", "email"))
+	}
+	if err := h.svc.AdminUpdateMemberEmail(c.Request().Context(), authState(c), c.Param("projectId"), c.Param("membershipId"), email); err != nil {
+		return writeError(c, err)
+	}
+	return writeOutcome(c, http.StatusOK, outcome("information", "informational", "All OK"))
 }
