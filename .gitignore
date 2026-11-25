@@ -6,6 +6,7 @@ coverage.html
 
 # Cấu hình và dữ liệu local (giữ .env.example)
 .env
+.env.full
 *.db
 *.db-shm
 *.db-wal

@@ -90,6 +90,7 @@ make build APP=fhir-cli && bin/fhir-cli help       # build một app bất kỳ 
 | `make lint` / `fmt` / `ci` | gofmt + vet / định dạng / những gì CI phải chạy |
 | `make swagger APP=<app>` | sinh lại OpenAPI (`fhir-server`, `auth`) |
 | `make docker APP=<app>` / `up` / `down` | build image / compose fhir-server + PostgreSQL / dừng và xóa volume |
+| `make up-full` / `down-full` | chạy toàn bộ 9 service bằng `docker-compose.full.yml` (khóa ký tự sinh vào `.env.full`) / dừng và xóa volume |
 
 ## Docker
 

@@ -5,6 +5,9 @@ APP_DIR    := apps/$(APP)
 BIN        := bin/$(APP)
 IMAGE      ?= trivita-$(APP):local
 COMPOSE    := docker compose --env-file $(APP_DIR)/.env
+# Toàn bộ hệ thống (docker-compose.full.yml); khóa ký sinh một lần vào FULL_ENV (gitignore) để giữ nguyên qua các lần khởi động lại
+FULL_ENV   := .env.full
+COMPOSE_FULL := docker compose -f docker-compose.full.yml --env-file $(FULL_ENV)
 MIGRATE    ?= status
 FHIR_SERVER_PORT ?= :8005
 AUTH_PORT ?= :8006
@@ -16,7 +19,7 @@ FHIR_WORKER_PORT ?= :8011
 comma := ,
 
 .DEFAULT_GOAL := help
-.PHONY: help swagger tidy build run run-fhir-server run-auth run-ws-gateway run-dicomweb run-fhir-downloader run-fhir-notifier run-fhir-worker test-unit test-db test-integration test-service test-app test-e2e test-load-dicomweb bench-ws bench-export smoke-split test-auth-pg migrate test test-race test-pg bench cover lint fmt ci docker up down
+.PHONY: help swagger tidy build run run-fhir-server run-auth run-ws-gateway run-dicomweb run-fhir-downloader run-fhir-notifier run-fhir-worker test-unit test-db test-integration test-service test-app test-e2e test-load-dicomweb bench-ws bench-export smoke-split test-auth-pg migrate test test-race test-pg bench cover lint fmt ci docker up down up-full down-full
 
 help: ## Liệt kê các lệnh
 	@grep -E '^[a-zA-Z0-9_-]+:.*##' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}'
@@ -163,6 +166,16 @@ up: ## Chạy fhir-server + PostgreSQL bằng compose
 
 down: ## Dừng và xóa cả volume dữ liệu
 	$(COMPOSE) down --volumes
+
+$(FULL_ENV):
+	@umask 077; printf 'FHIR_JOB_SIGNING_KEY=%s\nFHIR_WS_SIGNING_KEY=%s\n' "$$(openssl rand -hex 24)" "$$(openssl rand -hex 24)" > $@
+	@echo "đã sinh khóa ký vào $@"
+
+up-full: $(FULL_ENV) ## Chạy TOÀN BỘ hệ thống (docker-compose.full.yml, 9 service) ở nền và chờ healthy; khóa ký lấy từ .env.full (tự sinh lần đầu)
+	$(COMPOSE_FULL) up --build -d --wait --wait-timeout 300
+
+down-full: $(FULL_ENV) ## Dừng toàn bộ hệ thống và xóa cả volume dữ liệu (giữ .env.full)
+	$(COMPOSE_FULL) down --volumes
 
 test-load-dicomweb: ## Đo tải dicomweb (STOW, WADO, QIDO song song; SQLite và kho tệp tạm, không cần Docker): DICOMWEB_LOAD_CLIENTS=32 make test-load-dicomweb
 	DICOMWEB_LOAD=1 go test -count=1 -timeout 20m -run TestDicomwebLoad -v ./apps/dicomweb/tests/load/
