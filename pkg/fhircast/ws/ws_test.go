@@ -507,8 +507,13 @@ func TestMalformedMessagesAreIgnored(t *testing.T) {
 		if got := read(t, c); eventName(got) != "Patient-open" {
 			t.Errorf("sau tin hỏng vẫn phải nhận sự kiện thật: %v", got)
 		}
-		if e.srv.Stats().Received < 2 {
-			t.Errorf("Received = %d", e.srv.Stats().Received)
+		// tin của client do goroutine reader đếm, độc lập với luồng giao sự kiện: nhận được sự kiện chưa có nghĩa là reader đã đọc xong, nên chờ
+		deadline := time.Now().Add(2 * time.Second)
+		for e.srv.Stats().Received < 2 {
+			if time.Now().After(deadline) {
+				t.Fatalf("Received = %d sau 2 giây, muốn >= 2", e.srv.Stats().Received)
+			}
+			time.Sleep(10 * time.Millisecond)
 		}
 	})
 }
