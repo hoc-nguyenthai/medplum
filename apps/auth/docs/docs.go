@@ -59,7 +59,7 @@ const docTemplate = `{
         },
         "/.well-known/oauth-protected-resource": {
             "get": {
-                "description": "` + "`" + `resource` + "`" + ` tùy chọn phải bắt đầu bằng địa chỉ của auth; mặc định là chính auth.",
+                "description": "` + "`" + `resource` + "`" + ` tùy chọn phải là địa chỉ của auth hoặc nằm dưới địa chỉ đó (sau địa chỉ là hết chuỗi, /, ? hoặc #); mặc định là chính auth.",
                 "produces": [
                     "application/json"
                 ],
@@ -70,7 +70,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "phải bắt đầu bằng địa chỉ của auth",
+                        "description": "phải là địa chỉ của auth hoặc nằm dưới nó (sau địa chỉ: hết chuỗi, /, ? hoặc #)",
                         "name": "resource",
                         "in": "query"
                     }

@@ -362,20 +362,30 @@ func (h *oauthHandlers) smartStyles(c echo.Context) error {
 	})
 }
 
-// protectedResource trả RFC 9728. `resource` tùy chọn phải bắt đầu bằng địa chỉ của auth (như Medplum); mặc định là chính auth.
+// hasURLPrefix: u là base hoặc nằm DƯỚI base, tức sau base phải hết chuỗi hoặc là ký tự phân cách của URL (/, ?, #). So tiền tố chuỗi trần để lọt
+// địa chỉ nhái như base+".evil.example/", base+"@evil.example/" hay base+":1/".
+func hasURLPrefix(u, base string) bool {
+	if !strings.HasPrefix(u, base) {
+		return false
+	}
+	rest := u[len(base):]
+	return rest == "" || rest[0] == '/' || rest[0] == '?' || rest[0] == '#'
+}
+
+// protectedResource trả RFC 9728. `resource` tùy chọn phải là địa chỉ của auth hoặc nằm dưới địa chỉ đó (sau địa chỉ là hết chuỗi, /, ? hoặc #; như Medplum nhưng không nhận địa chỉ nhái tiền tố); mặc định là chính auth.
 //
 //	@Summary		Protected resource metadata (RFC 9728)
-//	@Description	`resource` tùy chọn phải bắt đầu bằng địa chỉ của auth; mặc định là chính auth.
+//	@Description	`resource` tùy chọn phải là địa chỉ của auth hoặc nằm dưới địa chỉ đó (sau địa chỉ là hết chuỗi, /, ? hoặc #); mặc định là chính auth.
 //	@Tags			well-known
 //	@Produce		json
-//	@Param			resource	query		string	false	"phải bắt đầu bằng địa chỉ của auth"
+//	@Param			resource	query		string	false	"phải là địa chỉ của auth hoặc nằm dưới nó (sau địa chỉ: hết chuỗi, /, ? hoặc #)"
 //	@Success		200			{object}	map[string]interface{}
 //	@Failure		400			{object}	map[string]interface{}
 //	@Router			/.well-known/oauth-protected-resource [get]
 func (h *oauthHandlers) protectedResource(c echo.Context) error {
 	resource := h.baseURL + "/"
 	if vals := c.QueryParams()["resource"]; len(vals) > 0 {
-		if len(vals) != 1 || !strings.HasPrefix(vals[0], h.baseURL) {
+		if len(vals) != 1 || !hasURLPrefix(vals[0], h.baseURL) {
 			return c.String(http.StatusBadRequest, "Invalid resource URL")
 		}
 		resource = vals[0]
