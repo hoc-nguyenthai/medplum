@@ -1,0 +1,1 @@
+{"name": "Auth | POST /auth/login: đầu vào và thông tin sai (data-driven)", "description": "Validator gom issue (email, projectId, password 8 ký tự..72 byte), sai thông tin không phân biệt email/mật khẩu, client/project lạ, chuỗi nguy hiểm.", "folderId": 0, "priority": 1, "tags": ["trivita-auth", "ai-generated"]}

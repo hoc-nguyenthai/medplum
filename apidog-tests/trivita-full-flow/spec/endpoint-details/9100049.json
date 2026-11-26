@@ -1,0 +1,1 @@
+{"id": 9100049, "name": "dicomweb: GET /dicomweb/studies không token -> 401", "method": "get", "path": "{{dicomUrl}}/dicomweb/studies", "parameters": {"path": [], "query": [], "header": [], "cookie": []}, "auth": {}, "securityScheme": {}, "requestBody": null, "responses": []}

@@ -1,0 +1,18 @@
+{
+ "id": "auth-login",
+ "name": "Đăng nhập email + mật khẩu (module Trivita Auth)",
+ "method": "post",
+ "path": "{{authUrl}}/auth/login",
+ "parameters": {
+  "path": [],
+  "query": [],
+  "header": [],
+  "cookie": []
+ },
+ "auth": {
+  "type": "noauth"
+ },
+ "securityScheme": {},
+ "requestBody": {},
+ "responses": []
+}

@@ -1,0 +1,1 @@
+{"id": 9100010, "name": "fhir: PUT Patient/{id} đổi gender (phiên bản 2)", "method": "put", "path": "{{fhirUrl}}/fhir/R4/Patient/{{patient_id}}", "parameters": {"path": [], "query": [], "header": [], "cookie": []}, "auth": {}, "securityScheme": {}, "requestBody": null, "responses": []}

@@ -1,0 +1,209 @@
+{
+ "id": 47548503,
+ "name": "Đọc một phiên bản",
+ "method": "get",
+ "path": "/fhir/R4/{resourceType}/{id}/_history/{vid}",
+ "parameters": {
+  "path": [
+   {
+    "id": "resourceType#0",
+    "name": "resourceType",
+    "required": true,
+    "enable": true,
+    "description": "Loại resource",
+    "example": "",
+    "type": "string",
+    "schema": {
+     "type": "string"
+    }
+   },
+   {
+    "id": "id#0",
+    "name": "id",
+    "required": true,
+    "enable": true,
+    "description": "Id",
+    "example": "",
+    "type": "string",
+    "schema": {
+     "type": "string"
+    }
+   },
+   {
+    "id": "vid#0",
+    "name": "vid",
+    "required": true,
+    "enable": true,
+    "description": "versionId",
+    "example": "",
+    "type": "string",
+    "schema": {
+     "type": "string"
+    }
+   }
+  ],
+  "query": [],
+  "cookie": [],
+  "header": []
+ },
+ "auth": {
+  "type": "securityscheme"
+ },
+ "securityScheme": {
+  "schemeGroups": [
+   {
+    "id": "WZCzTn7lzcZ1fh7JNSJc2",
+    "schemeIds": [
+     646419
+    ]
+   }
+  ],
+  "required": true,
+  "use": {
+   "id": "WZCzTn7lzcZ1fh7JNSJc2",
+   "configs": {
+    "646419": {
+     "authConfigs": {
+      "x-apidog": {
+       "value": "{{apiKey}}"
+      }
+     }
+    }
+   }
+  },
+  "scopes": {
+   "WZCzTn7lzcZ1fh7JNSJc2": {
+    "646419": []
+   }
+  }
+ },
+ "requestBody": {
+  "type": "none",
+  "parameters": [],
+  "required": false,
+  "additionalContentTypes": [],
+  "oasExtensions": ""
+ },
+ "responses": [
+  {
+   "id": "187199904",
+   "name": "",
+   "code": "200",
+   "contentType": "json",
+   "jsonSchema": {
+    "$ref": "#/definitions/19029557"
+   },
+   "itemSchema": {},
+   "description": "OK",
+   "mediaType": "application/json",
+   "headers": [],
+   "oasExtensions": "",
+   "additionalContent": [
+    {
+     "contentType": "json",
+     "mediaType": "application/fhir+json",
+     "jsonSchema": {
+      "$ref": "#/components/schemas/httpapi.FHIRResource"
+     },
+     "examples": {}
+    }
+   ]
+  },
+  {
+   "id": "113651612",
+   "name": "",
+   "code": "401",
+   "contentType": "json",
+   "jsonSchema": {
+    "$ref": "#/definitions/19029533"
+   },
+   "itemSchema": {},
+   "description": "Thiếu hoặc sai Bearer token",
+   "mediaType": "application/json",
+   "headers": [],
+   "oasExtensions": "",
+   "additionalContent": [
+    {
+     "contentType": "json",
+     "mediaType": "application/fhir+json",
+     "jsonSchema": {
+      "$ref": "#/components/schemas/fhir.OperationOutcome"
+     },
+     "examples": {}
+    }
+   ]
+  },
+  {
+   "id": "164085988",
+   "name": "",
+   "code": "403",
+   "contentType": "json",
+   "jsonSchema": {
+    "$ref": "#/definitions/19029533"
+   },
+   "itemSchema": {},
+   "description": "Token không đủ quyền (cần quyền read)",
+   "mediaType": "application/json",
+   "headers": [],
+   "oasExtensions": "",
+   "additionalContent": [
+    {
+     "contentType": "json",
+     "mediaType": "application/fhir+json",
+     "jsonSchema": {
+      "$ref": "#/components/schemas/fhir.OperationOutcome"
+     },
+     "examples": {}
+    }
+   ]
+  },
+  {
+   "id": "118791350",
+   "name": "",
+   "code": "404",
+   "contentType": "json",
+   "jsonSchema": {
+    "$ref": "#/definitions/19029533"
+   },
+   "itemSchema": {},
+   "description": "Không có phiên bản này",
+   "mediaType": "application/json",
+   "headers": [],
+   "oasExtensions": "",
+   "additionalContent": [
+    {
+     "contentType": "json",
+     "mediaType": "application/fhir+json",
+     "jsonSchema": {
+      "$ref": "#/components/schemas/fhir.OperationOutcome"
+     },
+     "examples": {}
+    }
+   ]
+  },
+  {
+   "id": "166006198",
+   "name": "",
+   "code": "410",
+   "contentType": "json",
+   "jsonSchema": {
+    "$ref": "#/definitions/19029533"
+   },
+   "itemSchema": {},
+   "description": "Phiên bản là bản xóa",
+   "mediaType": "application/json",
+   "headers": [],
+   "oasExtensions": "",
+   "additionalContent": [
+    {
+     "contentType": "json",
+     "mediaType": "application/fhir+json",
+     "jsonSchema": {
+      "$ref": "#/components/schemas/fhir.OperationOutcome"
+     },
+     "examples": {}
+    }
+   ]
+  }
+ ]
+}

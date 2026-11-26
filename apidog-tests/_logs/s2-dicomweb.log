@@ -1,0 +1,7 @@
+✓ dicomweb-authz-invalid-token (1998567): 5 step(s)
+✓ dicomweb-health (1998573): 4 step(s)
+✓ dicomweb-lifecycle (1998577): 29 step(s)
+✓ dicomweb-qido-matrix (1998597): 3 step(s)
+✓ dicomweb-retrieve-matrix (1998599): 3 step(s)
+✓ dicomweb-routing-isolation (1998600): 12 step(s)
+✓ dicomweb-stow-validation (1998607): 2 step(s)

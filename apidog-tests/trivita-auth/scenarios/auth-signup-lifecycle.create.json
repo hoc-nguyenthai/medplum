@@ -1,0 +1,1 @@
+{"name": "Auth | Đăng ký → tạo project → token → đổi mật khẩu", "description": "newuser (projectId=new, PKCE) → newproject → đổi code (code_verifier) → me/admin của project mới; admin project mới không đọc được project seed (403); changepassword sai/đúng; đổi mật khẩu thu hồi mọi phiên.", "folderId": 0, "priority": 1, "tags": ["trivita-auth", "ai-generated"]}

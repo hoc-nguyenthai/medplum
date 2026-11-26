@@ -1,0 +1,149 @@
+{
+ "steps": [
+  {
+   "id": "step-1",
+   "number": 1,
+   "name": "Lấy access token (client_credentials của auth)",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988399,
+    "name": "Lấy access token (client_credentials của auth)",
+    "path": "{{authUrl}}/oauth2/token",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "x-www-form-urlencoded",
+     "parameters": [
+      {
+       "name": "grant_type",
+       "value": "client_credentials",
+       "enable": true,
+       "type": "string"
+      },
+      {
+       "name": "client_id",
+       "value": "{{clientId}}",
+       "enable": true,
+       "type": "string"
+      },
+      {
+       "name": "client_secret",
+       "value": "{{clientSecret}}",
+       "enable": true,
+       "type": "string"
+      }
+     ]
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.access_token exists",
+       "subject": "responseJson",
+       "comparison": "exists",
+       "path": "$.access_token",
+       "value": "",
+       "extractSettings": {
+        "expression": "$.access_token"
+       }
+      }
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "const tok = pm.response.json().access_token; pm.variables.set('accessToken', tok);\ntry { const p = JSON.parse(atob(tok.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))); pm.variables.set('projectId', p.fhir_project || ''); } catch (e) { pm.variables.set('projectId', ''); }\nconst base = '1.2.826.0.1.3680043.9.7777.' + Date.now() + (100 + Math.floor(Math.random() * 900));\npm.variables.set('studyUid', base + '.1'); pm.variables.set('seriesUid', base + '.1.1'); pm.variables.set('sop1', base + '.1.1.1'); pm.variables.set('sop2', base + '.1.1.2');\npm.variables.set('series2Uid', base + '.1.2'); pm.variables.set('sop3', base + '.1.2.1'); pm.variables.set('otherStudyUid', base + '.9');\npm.variables.set('pid', 'QA-' + Date.now());"
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988399
+  },
+  {
+   "id": "step-2",
+   "number": 2,
+   "name": "STOW-RS theo dữ liệu",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988398,
+    "name": "STOW-RS theo dữ liệu",
+    "path": "/dicomweb/studies",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [
+      {
+       "name": "Content-Type",
+       "value": "{{ct}}",
+       "enable": true
+      }
+     ],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "raw",
+     "data": "{{raw_body}}"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == {{expected_status}}",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "{{expected_status}}"
+      }
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "const m = pm.iterationData.get('expected_message'); if (m) { pm.test('error = ' + m, () => pm.expect(pm.response.json().error).to.eql(m)); }"
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "if (pm.iterationData.get('expect_failed') === '1') { pm.test('có FailedSOPSequence (00081198)', () => pm.expect(pm.response.json()['00081198']).to.be.an('object')); }"
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{accessToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988398
+  }
+ ]
+}

@@ -1,0 +1,1 @@
+{"id": 9100057, "name": "đối chứng: fhir GET Patient với token hợp lệ -> 200", "method": "get", "path": "{{fhirUrl}}/fhir/R4/Patient", "parameters": {"path": [], "query": [], "header": [], "cookie": []}, "auth": {}, "securityScheme": {}, "requestBody": null, "responses": []}

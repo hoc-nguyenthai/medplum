@@ -1,0 +1,2 @@
+﻿case_id,case_group,description,expected_status
+HL-01,Positive,Bốn probe trả 200 không cần Authorization,200

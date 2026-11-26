@@ -1,0 +1,434 @@
+ Image trivita-ws-gateway:local Building 
+ Image trivita-fhir-downloader:local Building 
+ Image trivita-dicomweb:local Building 
+ Image trivita-fhir-notifier:local Building 
+ Image trivita-fhir-server:local Building 
+ Image trivita-auth:local Building 
+ Image trivita-fhir-worker:local Building 
+#1 [internal] load local bake definitions
+#1 reading from stdin 3.72kB done
+#1 DONE 0.0s
+
+#2 [fhir-server internal] load build definition from Dockerfile
+#2 transferring dockerfile: 2.70kB done
+#2 DONE 0.1s
+
+#3 [auth internal] load build definition from Dockerfile
+#3 transferring dockerfile: 2.48kB done
+#3 DONE 0.1s
+
+#4 [fhir-server] resolve image config for docker-image://docker.io/docker/dockerfile:1
+#4 ...
+
+#5 [fhir-downloader internal] load build definition from Dockerfile
+#5 transferring dockerfile: 2.79kB done
+#5 DONE 0.1s
+
+#6 [ws-gateway internal] load build definition from Dockerfile
+#6 transferring dockerfile: 2.45kB done
+#6 DONE 0.1s
+
+#7 [dicomweb internal] load build definition from Dockerfile
+#7 transferring dockerfile: 2.69kB done
+#7 DONE 0.2s
+
+#4 [ws-gateway] resolve image config for docker-image://docker.io/docker/dockerfile:1
+#4 ...
+
+#8 [fhir-worker internal] load build definition from Dockerfile
+#8 transferring dockerfile: 2.75kB done
+#8 DONE 0.2s
+
+#9 [fhir-notifier internal] load build definition from Dockerfile
+#9 transferring dockerfile: 2.45kB done
+#9 DONE 0.2s
+
+#4 [fhir-notifier] resolve image config for docker-image://docker.io/docker/dockerfile:1
+#4 ...
+
+#10 [auth] docker/dockerfile:pull token for registry-1.docker.io
+#10 DONE 0.0s
+
+#4 [fhir-notifier] resolve image config for docker-image://docker.io/docker/dockerfile:1
+#4 DONE 2.0s
+
+#11 [ws-gateway] docker-image://docker.io/docker/dockerfile:1@sha256:572cebbc2b15e6f84c077742952674889cb63cd5e9b80abdffcbe587b6f19183
+#11 CACHED
+
+#12 [auth internal] load metadata for docker.io/library/golang:1.26-alpine
+#12 ...
+
+#13 [auth] library/golang:pull token for registry-1.docker.io
+#13 DONE 0.0s
+
+#14 [fhir-worker internal] load metadata for gcr.io/distroless/static-debian12:nonroot
+#14 DONE 1.4s
+
+#12 [dicomweb internal] load metadata for docker.io/library/golang:1.26-alpine
+#12 DONE 2.1s
+
+#15 [fhir-downloader builder 1/6] FROM docker.io/library/golang:1.26-alpine@sha256:ecb67f987aa1a57794c91d19ade7ae0209f2f0f5496aaef9e6ae85ddf92d02ab
+#15 DONE 0.0s
+
+#16 [fhir-downloader stage-1 1/3] FROM gcr.io/distroless/static-debian12:nonroot@sha256:afa5c872c891853ca7fcf1f12c3edb23f7eeef36189728842dd51042ff57f7ab
+#16 DONE 0.0s
+
+#17 [auth internal] load build context
+#17 transferring context: 24B
+#17 transferring context: 2.19MB 0.1s done
+#17 DONE 0.2s
+
+#18 [dicomweb internal] load build context
+#18 transferring context: 705.77kB 0.1s done
+#18 DONE 0.2s
+
+#19 [fhir-notifier internal] load build context
+#19 transferring context: 335.11kB 0.1s done
+#19 DONE 0.2s
+
+#20 [fhir-downloader internal] load build context
+#20 transferring context: 411.93kB 0.1s done
+#20 DONE 0.2s
+
+#21 [dicomweb builder 2/6] WORKDIR /src/trivita-codebase-v1
+#21 CACHED
+
+#22 [dicomweb builder 3/6] COPY go.mod go.sum ./
+#22 CACHED
+
+#23 [dicomweb builder 4/6] RUN --mount=type=cache,target=/go/pkg/mod go mod download
+#23 CACHED
+
+#24 [dicomweb builder 5/6] COPY . ./
+#24 ...
+
+#23 [ws-gateway builder 4/6] RUN --mount=type=cache,target=/go/pkg/mod go mod download
+#23 CACHED
+
+#25 [fhir-server internal] load build context
+#25 transferring context: 6.74MB 0.1s done
+#25 DONE 0.3s
+
+#26 [fhir-worker internal] load build context
+#26 transferring context: 5.56MB 0.1s done
+#26 DONE 0.3s
+
+#27 [ws-gateway internal] load build context
+#27 transferring context: 5.94MB 0.1s done
+#27 DONE 0.3s
+
+#28 [fhir-notifier builder 3/6] COPY go.mod go.sum ./
+#28 CACHED
+
+#29 [fhir-notifier builder 4/6] RUN --mount=type=cache,target=/go/pkg/mod go mod download
+#29 CACHED
+
+#30 [fhir-server builder 3/6] COPY go.mod go.sum ./
+#30 CACHED
+
+#31 [fhir-server builder 4/6] RUN --mount=type=cache,target=/go/pkg/mod go mod download
+#31 CACHED
+
+#32 [fhir-downloader builder 4/6] RUN --mount=type=cache,target=/go/pkg/mod go mod download
+#32 CACHED
+
+#33 [fhir-downloader builder 3/6] COPY go.mod go.sum ./
+#33 CACHED
+
+#34 [auth builder 4/6] RUN --mount=type=cache,target=/go/pkg/mod go mod download
+#34 CACHED
+
+#35 [auth builder 3/6] COPY go.mod go.sum ./
+#35 CACHED
+
+#36 [fhir-worker builder 4/6] RUN --mount=type=cache,target=/go/pkg/mod go mod download
+#36 CACHED
+
+#21 [fhir-worker builder 2/6] WORKDIR /src/trivita-codebase-v1
+#21 CACHED
+
+#37 [fhir-worker builder 3/6] COPY go.mod go.sum ./
+#37 CACHED
+
+#38 [ws-gateway builder 3/6] COPY go.mod go.sum ./
+#38 CACHED
+
+#39 [ws-gateway builder 4/6] RUN --mount=type=cache,target=/go/pkg/mod go mod download
+#39 CACHED
+
+#21 [ws-gateway builder 2/6] WORKDIR /src/trivita-codebase-v1
+#21 CACHED
+
+#40 [ws-gateway builder 5/6] COPY . ./
+#40 ...
+
+#41 [fhir-server builder 5/6] COPY . ./
+#41 DONE 0.9s
+
+#42 [auth builder 5/6] COPY . ./
+#42 DONE 0.9s
+
+#43 [fhir-downloader builder 5/6] COPY . ./
+#43 DONE 0.9s
+
+#24 [dicomweb builder 5/6] COPY . ./
+#24 DONE 1.1s
+
+#40 [ws-gateway builder 5/6] COPY . ./
+#40 DONE 0.9s
+
+#44 [fhir-notifier builder 5/6] COPY . ./
+#44 DONE 1.0s
+
+#45 [fhir-worker builder 5/6] COPY . ./
+#45 DONE 1.0s
+
+#46 [fhir-downloader builder 6/6] RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache/go-build     go build -ldflags="-s -w" -o /out/app ./apps/fhir-downloader/cmd/fhir-downloader     && mkdir -p /out/data
+#46 ...
+
+#47 [fhir-worker builder 6/6] RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache/go-build     go build -ldflags="-s -w" -o /out/app ./apps/fhir-worker/cmd/fhir-worker     && mkdir -p /out/data
+#47 ...
+
+#48 [dicomweb builder 6/6] RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache/go-build     go build -ldflags="-s -w" -o /out/app ./apps/dicomweb/cmd/dicomweb     && mkdir -p /out/data
+#48 DONE 7.0s
+
+#49 [ws-gateway builder 6/6] RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache/go-build     go build -ldflags="-s -w" -o /out/app ./apps/ws-gateway/cmd/ws-gateway
+#49 DONE 7.1s
+
+#50 [fhir-notifier builder 6/6] RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache/go-build     go build -ldflags="-s -w" -o /out/app ./apps/fhir-notifier/cmd/fhir-notifier
+#50 DONE 7.1s
+
+#46 [fhir-downloader builder 6/6] RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache/go-build     go build -ldflags="-s -w" -o /out/app ./apps/fhir-downloader/cmd/fhir-downloader     && mkdir -p /out/data
+#46 DONE 7.1s
+
+#47 [fhir-worker builder 6/6] RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache/go-build     go build -ldflags="-s -w" -o /out/app ./apps/fhir-worker/cmd/fhir-worker     && mkdir -p /out/data
+#47 DONE 7.1s
+
+#16 [fhir-worker stage-1 1/3] FROM gcr.io/distroless/static-debian12:nonroot@sha256:afa5c872c891853ca7fcf1f12c3edb23f7eeef36189728842dd51042ff57f7ab
+#16 CACHED
+
+#51 [auth builder 6/6] RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache/go-build     go build -ldflags="-s -w" -o /out/app ./apps/auth/cmd/auth     && mkdir -p /out/data
+#51 ...
+
+#16 [fhir-downloader stage-1 1/3] FROM gcr.io/distroless/static-debian12:nonroot@sha256:afa5c872c891853ca7fcf1f12c3edb23f7eeef36189728842dd51042ff57f7ab
+#16 CACHED
+
+#52 [fhir-notifier stage-1 2/2] COPY --from=builder /out/app /app
+#52 ...
+
+#53 [dicomweb stage-1 2/3] COPY --from=builder /out/app /app
+#53 DONE 0.3s
+
+#54 [ws-gateway stage-1 2/2] COPY --from=builder /out/app /app
+#54 DONE 0.3s
+
+#52 [fhir-notifier stage-1 2/2] COPY --from=builder /out/app /app
+#52 DONE 0.3s
+
+#55 [dicomweb stage-1 3/3] COPY --from=builder --chown=nonroot:nonroot /out/data /data
+#55 ...
+
+#56 [fhir-downloader stage-1 2/3] COPY --from=builder /out/app /app
+#56 DONE 0.3s
+
+#57 [fhir-worker stage-1 2/3] COPY --from=builder /out/app /app
+#57 DONE 0.4s
+
+#58 [fhir-worker stage-1 3/3] COPY --from=builder --chown=nonroot:nonroot /out/data /data
+#58 ...
+
+#59 [fhir-server builder 6/6] RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache/go-build     go build -ldflags="-s -w" -o /out/app ./apps/fhir-server/cmd/fhir-server     && mkdir -p /out/data
+#59 DONE 8.0s
+
+#60 [ws-gateway] exporting to image
+#60 exporting layers 0.2s done
+#60 writing image sha256:b35143a3d8a2869da326affd1b6d06abbf8a362d10d5fff4627b4c8304225430 done
+#60 naming to docker.io/library/trivita-ws-gateway:local done
+#60 DONE 0.4s
+
+#61 [fhir-notifier] exporting to image
+#61 exporting layers 0.2s done
+#61 writing image sha256:149bfc405e49da1a0259980df786ff02dc3060dc56dcf552637aa1f596347b6c done
+#61 naming to docker.io/library/trivita-fhir-notifier:local done
+#61 DONE 0.5s
+
+#55 [dicomweb stage-1 3/3] COPY --from=builder --chown=nonroot:nonroot /out/data /data
+#55 DONE 0.6s
+
+#62 [dicomweb] exporting to image
+#62 ...
+
+#63 [fhir-downloader stage-1 3/3] COPY --from=builder --chown=nonroot:nonroot /out/data /data
+#63 DONE 0.4s
+
+#64 [fhir-server stage-1 2/3] COPY --from=builder /out/app /app
+#64 DONE 0.4s
+
+#58 [fhir-worker stage-1 3/3] COPY --from=builder --chown=nonroot:nonroot /out/data /data
+#58 DONE 0.5s
+
+#65 [fhir-downloader] exporting to image
+#65 exporting layers 0.3s done
+#65 writing image sha256:64d81abf0fe7e186b29dd6b7fa5ceb060d8a8f50d62e5b6ebb13fc3abffdb972 0.0s done
+#65 naming to docker.io/library/trivita-fhir-downloader:local 0.0s done
+#65 DONE 0.5s
+
+#62 [dicomweb] exporting to image
+#62 exporting layers 0.3s done
+#62 writing image sha256:37f027199570dd0f32caea52adf8749eab0f8aa14de20d175ee28bba24de8749 done
+#62 naming to docker.io/library/trivita-dicomweb:local done
+#62 DONE 0.5s
+
+#66 [ws-gateway] resolving provenance for metadata file
+#66 DONE 0.0s
+
+#67 [fhir-notifier] resolving provenance for metadata file
+#67 DONE 0.0s
+
+#68 [fhir-worker] exporting to image
+#68 exporting layers 0.3s done
+#68 ...
+
+#51 [auth builder 6/6] RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache/go-build     go build -ldflags="-s -w" -o /out/app ./apps/auth/cmd/auth     && mkdir -p /out/data
+#51 DONE 8.9s
+
+#69 [fhir-server stage-1 3/3] COPY --from=builder --chown=nonroot:nonroot /out/data /data
+#69 DONE 0.6s
+
+#68 [fhir-worker] exporting to image
+#68 writing image sha256:ca612279ec10fdd9ca3141e98813baff8a9dd177fded82e82449a8fa92ab8976 done
+#68 naming to docker.io/library/trivita-fhir-worker:local 0.0s done
+#68 DONE 0.6s
+
+#70 [dicomweb] resolving provenance for metadata file
+#70 DONE 0.2s
+
+#71 [fhir-server] exporting to image
+#71 exporting layers 0.2s done
+#71 writing image sha256:39115f9851be1b6167017b1e394a1209f055bcc2c8190adbbbdb8978a0e38ba1 done
+#71 naming to docker.io/library/trivita-fhir-server:local 0.0s done
+#71 DONE 0.3s
+
+#72 [auth stage-1 2/3] COPY --from=builder /out/app /app
+#72 DONE 0.3s
+
+#73 [fhir-downloader] resolving provenance for metadata file
+#73 DONE 0.1s
+
+#74 [fhir-worker] resolving provenance for metadata file
+#74 DONE 0.0s
+
+#75 [auth stage-1 3/3] COPY --from=builder --chown=nonroot:nonroot /out/data /data
+#75 DONE 0.2s
+
+#76 [fhir-server] resolving provenance for metadata file
+#76 DONE 0.0s
+
+#77 [auth] exporting to image
+#77 exporting layers 0.2s done
+#77 writing image sha256:81de72885c1591e68614935bab31af2be0976997b9cc23235bbdd6dc6af1c9be
+#77 writing image sha256:81de72885c1591e68614935bab31af2be0976997b9cc23235bbdd6dc6af1c9be done
+#77 naming to docker.io/library/trivita-auth:local done
+#77 DONE 0.2s
+
+#78 [auth] resolving provenance for metadata file
+#78 DONE 0.0s
+ Image trivita-fhir-worker:local Built 
+ Image trivita-dicomweb:local Built 
+ Image trivita-ws-gateway:local Built 
+ Image trivita-fhir-notifier:local Built 
+ Image trivita-auth:local Built 
+ Image trivita-fhir-server:local Built 
+ Image trivita-fhir-downloader:local Built 
+ Network trivita-apidog_default Creating 
+ Volume trivita-apidog_blobs Creating 
+ Volume trivita-apidog_postgres-data Creating 
+ Volume trivita-apidog_postgres-data Creating 
+ Volume trivita-apidog_blobs Creating 
+ Network trivita-apidog_default Creating 
+ Volume trivita-apidog_postgres-data Created 
+ Volume trivita-apidog_postgres-data Created 
+ Volume trivita-apidog_blobs Created 
+ Volume trivita-apidog_blobs Created 
+ Network trivita-apidog_default Created 
+ Network trivita-apidog_default Created 
+ Container trivita-apidog-postgres-1 Creating 
+ Container trivita-apidog-redis-1 Creating 
+ Container trivita-apidog-postgres-1 Created 
+ Container trivita-apidog-auth-1 Creating 
+ Container trivita-apidog-redis-1 Created 
+ Container trivita-apidog-ws-gateway-1 Creating 
+ Container trivita-apidog-auth-1 Created 
+ Container trivita-apidog-fhir-server-1 Creating 
+ Container trivita-apidog-ws-gateway-1 Created 
+ Container trivita-apidog-fhir-server-1 Created 
+ Container trivita-apidog-fhir-notifier-1 Creating 
+ Container trivita-apidog-fhir-downloader-1 Creating 
+ Container trivita-apidog-fhir-worker-1 Creating 
+ Container trivita-apidog-dicomweb-1 Creating 
+ Container trivita-apidog-fhir-notifier-1 Created 
+ Container trivita-apidog-fhir-downloader-1 Created 
+ Container trivita-apidog-dicomweb-1 Created 
+ Container trivita-apidog-fhir-worker-1 Created 
+ Container trivita-apidog-postgres-1 Starting 
+ Container trivita-apidog-redis-1 Starting 
+ Container trivita-apidog-redis-1 Started 
+ Container trivita-apidog-redis-1 Waiting 
+ Container trivita-apidog-postgres-1 Started 
+ Container trivita-apidog-postgres-1 Waiting 
+ Container trivita-apidog-redis-1 Healthy 
+ Container trivita-apidog-ws-gateway-1 Starting 
+ Container trivita-apidog-postgres-1 Healthy 
+ Container trivita-apidog-auth-1 Starting 
+ Container trivita-apidog-ws-gateway-1 Started 
+ Container trivita-apidog-auth-1 Started 
+ Container trivita-apidog-redis-1 Waiting 
+ Container trivita-apidog-auth-1 Waiting 
+ Container trivita-apidog-postgres-1 Waiting 
+ Container trivita-apidog-redis-1 Healthy 
+ Container trivita-apidog-postgres-1 Healthy 
+ Container trivita-apidog-auth-1 Healthy 
+ Container trivita-apidog-fhir-server-1 Starting 
+ Container trivita-apidog-fhir-server-1 Started 
+ Container trivita-apidog-fhir-server-1 Waiting 
+ Container trivita-apidog-auth-1 Waiting 
+ Container trivita-apidog-redis-1 Waiting 
+ Container trivita-apidog-fhir-server-1 Waiting 
+ Container trivita-apidog-redis-1 Waiting 
+ Container trivita-apidog-fhir-server-1 Waiting 
+ Container trivita-apidog-redis-1 Waiting 
+ Container trivita-apidog-fhir-server-1 Waiting 
+ Container trivita-apidog-redis-1 Healthy 
+ Container trivita-apidog-redis-1 Healthy 
+ Container trivita-apidog-redis-1 Healthy 
+ Container trivita-apidog-auth-1 Healthy 
+ Container trivita-apidog-fhir-server-1 Healthy 
+ Container trivita-apidog-fhir-server-1 Healthy 
+ Container trivita-apidog-fhir-downloader-1 Starting 
+ Container trivita-apidog-fhir-server-1 Healthy 
+ Container trivita-apidog-fhir-worker-1 Starting 
+ Container trivita-apidog-fhir-notifier-1 Starting 
+ Container trivita-apidog-fhir-server-1 Healthy 
+ Container trivita-apidog-dicomweb-1 Starting 
+ Container trivita-apidog-dicomweb-1 Started 
+ Container trivita-apidog-fhir-downloader-1 Started 
+ Container trivita-apidog-fhir-worker-1 Started 
+ Container trivita-apidog-fhir-notifier-1 Started 
+ Container trivita-apidog-auth-1 Waiting 
+ Container trivita-apidog-fhir-notifier-1 Waiting 
+ Container trivita-apidog-ws-gateway-1 Waiting 
+ Container trivita-apidog-fhir-downloader-1 Waiting 
+ Container trivita-apidog-fhir-worker-1 Waiting 
+ Container trivita-apidog-fhir-server-1 Waiting 
+ Container trivita-apidog-postgres-1 Waiting 
+ Container trivita-apidog-redis-1 Waiting 
+ Container trivita-apidog-dicomweb-1 Waiting 
+ Container trivita-apidog-auth-1 Healthy 
+ Container trivita-apidog-postgres-1 Healthy 
+ Container trivita-apidog-ws-gateway-1 Healthy 
+ Container trivita-apidog-redis-1 Healthy 
+ Container trivita-apidog-fhir-server-1 Healthy 
+ Container trivita-apidog-fhir-downloader-1 Healthy 
+ Container trivita-apidog-dicomweb-1 Healthy 
+ Container trivita-apidog-fhir-worker-1 Healthy 
+ Container trivita-apidog-fhir-notifier-1 Healthy 

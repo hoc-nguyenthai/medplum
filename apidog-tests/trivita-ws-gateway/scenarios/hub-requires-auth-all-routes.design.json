@@ -1,0 +1,229 @@
+{
+ "slug": "hub-requires-auth-all-routes",
+ "name": "Hub từ chối khi không có token (9 route)",
+ "priority": 1,
+ "steps": [
+  {
+   "name": "POST /fhircast/STU2 không token → 401",
+   "endpointId": 47548546,
+   "method": "POST",
+   "path": "/fhircast/STU2",
+   "auth": "none",
+   "body": "{\"hub.channel.type\":\"websocket\",\"hub.mode\":\"subscribe\",\"hub.topic\":\"qa-noauth\",\"hub.events\":\"Patient-open\"}",
+   "assertions": [
+    "status == 401"
+   ],
+   "postProcessors": [
+    {
+     "type": "customScript",
+     "data": {
+      "script": "pm.test('WWW-Authenticate: Bearer realm=\"fhircast\"', () => pm.expect(pm.response.headers.get('WWW-Authenticate')).to.eql('Bearer realm=\"fhircast\"'));"
+     }
+    },
+    {
+     "type": "customScript",
+     "data": {
+      "script": "if (pm.response.code >= 400) { pm.test('lỗi là OperationOutcome', () => { pm.expect(pm.response.headers.get('Content-Type')).to.include('application/fhir+json'); pm.expect(pm.response.json().resourceType).to.eql('OperationOutcome'); }); }"
+     }
+    }
+   ]
+  },
+  {
+   "name": "GET /fhircast/STU2/qa-noauth không token → 401",
+   "endpointId": 47548548,
+   "method": "GET",
+   "path": "/fhircast/STU2/qa-noauth",
+   "auth": "none",
+   "assertions": [
+    "status == 401"
+   ],
+   "postProcessors": [
+    {
+     "type": "customScript",
+     "data": {
+      "script": "pm.test('WWW-Authenticate: Bearer realm=\"fhircast\"', () => pm.expect(pm.response.headers.get('WWW-Authenticate')).to.eql('Bearer realm=\"fhircast\"'));"
+     }
+    },
+    {
+     "type": "customScript",
+     "data": {
+      "script": "if (pm.response.code >= 400) { pm.test('lỗi là OperationOutcome', () => { pm.expect(pm.response.headers.get('Content-Type')).to.include('application/fhir+json'); pm.expect(pm.response.json().resourceType).to.eql('OperationOutcome'); }); }"
+     }
+    }
+   ]
+  },
+  {
+   "name": "POST /fhircast/STU2/qa-noauth không token → 401",
+   "endpointId": 47548549,
+   "method": "POST",
+   "path": "/fhircast/STU2/qa-noauth",
+   "auth": "none",
+   "body": "{\"id\":\"qa-{{$timestamp}}\",\"timestamp\":\"2026-11-25T10:00:00.000Z\",\"event\":{\"hub.topic\":\"qa-noauth\",\"hub.event\":\"heartbeat\",\"context\":[]}}",
+   "assertions": [
+    "status == 401"
+   ],
+   "postProcessors": [
+    {
+     "type": "customScript",
+     "data": {
+      "script": "pm.test('WWW-Authenticate: Bearer realm=\"fhircast\"', () => pm.expect(pm.response.headers.get('WWW-Authenticate')).to.eql('Bearer realm=\"fhircast\"'));"
+     }
+    },
+    {
+     "type": "customScript",
+     "data": {
+      "script": "if (pm.response.code >= 400) { pm.test('lỗi là OperationOutcome', () => { pm.expect(pm.response.headers.get('Content-Type')).to.include('application/fhir+json'); pm.expect(pm.response.json().resourceType).to.eql('OperationOutcome'); }); }"
+     }
+    }
+   ]
+  },
+  {
+   "name": "POST /fhircast/STU3 không token → 401",
+   "endpointId": 47548550,
+   "method": "POST",
+   "path": "/fhircast/STU3",
+   "auth": "none",
+   "body": "{\"hub.channel.type\":\"websocket\",\"hub.mode\":\"subscribe\",\"hub.topic\":\"qa-noauth\",\"hub.events\":\"Patient-open\"}",
+   "assertions": [
+    "status == 401"
+   ],
+   "postProcessors": [
+    {
+     "type": "customScript",
+     "data": {
+      "script": "pm.test('WWW-Authenticate: Bearer realm=\"fhircast\"', () => pm.expect(pm.response.headers.get('WWW-Authenticate')).to.eql('Bearer realm=\"fhircast\"'));"
+     }
+    },
+    {
+     "type": "customScript",
+     "data": {
+      "script": "if (pm.response.code >= 400) { pm.test('lỗi là OperationOutcome', () => { pm.expect(pm.response.headers.get('Content-Type')).to.include('application/fhir+json'); pm.expect(pm.response.json().resourceType).to.eql('OperationOutcome'); }); }"
+     }
+    }
+   ]
+  },
+  {
+   "name": "GET /fhircast/STU3/qa-noauth không token → 401",
+   "endpointId": 47548552,
+   "method": "GET",
+   "path": "/fhircast/STU3/qa-noauth",
+   "auth": "none",
+   "assertions": [
+    "status == 401"
+   ],
+   "postProcessors": [
+    {
+     "type": "customScript",
+     "data": {
+      "script": "pm.test('WWW-Authenticate: Bearer realm=\"fhircast\"', () => pm.expect(pm.response.headers.get('WWW-Authenticate')).to.eql('Bearer realm=\"fhircast\"'));"
+     }
+    },
+    {
+     "type": "customScript",
+     "data": {
+      "script": "if (pm.response.code >= 400) { pm.test('lỗi là OperationOutcome', () => { pm.expect(pm.response.headers.get('Content-Type')).to.include('application/fhir+json'); pm.expect(pm.response.json().resourceType).to.eql('OperationOutcome'); }); }"
+     }
+    }
+   ]
+  },
+  {
+   "name": "POST /fhircast/STU3/qa-noauth không token → 401",
+   "endpointId": 47548553,
+   "method": "POST",
+   "path": "/fhircast/STU3/qa-noauth",
+   "auth": "none",
+   "body": "{\"id\":\"qa-{{$timestamp}}\",\"timestamp\":\"2026-11-25T10:00:00.000Z\",\"event\":{\"hub.topic\":\"qa-noauth\",\"hub.event\":\"heartbeat\",\"context\":[]}}",
+   "assertions": [
+    "status == 401"
+   ],
+   "postProcessors": [
+    {
+     "type": "customScript",
+     "data": {
+      "script": "pm.test('WWW-Authenticate: Bearer realm=\"fhircast\"', () => pm.expect(pm.response.headers.get('WWW-Authenticate')).to.eql('Bearer realm=\"fhircast\"'));"
+     }
+    },
+    {
+     "type": "customScript",
+     "data": {
+      "script": "if (pm.response.code >= 400) { pm.test('lỗi là OperationOutcome', () => { pm.expect(pm.response.headers.get('Content-Type')).to.include('application/fhir+json'); pm.expect(pm.response.json().resourceType).to.eql('OperationOutcome'); }); }"
+     }
+    }
+   ]
+  },
+  {
+   "name": "POST /hub không token → 401",
+   "endpointId": 47548554,
+   "method": "POST",
+   "path": "/hub",
+   "auth": "none",
+   "body": "{\"hub.channel.type\":\"websocket\",\"hub.mode\":\"subscribe\",\"hub.topic\":\"qa-noauth\",\"hub.events\":\"Patient-open\"}",
+   "assertions": [
+    "status == 401"
+   ],
+   "postProcessors": [
+    {
+     "type": "customScript",
+     "data": {
+      "script": "pm.test('WWW-Authenticate: Bearer realm=\"fhircast\"', () => pm.expect(pm.response.headers.get('WWW-Authenticate')).to.eql('Bearer realm=\"fhircast\"'));"
+     }
+    },
+    {
+     "type": "customScript",
+     "data": {
+      "script": "if (pm.response.code >= 400) { pm.test('lỗi là OperationOutcome', () => { pm.expect(pm.response.headers.get('Content-Type')).to.include('application/fhir+json'); pm.expect(pm.response.json().resourceType).to.eql('OperationOutcome'); }); }"
+     }
+    }
+   ]
+  },
+  {
+   "name": "GET /hub/qa-noauth không token → 401",
+   "endpointId": 47548556,
+   "method": "GET",
+   "path": "/hub/qa-noauth",
+   "auth": "none",
+   "assertions": [
+    "status == 401"
+   ],
+   "postProcessors": [
+    {
+     "type": "customScript",
+     "data": {
+      "script": "pm.test('WWW-Authenticate: Bearer realm=\"fhircast\"', () => pm.expect(pm.response.headers.get('WWW-Authenticate')).to.eql('Bearer realm=\"fhircast\"'));"
+     }
+    },
+    {
+     "type": "customScript",
+     "data": {
+      "script": "if (pm.response.code >= 400) { pm.test('lỗi là OperationOutcome', () => { pm.expect(pm.response.headers.get('Content-Type')).to.include('application/fhir+json'); pm.expect(pm.response.json().resourceType).to.eql('OperationOutcome'); }); }"
+     }
+    }
+   ]
+  },
+  {
+   "name": "POST /hub/qa-noauth không token → 401",
+   "endpointId": 47548557,
+   "method": "POST",
+   "path": "/hub/qa-noauth",
+   "auth": "none",
+   "body": "{\"id\":\"qa-{{$timestamp}}\",\"timestamp\":\"2026-11-25T10:00:00.000Z\",\"event\":{\"hub.topic\":\"qa-noauth\",\"hub.event\":\"heartbeat\",\"context\":[]}}",
+   "assertions": [
+    "status == 401"
+   ],
+   "postProcessors": [
+    {
+     "type": "customScript",
+     "data": {
+      "script": "pm.test('WWW-Authenticate: Bearer realm=\"fhircast\"', () => pm.expect(pm.response.headers.get('WWW-Authenticate')).to.eql('Bearer realm=\"fhircast\"'));"
+     }
+    },
+    {
+     "type": "customScript",
+     "data": {
+      "script": "if (pm.response.code >= 400) { pm.test('lỗi là OperationOutcome', () => { pm.expect(pm.response.headers.get('Content-Type')).to.include('application/fhir+json'); pm.expect(pm.response.json().resourceType).to.eql('OperationOutcome'); }); }"
+     }
+    }
+   ]
+  }
+ ]
+}

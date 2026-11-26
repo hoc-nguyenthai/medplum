@@ -1,0 +1,11 @@
+[
+ {
+  "case_id": "SI-01",
+  "case_group": "Positive",
+  "description": "một site hợp lệ",
+  "expected_status": "200",
+  "expected_code": "",
+  "expected_message": "",
+  "admin_body": "[{\"name\": \"web\", \"domain\": [\"app.example.org\"]}]"
+ }
+]

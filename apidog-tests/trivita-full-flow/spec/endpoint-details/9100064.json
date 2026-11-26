@@ -1,0 +1,1 @@
+{"id": 9100064, "name": "dicomweb: cùng token dùng được ở dicomweb", "method": "get", "path": "{{dicomUrl}}/dicomweb/studies", "parameters": {"path": [], "query": [], "header": [], "cookie": []}, "auth": {}, "securityScheme": {}, "requestBody": null, "responses": []}

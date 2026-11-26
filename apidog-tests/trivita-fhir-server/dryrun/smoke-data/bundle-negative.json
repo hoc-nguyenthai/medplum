@@ -1,0 +1,14 @@
+[
+ {
+  "case_id": "TC-BN-01",
+  "case_group": "Negative",
+  "description": "thân là Patient, không phải Bundle",
+  "expected_status": "400",
+  "expected_code": "invalid",
+  "expected_message": "Body phải là Bundle",
+  "body": "{\"resourceType\":\"Patient\"}",
+  "content_type": "application/fhir+json",
+  "prefer": "handling=lenient",
+  "expect_empty_body": ""
+ }
+]

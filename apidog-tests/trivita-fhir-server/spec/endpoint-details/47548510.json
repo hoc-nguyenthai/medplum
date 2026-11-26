@@ -1,0 +1,139 @@
+{
+ "id": 47548510,
+ "name": "ConceptMap/$import (nạp ánh xạ cho bảng ánh xạ lớn)",
+ "method": "post",
+ "path": "/fhir/R4/ConceptMap/{id}/$import",
+ "parameters": {
+  "path": [
+   {
+    "id": "id#0",
+    "name": "id",
+    "required": true,
+    "enable": true,
+    "description": "Id của ConceptMap",
+    "example": "",
+    "type": "string",
+    "schema": {
+     "type": "string"
+    }
+   }
+  ],
+  "query": [],
+  "cookie": [],
+  "header": []
+ },
+ "auth": {
+  "type": "securityscheme"
+ },
+ "securityScheme": {
+  "schemeGroups": [
+   {
+    "id": "jCUcMp2xhIi6NJUOGWGis",
+    "schemeIds": [
+     646419
+    ]
+   }
+  ],
+  "required": true,
+  "use": {
+   "id": "jCUcMp2xhIi6NJUOGWGis",
+   "configs": {
+    "646419": {
+     "authConfigs": {
+      "x-apidog": {
+       "value": "{{apiKey}}"
+      }
+     }
+    }
+   }
+  },
+  "scopes": {
+   "jCUcMp2xhIi6NJUOGWGis": {
+    "646419": []
+   }
+  }
+ },
+ "requestBody": {
+  "type": "application/json",
+  "jsonSchema": {
+   "$ref": "#/definitions/19029535"
+  },
+  "parameters": [],
+  "mediaType": "application/fhir+json",
+  "oasExtensions": "",
+  "required": true,
+  "additionalContentTypes": []
+ },
+ "responses": [
+  {
+   "id": "136960691",
+   "name": "",
+   "code": "200",
+   "contentType": "json",
+   "jsonSchema": {
+    "$ref": "#/definitions/19029521"
+   },
+   "itemSchema": {},
+   "description": "OK",
+   "mediaType": "application/fhir+json",
+   "headers": [],
+   "oasExtensions": ""
+  },
+  {
+   "id": "193538982",
+   "name": "",
+   "code": "400",
+   "contentType": "json",
+   "jsonSchema": {
+    "$ref": "#/definitions/19029533"
+   },
+   "itemSchema": {},
+   "description": "Thiếu mapping, source.code hoặc target.system",
+   "mediaType": "application/fhir+json",
+   "headers": [],
+   "oasExtensions": ""
+  },
+  {
+   "id": "120224730",
+   "name": "",
+   "code": "401",
+   "contentType": "json",
+   "jsonSchema": {
+    "$ref": "#/definitions/19029533"
+   },
+   "itemSchema": {},
+   "description": "Thiếu hoặc sai Bearer token",
+   "mediaType": "application/fhir+json",
+   "headers": [],
+   "oasExtensions": ""
+  },
+  {
+   "id": "130117709",
+   "name": "",
+   "code": "403",
+   "contentType": "json",
+   "jsonSchema": {
+    "$ref": "#/definitions/19029533"
+   },
+   "itemSchema": {},
+   "description": "Token không đủ quyền (cần quyền admin)",
+   "mediaType": "application/fhir+json",
+   "headers": [],
+   "oasExtensions": ""
+  },
+  {
+   "id": "164721594",
+   "name": "",
+   "code": "404",
+   "contentType": "json",
+   "jsonSchema": {
+    "$ref": "#/definitions/19029533"
+   },
+   "itemSchema": {},
+   "description": "ConceptMap không tồn tại",
+   "mediaType": "application/fhir+json",
+   "headers": [],
+   "oasExtensions": ""
+  }
+ ]
+}

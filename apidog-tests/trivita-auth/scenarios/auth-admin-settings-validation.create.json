@@ -1,0 +1,1 @@
+{"name": "Auth | POST /admin/projects/{id}/settings: allowlist và giá trị (data-driven)", "description": "Allowlist 4 tên, biên appName 1..100, boolean, danh sách MFA, tên miền Practitioner, trùng tên, body sai. Hàng cuối đặt lại [] để không để lại setting.", "folderId": 0, "priority": 1, "tags": ["trivita-auth", "ai-generated"]}

@@ -1,0 +1,123 @@
+[
+ {
+  "case_id": "TC-VA-01",
+  "case_group": "Positive",
+  "description": "Patient hợp lệ (cảnh báo thiếu narrative vẫn 200)",
+  "expected_status": "200",
+  "expected_code": "",
+  "expected_message": "",
+  "resource_type": "Patient",
+  "body": "{\"resourceType\":\"Patient\",\"gender\":\"male\"}",
+  "content_type": "application/fhir+json"
+ },
+ {
+  "case_id": "TC-VA-02",
+  "case_group": "Positive",
+  "description": "Parameters bọc resource",
+  "expected_status": "200",
+  "expected_code": "",
+  "expected_message": "",
+  "resource_type": "Patient",
+  "body": "{\"resourceType\":\"Parameters\",\"parameter\":[{\"name\":\"resource\",\"resource\":{\"resourceType\":\"Patient\"}}]}",
+  "content_type": "application/fhir+json"
+ },
+ {
+  "case_id": "TC-VA-03",
+  "case_group": "Negative",
+  "description": "thuộc tính lạ",
+  "expected_status": "400",
+  "expected_code": "structure",
+  "expected_message": "Thuộc tính không hợp lệ \"bogus\"",
+  "resource_type": "Patient",
+  "body": "{\"resourceType\":\"Patient\",\"bogus\":1}",
+  "content_type": "application/fhir+json"
+ },
+ {
+  "case_id": "TC-VA-04",
+  "case_group": "Negative",
+  "description": "thiếu bắt buộc của Observation",
+  "expected_status": "400",
+  "expected_code": "required",
+  "expected_message": "Thiếu thuộc tính bắt buộc",
+  "resource_type": "Observation",
+  "body": "{\"resourceType\":\"Observation\"}",
+  "content_type": "application/fhir+json"
+ },
+ {
+  "case_id": "TC-VA-05",
+  "case_group": "Negative",
+  "description": "thân rỗng",
+  "expected_status": "400",
+  "expected_code": "invalid",
+  "expected_message": "Thiếu resource cần kiểm tra",
+  "resource_type": "Patient",
+  "body": "",
+  "content_type": "application/fhir+json"
+ },
+ {
+  "case_id": "TC-VA-06",
+  "case_group": "Negative",
+  "description": "resourceType lệch",
+  "expected_status": "400",
+  "expected_code": "invalid",
+  "expected_message": "resourceType không khớp: đường dẫn là Patient, resource là \"Observation\"",
+  "resource_type": "Patient",
+  "body": "{\"resourceType\":\"Observation\"}",
+  "content_type": "application/fhir+json"
+ },
+ {
+  "case_id": "TC-VA-07",
+  "case_group": "Negative",
+  "description": "thân là mảng",
+  "expected_status": "400",
+  "expected_code": "invalid",
+  "expected_message": "Body phải là một resource hoặc Parameters",
+  "resource_type": "Patient",
+  "body": "[]",
+  "content_type": "application/fhir+json"
+ },
+ {
+  "case_id": "TC-VA-08",
+  "case_group": "Negative",
+  "description": "Parameters thiếu name",
+  "expected_status": "400",
+  "expected_code": "invalid",
+  "expected_message": "Parameters.parameter[0] thiếu name",
+  "resource_type": "Patient",
+  "body": "{\"resourceType\":\"Parameters\",\"parameter\":[{}]}",
+  "content_type": "application/fhir+json"
+ },
+ {
+  "case_id": "TC-VA-09",
+  "case_group": "Negative",
+  "description": "JSON hỏng",
+  "expected_status": "400",
+  "expected_code": "invalid",
+  "expected_message": "JSON không hợp lệ",
+  "resource_type": "Patient",
+  "body": "{",
+  "content_type": "application/fhir+json"
+ },
+ {
+  "case_id": "TC-VA-10",
+  "case_group": "Negative",
+  "description": "Content-Type text/plain",
+  "expected_status": "415",
+  "expected_code": "not-supported",
+  "expected_message": "Content-Type không hỗ trợ: text/plain",
+  "resource_type": "Patient",
+  "body": "{\"resourceType\":\"Patient\"}",
+  "content_type": "text/plain"
+ },
+ {
+  "case_id": "TC-VA-11",
+  "case_group": "Negative",
+  "description": "loại resource lạ",
+  "expected_status": "404",
+  "expected_code": "not-found",
+  "expected_message": "Không có route cho POST Foo/$validate",
+  "resource_type": "Foo",
+  "body": "{\"resourceType\":\"Foo\"}",
+  "content_type": "application/fhir+json"
+ }
+]

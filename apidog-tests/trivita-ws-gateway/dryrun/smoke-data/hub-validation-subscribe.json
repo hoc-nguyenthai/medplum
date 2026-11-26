@@ -1,0 +1,11 @@
+[
+ {
+  "case_id": "SV-01",
+  "case_group": "Negative",
+  "description": "Thân rỗng {} → thiếu channel.type",
+  "expected_status": "400",
+  "expected_code": "",
+  "body_json": "{}",
+  "expected_message": "Missing hub.channel.type"
+ }
+]

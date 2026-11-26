@@ -1,0 +1,1 @@
+{"id": 9100033, "name": "ws-gateway: unsubscribe", "method": "post", "path": "{{wsUrl}}/fhircast/STU3", "parameters": {"path": [], "query": [], "header": [], "cookie": []}, "auth": {}, "securityScheme": {}, "requestBody": null, "responses": []}

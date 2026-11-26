@@ -1,0 +1,1 @@
+{"id": 9000007, "name": "dicomweb: GET /dicomweb/foo (route lạ)", "method": "get", "path": "{{dicomUrl}}/dicomweb/foo", "parameters": {"path": [], "query": [], "header": [], "cookie": []}, "auth": {}, "securityScheme": {}, "requestBody": null, "responses": []}

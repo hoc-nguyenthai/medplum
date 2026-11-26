@@ -1,0 +1,18 @@
+[
+ {
+  "case_id": "TC-EX-01",
+  "case_group": "Positive",
+  "description": "mở rộng toàn bộ",
+  "expected_status": "200",
+  "expected_code": "",
+  "expected_message": "",
+  "expected_contains": "3",
+  "expected_total": "3",
+  "url_name": "url",
+  "url_suffix": "",
+  "count_name": "_c",
+  "count_value": "1",
+  "offset_name": "_o",
+  "offset_value": "0"
+ }
+]

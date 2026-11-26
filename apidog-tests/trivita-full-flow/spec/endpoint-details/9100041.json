@@ -1,0 +1,1 @@
+{"id": 9100041, "name": "auth: POST /oauth2/logout thu hồi phiên của token", "method": "post", "path": "{{authUrl}}/oauth2/logout", "parameters": {"path": [], "query": [], "header": [], "cookie": []}, "auth": {}, "securityScheme": {}, "requestBody": null, "responses": []}

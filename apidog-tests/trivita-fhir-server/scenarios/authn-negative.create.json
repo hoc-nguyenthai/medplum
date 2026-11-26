@@ -1,0 +1,10 @@
+{
+ "name": "Xác thực: token sai hoặc thiếu",
+ "description": "Token giả → 401 invalid_token; không Authorization → 401; metadata vẫn công khai kể cả khi kèm token sai.",
+ "priority": 1,
+ "folderId": 0,
+ "tags": [
+  "authn",
+  "security"
+ ]
+}

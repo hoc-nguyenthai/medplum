@@ -84,7 +84,7 @@ Object tự do (khóa và giá trị tùy ý).
 
 **Protected resource metadata (RFC 9728)**
 
-`resource` tùy chọn phải bắt đầu bằng địa chỉ của auth; mặc định là chính auth.
+`resource` tùy chọn phải là địa chỉ của auth hoặc nằm dưới địa chỉ đó (sau địa chỉ là hết chuỗi, /, ? hoặc #); mặc định là chính auth.
 
 Các trường hợp phản hồi: [../cases/well-known.md#get-well-known-oauth-protected-resource](../cases/well-known.md#get-well-known-oauth-protected-resource)
 
@@ -104,7 +104,7 @@ Các trường hợp phản hồi: [../cases/well-known.md#get-well-known-oauth-
 
 | Tên | Vị trí | Kiểu | Bắt buộc | Mô tả |
 |---|---|---|---|---|
-| `resource` | query | string | không | phải bắt đầu bằng địa chỉ của auth |
+| `resource` | query | string | không | phải là địa chỉ của auth hoặc nằm dưới nó (sau địa chỉ: hết chuỗi, /, ? hoặc #) |
 
 **Phản hồi**
 

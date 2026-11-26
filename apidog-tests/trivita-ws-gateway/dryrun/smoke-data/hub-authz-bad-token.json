@@ -1,0 +1,10 @@
+[
+ {
+  "case_id": "AZ-01",
+  "case_group": "Security",
+  "description": "Authorization: Bearer rỗng",
+  "expected_status": "401",
+  "expected_code": "",
+  "credential": ""
+ }
+]

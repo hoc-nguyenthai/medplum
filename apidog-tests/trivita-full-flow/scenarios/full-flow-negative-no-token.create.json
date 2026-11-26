@@ -1,0 +1,11 @@
+{
+ "name": "Full flow negative: không token → 401 trên cả 4 service",
+ "description": "Mỗi service từ chối yêu cầu thiếu Authorization bằng 401 trên route bảo vệ, các route công khai (jwks, metadata, fhircast-configuration) vẫn 200, dicomweb không xác thực route ngoài tiền tố (404), /oauth2/token thiếu client_secret bị từ chối. Không cần token nên chạy được kể cả khi chưa seed client.",
+ "folderId": 0,
+ "priority": 1,
+ "tags": [
+  "full-flow",
+  "negative",
+  "authz"
+ ]
+}

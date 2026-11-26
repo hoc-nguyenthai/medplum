@@ -1,0 +1,11 @@
+[
+ {
+  "case_id": "TC-ST-01",
+  "case_group": "Negative",
+  "description": "id dạng chuỗi lạ",
+  "expected_status": "404",
+  "expected_code": "not-found",
+  "expected_message": "",
+  "job_id": "khong-co"
+ }
+]

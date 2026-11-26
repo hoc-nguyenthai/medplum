@@ -1,0 +1,171 @@
+{
+ "id": 47548519,
+ "name": "CodeSystem/$lookup",
+ "method": "get",
+ "path": "/fhir/R4/CodeSystem/$lookup",
+ "parameters": {
+  "path": [],
+  "query": [
+   {
+    "id": "qbvKTC81gv",
+    "name": "system",
+    "required": true,
+    "enable": true,
+    "description": "URL của CodeSystem",
+    "example": "",
+    "type": "string",
+    "schema": {
+     "type": "string"
+    }
+   },
+   {
+    "id": "e05g6SAqH1",
+    "name": "code",
+    "required": true,
+    "enable": true,
+    "description": "Code cần tra",
+    "example": "",
+    "type": "string",
+    "schema": {
+     "type": "string"
+    }
+   },
+   {
+    "id": "TKTtDlAvTh",
+    "name": "version",
+    "required": false,
+    "enable": true,
+    "description": "Phiên bản CodeSystem",
+    "example": "",
+    "type": "string",
+    "schema": {
+     "type": "string"
+    }
+   },
+   {
+    "id": "p893FqFnZu",
+    "name": "property",
+    "required": false,
+    "enable": true,
+    "description": "Property cần trả, lặp tham số để chọn nhiều",
+    "example": "",
+    "type": "string",
+    "schema": {
+     "type": "string"
+    }
+   }
+  ],
+  "cookie": [],
+  "header": []
+ },
+ "auth": {
+  "type": "securityscheme"
+ },
+ "securityScheme": {
+  "schemeGroups": [
+   {
+    "id": "iIQ2KTbXN1CkXq7SiXmVt",
+    "schemeIds": [
+     646419
+    ]
+   }
+  ],
+  "required": true,
+  "use": {
+   "id": "iIQ2KTbXN1CkXq7SiXmVt",
+   "configs": {
+    "646419": {
+     "authConfigs": {
+      "x-apidog": {
+       "value": "{{apiKey}}"
+      }
+     }
+    }
+   }
+  },
+  "scopes": {
+   "iIQ2KTbXN1CkXq7SiXmVt": {
+    "646419": []
+   }
+  }
+ },
+ "requestBody": {
+  "type": "none",
+  "parameters": [],
+  "required": false,
+  "additionalContentTypes": [],
+  "oasExtensions": ""
+ },
+ "responses": [
+  {
+   "id": "139010819",
+   "name": "",
+   "code": "200",
+   "contentType": "json",
+   "jsonSchema": {
+    "$ref": "#/definitions/19029535"
+   },
+   "itemSchema": {},
+   "description": "OK",
+   "mediaType": "application/fhir+json",
+   "headers": [],
+   "oasExtensions": ""
+  },
+  {
+   "id": "195411425",
+   "name": "",
+   "code": "400",
+   "contentType": "json",
+   "jsonSchema": {
+    "$ref": "#/definitions/19029533"
+   },
+   "itemSchema": {},
+   "description": "Thiếu system hoặc code",
+   "mediaType": "application/fhir+json",
+   "headers": [],
+   "oasExtensions": ""
+  },
+  {
+   "id": "158272934",
+   "name": "",
+   "code": "401",
+   "contentType": "json",
+   "jsonSchema": {
+    "$ref": "#/definitions/19029533"
+   },
+   "itemSchema": {},
+   "description": "Thiếu hoặc sai Bearer token",
+   "mediaType": "application/fhir+json",
+   "headers": [],
+   "oasExtensions": ""
+  },
+  {
+   "id": "144608725",
+   "name": "",
+   "code": "403",
+   "contentType": "json",
+   "jsonSchema": {
+    "$ref": "#/definitions/19029533"
+   },
+   "itemSchema": {},
+   "description": "Token không đủ quyền (cần quyền read)",
+   "mediaType": "application/fhir+json",
+   "headers": [],
+   "oasExtensions": ""
+  },
+  {
+   "id": "131410774",
+   "name": "",
+   "code": "404",
+   "contentType": "json",
+   "jsonSchema": {
+    "$ref": "#/definitions/19029533"
+   },
+   "itemSchema": {},
+   "description": "Không tìm thấy code",
+   "mediaType": "application/fhir+json",
+   "headers": [],
+   "oasExtensions": ""
+  }
+ ]
+}

@@ -1,0 +1,139 @@
+{
+ "id": 47548508,
+ "name": "CodeSystem/$import (nạp concept cho bảng mã lớn)",
+ "method": "post",
+ "path": "/fhir/R4/CodeSystem/{id}/$import",
+ "parameters": {
+  "path": [
+   {
+    "id": "id#0",
+    "name": "id",
+    "required": true,
+    "enable": true,
+    "description": "Id của CodeSystem",
+    "example": "",
+    "type": "string",
+    "schema": {
+     "type": "string"
+    }
+   }
+  ],
+  "query": [],
+  "cookie": [],
+  "header": []
+ },
+ "auth": {
+  "type": "securityscheme"
+ },
+ "securityScheme": {
+  "schemeGroups": [
+   {
+    "id": "jEAEuP16pUPVFeUwqZ9zx",
+    "schemeIds": [
+     646419
+    ]
+   }
+  ],
+  "required": true,
+  "use": {
+   "id": "jEAEuP16pUPVFeUwqZ9zx",
+   "configs": {
+    "646419": {
+     "authConfigs": {
+      "x-apidog": {
+       "value": "{{apiKey}}"
+      }
+     }
+    }
+   }
+  },
+  "scopes": {
+   "jEAEuP16pUPVFeUwqZ9zx": {
+    "646419": []
+   }
+  }
+ },
+ "requestBody": {
+  "type": "application/json",
+  "jsonSchema": {
+   "$ref": "#/definitions/19029535"
+  },
+  "parameters": [],
+  "mediaType": "application/fhir+json",
+  "oasExtensions": "",
+  "required": true,
+  "additionalContentTypes": []
+ },
+ "responses": [
+  {
+   "id": "186017785",
+   "name": "",
+   "code": "200",
+   "contentType": "json",
+   "jsonSchema": {
+    "$ref": "#/definitions/19029535"
+   },
+   "itemSchema": {},
+   "description": "OK",
+   "mediaType": "application/fhir+json",
+   "headers": [],
+   "oasExtensions": ""
+  },
+  {
+   "id": "133934516",
+   "name": "",
+   "code": "400",
+   "contentType": "json",
+   "jsonSchema": {
+    "$ref": "#/definitions/19029533"
+   },
+   "itemSchema": {},
+   "description": "Thiếu CodeSystem, property chưa khai báo hoặc code không xác định",
+   "mediaType": "application/fhir+json",
+   "headers": [],
+   "oasExtensions": ""
+  },
+  {
+   "id": "125616571",
+   "name": "",
+   "code": "401",
+   "contentType": "json",
+   "jsonSchema": {
+    "$ref": "#/definitions/19029533"
+   },
+   "itemSchema": {},
+   "description": "Thiếu hoặc sai Bearer token",
+   "mediaType": "application/fhir+json",
+   "headers": [],
+   "oasExtensions": ""
+  },
+  {
+   "id": "194608079",
+   "name": "",
+   "code": "403",
+   "contentType": "json",
+   "jsonSchema": {
+    "$ref": "#/definitions/19029533"
+   },
+   "itemSchema": {},
+   "description": "Token không đủ quyền (cần quyền admin)",
+   "mediaType": "application/fhir+json",
+   "headers": [],
+   "oasExtensions": ""
+  },
+  {
+   "id": "186515419",
+   "name": "",
+   "code": "404",
+   "contentType": "json",
+   "jsonSchema": {
+    "$ref": "#/definitions/19029533"
+   },
+   "itemSchema": {},
+   "description": "CodeSystem không tồn tại",
+   "mediaType": "application/fhir+json",
+   "headers": [],
+   "oasExtensions": ""
+  }
+ ]
+}

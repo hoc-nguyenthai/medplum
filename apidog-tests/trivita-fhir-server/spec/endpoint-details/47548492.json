@@ -1,0 +1,128 @@
+{
+ "id": 47548492,
+ "name": "GraphQL",
+ "method": "post",
+ "path": "/fhir/R4/$graphql",
+ "parameters": {
+  "path": [],
+  "query": [],
+  "cookie": [],
+  "header": []
+ },
+ "auth": {
+  "type": "securityscheme"
+ },
+ "securityScheme": {
+  "schemeGroups": [
+   {
+    "id": "Zo1-Qn-WW5d4A7nbjV4Da",
+    "schemeIds": [
+     646419
+    ]
+   }
+  ],
+  "required": true,
+  "use": {
+   "id": "Zo1-Qn-WW5d4A7nbjV4Da",
+   "configs": {
+    "646419": {
+     "authConfigs": {
+      "x-apidog": {
+       "value": "{{apiKey}}"
+      }
+     }
+    }
+   }
+  },
+  "scopes": {
+   "Zo1-Qn-WW5d4A7nbjV4Da": {
+    "646419": []
+   }
+  }
+ },
+ "requestBody": {
+  "type": "application/json",
+  "jsonSchema": {
+   "$ref": "#/definitions/19029559"
+  },
+  "parameters": [],
+  "mediaType": "application/json",
+  "oasExtensions": "",
+  "required": true,
+  "additionalContentTypes": []
+ },
+ "responses": [
+  {
+   "id": "123158149",
+   "name": "",
+   "code": "200",
+   "contentType": "json",
+   "jsonSchema": {
+    "$ref": "#/definitions/19029560"
+   },
+   "itemSchema": {},
+   "description": "OK",
+   "mediaType": "application/json",
+   "headers": [],
+   "oasExtensions": "",
+   "additionalContent": [
+    {
+     "contentType": "json",
+     "mediaType": "application/fhir+json",
+     "jsonSchema": {
+      "$ref": "#/components/schemas/httpapi.GraphQLResponse"
+     },
+     "examples": {}
+    }
+   ]
+  },
+  {
+   "id": "170137844",
+   "name": "",
+   "code": "401",
+   "contentType": "json",
+   "jsonSchema": {
+    "$ref": "#/definitions/19029533"
+   },
+   "itemSchema": {},
+   "description": "Thiếu hoặc sai Bearer token",
+   "mediaType": "application/json",
+   "headers": [],
+   "oasExtensions": "",
+   "additionalContent": [
+    {
+     "contentType": "json",
+     "mediaType": "application/fhir+json",
+     "jsonSchema": {
+      "$ref": "#/components/schemas/fhir.OperationOutcome"
+     },
+     "examples": {}
+    }
+   ]
+  },
+  {
+   "id": "108700437",
+   "name": "",
+   "code": "403",
+   "contentType": "json",
+   "jsonSchema": {
+    "$ref": "#/definitions/19029533"
+   },
+   "itemSchema": {},
+   "description": "Token không đủ quyền (cần quyền read)",
+   "mediaType": "application/json",
+   "headers": [],
+   "oasExtensions": "",
+   "additionalContent": [
+    {
+     "contentType": "json",
+     "mediaType": "application/fhir+json",
+     "jsonSchema": {
+      "$ref": "#/components/schemas/fhir.OperationOutcome"
+     },
+     "examples": {}
+    }
+   ]
+  }
+ ]
+}

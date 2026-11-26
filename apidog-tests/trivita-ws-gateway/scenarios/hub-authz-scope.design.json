@@ -1,0 +1,44 @@
+{
+ "slug": "hub-authz-scope",
+ "name": "Hub authz: scope",
+ "priority": 1,
+ "steps": [
+  {
+   "name": "Lấy token với scope {{oauth_scope}}",
+   "endpointId": 47548561,
+   "method": "GET",
+   "path": "/healthz",
+   "assertions": [
+    "status == 200"
+   ],
+   "postProcessors": [
+    {
+     "type": "customScript",
+     "data": {
+      "script": "\nconst scope = pm.iterationData.get('oauth_scope') || 'fhircast/*';\nconst authUrl = pm.variables.get('authUrl') || pm.environment.get('authUrl');\nconst set = (k, v) => { try { pm.variables.set(k, v); } catch (e) {} try { pm.environment.set(k, v); } catch (e) {} };\nset('topic', 'qa-' + Date.now() + '-' + Math.floor(Math.random() * 1000000));\npm.sendRequest({\n  url: authUrl + '/oauth2/token', method: 'POST',\n  header: { 'Content-Type': 'application/x-www-form-urlencoded' },\n  body: { mode: 'urlencoded', urlencoded: [\n    { key: 'grant_type', value: 'client_credentials' },\n    { key: 'client_id', value: pm.variables.get('clientId') || pm.environment.get('clientId') },\n    { key: 'client_secret', value: pm.variables.get('clientSecret') || pm.environment.get('clientSecret') },\n    { key: 'scope', value: scope } ] }\n}, (err, res) => {\n  pm.test('token client_credentials 200', () => { pm.expect(err).to.eql(null); pm.expect(res.code).to.eql(200); });\n  if (!err && res.code === 200) { set('access_token', res.json().access_token); }\n});\n"
+     }
+    }
+   ],
+   "auth": "none"
+  },
+  {
+   "name": "POST /fhircast/STU3 đăng ký theo scope",
+   "endpointId": 47548550,
+   "method": "POST",
+   "path": "/fhircast/STU3",
+   "auth": "Bearer {{access_token}}",
+   "body": "{\"hub.channel.type\":\"websocket\",\"hub.mode\":\"subscribe\",\"hub.topic\":\"{{topic}}\",\"hub.events\":\"Patient-open\"}",
+   "assertions": [
+    "status == {{expected_status}}"
+   ],
+   "postProcessors": [
+    {
+     "type": "customScript",
+     "data": {
+      "script": "if (pm.response.code === 403) { pm.test('Forbidden', () => pm.expect(pm.response.json().issue[0].details.text).to.eql('Forbidden')); }"
+     }
+    }
+   ]
+  }
+ ]
+}

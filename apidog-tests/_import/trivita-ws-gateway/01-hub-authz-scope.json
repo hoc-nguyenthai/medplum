@@ -1,0 +1,26 @@
+[
+  {
+    "case_id": "SC-01",
+    "case_group": "Positive",
+    "description": "scope fhircast/* \u0111\u01b0\u1ee3c ch\u1ea5p nh\u1eadn (\u0111\u1ed1i ch\u1ee9ng)",
+    "expected_status": "202",
+    "expected_code": "",
+    "oauth_scope": "fhircast/*"
+  },
+  {
+    "case_id": "SC-02",
+    "case_group": "Security",
+    "description": "token kh\u00f4ng c\u00f3 scope fhircast/ \u2192 403 Forbidden (FHIRCAST_REQUIRE_SCOPE=true)",
+    "expected_status": "403",
+    "expected_code": "",
+    "oauth_scope": "openid"
+  },
+  {
+    "case_id": "SC-03",
+    "case_group": "Security",
+    "description": "token ch\u1ec9 c\u00f3 scope SMART kh\u00e1c \u2192 403",
+    "expected_status": "403",
+    "expected_code": "",
+    "oauth_scope": "system/Patient.rs"
+  }
+]

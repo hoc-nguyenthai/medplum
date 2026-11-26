@@ -1,0 +1,1 @@
+{"name": "Auth | oauth-protected-resource: tham số resource", "description": "Data-driven: resource hợp lệ (bắt đầu bằng AUTH_BASE_URL) 200; resource lạ/rỗng 400 văn bản 'Invalid resource URL' (RFC 9728 chống mở rộng).", "folderId": 0, "priority": 1, "tags": ["trivita-auth", "ai-generated"]}

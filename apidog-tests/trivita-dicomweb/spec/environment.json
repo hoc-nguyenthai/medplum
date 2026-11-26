@@ -1,0 +1,84 @@
+{
+ "variables": [
+  {
+   "name": "apiKey",
+   "value": "",
+   "description": "khai báo bởi security scheme BearerAuth2 của module (header Authorization); các step dùng bearer {{accessToken}} nên KHÔNG cần nhập"
+  },
+  {
+   "name": "dicomUrl",
+   "value": "",
+   "description": "Base URL dicomweb, vd http://localhost:8008 (không kèm tiền tố)"
+  },
+  {
+   "name": "authUrl",
+   "value": "",
+   "description": "Base URL auth, vd http://localhost:8006"
+  },
+  {
+   "name": "clientId",
+   "value": "",
+   "description": "client_id của ClientApplication seed (nhập lúc chạy, --env-var)"
+  },
+  {
+   "name": "clientSecret",
+   "value": "",
+   "description": "client_secret tương ứng (nhập lúc chạy, KHÔNG lưu)"
+  },
+  {
+   "name": "accessToken",
+   "value": "",
+   "description": "do bước token tạo ra"
+  },
+  {
+   "name": "projectId",
+   "value": "",
+   "description": "do bước token tạo ra (claim fhir_project)"
+  },
+  {
+   "name": "callBad",
+   "value": "",
+   "description": "token xấu do script tạo (authz)"
+  },
+  {
+   "name": "studyUid",
+   "value": "",
+   "description": "UID sinh mỗi lần chạy (lifecycle)"
+  },
+  {
+   "name": "seriesUid",
+   "value": "",
+   "description": "như trên"
+  },
+  {
+   "name": "series2Uid",
+   "value": "",
+   "description": "như trên"
+  },
+  {
+   "name": "sop1",
+   "value": "",
+   "description": "như trên"
+  },
+  {
+   "name": "sop2",
+   "value": "",
+   "description": "như trên"
+  },
+  {
+   "name": "sop3",
+   "value": "",
+   "description": "như trên"
+  },
+  {
+   "name": "otherStudyUid",
+   "value": "",
+   "description": "như trên"
+  },
+  {
+   "name": "pid",
+   "value": "",
+   "description": "PatientID sinh mỗi lần chạy"
+  }
+ ]
+}

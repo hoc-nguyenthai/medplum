@@ -1,0 +1,1 @@
+{"id": 9100048, "name": "fhir: GET /fhir/R4/Patient không token -> 401", "method": "get", "path": "{{fhirUrl}}/fhir/R4/Patient", "parameters": {"path": [], "query": [], "header": [], "cookie": []}, "auth": {}, "securityScheme": {}, "requestBody": null, "responses": []}

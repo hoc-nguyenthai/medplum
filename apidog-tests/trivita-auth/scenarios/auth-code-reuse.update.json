@@ -1,0 +1,342 @@
+{
+ "steps": [
+  {
+   "id": "step-1",
+   "number": 1,
+   "name": "Đăng nhập admin (email + mật khẩu)",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988438,
+    "name": "Đăng nhập admin (email + mật khẩu)",
+    "path": "/auth/login",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "json",
+     "data": "{\"email\": \"{{adminEmail}}\", \"password\": \"{{adminPassword}}\", \"clientId\": \"{{clientId}}\", \"scope\": \"openid profile email\"}"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.code exists",
+       "subject": "responseJson",
+       "comparison": "exists",
+       "path": "$.code",
+       "value": "",
+       "extractSettings": {
+        "expression": "$.code"
+       }
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.login exists",
+       "subject": "responseJson",
+       "comparison": "exists",
+       "path": "$.login",
+       "value": "",
+       "extractSettings": {
+        "expression": "$.login"
+       }
+      }
+     },
+     {
+      "type": "extractor",
+      "enable": true,
+      "data": {
+       "variableType": "local",
+       "variableName": "loginId",
+       "expression": "$.login",
+       "subject": "responseJson"
+      }
+     },
+     {
+      "type": "extractor",
+      "enable": true,
+      "data": {
+       "variableType": "local",
+       "variableName": "code",
+       "expression": "$.code",
+       "subject": "responseJson"
+      }
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988438
+  },
+  {
+   "id": "step-2",
+   "number": 2,
+   "name": "Đổi code lấy token (authorization_code)",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988261,
+    "name": "Đổi code lấy token (authorization_code)",
+    "path": "/oauth2/token",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "x-www-form-urlencoded",
+     "parameters": [
+      {
+       "name": "grant_type",
+       "value": "authorization_code",
+       "enable": true,
+       "type": "string"
+      },
+      {
+       "name": "code",
+       "value": "{{code}}",
+       "enable": true,
+       "type": "string"
+      },
+      {
+       "name": "client_id",
+       "value": "{{clientId}}",
+       "enable": true,
+       "type": "string"
+      },
+      {
+       "name": "client_secret",
+       "value": "{{clientSecret}}",
+       "enable": true,
+       "type": "string"
+      }
+     ]
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.access_token exists",
+       "subject": "responseJson",
+       "comparison": "exists",
+       "path": "$.access_token",
+       "value": "",
+       "extractSettings": {
+        "expression": "$.access_token"
+       }
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.token_type == Bearer",
+       "subject": "responseJson",
+       "comparison": "equal",
+       "path": "$.token_type",
+       "value": "Bearer",
+       "extractSettings": {
+        "expression": "$.token_type"
+       }
+      }
+     },
+     {
+      "type": "extractor",
+      "enable": true,
+      "data": {
+       "variableType": "local",
+       "variableName": "userToken",
+       "expression": "$.access_token",
+       "subject": "responseJson"
+      }
+     }
+    ],
+    "auth": {},
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988261
+  },
+  {
+   "id": "step-3",
+   "number": 3,
+   "name": "Đổi lại cùng code → 400",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988260,
+    "name": "Đổi lại cùng code → 400",
+    "path": "/oauth2/token",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "x-www-form-urlencoded",
+     "parameters": [
+      {
+       "name": "grant_type",
+       "value": "authorization_code",
+       "enable": true,
+       "type": "string"
+      },
+      {
+       "name": "code",
+       "value": "{{code}}",
+       "enable": true,
+       "type": "string"
+      },
+      {
+       "name": "client_id",
+       "value": "{{clientId}}",
+       "enable": true,
+       "type": "string"
+      },
+      {
+       "name": "client_secret",
+       "value": "{{clientSecret}}",
+       "enable": true,
+       "type": "string"
+      }
+     ]
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 400",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "400"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.error == invalid_grant",
+       "subject": "responseJson",
+       "comparison": "equal",
+       "path": "$.error",
+       "value": "invalid_grant",
+       "extractSettings": {
+        "expression": "$.error"
+       }
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.error_description == Token already granted",
+       "subject": "responseJson",
+       "comparison": "equal",
+       "path": "$.error_description",
+       "value": "Token already granted",
+       "extractSettings": {
+        "expression": "$.error_description"
+       }
+      }
+     }
+    ],
+    "auth": {},
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988260
+  },
+  {
+   "id": "step-4",
+   "number": 4,
+   "name": "Token đã cấp ở lần 1 chết (login bị thu hồi)",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988259,
+    "name": "Token đã cấp ở lần 1 chết (login bị thu hồi)",
+    "path": "/auth/me",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 401",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "401"
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{userToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988259
+  }
+ ]
+}

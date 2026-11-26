@@ -1,0 +1,9 @@
+{
+ "name": "Patient/{id}/$everything",
+ "description": "Mỗi dòng: Patient + Observation + Condition rồi $everything theo data; cuối: xóa Patient → 410, id lạ → 404.",
+ "priority": 1,
+ "folderId": 0,
+ "tags": [
+  "operation"
+ ]
+}

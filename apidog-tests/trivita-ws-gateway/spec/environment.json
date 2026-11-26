@@ -1,0 +1,45 @@
+{
+ "name": "Trivita WS Gateway (tên biến, không giá trị)",
+ "variables": [
+  {
+   "name": "authUrl",
+   "value": ""
+  },
+  {
+   "name": "wsUrl",
+   "value": ""
+  },
+  {
+   "name": "clientId",
+   "value": ""
+  },
+  {
+   "name": "clientSecret",
+   "value": ""
+  },
+  {
+   "name": "access_token",
+   "value": ""
+  },
+  {
+   "name": "topic",
+   "value": ""
+  },
+  {
+   "name": "channel_endpoint",
+   "value": ""
+  },
+  {
+   "name": "ctx_version",
+   "value": ""
+  },
+  {
+   "name": "ctx_version_2",
+   "value": ""
+  },
+  {
+   "name": "apiKey",
+   "value": ""
+  }
+ ]
+}

@@ -1,0 +1,83 @@
+[
+  {
+    "case_id": "SC-01",
+    "case_group": "Positive",
+    "description": "t\u1ea1o h\u1ee3p l\u1ec7",
+    "expected_status": "201",
+    "expected_code": "",
+    "expected_message": "",
+    "scim_body": "{\"schemas\": [\"urn:ietf:params:scim:schemas:core:2.0:User\"], \"userName\": \"qa.sc01.{{$timestamp}}{{$randomInt}}@example.org\", \"name\": {\"givenName\": \"QA\", \"familyName\": \"Scim\"}, \"emails\": [{\"value\": \"qa.sc01.{{$timestamp}}{{$randomInt}}@example.org\"}], \"userType\": \"Practitioner\"}"
+  },
+  {
+    "case_id": "SC-02",
+    "case_group": "Negative",
+    "description": "thi\u1ebfu emails",
+    "expected_status": "400",
+    "expected_code": "invalidValue",
+    "expected_message": "emails[0].value is required",
+    "scim_body": "{\"schemas\": [\"urn:ietf:params:scim:schemas:core:2.0:User\"], \"userName\": \"qa.sc02\", \"name\": {\"givenName\": \"QA\", \"familyName\": \"Scim\"}}"
+  },
+  {
+    "case_id": "SC-03",
+    "case_group": "Negative",
+    "description": "userName r\u1ed7ng",
+    "expected_status": "400",
+    "expected_code": "invalidValue",
+    "expected_message": "userName is required",
+    "scim_body": "{\"schemas\": [\"urn:ietf:params:scim:schemas:core:2.0:User\"], \"userName\": \"\", \"name\": {\"givenName\": \"QA\", \"familyName\": \"Scim\"}, \"emails\": [{\"value\": \"qa.sc03.{{$timestamp}}{{$randomInt}}@example.org\"}]}"
+  },
+  {
+    "case_id": "SC-04",
+    "case_group": "Negative",
+    "description": "email sai \u0111\u1ecbnh d\u1ea1ng",
+    "expected_status": "400",
+    "expected_code": "invalidValue",
+    "expected_message": "Valid email address is required",
+    "scim_body": "{\"schemas\": [\"urn:ietf:params:scim:schemas:core:2.0:User\"], \"userName\": \"qa.sc04\", \"name\": {\"givenName\": \"QA\", \"familyName\": \"Scim\"}, \"emails\": [{\"value\": \"khong-phai-email\"}]}"
+  },
+  {
+    "case_id": "SC-05",
+    "case_group": "Negative",
+    "description": "thi\u1ebfu givenName",
+    "expected_status": "400",
+    "expected_code": "invalidValue",
+    "expected_message": "First name is required",
+    "scim_body": "{\"schemas\": [\"urn:ietf:params:scim:schemas:core:2.0:User\"], \"userName\": \"qa.sc05\", \"name\": {\"familyName\": \"Scim\"}, \"emails\": [{\"value\": \"qa.sc05.{{$timestamp}}{{$randomInt}}@example.org\"}]}"
+  },
+  {
+    "case_id": "SC-06",
+    "case_group": "Negative",
+    "description": "thi\u1ebfu familyName",
+    "expected_status": "400",
+    "expected_code": "invalidValue",
+    "expected_message": "Last name is required",
+    "scim_body": "{\"schemas\": [\"urn:ietf:params:scim:schemas:core:2.0:User\"], \"userName\": \"qa.sc06\", \"name\": {\"givenName\": \"QA\"}, \"emails\": [{\"value\": \"qa.sc06.{{$timestamp}}{{$randomInt}}@example.org\"}]}"
+  },
+  {
+    "case_id": "SC-07",
+    "case_group": "Negative",
+    "description": "RelatedPerson kh\u00f4ng c\u00f3 patient",
+    "expected_status": "400",
+    "expected_code": "invalidValue",
+    "expected_message": "Patient is required to create a RelatedPerson",
+    "scim_body": "{\"schemas\": [\"urn:ietf:params:scim:schemas:core:2.0:User\"], \"userName\": \"qa.sc07\", \"name\": {\"givenName\": \"QA\", \"familyName\": \"Scim\"}, \"emails\": [{\"value\": \"qa.sc07.{{$timestamp}}{{$randomInt}}@example.org\"}], \"userType\": \"RelatedPerson\"}"
+  },
+  {
+    "case_id": "SC-08",
+    "case_group": "Negative",
+    "description": "JSON h\u1ecfng",
+    "expected_status": "400",
+    "expected_code": "invalidSyntax",
+    "expected_message": "Content could not be parsed",
+    "scim_body": "{"
+  },
+  {
+    "case_id": "SC-09",
+    "case_group": "Security",
+    "description": "givenName ch\u1ee9a HTML \u0111\u01b0\u1ee3c l\u01b0u nguy\u00ean",
+    "expected_status": "201",
+    "expected_code": "",
+    "expected_message": "",
+    "scim_body": "{\"schemas\": [\"urn:ietf:params:scim:schemas:core:2.0:User\"], \"userName\": \"qa.sc09\", \"name\": {\"givenName\": \"<script>1</script>\", \"familyName\": \"Scim\"}, \"emails\": [{\"value\": \"qa.sc09.{{$timestamp}}{{$randomInt}}@example.org\"}]}"
+  }
+]

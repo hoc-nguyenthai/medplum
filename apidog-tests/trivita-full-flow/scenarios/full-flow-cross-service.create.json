@@ -1,0 +1,10 @@
+{
+ "name": "Full flow: một JWT của auth dùng chung cho các service",
+ "description": "Token client_credentials của auth được fhir-server và dicomweb chấp nhận (cùng issuer/audience), token có scope fhircast/* được ws-gateway chấp nhận; sau logout ở auth, /auth/me trả 401. Việc fhir-server có từ chối token đã thu hồi hay không (G3) chưa rõ nên chỉ ghi nhận.",
+ "folderId": 0,
+ "priority": 1,
+ "tags": [
+  "full-flow",
+  "cross-service"
+ ]
+}

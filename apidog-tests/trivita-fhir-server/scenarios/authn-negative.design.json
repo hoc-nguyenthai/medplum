@@ -1,0 +1,129 @@
+{
+ "slug": "authn-negative",
+ "name": "Xác thực: token sai hoặc thiếu",
+ "priority": 1,
+ "steps": [
+  {
+   "name": "Đăng nhập admin project (auth /auth/login)",
+   "endpointId": "auth-login",
+   "method": "POST",
+   "path": "{{authUrl}}/auth/login",
+   "body": "{\"email\": \"{{adminEmail}}\", \"password\": \"{{adminPassword}}\", \"clientId\": \"{{clientId}}\", \"scope\": \"openid profile email\"}",
+   "auth": "none",
+   "assertions": [
+    "status == 200",
+    "$.code exists"
+   ],
+   "postProcessors": [
+    {
+     "type": "extractor",
+     "data": {
+      "variableName": "adm_code",
+      "expression": "$.code",
+      "subject": "responseJson"
+     }
+    }
+   ]
+  },
+  {
+   "name": "Đổi code lấy token admin (authorization_code)",
+   "endpointId": "auth-token",
+   "method": "POST",
+   "path": "{{authUrl}}/oauth2/token",
+   "form": {
+    "grant_type": "authorization_code",
+    "code": "{{adm_code}}",
+    "client_id": "{{clientId}}",
+    "client_secret": "{{clientSecret}}"
+   },
+   "auth": "none",
+   "assertions": [
+    "status == 200",
+    "$.access_token exists"
+   ],
+   "postProcessors": [
+    {
+     "type": "extractor",
+     "data": {
+      "variableName": "bearerToken",
+      "expression": "$.access_token",
+      "subject": "responseJson"
+     }
+    }
+   ],
+   "custom": true
+  },
+  {
+   "name": "GET Patient với token hợp lệ (đối chứng)",
+   "endpointId": 47548494,
+   "method": "GET",
+   "path": "/fhir/R4/Patient",
+   "query": {
+    "_count": "1"
+   },
+   "auth": "Bearer {{bearerToken}}",
+   "assertions": [
+    "status == 200"
+   ],
+   "custom": true
+  },
+  {
+   "name": "GET Patient với token sai → 401",
+   "endpointId": 47548494,
+   "method": "GET",
+   "path": "/fhir/R4/Patient",
+   "query": {
+    "_count": "1"
+   },
+   "auth": "Bearer {{bad_token}}",
+   "assertions": [
+    "status == {{expected_status}}"
+   ],
+   "postProcessors": [
+    {
+     "type": "customScript",
+     "data": {
+      "script": "const code = pm.iterationData.get('expected_code'); const msg = pm.iterationData.get('expected_message'); let b = {}; try { b = pm.response.json(); } catch (x) {} const issue = (b.issue && b.issue[0]) || {}; const text = (issue.details && issue.details.text) || (b.errors && b.errors[0] && b.errors[0].message) || ''; if (code) { pm.test('issue.code == ' + code, () => pm.expect(issue.code).to.eql(code)); } if (msg) { pm.test('thông điệp chứa: ' + msg, () => pm.expect(text).to.include(msg)); }"
+     }
+    },
+    {
+     "type": "customScript",
+     "data": {
+      "script": "pm.test('header WWW-Authenticate chứa invalid_token', () => pm.expect(pm.response.headers.get('WWW-Authenticate') || '').to.include('invalid_token'));"
+     }
+    }
+   ],
+   "custom": true
+  },
+  {
+   "name": "GET Patient không Authorization → 401",
+   "endpointId": 47548494,
+   "method": "GET",
+   "path": "/fhir/R4/Patient",
+   "auth": "none",
+   "assertions": [
+    "status == 401",
+    "$.issue[0].code == login"
+   ],
+   "postProcessors": [
+    {
+     "type": "customScript",
+     "data": {
+      "script": "pm.test('thông điệp thiếu token', () => pm.expect(pm.response.json().issue[0].details.text).to.include('Thiếu')); pm.test('header WWW-Authenticate chứa Bearer realm=\"fhir\"', () => pm.expect(pm.response.headers.get('WWW-Authenticate') || '').to.include('Bearer realm=\"fhir\"'));"
+     }
+    }
+   ],
+   "custom": true
+  },
+  {
+   "name": "GET metadata kèm token sai → 200 (công khai)",
+   "endpointId": 47548493,
+   "method": "GET",
+   "path": "/fhir/R4/metadata",
+   "auth": "Bearer {{bad_token}}",
+   "assertions": [
+    "status == 200"
+   ]
+  }
+ ]
+}

@@ -1,0 +1,1 @@
+{"id": 9000008, "name": "dicomweb: DELETE /dicomweb/studies/{uid} (chưa cài)", "method": "delete", "path": "{{dicomUrl}}/dicomweb/studies/{{studyUid}}", "parameters": {"path": [], "query": [], "header": [], "cookie": []}, "auth": {}, "securityScheme": {}, "requestBody": null, "responses": []}

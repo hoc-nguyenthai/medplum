@@ -1,0 +1,10 @@
+[
+  {
+    "case_id": "TC-BX-01",
+    "case_group": "Positive",
+    "description": "$export async \u2192 poll \u2192 manifest \u2192 t\u1ea3i ndjson \u2192 DELETE job",
+    "expected_status": "202",
+    "expected_code": "",
+    "expected_message": ""
+  }
+]

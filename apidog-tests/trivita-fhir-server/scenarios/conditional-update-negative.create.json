@@ -1,0 +1,10 @@
+{
+ "name": "PUT /{resourceType}?query: điều kiện sai",
+ "description": "PUT có điều kiện: thiếu tiêu chí, tham số lạ, id sai, thân hỏng.",
+ "priority": 1,
+ "folderId": 0,
+ "tags": [
+  "conditional",
+  "negative"
+ ]
+}

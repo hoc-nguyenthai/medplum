@@ -1,0 +1,128 @@
+{
+ "slug": "smoke",
+ "name": "Smoke fhir-server",
+ "priority": 0,
+ "steps": [
+  {
+   "name": "Đăng nhập admin project (auth /auth/login)",
+   "endpointId": "auth-login",
+   "method": "POST",
+   "path": "{{authUrl}}/auth/login",
+   "body": "{\"email\": \"{{adminEmail}}\", \"password\": \"{{adminPassword}}\", \"clientId\": \"{{clientId}}\", \"scope\": \"openid profile email\"}",
+   "auth": "none",
+   "assertions": [
+    "status == 200",
+    "$.code exists"
+   ],
+   "postProcessors": [
+    {
+     "type": "extractor",
+     "data": {
+      "variableName": "adm_code",
+      "expression": "$.code",
+      "subject": "responseJson"
+     }
+    }
+   ]
+  },
+  {
+   "name": "Đổi code lấy token admin (authorization_code)",
+   "endpointId": "auth-token",
+   "method": "POST",
+   "path": "{{authUrl}}/oauth2/token",
+   "form": {
+    "grant_type": "authorization_code",
+    "code": "{{adm_code}}",
+    "client_id": "{{clientId}}",
+    "client_secret": "{{clientSecret}}"
+   },
+   "auth": "none",
+   "assertions": [
+    "status == 200",
+    "$.access_token exists"
+   ],
+   "postProcessors": [
+    {
+     "type": "extractor",
+     "data": {
+      "variableName": "bearerToken",
+      "expression": "$.access_token",
+      "subject": "responseJson"
+     }
+    }
+   ],
+   "custom": true
+  },
+  {
+   "name": "GET /healthz",
+   "endpointId": 47548521,
+   "method": "GET",
+   "path": "/healthz",
+   "auth": "none",
+   "assertions": [
+    "status == 200",
+    "$.status == ok"
+   ]
+  },
+  {
+   "name": "GET /readyz",
+   "endpointId": 47548522,
+   "method": "GET",
+   "path": "/readyz",
+   "auth": "none",
+   "assertions": [
+    "status == 200",
+    "$.ready == true"
+   ]
+  },
+  {
+   "name": "GET /fhir/R4/metadata (công khai)",
+   "endpointId": 47548493,
+   "method": "GET",
+   "path": "/fhir/R4/metadata",
+   "auth": "none",
+   "assertions": [
+    "status == 200",
+    "$.resourceType == CapabilityStatement",
+    "$.fhirVersion == 4.0.1"
+   ]
+  },
+  {
+   "name": "GET Patient không token → 401",
+   "endpointId": 47548494,
+   "method": "GET",
+   "path": "/fhir/R4/Patient",
+   "auth": "none",
+   "assertions": [
+    "status == 401",
+    "$.resourceType == OperationOutcome",
+    "$.issue[0].code == login"
+   ],
+   "postProcessors": [
+    {
+     "type": "customScript",
+     "data": {
+      "script": "pm.test('header WWW-Authenticate chứa Bearer realm=\"fhir\"', () => pm.expect(pm.response.headers.get('WWW-Authenticate') || '').to.include('Bearer realm=\"fhir\"'));"
+     }
+    }
+   ],
+   "custom": true
+  },
+  {
+   "name": "GET Patient?_count=1 có token",
+   "endpointId": 47548494,
+   "method": "GET",
+   "path": "/fhir/R4/Patient",
+   "query": {
+    "_count": "1"
+   },
+   "auth": "Bearer {{bearerToken}}",
+   "assertions": [
+    "status == 200",
+    "$.resourceType == Bundle",
+    "$.type == searchset"
+   ],
+   "custom": true
+  }
+ ]
+}

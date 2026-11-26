@@ -1,0 +1,98 @@
+[
+  {
+    "case_id": "TC-CR-01",
+    "case_group": "Positive",
+    "description": "Patient nam, ng\u00e0y sinh \u0111\u1ea7y \u0111\u1ee7",
+    "expected_status": "201",
+    "expected_code": "",
+    "expected_message": "",
+    "family": "Nguyen",
+    "given": "Van A",
+    "gender": "male",
+    "birth_date": "1980-01-01"
+  },
+  {
+    "case_id": "TC-CR-02",
+    "case_group": "Positive",
+    "description": "Patient n\u1eef",
+    "expected_status": "201",
+    "expected_code": "",
+    "expected_message": "",
+    "family": "Tran",
+    "given": "Thi B",
+    "gender": "female",
+    "birth_date": "1999-12-31"
+  },
+  {
+    "case_id": "TC-CR-03",
+    "case_group": "Positive",
+    "description": "gender other",
+    "expected_status": "201",
+    "expected_code": "",
+    "expected_message": "",
+    "family": "Le",
+    "given": "C",
+    "gender": "other",
+    "birth_date": "1975-05-05"
+  },
+  {
+    "case_id": "TC-CR-04",
+    "case_group": "Boundary",
+    "description": "ng\u00e0y sinh t\u1ed1i thi\u1ec3u h\u1ee3p l\u00fd 1900-01-01",
+    "expected_status": "201",
+    "expected_code": "",
+    "expected_message": "",
+    "family": "Pham",
+    "given": "Cu",
+    "gender": "male",
+    "birth_date": "1900-01-01"
+  },
+  {
+    "case_id": "TC-CR-05",
+    "case_group": "Boundary",
+    "description": "ng\u00e0y sinh ch\u1ec9 c\u00f3 n\u0103m (FHIR date m\u1ed9t ph\u1ea7n)",
+    "expected_status": "201",
+    "expected_code": "",
+    "expected_message": "",
+    "family": "Hoang",
+    "given": "D",
+    "gender": "female",
+    "birth_date": "2000"
+  },
+  {
+    "case_id": "TC-CR-06",
+    "case_group": "Positive",
+    "description": "t\u00ean ti\u1ebfng Vi\u1ec7t c\u00f3 d\u1ea5u",
+    "expected_status": "201",
+    "expected_code": "",
+    "expected_message": "",
+    "family": "Nguy\u1ec5n",
+    "given": "V\u0103n \u00c1",
+    "gender": "male",
+    "birth_date": "1990-02-03"
+  },
+  {
+    "case_id": "TC-CR-07",
+    "case_group": "Security",
+    "description": "chu\u1ed7i gi\u1ed1ng XSS trong t\u00ean \u0111\u01b0\u1ee3c l\u01b0u nguy\u00ean v\u0103n, kh\u00f4ng th\u1ef1c thi",
+    "expected_status": "201",
+    "expected_code": "",
+    "expected_message": "",
+    "family": "<script>alert(1)</script>",
+    "given": "x",
+    "gender": "female",
+    "birth_date": "1991-01-01"
+  },
+  {
+    "case_id": "TC-CR-08",
+    "case_group": "Security",
+    "description": "chu\u1ed7i gi\u1ed1ng SQLi trong t\u00ean \u0111\u01b0\u1ee3c l\u01b0u nguy\u00ean v\u0103n",
+    "expected_status": "201",
+    "expected_code": "",
+    "expected_message": "",
+    "family": "Robert'); DROP TABLE fhir_resource;--",
+    "given": "x",
+    "gender": "male",
+    "birth_date": "1992-01-01"
+  }
+]

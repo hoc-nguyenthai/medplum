@@ -1,0 +1,17 @@
+[
+ {
+  "case_id": "TC-LK-01",
+  "case_group": "Positive",
+  "description": "mã gốc A",
+  "expected_status": "200",
+  "expected_code": "",
+  "expected_message": "",
+  "code_value": "A",
+  "expected_display": "Alpha",
+  "sys_name": "system",
+  "code_name": "code",
+  "prop_name": "_p",
+  "prop_value": "x",
+  "sys_suffix": ""
+ }
+]

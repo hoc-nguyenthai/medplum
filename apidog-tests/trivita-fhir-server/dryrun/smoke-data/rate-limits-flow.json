@@ -1,0 +1,10 @@
+[
+ {
+  "case_id": "TC-RL-01",
+  "case_group": "Positive",
+  "description": "xem hạn mức điểm của chính project; project khác 403; không token 401",
+  "expected_status": "200",
+  "expected_code": "",
+  "expected_message": ""
+ }
+]

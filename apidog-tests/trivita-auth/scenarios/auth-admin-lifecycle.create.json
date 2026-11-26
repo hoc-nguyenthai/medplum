@@ -1,0 +1,1 @@
+{"name": "Auth | Admin project: setting/secret/site/client/rotate-secret/invite/member/delete", "description": "Admin seed quản trị chính project: đặt setting, secret (che), site, tạo client rồi xoay secret (retiring), mời user Practitioner, sửa/tắt/xóa membership. Cần AUTH_ADMIN_ENABLED=true.", "folderId": 0, "priority": 1, "tags": ["trivita-auth", "ai-generated"]}

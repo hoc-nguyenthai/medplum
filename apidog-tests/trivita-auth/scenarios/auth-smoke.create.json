@@ -1,0 +1,1 @@
+{"name": "Auth | Smoke: health + discovery", "description": "Kiểm nhanh service sống và các tài liệu công khai: /health/*, JWKS, openid-configuration, oauth-authorization-server, smart-configuration, smart-styles, oauth-protected-resource. Không cần thông tin đăng nhập.", "folderId": 0, "priority": 0, "tags": ["trivita-auth", "ai-generated"]}

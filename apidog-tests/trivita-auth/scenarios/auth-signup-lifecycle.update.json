@@ -1,0 +1,733 @@
+{
+ "steps": [
+  {
+   "id": "step-1",
+   "number": 1,
+   "name": "Đăng ký tài khoản mới",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988462,
+    "name": "Đăng ký tài khoản mới",
+    "path": "/auth/newuser",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "json",
+     "data": "{\"firstName\": \"QA\", \"lastName\": \"Signup\", \"email\": \"qa.signup.{{$timestamp}}@example.org\", \"password\": \"Qa-Signup-2026-xK9\", \"projectId\": \"new\", \"codeChallenge\": \"E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM\", \"codeChallengeMethod\": \"S256\"}"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.login exists",
+       "subject": "responseJson",
+       "comparison": "exists",
+       "path": "$.login",
+       "value": "",
+       "extractSettings": {
+        "expression": "$.login"
+       }
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.emailVerificationRequired == false",
+       "subject": "responseJson",
+       "comparison": "equal",
+       "path": "$.emailVerificationRequired",
+       "value": "false",
+       "extractSettings": {
+        "expression": "$.emailVerificationRequired"
+       }
+      }
+     },
+     {
+      "type": "extractor",
+      "enable": true,
+      "data": {
+       "variableType": "local",
+       "variableName": "suLogin",
+       "expression": "$.login",
+       "subject": "responseJson"
+      }
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988462
+  },
+  {
+   "id": "step-2",
+   "number": 2,
+   "name": "Tạo project mới",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988461,
+    "name": "Tạo project mới",
+    "path": "/auth/newproject",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "json",
+     "data": "{\"login\": \"{{suLogin}}\", \"projectName\": \"QA Project {{$timestamp}}\"}"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.code exists",
+       "subject": "responseJson",
+       "comparison": "exists",
+       "path": "$.code",
+       "value": "",
+       "extractSettings": {
+        "expression": "$.code"
+       }
+      }
+     },
+     {
+      "type": "extractor",
+      "enable": true,
+      "data": {
+       "variableType": "local",
+       "variableName": "suCode",
+       "expression": "$.code",
+       "subject": "responseJson"
+      }
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988461
+  },
+  {
+   "id": "step-3",
+   "number": 3,
+   "name": "Đổi code (PKCE) lấy token",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988360,
+    "name": "Đổi code (PKCE) lấy token",
+    "path": "/oauth2/token",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "x-www-form-urlencoded",
+     "parameters": [
+      {
+       "name": "grant_type",
+       "value": "authorization_code",
+       "enable": true,
+       "type": "string"
+      },
+      {
+       "name": "code",
+       "value": "{{suCode}}",
+       "enable": true,
+       "type": "string"
+      },
+      {
+       "name": "code_verifier",
+       "value": "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk",
+       "enable": true,
+       "type": "string"
+      }
+     ]
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.access_token exists",
+       "subject": "responseJson",
+       "comparison": "exists",
+       "path": "$.access_token",
+       "value": "",
+       "extractSettings": {
+        "expression": "$.access_token"
+       }
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.project.reference exists",
+       "subject": "responseJson",
+       "comparison": "exists",
+       "path": "$.project.reference",
+       "value": "",
+       "extractSettings": {
+        "expression": "$.project.reference"
+       }
+      }
+     },
+     {
+      "type": "extractor",
+      "enable": true,
+      "data": {
+       "variableType": "local",
+       "variableName": "suToken",
+       "expression": "$.access_token",
+       "subject": "responseJson"
+      }
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "const ref = pm.response.json().project.reference; pm.variables.set('suProjectId', ref.split('/')[1]);"
+     }
+    ],
+    "auth": {},
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988360
+  },
+  {
+   "id": "step-4",
+   "number": 4,
+   "name": "GET /auth/me: chủ project là admin",
+   "type": "http",
+   "bindType": "API",
+   "syncMode": "MANUAL",
+   "bindId": 47548454,
+   "httpApiCase": {
+    "type": "DEBUG_CASE",
+    "name": "GET /auth/me: chủ project là admin",
+    "path": "/auth/me",
+    "method": "get",
+    "apiDetailId": 47548454,
+    "projectId": 1380475,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.membership.admin == true",
+       "subject": "responseJson",
+       "comparison": "equal",
+       "path": "$.membership.admin",
+       "value": "true",
+       "extractSettings": {
+        "expression": "$.membership.admin"
+       }
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.project.id == {{suProjectId}}",
+       "subject": "responseJson",
+       "comparison": "equal",
+       "path": "$.project.id",
+       "value": "{{suProjectId}}",
+       "extractSettings": {
+        "expression": "$.project.id"
+       }
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{suToken}}"
+     }
+    },
+    "id": 65401529
+   },
+   "relatedId": 65401529
+  },
+  {
+   "id": "step-5",
+   "number": 5,
+   "name": "Admin project mới đọc project của mình",
+   "type": "http",
+   "bindType": "API",
+   "syncMode": "MANUAL",
+   "bindId": 47548427,
+   "httpApiCase": {
+    "type": "DEBUG_CASE",
+    "name": "Admin project mới đọc project của mình",
+    "path": "/admin/projects/{projectId}",
+    "method": "get",
+    "apiDetailId": 47548427,
+    "projectId": 1380475,
+    "parameters": {
+     "path": [
+      {
+       "name": "projectId",
+       "value": "{{suProjectId}}",
+       "enable": true
+      }
+     ],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.project.id == {{suProjectId}}",
+       "subject": "responseJson",
+       "comparison": "equal",
+       "path": "$.project.id",
+       "value": "{{suProjectId}}",
+       "extractSettings": {
+        "expression": "$.project.id"
+       }
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{suToken}}"
+     }
+    },
+    "id": 65401528
+   },
+   "relatedId": 65401528
+  },
+  {
+   "id": "step-6",
+   "number": 6,
+   "name": "Admin project mới đọc project seed → 403 chung",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988359,
+    "name": "Admin project mới đọc project seed → 403 chung",
+    "path": "/admin/projects/{{projectId}}",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 403",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "403"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.issue[0].code == forbidden",
+       "subject": "responseJson",
+       "comparison": "equal",
+       "path": "$.issue[0].code",
+       "value": "forbidden",
+       "extractSettings": {
+        "expression": "$.issue[0].code"
+       }
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.issue[0].details.text == Forbidden",
+       "subject": "responseJson",
+       "comparison": "equal",
+       "path": "$.issue[0].details.text",
+       "value": "Forbidden",
+       "extractSettings": {
+        "expression": "$.issue[0].details.text"
+       }
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{suToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988359
+  },
+  {
+   "id": "step-7",
+   "number": 7,
+   "name": "changepassword: mật khẩu cũ sai → 400",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988358,
+    "name": "changepassword: mật khẩu cũ sai → 400",
+    "path": "/auth/changepassword",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "json",
+     "data": "{\"oldPassword\": \"sai-mat-khau-cu\", \"newPassword\": \"Qa-Signup-2026-new1\"}"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 400",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "400"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.issue[0].details.text == Incorrect password",
+       "subject": "responseJson",
+       "comparison": "equal",
+       "path": "$.issue[0].details.text",
+       "value": "Incorrect password",
+       "extractSettings": {
+        "expression": "$.issue[0].details.text"
+       }
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{suToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988358
+  },
+  {
+   "id": "step-8",
+   "number": 8,
+   "name": "changepassword: mật khẩu mới quá ngắn → 400",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988357,
+    "name": "changepassword: mật khẩu mới quá ngắn → 400",
+    "path": "/auth/changepassword",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "json",
+     "data": "{\"oldPassword\": \"Qa-Signup-2026-xK9\", \"newPassword\": \"short\"}"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 400",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "400"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.issue[0].details.text == Password must be at least 8 characters",
+       "subject": "responseJson",
+       "comparison": "equal",
+       "path": "$.issue[0].details.text",
+       "value": "Password must be at least 8 characters",
+       "extractSettings": {
+        "expression": "$.issue[0].details.text"
+       }
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{suToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988357
+  },
+  {
+   "id": "step-9",
+   "number": 9,
+   "name": "changepassword đúng → 200",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988460,
+    "name": "changepassword đúng → 200",
+    "path": "/auth/changepassword",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "json",
+     "data": "{\"oldPassword\": \"Qa-Signup-2026-xK9\", \"newPassword\": \"Qa-Signup-2026-new1\"}"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{suToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988460
+  },
+  {
+   "id": "step-10",
+   "number": 10,
+   "name": "Đổi mật khẩu thu hồi mọi phiên → /auth/me 401",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988356,
+    "name": "Đổi mật khẩu thu hồi mọi phiên → /auth/me 401",
+    "path": "/auth/me",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 401",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "401"
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{suToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988356
+  },
+  {
+   "id": "step-11",
+   "number": 11,
+   "name": "newproject dùng lại login đã cấp code → 400",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988355,
+    "name": "newproject dùng lại login đã cấp code → 400",
+    "path": "/auth/newproject",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "json",
+     "data": "{\"login\": \"{{suLogin}}\", \"projectName\": \"QA Project lan hai\"}"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 400",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "400"
+      }
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988355
+  }
+ ]
+}

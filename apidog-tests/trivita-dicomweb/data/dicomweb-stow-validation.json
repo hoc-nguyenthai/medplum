@@ -1,0 +1,182 @@
+[
+ {
+  "case_id": "SV-01",
+  "case_group": "Negative",
+  "description": "Content-Type không phải multipart/related (application/json)",
+  "expected_status": "415",
+  "ct": "application/json",
+  "raw_body": "{}",
+  "expected_message": "Cần Content-Type multipart/related",
+  "expect_failed": ""
+ },
+ {
+  "case_id": "SV-02",
+  "case_group": "Negative",
+  "description": "multipart/related thiếu boundary",
+  "expected_status": "400",
+  "ct": "multipart/related",
+  "raw_body": "x",
+  "expected_message": "Thiếu boundary",
+  "expect_failed": ""
+ },
+ {
+  "case_id": "SV-03",
+  "case_group": "Negative",
+  "description": "multipart/related nhưng thân không phải multipart",
+  "expected_status": "400",
+  "ct": "multipart/related; type=\"application/dicom+json\"; boundary=qa-bnd",
+  "raw_body": "đây không phải multipart",
+  "expected_message": "",
+  "expect_failed": ""
+ },
+ {
+  "case_id": "SV-04",
+  "case_group": "Negative",
+  "description": "multipart hợp lệ nhưng không có phần nào (chỉ boundary đóng)",
+  "expected_status": "400",
+  "ct": "multipart/related; type=\"application/dicom+json\"; boundary=qa-bnd",
+  "raw_body": "--qa-bnd--\r\n",
+  "expected_message": "Yêu cầu không có instance nào",
+  "expect_failed": ""
+ },
+ {
+  "case_id": "SV-05",
+  "case_group": "Negative",
+  "description": "Metadata JSON hỏng ({oops)",
+  "expected_status": "400",
+  "ct": "multipart/related; type=\"application/dicom+json\"; boundary=qa-bnd",
+  "raw_body": "--qa-bnd\r\nContent-Type: application/dicom+json\r\n\r\n[{\"oops\"\r\n--qa-bnd--\r\n",
+  "expected_message": "",
+  "expect_failed": ""
+ },
+ {
+  "case_id": "SV-06",
+  "case_group": "Negative",
+  "description": "Phần metadata rỗng",
+  "expected_status": "400",
+  "ct": "multipart/related; type=\"application/dicom+json\"; boundary=qa-bnd",
+  "raw_body": "--qa-bnd\r\nContent-Type: application/dicom+json\r\n\r\n\r\n--qa-bnd--\r\n",
+  "expected_message": "",
+  "expect_failed": ""
+ },
+ {
+  "case_id": "SV-07",
+  "case_group": "Negative",
+  "description": "Metadata là mảng rỗng []",
+  "expected_status": "400",
+  "ct": "multipart/related; type=\"application/dicom+json\"; boundary=qa-bnd",
+  "raw_body": "--qa-bnd\r\nContent-Type: application/dicom+json\r\n\r\n[]\r\n--qa-bnd--\r\n",
+  "expected_message": "",
+  "expect_failed": ""
+ },
+ {
+  "case_id": "SV-08",
+  "case_group": "Negative",
+  "description": "Phần bulkdata thiếu Content-Location và Content-ID",
+  "expected_status": "400",
+  "ct": "multipart/related; type=\"application/dicom+json\"; boundary=qa-bnd",
+  "raw_body": "--qa-bnd\r\nContent-Type: application/dicom+json\r\n\r\n[{\"00080016\":{\"vr\":\"UI\",\"Value\":[\"1.2.840.10008.5.1.4.1.1.2\"]},\"00080018\":{\"vr\":\"UI\",\"Value\":[\"1.2.826.0.1.3680043.9.7777.400.1.1.1\"]},\"00080060\":{\"vr\":\"CS\",\"Value\":[\"CT\"]},\"00080020\":{\"vr\":\"DA\",\"Value\":[\"20240102\"]},\"00100010\":{\"vr\":\"PN\",\"Value\":[{\"Alphabetic\":\"Qa^Test\"}]},\"00100020\":{\"vr\":\"LO\",\"Value\":[\"QA-STOWVAL\"]},\"0020000D\":{\"vr\":\"UI\",\"Value\":[\"1.2.826.0.1.3680043.9.7777.400.1\"]},\"0020000E\":{\"vr\":\"UI\",\"Value\":[\"1.2.826.0.1.3680043.9.7777.400.1.1\"]},\"00280002\":{\"vr\":\"US\",\"Value\":[1]},\"00280004\":{\"vr\":\"CS\",\"Value\":[\"MONOCHROME2\"]},\"00280008\":{\"vr\":\"IS\",\"Value\":[\"1\"]},\"00280010\":{\"vr\":\"US\",\"Value\":[2]},\"00280011\":{\"vr\":\"US\",\"Value\":[2]},\"00280100\":{\"vr\":\"US\",\"Value\":[8]},\"00280101\":{\"vr\":\"US\",\"Value\":[8]},\"00280102\":{\"vr\":\"US\",\"Value\":[7]},\"00280103\":{\"vr\":\"US\",\"Value\":[0]},\"7FE00010\":{\"vr\":\"OB\",\"BulkDataURI\":\"urn:qa:v\"}}]\r\n--qa-bnd\r\nContent-Type: application/octet-stream\r\n\r\nABCD\r\n--qa-bnd--\r\n",
+  "expected_message": "Phần bulkdata thiếu Content-Location hoặc Content-ID",
+  "expect_failed": ""
+ },
+ {
+  "case_id": "SV-09",
+  "case_group": "Negative",
+  "description": "SOPInstanceUID không phải UID (abc) -> 409 FailedSOPSequence",
+  "expected_status": "409",
+  "ct": "multipart/related; type=\"application/dicom+json\"; boundary=qa-bnd",
+  "raw_body": "--qa-bnd\r\nContent-Type: application/dicom+json\r\n\r\n[{\"00080016\":{\"vr\":\"UI\",\"Value\":[\"1.2.840.10008.5.1.4.1.1.2\"]},\"00080018\":{\"vr\":\"UI\",\"Value\":[\"abc\"]},\"00080060\":{\"vr\":\"CS\",\"Value\":[\"CT\"]},\"00080020\":{\"vr\":\"DA\",\"Value\":[\"20240102\"]},\"00100010\":{\"vr\":\"PN\",\"Value\":[{\"Alphabetic\":\"Qa^Test\"}]},\"00100020\":{\"vr\":\"LO\",\"Value\":[\"QA-STOWVAL\"]},\"0020000D\":{\"vr\":\"UI\",\"Value\":[\"1.2.826.0.1.3680043.9.7777.400.1\"]},\"0020000E\":{\"vr\":\"UI\",\"Value\":[\"1.2.826.0.1.3680043.9.7777.400.1.1\"]},\"00280002\":{\"vr\":\"US\",\"Value\":[1]},\"00280004\":{\"vr\":\"CS\",\"Value\":[\"MONOCHROME2\"]},\"00280008\":{\"vr\":\"IS\",\"Value\":[\"1\"]},\"00280010\":{\"vr\":\"US\",\"Value\":[2]},\"00280011\":{\"vr\":\"US\",\"Value\":[2]},\"00280100\":{\"vr\":\"US\",\"Value\":[8]},\"00280101\":{\"vr\":\"US\",\"Value\":[8]},\"00280102\":{\"vr\":\"US\",\"Value\":[7]},\"00280103\":{\"vr\":\"US\",\"Value\":[0]},\"7FE00010\":{\"vr\":\"OB\",\"BulkDataURI\":\"urn:qa:v\"}}]\r\n--qa-bnd\r\nContent-Location: urn:qa:v\r\nContent-Type: application/octet-stream\r\n\r\nABCD\r\n--qa-bnd--\r\n",
+  "expected_message": "",
+  "expect_failed": "1"
+ },
+ {
+  "case_id": "SV-10",
+  "case_group": "Negative",
+  "description": "Thiếu SOPClassUID (0008,0016) -> 409",
+  "expected_status": "409",
+  "ct": "multipart/related; type=\"application/dicom+json\"; boundary=qa-bnd",
+  "raw_body": "--qa-bnd\r\nContent-Type: application/dicom+json\r\n\r\n[{\"00080018\":{\"vr\":\"UI\",\"Value\":[\"1.2.826.0.1.3680043.9.7777.400.1.1.7\"]},\"00080060\":{\"vr\":\"CS\",\"Value\":[\"CT\"]},\"00080020\":{\"vr\":\"DA\",\"Value\":[\"20240102\"]},\"00100010\":{\"vr\":\"PN\",\"Value\":[{\"Alphabetic\":\"Qa^Test\"}]},\"00100020\":{\"vr\":\"LO\",\"Value\":[\"QA-STOWVAL\"]},\"0020000D\":{\"vr\":\"UI\",\"Value\":[\"1.2.826.0.1.3680043.9.7777.400.1\"]},\"0020000E\":{\"vr\":\"UI\",\"Value\":[\"1.2.826.0.1.3680043.9.7777.400.1.1\"]},\"00280002\":{\"vr\":\"US\",\"Value\":[1]},\"00280004\":{\"vr\":\"CS\",\"Value\":[\"MONOCHROME2\"]},\"00280008\":{\"vr\":\"IS\",\"Value\":[\"1\"]},\"00280010\":{\"vr\":\"US\",\"Value\":[2]},\"00280011\":{\"vr\":\"US\",\"Value\":[2]},\"00280100\":{\"vr\":\"US\",\"Value\":[8]},\"00280101\":{\"vr\":\"US\",\"Value\":[8]},\"00280102\":{\"vr\":\"US\",\"Value\":[7]},\"00280103\":{\"vr\":\"US\",\"Value\":[0]},\"7FE00010\":{\"vr\":\"OB\",\"BulkDataURI\":\"urn:qa:v\"}}]\r\n--qa-bnd\r\nContent-Location: urn:qa:v\r\nContent-Type: application/octet-stream\r\n\r\nABCD\r\n--qa-bnd--\r\n",
+  "expected_message": "",
+  "expect_failed": "1"
+ },
+ {
+  "case_id": "SV-11",
+  "case_group": "Negative",
+  "description": "PixelData tham chiếu bulkdata không có trong yêu cầu -> 409",
+  "expected_status": "409",
+  "ct": "multipart/related; type=\"application/dicom+json\"; boundary=qa-bnd",
+  "raw_body": "--qa-bnd\r\nContent-Type: application/dicom+json\r\n\r\n[{\"00080016\":{\"vr\":\"UI\",\"Value\":[\"1.2.840.10008.5.1.4.1.1.2\"]},\"00080018\":{\"vr\":\"UI\",\"Value\":[\"1.2.826.0.1.3680043.9.7777.400.1.1.2\"]},\"00080060\":{\"vr\":\"CS\",\"Value\":[\"CT\"]},\"00080020\":{\"vr\":\"DA\",\"Value\":[\"20240102\"]},\"00100010\":{\"vr\":\"PN\",\"Value\":[{\"Alphabetic\":\"Qa^Test\"}]},\"00100020\":{\"vr\":\"LO\",\"Value\":[\"QA-STOWVAL\"]},\"0020000D\":{\"vr\":\"UI\",\"Value\":[\"1.2.826.0.1.3680043.9.7777.400.1\"]},\"0020000E\":{\"vr\":\"UI\",\"Value\":[\"1.2.826.0.1.3680043.9.7777.400.1.1\"]},\"00280002\":{\"vr\":\"US\",\"Value\":[1]},\"00280004\":{\"vr\":\"CS\",\"Value\":[\"MONOCHROME2\"]},\"00280008\":{\"vr\":\"IS\",\"Value\":[\"1\"]},\"00280010\":{\"vr\":\"US\",\"Value\":[2]},\"00280011\":{\"vr\":\"US\",\"Value\":[2]},\"00280100\":{\"vr\":\"US\",\"Value\":[8]},\"00280101\":{\"vr\":\"US\",\"Value\":[8]},\"00280102\":{\"vr\":\"US\",\"Value\":[7]},\"00280103\":{\"vr\":\"US\",\"Value\":[0]},\"7FE00010\":{\"vr\":\"OB\",\"BulkDataURI\":\"urn:qa:thieu\"}}]\r\n--qa-bnd\r\nContent-Location: urn:qa:v\r\nContent-Type: application/octet-stream\r\n\r\nABCD\r\n--qa-bnd--\r\n",
+  "expected_message": "",
+  "expect_failed": "1"
+ },
+ {
+  "case_id": "SV-12",
+  "case_group": "Negative",
+  "description": "UID có chữ cái giữa chừng (1.2.826.abc) -> 409",
+  "expected_status": "409",
+  "ct": "multipart/related; type=\"application/dicom+json\"; boundary=qa-bnd",
+  "raw_body": "--qa-bnd\r\nContent-Type: application/dicom+json\r\n\r\n[{\"00080016\":{\"vr\":\"UI\",\"Value\":[\"1.2.840.10008.5.1.4.1.1.2\"]},\"00080018\":{\"vr\":\"UI\",\"Value\":[\"1.2.826.abc\"]},\"00080060\":{\"vr\":\"CS\",\"Value\":[\"CT\"]},\"00080020\":{\"vr\":\"DA\",\"Value\":[\"20240102\"]},\"00100010\":{\"vr\":\"PN\",\"Value\":[{\"Alphabetic\":\"Qa^Test\"}]},\"00100020\":{\"vr\":\"LO\",\"Value\":[\"QA-STOWVAL\"]},\"0020000D\":{\"vr\":\"UI\",\"Value\":[\"1.2.826.0.1.3680043.9.7777.400.1\"]},\"0020000E\":{\"vr\":\"UI\",\"Value\":[\"1.2.826.0.1.3680043.9.7777.400.1.1\"]},\"00280002\":{\"vr\":\"US\",\"Value\":[1]},\"00280004\":{\"vr\":\"CS\",\"Value\":[\"MONOCHROME2\"]},\"00280008\":{\"vr\":\"IS\",\"Value\":[\"1\"]},\"00280010\":{\"vr\":\"US\",\"Value\":[2]},\"00280011\":{\"vr\":\"US\",\"Value\":[2]},\"00280100\":{\"vr\":\"US\",\"Value\":[8]},\"00280101\":{\"vr\":\"US\",\"Value\":[8]},\"00280102\":{\"vr\":\"US\",\"Value\":[7]},\"00280103\":{\"vr\":\"US\",\"Value\":[0]},\"7FE00010\":{\"vr\":\"OB\",\"BulkDataURI\":\"urn:qa:v\"}}]\r\n--qa-bnd\r\nContent-Location: urn:qa:v\r\nContent-Type: application/octet-stream\r\n\r\nABCD\r\n--qa-bnd--\r\n",
+  "expected_message": "",
+  "expect_failed": "1"
+ },
+ {
+  "case_id": "SV-13",
+  "case_group": "Boundary",
+  "description": "SOPInstanceUID dài 65 ký tự (vượt trần 64) -> 409",
+  "expected_status": "409",
+  "ct": "multipart/related; type=\"application/dicom+json\"; boundary=qa-bnd",
+  "raw_body": "--qa-bnd\r\nContent-Type: application/dicom+json\r\n\r\n[{\"00080016\":{\"vr\":\"UI\",\"Value\":[\"1.2.840.10008.5.1.4.1.1.2\"]},\"00080018\":{\"vr\":\"UI\",\"Value\":[\"1.2.826.0.1.3680043.9.7777.400.1.1.999999999999999999999999999999\"]},\"00080060\":{\"vr\":\"CS\",\"Value\":[\"CT\"]},\"00080020\":{\"vr\":\"DA\",\"Value\":[\"20240102\"]},\"00100010\":{\"vr\":\"PN\",\"Value\":[{\"Alphabetic\":\"Qa^Test\"}]},\"00100020\":{\"vr\":\"LO\",\"Value\":[\"QA-STOWVAL\"]},\"0020000D\":{\"vr\":\"UI\",\"Value\":[\"1.2.826.0.1.3680043.9.7777.400.1\"]},\"0020000E\":{\"vr\":\"UI\",\"Value\":[\"1.2.826.0.1.3680043.9.7777.400.1.1\"]},\"00280002\":{\"vr\":\"US\",\"Value\":[1]},\"00280004\":{\"vr\":\"CS\",\"Value\":[\"MONOCHROME2\"]},\"00280008\":{\"vr\":\"IS\",\"Value\":[\"1\"]},\"00280010\":{\"vr\":\"US\",\"Value\":[2]},\"00280011\":{\"vr\":\"US\",\"Value\":[2]},\"00280100\":{\"vr\":\"US\",\"Value\":[8]},\"00280101\":{\"vr\":\"US\",\"Value\":[8]},\"00280102\":{\"vr\":\"US\",\"Value\":[7]},\"00280103\":{\"vr\":\"US\",\"Value\":[0]},\"7FE00010\":{\"vr\":\"OB\",\"BulkDataURI\":\"urn:qa:v\"}}]\r\n--qa-bnd\r\nContent-Location: urn:qa:v\r\nContent-Type: application/octet-stream\r\n\r\nABCD\r\n--qa-bnd--\r\n",
+  "expected_message": "",
+  "expect_failed": "1"
+ },
+ {
+  "case_id": "SV-14",
+  "case_group": "Boundary",
+  "description": "SOPInstanceUID dài đúng 64 ký tự -> 200 (cố định nên chạy lại vẫn 200)",
+  "expected_status": "200",
+  "ct": "multipart/related; type=\"application/dicom+json\"; boundary=qa-bnd",
+  "raw_body": "--qa-bnd\r\nContent-Type: application/dicom+json\r\n\r\n[{\"00080016\":{\"vr\":\"UI\",\"Value\":[\"1.2.840.10008.5.1.4.1.1.2\"]},\"00080018\":{\"vr\":\"UI\",\"Value\":[\"1.2.826.0.1.3680043.9.7777.400.1.1.99999999999999999999999999999\"]},\"00080060\":{\"vr\":\"CS\",\"Value\":[\"CT\"]},\"00080020\":{\"vr\":\"DA\",\"Value\":[\"20240102\"]},\"00100010\":{\"vr\":\"PN\",\"Value\":[{\"Alphabetic\":\"Qa^Test\"}]},\"00100020\":{\"vr\":\"LO\",\"Value\":[\"QA-STOWVAL\"]},\"0020000D\":{\"vr\":\"UI\",\"Value\":[\"1.2.826.0.1.3680043.9.7777.400.1\"]},\"0020000E\":{\"vr\":\"UI\",\"Value\":[\"1.2.826.0.1.3680043.9.7777.400.1.1\"]},\"00280002\":{\"vr\":\"US\",\"Value\":[1]},\"00280004\":{\"vr\":\"CS\",\"Value\":[\"MONOCHROME2\"]},\"00280008\":{\"vr\":\"IS\",\"Value\":[\"1\"]},\"00280010\":{\"vr\":\"US\",\"Value\":[2]},\"00280011\":{\"vr\":\"US\",\"Value\":[2]},\"00280100\":{\"vr\":\"US\",\"Value\":[8]},\"00280101\":{\"vr\":\"US\",\"Value\":[8]},\"00280102\":{\"vr\":\"US\",\"Value\":[7]},\"00280103\":{\"vr\":\"US\",\"Value\":[0]},\"7FE00010\":{\"vr\":\"OB\",\"BulkDataURI\":\"urn:qa:v\"}}]\r\n--qa-bnd\r\nContent-Location: urn:qa:v\r\nContent-Type: application/octet-stream\r\n\r\nABCD\r\n--qa-bnd--\r\n",
+  "expected_message": "",
+  "expect_failed": ""
+ },
+ {
+  "case_id": "SV-15",
+  "case_group": "Negative",
+  "description": "Dạng tệp: phần đầu Content-Type text/plain -> 409 (0xC000)",
+  "expected_status": "409",
+  "ct": "multipart/related; type=\"application/dicom\"; boundary=qa-bnd",
+  "raw_body": "--qa-bnd\r\nContent-Type: text/plain\r\n\r\nxin chào\r\n",
+  "expected_message": "",
+  "expect_failed": "1"
+ },
+ {
+  "case_id": "SV-16",
+  "case_group": "Negative",
+  "description": "Dạng tệp: application/dicom nhưng nội dung không phải DICOM -> 409",
+  "expected_status": "409",
+  "ct": "multipart/related; type=\"application/dicom\"; boundary=qa-bnd",
+  "raw_body": "--qa-bnd\r\nContent-Type: application/dicom\r\n\r\nđây không phải tệp DICOM\r\n",
+  "expected_message": "",
+  "expect_failed": "1"
+ },
+ {
+  "case_id": "SV-17",
+  "case_group": "Security",
+  "description": "Content-Type chèn thêm tham số lạ + boundary dài 70 ký tự, không có phần -> 400 không 5xx",
+  "expected_status": "400",
+  "ct": "multipart/related; type=\"application/dicom+json\"; boundary=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "raw_body": "--bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb--\r\n",
+  "expected_message": "Yêu cầu không có instance nào",
+  "expect_failed": ""
+ },
+ {
+  "case_id": "SV-18",
+  "case_group": "Security",
+  "description": "Tên Content-Location chứa chuỗi giống lệnh ('; DROP TABLE) -> xử lý như khóa thường, không 5xx",
+  "expected_status": "200",
+  "ct": "multipart/related; type=\"application/dicom+json\"; boundary=qa-bnd",
+  "raw_body": "--qa-bnd\r\nContent-Type: application/dicom+json\r\n\r\n[{\"00080016\":{\"vr\":\"UI\",\"Value\":[\"1.2.840.10008.5.1.4.1.1.2\"]},\"00080018\":{\"vr\":\"UI\",\"Value\":[\"1.2.826.0.1.3680043.9.7777.400.1.1.3\"]},\"00080060\":{\"vr\":\"CS\",\"Value\":[\"CT\"]},\"00080020\":{\"vr\":\"DA\",\"Value\":[\"20240102\"]},\"00100010\":{\"vr\":\"PN\",\"Value\":[{\"Alphabetic\":\"Qa^Test\"}]},\"00100020\":{\"vr\":\"LO\",\"Value\":[\"QA-STOWVAL\"]},\"0020000D\":{\"vr\":\"UI\",\"Value\":[\"1.2.826.0.1.3680043.9.7777.400.1\"]},\"0020000E\":{\"vr\":\"UI\",\"Value\":[\"1.2.826.0.1.3680043.9.7777.400.1.1\"]},\"00280002\":{\"vr\":\"US\",\"Value\":[1]},\"00280004\":{\"vr\":\"CS\",\"Value\":[\"MONOCHROME2\"]},\"00280008\":{\"vr\":\"IS\",\"Value\":[\"1\"]},\"00280010\":{\"vr\":\"US\",\"Value\":[2]},\"00280011\":{\"vr\":\"US\",\"Value\":[2]},\"00280100\":{\"vr\":\"US\",\"Value\":[8]},\"00280101\":{\"vr\":\"US\",\"Value\":[8]},\"00280102\":{\"vr\":\"US\",\"Value\":[7]},\"00280103\":{\"vr\":\"US\",\"Value\":[0]},\"7FE00010\":{\"vr\":\"OB\",\"BulkDataURI\":\"x'; DROP TABLE--\"}}]\r\n--qa-bnd\r\nContent-Location: x'; DROP TABLE--\r\nContent-Type: application/octet-stream\r\n\r\nABCD\r\n--qa-bnd--\r\n",
+  "expected_message": "",
+  "expect_failed": ""
+ }
+]

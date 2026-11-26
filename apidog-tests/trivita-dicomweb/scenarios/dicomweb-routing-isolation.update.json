@@ -1,0 +1,637 @@
+{
+ "steps": [
+  {
+   "id": "step-1",
+   "number": 1,
+   "name": "Lấy access token (client_credentials của auth)",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988214,
+    "name": "Lấy access token (client_credentials của auth)",
+    "path": "{{authUrl}}/oauth2/token",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "x-www-form-urlencoded",
+     "parameters": [
+      {
+       "name": "grant_type",
+       "value": "client_credentials",
+       "enable": true,
+       "type": "string"
+      },
+      {
+       "name": "client_id",
+       "value": "{{clientId}}",
+       "enable": true,
+       "type": "string"
+      },
+      {
+       "name": "client_secret",
+       "value": "{{clientSecret}}",
+       "enable": true,
+       "type": "string"
+      }
+     ]
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.access_token exists",
+       "subject": "responseJson",
+       "comparison": "exists",
+       "path": "$.access_token",
+       "value": "",
+       "extractSettings": {
+        "expression": "$.access_token"
+       }
+      }
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "const tok = pm.response.json().access_token; pm.variables.set('accessToken', tok);\ntry { const p = JSON.parse(atob(tok.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))); pm.variables.set('projectId', p.fhir_project || ''); } catch (e) { pm.variables.set('projectId', ''); }\nconst base = '1.2.826.0.1.3680043.9.7777.' + Date.now() + (100 + Math.floor(Math.random() * 900));\npm.variables.set('studyUid', base + '.1'); pm.variables.set('seriesUid', base + '.1.1'); pm.variables.set('sop1', base + '.1.1.1'); pm.variables.set('sop2', base + '.1.1.2');\npm.variables.set('series2Uid', base + '.1.2'); pm.variables.set('sop3', base + '.1.2.1'); pm.variables.set('otherStudyUid', base + '.9');\npm.variables.set('pid', 'QA-' + Date.now());"
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988214
+  },
+  {
+   "id": "step-2",
+   "number": 2,
+   "name": "Không token -> 401 Thiếu bearer token",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988213,
+    "name": "Không token -> 401 Thiếu bearer token",
+    "path": "/dicomweb/studies",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 401",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "401"
+      }
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "pm.test(\"thông điệp + WWW-Authenticate\", () => { pm.expect(pm.response.json().error).to.eql('Thiếu bearer token'); pm.expect(pm.response.headers.get('WWW-Authenticate') || '').to.include('Bearer realm=\"dicomweb\"'); });"
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988213
+  },
+  {
+   "id": "step-3",
+   "number": 3,
+   "name": "Tiền tố /projects/{projectId}/dicomweb khớp project của token -> 200",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988212,
+    "name": "Tiền tố /projects/{projectId}/dicomweb khớp project của token -> 200",
+    "path": "{{dicomUrl}}/projects/{{projectId}}/dicomweb/studies",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "pm.test(\"mảng\", () => { pm.expect(Array.isArray(pm.response.json())).to.eql(true); });"
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{accessToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988212
+  },
+  {
+   "id": "step-4",
+   "number": 4,
+   "name": "Tiền tố /api/dicomweb -> 200",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988211,
+    "name": "Tiền tố /api/dicomweb -> 200",
+    "path": "{{dicomUrl}}/api/dicomweb/studies",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{accessToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988211
+  },
+  {
+   "id": "step-5",
+   "number": 5,
+   "name": "Tiền tố /api/projects/{projectId}/dicomweb -> 200",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988210,
+    "name": "Tiền tố /api/projects/{projectId}/dicomweb -> 200",
+    "path": "{{dicomUrl}}/api/projects/{{projectId}}/dicomweb/studies",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{accessToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988210
+  },
+  {
+   "id": "step-6",
+   "number": 6,
+   "name": "Project khác trong URL -> 403",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988209,
+    "name": "Project khác trong URL -> 403",
+    "path": "{{dicomUrl}}/projects/qa-not-my-project/dicomweb/studies",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 403",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "403"
+      }
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "pm.test(\"thông điệp\", () => { pm.expect(pm.response.json().error).to.eql('Không được dùng project khác'); });"
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{accessToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988209
+  },
+  {
+   "id": "step-7",
+   "number": 7,
+   "name": "Header X-Fhir-Project khác project của token -> 403",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988208,
+    "name": "Header X-Fhir-Project khác project của token -> 403",
+    "path": "/dicomweb/studies",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [
+      {
+       "name": "X-Fhir-Project",
+       "value": "qa-not-my-project",
+       "enable": true
+      }
+     ],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 403",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "403"
+      }
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "pm.test(\"thông điệp\", () => { pm.expect(pm.response.json().error).to.eql('Không được dùng project khác'); });"
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{accessToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988208
+  },
+  {
+   "id": "step-8",
+   "number": 8,
+   "name": "Route lạ dưới tiền tố: GET /dicomweb/foo -> 501",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988207,
+    "name": "Route lạ dưới tiền tố: GET /dicomweb/foo -> 501",
+    "path": "{{dicomUrl}}/dicomweb/foo",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 501",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "501"
+      }
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "pm.test(\"thông điệp\", () => { pm.expect(pm.response.json().error).to.eql('Chưa cài đặt'); });"
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{accessToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988207
+  },
+  {
+   "id": "step-9",
+   "number": 9,
+   "name": "Xóa study chưa cài: DELETE /dicomweb/studies/{uid} -> 501",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988206,
+    "name": "Xóa study chưa cài: DELETE /dicomweb/studies/{uid} -> 501",
+    "path": "{{dicomUrl}}/dicomweb/studies/{{studyUid}}",
+    "method": "delete",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 501",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "501"
+      }
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "pm.test(\"thông điệp\", () => { pm.expect(pm.response.json().error).to.eql('Chưa cài đặt'); });"
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{accessToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988206
+  },
+  {
+   "id": "step-10",
+   "number": 10,
+   "name": "POST /dicomweb/series chưa cài -> 501",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988205,
+    "name": "POST /dicomweb/series chưa cài -> 501",
+    "path": "{{dicomUrl}}/dicomweb/series",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 501",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "501"
+      }
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "pm.test(\"thông điệp\", () => { pm.expect(pm.response.json().error).to.eql('Chưa cài đặt'); });"
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{accessToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988205
+  },
+  {
+   "id": "step-11",
+   "number": 11,
+   "name": "Ngoài tiền tố: GET /fhir/R4/Patient -> 404 (không qua xác thực)",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988204,
+    "name": "Ngoài tiền tố: GET /fhir/R4/Patient -> 404 (không qua xác thực)",
+    "path": "{{dicomUrl}}/fhir/R4/Patient",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 404",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "404"
+      }
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "pm.test(\"thông điệp\", () => { pm.expect(pm.response.json().error).to.eql('Không có route cho GET /fhir/R4/Patient'); });"
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988204
+  },
+  {
+   "id": "step-12",
+   "number": 12,
+   "name": "Header bảo mật có mặt ở mọi phản hồi",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988203,
+    "name": "Header bảo mật có mặt ở mọi phản hồi",
+    "path": "/dicomweb/studies",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "pm.test(\"header bảo mật\", () => { const h = pm.response.headers; pm.expect(h.get('Cache-Control')).to.include('no-store'); pm.expect(h.get('X-Content-Type-Options')).to.eql('nosniff'); pm.expect(h.get('X-Frame-Options')).to.eql('DENY'); pm.expect(h.get('X-Request-Id')).to.be.ok; });"
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{accessToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988203
+  }
+ ]
+}

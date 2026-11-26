@@ -1,0 +1,1 @@
+{"id": 9100003, "name": "ws-gateway: GET /healthz", "method": "get", "path": "{{wsUrl}}/healthz", "parameters": {"path": [], "query": [], "header": [], "cookie": []}, "auth": {}, "securityScheme": {}, "requestBody": null, "responses": []}

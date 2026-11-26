@@ -1,0 +1,2 @@
+Dataset Name,case_id,case_group,description,expected_status
+TC-SM-01,TC-SM-01,Positive,"Probe sống/sẵn sàng, metadata công khai, 401 khi thiếu token, tìm kiếm có token",200

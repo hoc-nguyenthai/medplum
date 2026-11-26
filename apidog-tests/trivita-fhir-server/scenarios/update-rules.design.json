@@ -1,0 +1,299 @@
+{
+ "slug": "update-rules",
+ "name": "PUT/GET: If-Match, If-None-Match, Prefer, id lệch",
+ "priority": 1,
+ "steps": [
+  {
+   "name": "Đăng nhập admin project (auth /auth/login)",
+   "endpointId": "auth-login",
+   "method": "POST",
+   "path": "{{authUrl}}/auth/login",
+   "body": "{\"email\": \"{{adminEmail}}\", \"password\": \"{{adminPassword}}\", \"clientId\": \"{{clientId}}\", \"scope\": \"openid profile email\"}",
+   "auth": "none",
+   "assertions": [
+    "status == 200",
+    "$.code exists"
+   ],
+   "postProcessors": [
+    {
+     "type": "extractor",
+     "data": {
+      "variableName": "adm_code",
+      "expression": "$.code",
+      "subject": "responseJson"
+     }
+    }
+   ]
+  },
+  {
+   "name": "Đổi code lấy token admin (authorization_code)",
+   "endpointId": "auth-token",
+   "method": "POST",
+   "path": "{{authUrl}}/oauth2/token",
+   "form": {
+    "grant_type": "authorization_code",
+    "code": "{{adm_code}}",
+    "client_id": "{{clientId}}",
+    "client_secret": "{{clientSecret}}"
+   },
+   "auth": "none",
+   "assertions": [
+    "status == 200",
+    "$.access_token exists"
+   ],
+   "postProcessors": [
+    {
+     "type": "extractor",
+     "data": {
+      "variableName": "bearerToken",
+      "expression": "$.access_token",
+      "subject": "responseJson"
+     }
+    }
+   ],
+   "custom": true
+  },
+  {
+   "name": "POST Patient",
+   "endpointId": 47548496,
+   "method": "POST",
+   "path": "/fhir/R4/Patient",
+   "body": "{\"resourceType\": \"Patient\", \"name\": [{\"family\": \"UR-{{$timestamp}}\", \"given\": [\"Qa\"]}], \"gender\": \"male\"}",
+   "auth": "Bearer {{bearerToken}}",
+   "assertions": [
+    "status == 201",
+    "$.id exists"
+   ],
+   "postProcessors": [
+    {
+     "type": "extractor",
+     "data": {
+      "variableName": "patient_id",
+      "expression": "$.id",
+      "subject": "responseJson"
+     }
+    }
+   ],
+   "custom": true
+  },
+  {
+   "name": "(setup) đọc v1",
+   "endpointId": 47548498,
+   "method": "GET",
+   "path": "/fhir/R4/Patient/{{patient_id}}",
+   "auth": "Bearer {{bearerToken}}",
+   "assertions": [
+    "status == 200"
+   ],
+   "postProcessors": [
+    {
+     "type": "extractor",
+     "data": {
+      "variableName": "v1",
+      "expression": "$.meta.versionId",
+      "subject": "responseJson"
+     }
+    }
+   ]
+  },
+  {
+   "name": "PUT If-Match sai → 412",
+   "endpointId": 47548499,
+   "method": "PUT",
+   "path": "/fhir/R4/Patient/{{patient_id}}",
+   "headers": {
+    "If-Match": "W/\"khong-co\""
+   },
+   "body": "{\"resourceType\": \"Patient\", \"id\": \"{{patient_id}}\", \"name\": [{\"family\": \"UR\", \"given\": [\"Qa\"]}]}",
+   "auth": "Bearer {{bearerToken}}",
+   "assertions": [
+    "status == 412",
+    "$.issue[0].code == conflict"
+   ],
+   "custom": true
+  },
+  {
+   "name": "PUT If-Match đúng (W/\"v1\") → 200",
+   "endpointId": 47548499,
+   "method": "PUT",
+   "path": "/fhir/R4/Patient/{{patient_id}}",
+   "headers": {
+    "If-Match": "W/\"{{v1}}\""
+   },
+   "body": "{\"resourceType\": \"Patient\", \"id\": \"{{patient_id}}\", \"name\": [{\"family\": \"UR\", \"given\": [\"Qa\"]}], \"gender\": \"female\"}",
+   "auth": "Bearer {{bearerToken}}",
+   "assertions": [
+    "status == 200",
+    "$.gender == female"
+   ],
+   "postProcessors": [
+    {
+     "type": "extractor",
+     "data": {
+      "variableName": "v2",
+      "expression": "$.meta.versionId",
+      "subject": "responseJson"
+     }
+    }
+   ],
+   "custom": true
+  },
+  {
+   "name": "PUT If-Match v1 (đã cũ) → 412 nêu phiên bản hiện tại",
+   "endpointId": 47548499,
+   "method": "PUT",
+   "path": "/fhir/R4/Patient/{{patient_id}}",
+   "headers": {
+    "If-Match": "{{v1}}"
+   },
+   "body": "{\"resourceType\": \"Patient\", \"id\": \"{{patient_id}}\", \"name\": [{\"family\": \"UR\", \"given\": [\"Qa\"]}]}",
+   "auth": "Bearer {{bearerToken}}",
+   "assertions": [
+    "status == 412"
+   ],
+   "postProcessors": [
+    {
+     "type": "customScript",
+     "data": {
+      "script": "pm.test('nêu versionId hiện tại', () => pm.expect(pm.response.json().issue[0].details.text).to.include(pm.variables.get('v2')));"
+     }
+    }
+   ],
+   "custom": true
+  },
+  {
+   "name": "PUT If-Match * → 412",
+   "endpointId": 47548499,
+   "method": "PUT",
+   "path": "/fhir/R4/Patient/{{patient_id}}",
+   "headers": {
+    "If-Match": "*"
+   },
+   "body": "{\"resourceType\": \"Patient\", \"id\": \"{{patient_id}}\", \"name\": [{\"family\": \"UR\", \"given\": [\"Qa\"]}]}",
+   "auth": "Bearer {{bearerToken}}",
+   "assertions": [
+    "status == 412"
+   ],
+   "custom": true
+  },
+  {
+   "name": "PUT id thân lệch đường dẫn → 400",
+   "endpointId": 47548499,
+   "method": "PUT",
+   "path": "/fhir/R4/Patient/{{patient_id}}",
+   "body": "{\"resourceType\": \"Patient\", \"id\": \"00000000-0000-4000-8000-000000000000\", \"name\": [{\"family\": \"UR\", \"given\": [\"Qa\"]}]}",
+   "auth": "Bearer {{bearerToken}}",
+   "assertions": [
+    "status == 400"
+   ],
+   "postProcessors": [
+    {
+     "type": "customScript",
+     "data": {
+      "script": "pm.test('thông điệp', () => pm.expect(pm.response.json().issue[0].details.text).to.include('id trong body không khớp với đường dẫn'));"
+     }
+    }
+   ],
+   "custom": true
+  },
+  {
+   "name": "PUT id chưa tồn tại → 404 (update-as-create tắt)",
+   "endpointId": 47548499,
+   "method": "PUT",
+   "path": "/fhir/R4/Patient/00000000-0000-4000-8000-000000000000",
+   "body": "{\"resourceType\": \"Patient\", \"id\": \"00000000-0000-4000-8000-000000000000\", \"name\": [{\"family\": \"UR\", \"given\": [\"Qa\"]}]}",
+   "auth": "Bearer {{bearerToken}}",
+   "assertions": [
+    "status == 404",
+    "$.issue[0].code == not-found"
+   ],
+   "custom": true
+  },
+  {
+   "name": "GET If-None-Match khớp → 304",
+   "endpointId": 47548498,
+   "method": "GET",
+   "path": "/fhir/R4/Patient/{{patient_id}}",
+   "headers": {
+    "If-None-Match": "W/\"{{v2}}\""
+   },
+   "auth": "Bearer {{bearerToken}}",
+   "assertions": [
+    "status == 304"
+   ],
+   "custom": true
+  },
+  {
+   "name": "GET If-None-Match khác → 200",
+   "endpointId": 47548498,
+   "method": "GET",
+   "path": "/fhir/R4/Patient/{{patient_id}}",
+   "headers": {
+    "If-None-Match": "W/\"khac\""
+   },
+   "auth": "Bearer {{bearerToken}}",
+   "assertions": [
+    "status == 200"
+   ],
+   "custom": true
+  },
+  {
+   "name": "PUT y hệt → 200 và ETag mới (vẫn sinh phiên bản)",
+   "endpointId": 47548499,
+   "method": "PUT",
+   "path": "/fhir/R4/Patient/{{patient_id}}",
+   "body": "{\"resourceType\": \"Patient\", \"id\": \"{{patient_id}}\", \"name\": [{\"family\": \"UR\", \"given\": [\"Qa\"]}], \"gender\": \"female\"}",
+   "auth": "Bearer {{bearerToken}}",
+   "assertions": [
+    "status == 200"
+   ],
+   "postProcessors": [
+    {
+     "type": "customScript",
+     "data": {
+      "script": "pm.test('versionId mới', () => pm.expect(pm.response.json().meta.versionId).to.not.eql(pm.variables.get('v2')));"
+     }
+    }
+   ]
+  },
+  {
+   "name": "PUT Prefer return=minimal → 200 thân rỗng",
+   "endpointId": 47548499,
+   "method": "PUT",
+   "path": "/fhir/R4/Patient/{{patient_id}}",
+   "headers": {
+    "Prefer": "return=minimal"
+   },
+   "body": "{\"resourceType\": \"Patient\", \"id\": \"{{patient_id}}\", \"name\": [{\"family\": \"UR\", \"given\": [\"Qa\"]}]}",
+   "auth": "Bearer {{bearerToken}}",
+   "assertions": [
+    "status == 200"
+   ],
+   "postProcessors": [
+    {
+     "type": "customScript",
+     "data": {
+      "script": "pm.test('thân rỗng', () => pm.expect(pm.response.text()).to.eql('')); pm.test('header ETag chứa W/\"', () => pm.expect(pm.response.headers.get('ETag') || '').to.include('W/\"'));"
+     }
+    }
+   ],
+   "custom": true
+  },
+  {
+   "name": "PUT Prefer return=OperationOutcome → thân OperationOutcome",
+   "endpointId": 47548499,
+   "method": "PUT",
+   "path": "/fhir/R4/Patient/{{patient_id}}",
+   "headers": {
+    "Prefer": "return=OperationOutcome"
+   },
+   "body": "{\"resourceType\": \"Patient\", \"id\": \"{{patient_id}}\", \"name\": [{\"family\": \"UR\", \"given\": [\"Qa\"]}]}",
+   "auth": "Bearer {{bearerToken}}",
+   "assertions": [
+    "status == 200",
+    "$.resourceType == OperationOutcome"
+   ],
+   "custom": true
+  }
+ ]
+}

@@ -1,0 +1,639 @@
+{
+ "steps": [
+  {
+   "id": "step-1",
+   "number": 1,
+   "name": "Đăng nhập admin (email + mật khẩu)",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988464,
+    "name": "Đăng nhập admin (email + mật khẩu)",
+    "path": "/auth/login",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "json",
+     "data": "{\"email\": \"{{adminEmail}}\", \"password\": \"{{adminPassword}}\", \"clientId\": \"{{clientId}}\", \"scope\": \"openid profile email\"}"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.code exists",
+       "subject": "responseJson",
+       "comparison": "exists",
+       "path": "$.code",
+       "value": "",
+       "extractSettings": {
+        "expression": "$.code"
+       }
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.login exists",
+       "subject": "responseJson",
+       "comparison": "exists",
+       "path": "$.login",
+       "value": "",
+       "extractSettings": {
+        "expression": "$.login"
+       }
+      }
+     },
+     {
+      "type": "extractor",
+      "enable": true,
+      "data": {
+       "variableType": "local",
+       "variableName": "loginId",
+       "expression": "$.login",
+       "subject": "responseJson"
+      }
+     },
+     {
+      "type": "extractor",
+      "enable": true,
+      "data": {
+       "variableType": "local",
+       "variableName": "code",
+       "expression": "$.code",
+       "subject": "responseJson"
+      }
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988464
+  },
+  {
+   "id": "step-2",
+   "number": 2,
+   "name": "Đổi code lấy token (authorization_code)",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988389,
+    "name": "Đổi code lấy token (authorization_code)",
+    "path": "/oauth2/token",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "x-www-form-urlencoded",
+     "parameters": [
+      {
+       "name": "grant_type",
+       "value": "authorization_code",
+       "enable": true,
+       "type": "string"
+      },
+      {
+       "name": "code",
+       "value": "{{code}}",
+       "enable": true,
+       "type": "string"
+      },
+      {
+       "name": "client_id",
+       "value": "{{clientId}}",
+       "enable": true,
+       "type": "string"
+      },
+      {
+       "name": "client_secret",
+       "value": "{{clientSecret}}",
+       "enable": true,
+       "type": "string"
+      }
+     ]
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.access_token exists",
+       "subject": "responseJson",
+       "comparison": "exists",
+       "path": "$.access_token",
+       "value": "",
+       "extractSettings": {
+        "expression": "$.access_token"
+       }
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.token_type == Bearer",
+       "subject": "responseJson",
+       "comparison": "equal",
+       "path": "$.token_type",
+       "value": "Bearer",
+       "extractSettings": {
+        "expression": "$.token_type"
+       }
+      }
+     },
+     {
+      "type": "extractor",
+      "enable": true,
+      "data": {
+       "variableType": "local",
+       "variableName": "userToken",
+       "expression": "$.access_token",
+       "subject": "responseJson"
+      }
+     }
+    ],
+    "auth": {},
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988389
+  },
+  {
+   "id": "step-3",
+   "number": 3,
+   "name": "GET /auth/me của admin",
+   "type": "http",
+   "bindType": "API",
+   "syncMode": "MANUAL",
+   "bindId": 47548454,
+   "httpApiCase": {
+    "type": "DEBUG_CASE",
+    "name": "GET /auth/me của admin",
+    "path": "/auth/me",
+    "method": "get",
+    "apiDetailId": 47548454,
+    "projectId": 1380475,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.user.email == {{adminEmail}}",
+       "subject": "responseJson",
+       "comparison": "equal",
+       "path": "$.user.email",
+       "value": "{{adminEmail}}",
+       "extractSettings": {
+        "expression": "$.user.email"
+       }
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.project.id == {{projectId}}",
+       "subject": "responseJson",
+       "comparison": "equal",
+       "path": "$.project.id",
+       "value": "{{projectId}}",
+       "extractSettings": {
+        "expression": "$.project.id"
+       }
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.membership.admin == true",
+       "subject": "responseJson",
+       "comparison": "equal",
+       "path": "$.membership.admin",
+       "value": "true",
+       "extractSettings": {
+        "expression": "$.membership.admin"
+       }
+      }
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "pm.test(\"$.security.sessions is array\", () => pm.expect(Array.isArray(pm.response.json().security.sessions)).to.eql(true));"
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{userToken}}"
+     }
+    },
+    "id": 65401569
+   },
+   "relatedId": 65401569
+  },
+  {
+   "id": "step-4",
+   "number": 4,
+   "name": "GET /oauth2/userinfo (scope profile email)",
+   "type": "http",
+   "bindType": "API",
+   "syncMode": "MANUAL",
+   "bindId": 47548483,
+   "httpApiCase": {
+    "type": "DEBUG_CASE",
+    "name": "GET /oauth2/userinfo (scope profile email)",
+    "path": "/oauth2/userinfo",
+    "method": "get",
+    "apiDetailId": 47548483,
+    "projectId": 1380475,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.email == {{adminEmail}}",
+       "subject": "responseJson",
+       "comparison": "equal",
+       "path": "$.email",
+       "value": "{{adminEmail}}",
+       "extractSettings": {
+        "expression": "$.email"
+       }
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.sub exists",
+       "subject": "responseJson",
+       "comparison": "exists",
+       "path": "$.sub",
+       "value": "",
+       "extractSettings": {
+        "expression": "$.sub"
+       }
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.email_verified exists",
+       "subject": "responseJson",
+       "comparison": "exists",
+       "path": "$.email_verified",
+       "value": "",
+       "extractSettings": {
+        "expression": "$.email_verified"
+       }
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{userToken}}"
+     }
+    },
+    "id": 65401568
+   },
+   "relatedId": 65401568
+  },
+  {
+   "id": "step-5",
+   "number": 5,
+   "name": "GET /auth/mfa/status",
+   "type": "http",
+   "bindType": "API",
+   "syncMode": "MANUAL",
+   "bindId": 47548461,
+   "httpApiCase": {
+    "type": "DEBUG_CASE",
+    "name": "GET /auth/mfa/status",
+    "path": "/auth/mfa/status",
+    "method": "get",
+    "apiDetailId": 47548461,
+    "projectId": 1380475,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{userToken}}"
+     }
+    },
+    "id": 65401567
+   },
+   "relatedId": 65401567
+  },
+  {
+   "id": "step-6",
+   "number": 6,
+   "name": "Introspect token admin (cùng client)",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988388,
+    "name": "Introspect token admin (cùng client)",
+    "path": "/oauth2/introspect",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "x-www-form-urlencoded",
+     "parameters": [
+      {
+       "name": "token",
+       "value": "{{userToken}}",
+       "enable": true,
+       "type": "string"
+      }
+     ]
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.active == true",
+       "subject": "responseJson",
+       "comparison": "equal",
+       "path": "$.active",
+       "value": "true",
+       "extractSettings": {
+        "expression": "$.active"
+       }
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{userToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988388
+  },
+  {
+   "id": "step-7",
+   "number": 7,
+   "name": "Thu hồi phiên bằng loginId",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988463,
+    "name": "Thu hồi phiên bằng loginId",
+    "path": "/auth/revoke",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "json",
+     "data": "{\"loginId\": \"{{loginId}}\"}"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{userToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988463
+  },
+  {
+   "id": "step-8",
+   "number": 8,
+   "name": "Sau revoke: /auth/me → 401",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988387,
+    "name": "Sau revoke: /auth/me → 401",
+    "path": "/auth/me",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 401",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "401"
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{userToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988387
+  },
+  {
+   "id": "step-9",
+   "number": 9,
+   "name": "Revoke lần hai bằng token chết → 401",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988386,
+    "name": "Revoke lần hai bằng token chết → 401",
+    "path": "/auth/revoke",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "json",
+     "data": "{\"loginId\": \"{{loginId}}\"}"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 401",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "401"
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{userToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988386
+  }
+ ]
+}

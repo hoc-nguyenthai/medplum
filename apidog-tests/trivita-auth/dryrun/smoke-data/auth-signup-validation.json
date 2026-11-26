@@ -1,0 +1,14 @@
+[
+ {
+  "case_id": "NU-01",
+  "case_group": "Positive",
+  "description": "đăng ký hợp lệ",
+  "expected_status": "200",
+  "expected_code": "",
+  "expected_message": "",
+  "firstName": "QA",
+  "lastName": "Valid",
+  "email": "qa.nu01.{{$timestamp}}@example.org",
+  "password": "Qa-Valid-2026-xK9"
+ }
+]

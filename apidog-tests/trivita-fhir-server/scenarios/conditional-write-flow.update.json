@@ -1,0 +1,737 @@
+{
+ "steps": [
+  {
+   "id": "step-1",
+   "number": 1,
+   "name": "Đăng nhập admin project (auth /auth/login)",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988253,
+    "name": "Đăng nhập admin project (auth /auth/login)",
+    "path": "{{authUrl}}/auth/login",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "json",
+     "data": "{\"email\": \"{{adminEmail}}\", \"password\": \"{{adminPassword}}\", \"clientId\": \"{{clientId}}\", \"scope\": \"openid profile email\"}"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.code exists",
+       "subject": "responseJson",
+       "comparison": "exists",
+       "path": "$.code",
+       "value": "",
+       "extractSettings": {
+        "expression": "$.code"
+       }
+      }
+     },
+     {
+      "type": "extractor",
+      "enable": true,
+      "data": {
+       "variableType": "local",
+       "variableName": "adm_code",
+       "expression": "$.code",
+       "subject": "responseJson"
+      }
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988253
+  },
+  {
+   "id": "step-2",
+   "number": 2,
+   "name": "Đổi code lấy token admin (authorization_code)",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988252,
+    "name": "Đổi code lấy token admin (authorization_code)",
+    "path": "{{authUrl}}/oauth2/token",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "x-www-form-urlencoded",
+     "parameters": [
+      {
+       "name": "grant_type",
+       "value": "authorization_code",
+       "enable": true,
+       "type": "string"
+      },
+      {
+       "name": "code",
+       "value": "{{adm_code}}",
+       "enable": true,
+       "type": "string"
+      },
+      {
+       "name": "client_id",
+       "value": "{{clientId}}",
+       "enable": true,
+       "type": "string"
+      },
+      {
+       "name": "client_secret",
+       "value": "{{clientSecret}}",
+       "enable": true,
+       "type": "string"
+      }
+     ]
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.access_token exists",
+       "subject": "responseJson",
+       "comparison": "exists",
+       "path": "$.access_token",
+       "value": "",
+       "extractSettings": {
+        "expression": "$.access_token"
+       }
+      }
+     },
+     {
+      "type": "extractor",
+      "enable": true,
+      "data": {
+       "variableType": "local",
+       "variableName": "bearerToken",
+       "expression": "$.access_token",
+       "subject": "responseJson"
+      }
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988252
+  },
+  {
+   "id": "step-3",
+   "number": 3,
+   "name": "POST Patient (ident mới)",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988251,
+    "name": "POST Patient (ident mới)",
+    "path": "/fhir/R4/Patient",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "json",
+     "data": "{\"resourceType\": \"Patient\", \"identifier\": [{\"system\": \"urn:trivita:qa-mrn\", \"value\": \"cw-{{case_id}}-{{$timestamp}}\"}], \"name\": [{\"family\": \"Cond-{{$timestamp}}\", \"given\": [\"Qa\"]}]}"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 201",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "201"
+      }
+     },
+     {
+      "type": "extractor",
+      "enable": true,
+      "data": {
+       "variableType": "local",
+       "variableName": "patient_id",
+       "expression": "$.id",
+       "subject": "responseJson"
+      }
+     },
+     {
+      "type": "extractor",
+      "enable": true,
+      "data": {
+       "variableType": "local",
+       "variableName": "ident",
+       "expression": "$.identifier[0].value",
+       "subject": "responseJson"
+      }
+     },
+     {
+      "type": "extractor",
+      "enable": true,
+      "data": {
+       "variableType": "local",
+       "variableName": "v1",
+       "expression": "$.meta.versionId",
+       "subject": "responseJson"
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{bearerToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988251
+  },
+  {
+   "id": "step-4",
+   "number": 4,
+   "name": "POST If-None-Exist (1 khớp) → 200, không tạo mới",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988250,
+    "name": "POST If-None-Exist (1 khớp) → 200, không tạo mới",
+    "path": "/fhir/R4/Patient",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [
+      {
+       "name": "If-None-Exist",
+       "value": "identifier=urn:trivita:qa-mrn|{{ident}}",
+       "enable": true
+      }
+     ],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "json",
+     "data": "{\"resourceType\": \"Patient\", \"identifier\": [{\"system\": \"urn:trivita:qa-mrn\", \"value\": \"{{ident}}\"}], \"name\": [{\"family\": \"Cond-khac\", \"given\": [\"Qa\"]}]}"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.id == {{patient_id}}",
+       "subject": "responseJson",
+       "comparison": "equal",
+       "path": "$.id",
+       "value": "{{patient_id}}",
+       "extractSettings": {
+        "expression": "$.id"
+       }
+      }
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "pm.test('không có Location (không tạo mới)', () => pm.expect(pm.response.headers.get('Location')).to.eql(undefined));"
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{bearerToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988250
+  },
+  {
+   "id": "step-5",
+   "number": 5,
+   "name": "POST cùng ident không điều kiện → 201 (tạo trùng)",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988249,
+    "name": "POST cùng ident không điều kiện → 201 (tạo trùng)",
+    "path": "/fhir/R4/Patient",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "json",
+     "data": "{\"resourceType\": \"Patient\", \"identifier\": [{\"system\": \"urn:trivita:qa-mrn\", \"value\": \"{{ident}}\"}], \"name\": [{\"family\": \"Cond-trung\", \"given\": [\"Qa\"]}]}"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 201",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "201"
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{bearerToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988249
+  },
+  {
+   "id": "step-6",
+   "number": 6,
+   "name": "POST If-None-Exist (2 khớp) → 412",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988248,
+    "name": "POST If-None-Exist (2 khớp) → 412",
+    "path": "/fhir/R4/Patient",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [
+      {
+       "name": "If-None-Exist",
+       "value": "identifier=urn:trivita:qa-mrn|{{ident}}",
+       "enable": true
+      }
+     ],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "json",
+     "data": "{\"resourceType\": \"Patient\", \"identifier\": [{\"system\": \"urn:trivita:qa-mrn\", \"value\": \"{{ident}}\"}], \"name\": [{\"family\": \"Cond-khac\", \"given\": [\"Qa\"]}]}"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 412",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "412"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.issue[0].code == conflict",
+       "subject": "responseJson",
+       "comparison": "equal",
+       "path": "$.issue[0].code",
+       "value": "conflict",
+       "extractSettings": {
+        "expression": "$.issue[0].code"
+       }
+      }
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "pm.test('thông điệp', () => pm.expect(pm.response.json().issue[0].details.text).to.include('Nhiều resource khớp If-None-Exist'));"
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{bearerToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988248
+  },
+  {
+   "id": "step-7",
+   "number": 7,
+   "name": "PUT ?identifier (2 khớp) → 412",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988247,
+    "name": "PUT ?identifier (2 khớp) → 412",
+    "path": "/fhir/R4/Patient?identifier=urn:trivita:qa-mrn|{{ident}}",
+    "method": "put",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "json",
+     "data": "{\"resourceType\": \"Patient\", \"identifier\": [{\"system\": \"urn:trivita:qa-mrn\", \"value\": \"{{ident}}\"}], \"name\": [{\"family\": \"Cond-put\", \"given\": [\"Qa\"]}]}"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 412",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "412"
+      }
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "pm.test('thông điệp', () => pm.expect(pm.response.json().issue[0].details.text).to.include('Nhiều resource khớp tiêu chí'));"
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{bearerToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988247
+  },
+  {
+   "id": "step-8",
+   "number": 8,
+   "name": "PUT ?identifier (0 khớp) → 201 tạo mới",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988444,
+    "name": "PUT ?identifier (0 khớp) → 201 tạo mới",
+    "path": "/fhir/R4/Patient?identifier=urn:trivita:qa-mrn|{{ident}}-moi",
+    "method": "put",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "json",
+     "data": "{\"resourceType\": \"Patient\", \"identifier\": [{\"system\": \"urn:trivita:qa-mrn\", \"value\": \"{{ident}}-moi\"}], \"name\": [{\"family\": \"Cond-moi\", \"given\": [\"Qa\"]}]}"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 201",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "201"
+      }
+     },
+     {
+      "type": "extractor",
+      "enable": true,
+      "data": {
+       "variableType": "local",
+       "variableName": "patient2_id",
+       "expression": "$.id",
+       "subject": "responseJson"
+      }
+     },
+     {
+      "type": "extractor",
+      "enable": true,
+      "data": {
+       "variableType": "local",
+       "variableName": "v_new",
+       "expression": "$.meta.versionId",
+       "subject": "responseJson"
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{bearerToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988444
+  },
+  {
+   "id": "step-9",
+   "number": 9,
+   "name": "PUT ?identifier (1 khớp) → 200 cập nhật cùng id",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988246,
+    "name": "PUT ?identifier (1 khớp) → 200 cập nhật cùng id",
+    "path": "/fhir/R4/Patient?identifier=urn:trivita:qa-mrn|{{ident}}-moi",
+    "method": "put",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "json",
+     "data": "{\"resourceType\": \"Patient\", \"identifier\": [{\"system\": \"urn:trivita:qa-mrn\", \"value\": \"{{ident}}-moi\"}], \"name\": [{\"family\": \"Cond-moi\", \"given\": [\"Qa\"]}], \"gender\": \"female\"}"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.id == {{patient2_id}}",
+       "subject": "responseJson",
+       "comparison": "equal",
+       "path": "$.id",
+       "value": "{{patient2_id}}",
+       "extractSettings": {
+        "expression": "$.id"
+       }
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.gender == female",
+       "subject": "responseJson",
+       "comparison": "equal",
+       "path": "$.gender",
+       "value": "female",
+       "extractSettings": {
+        "expression": "$.gender"
+       }
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{bearerToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988246
+  },
+  {
+   "id": "step-10",
+   "number": 10,
+   "name": "PUT ?identifier (1 khớp) + If-Match cũ → 412",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988245,
+    "name": "PUT ?identifier (1 khớp) + If-Match cũ → 412",
+    "path": "/fhir/R4/Patient?identifier=urn:trivita:qa-mrn|{{ident}}-moi",
+    "method": "put",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [
+      {
+       "name": "If-Match",
+       "value": "W/\"{{v_new}}\"",
+       "enable": true
+      }
+     ],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "json",
+     "data": "{\"resourceType\": \"Patient\", \"identifier\": [{\"system\": \"urn:trivita:qa-mrn\", \"value\": \"{{ident}}-moi\"}], \"name\": [{\"family\": \"Cond-moi\", \"given\": [\"Qa\"]}]}"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 412",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "412"
+      }
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "pm.test('thông điệp', () => pm.expect(pm.response.json().issue[0].details.text).to.include('Phiên bản không khớp'));"
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{bearerToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988245
+  },
+  {
+   "id": "step-11",
+   "number": 11,
+   "name": "PUT ?identifier (1 khớp) + id lệch → 400",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988489,
+    "name": "PUT ?identifier (1 khớp) + id lệch → 400",
+    "path": "/fhir/R4/Patient?identifier=urn:trivita:qa-mrn|{{ident}}-moi",
+    "method": "put",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "json",
+     "data": "{\"resourceType\": \"Patient\", \"id\": \"00000000-0000-4000-8000-000000000000\", \"identifier\": [{\"system\": \"urn:trivita:qa-mrn\", \"value\": \"{{ident}}-moi\"}], \"name\": [{\"family\": \"Cond-moi\", \"given\": [\"Qa\"]}]}"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 400",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "400"
+      }
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "pm.test('thông điệp', () => pm.expect(pm.response.json().issue[0].details.text).to.include('id trong body không khớp với resource tìm thấy'));"
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{bearerToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988489
+  }
+ ]
+}

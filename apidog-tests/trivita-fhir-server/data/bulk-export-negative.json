@@ -1,0 +1,62 @@
+[
+ {
+  "case_id": "TC-BXN-01",
+  "case_group": "Negative",
+  "description": "thiếu Prefer respond-async",
+  "expected_status": "400",
+  "expected_code": "invalid",
+  "expected_message": "Bulk export cần header Prefer: respond-async",
+  "prefer": "handling=lenient",
+  "out_fmt": "ndjson",
+  "etype": "Patient",
+  "since": "2020-01-01T00:00:00Z"
+ },
+ {
+  "case_id": "TC-BXN-02",
+  "case_group": "Negative",
+  "description": "_outputFormat=csv",
+  "expected_status": "400",
+  "expected_code": "invalid",
+  "expected_message": "_outputFormat chỉ hỗ trợ ndjson, nhận csv",
+  "prefer": "respond-async",
+  "out_fmt": "csv",
+  "etype": "Patient",
+  "since": "2020-01-01T00:00:00Z"
+ },
+ {
+  "case_id": "TC-BXN-03",
+  "case_group": "Negative",
+  "description": "_type có loại lạ",
+  "expected_status": "400",
+  "expected_code": "invalid",
+  "expected_message": "_type không hợp lệ: Foo",
+  "prefer": "respond-async",
+  "out_fmt": "ndjson",
+  "etype": "Patient,Foo",
+  "since": "2020-01-01T00:00:00Z"
+ },
+ {
+  "case_id": "TC-BXN-04",
+  "case_group": "Negative",
+  "description": "_since chỉ có ngày",
+  "expected_status": "400",
+  "expected_code": "invalid",
+  "expected_message": "_since phải là instant RFC3339",
+  "prefer": "respond-async",
+  "out_fmt": "ndjson",
+  "etype": "Patient",
+  "since": "2026-01-01"
+ },
+ {
+  "case_id": "TC-BXN-05",
+  "case_group": "Security",
+  "description": "_type chứa SQLi",
+  "expected_status": "400",
+  "expected_code": "invalid",
+  "expected_message": "_type không hợp lệ",
+  "prefer": "respond-async",
+  "out_fmt": "ndjson",
+  "etype": "Patient%3BDROP%20TABLE%20x",
+  "since": "2020-01-01T00:00:00Z"
+ }
+]

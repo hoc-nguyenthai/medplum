@@ -1,0 +1,2 @@
+case_id,case_group,description,expected_status,expected_code,expected_message,resource
+WK-01,Positive,resource bằng chính base URL,200,,,{{authUrl}}

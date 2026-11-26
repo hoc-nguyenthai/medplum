@@ -1,0 +1,297 @@
+{
+ "steps": [
+  {
+   "id": "step-1",
+   "number": 1,
+   "name": "Lấy access token (client_credentials của auth)",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988030,
+    "name": "Lấy access token (client_credentials của auth)",
+    "path": "{{authUrl}}/oauth2/token",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "x-www-form-urlencoded",
+     "parameters": [
+      {
+       "name": "grant_type",
+       "value": "client_credentials",
+       "enable": true,
+       "type": "string"
+      },
+      {
+       "name": "client_id",
+       "value": "{{clientId}}",
+       "enable": true,
+       "type": "string"
+      },
+      {
+       "name": "client_secret",
+       "value": "{{clientSecret}}",
+       "enable": true,
+       "type": "string"
+      }
+     ]
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.access_token exists",
+       "subject": "responseJson",
+       "comparison": "exists",
+       "path": "$.access_token",
+       "value": "",
+       "extractSettings": {
+        "expression": "$.access_token"
+       }
+      }
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "const tok = pm.response.json().access_token; pm.variables.set('accessToken', tok);\ntry { const p = JSON.parse(atob(tok.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))); pm.variables.set('projectId', p.fhir_project || ''); } catch (e) { pm.variables.set('projectId', ''); }\nconst base = '1.2.826.0.1.3680043.9.7777.' + Date.now() + (100 + Math.floor(Math.random() * 900));\npm.variables.set('studyUid', base + '.1'); pm.variables.set('seriesUid', base + '.1.1'); pm.variables.set('sop1', base + '.1.1.1'); pm.variables.set('sop2', base + '.1.1.2');\npm.variables.set('series2Uid', base + '.1.2'); pm.variables.set('sop3', base + '.1.2.1'); pm.variables.set('otherStudyUid', base + '.9');\npm.variables.set('pid', 'QA-' + Date.now());const tok0 = pm.response.json().access_token; const k = pm.iterationData.get('bad_kind'); let bad = ''; if (k === 'garbage') bad = 'khong-phai-jwt'; else if (k === 'three-parts') bad = 'aaa.bbb.ccc'; else if (k === 'alg-none') bad = btoa('{\"alg\":\"none\",\"typ\":\"JWT\"}').replace(/=/g, '') + '.' + tok0.split('.')[1] + '.'; else if (k === 'tampered') { const p = tok0.split('.'); bad = p[0] + '.' + p[1] + '.' + p[2].slice(0, -2) + (p[2].slice(-2) === 'AA' ? 'BB' : 'AA'); } else if (k === 'no-signature') bad = tok0.split('.').slice(0, 2).join('.'); pm.variables.set('callBad', bad);"
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988030
+  },
+  {
+   "id": "step-2",
+   "number": 2,
+   "name": "GET /dicomweb/studies với token xấu",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988029,
+    "name": "GET /dicomweb/studies với token xấu",
+    "path": "/dicomweb/studies",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == {{expected_status}}",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "{{expected_status}}"
+      }
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "const m = pm.iterationData.get('expected_message'); if (m) { pm.test('error = ' + m, () => pm.expect(pm.response.json().error).to.eql(m)); } pm.test(\"WWW-Authenticate\", () => { pm.expect(pm.response.headers.get('WWW-Authenticate') || '').to.include('Bearer realm=\"dicomweb\"'); });"
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{callBad}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988029
+  },
+  {
+   "id": "step-3",
+   "number": 3,
+   "name": "POST /dicomweb/studies với token xấu",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988028,
+    "name": "POST /dicomweb/studies với token xấu",
+    "path": "/dicomweb/studies",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [
+      {
+       "name": "Content-Type",
+       "value": "multipart/related; type=\"application/dicom+json\"; boundary=qa-bnd",
+       "enable": true
+      }
+     ],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "raw",
+     "data": "--qa-bnd--\r\n"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == {{expected_status}}",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "{{expected_status}}"
+      }
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "const m = pm.iterationData.get('expected_message'); if (m) { pm.test('error = ' + m, () => pm.expect(pm.response.json().error).to.eql(m)); } pm.test(\"WWW-Authenticate\", () => { pm.expect(pm.response.headers.get('WWW-Authenticate') || '').to.include('Bearer realm=\"dicomweb\"'); });"
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{callBad}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988028
+  },
+  {
+   "id": "step-4",
+   "number": 4,
+   "name": "GET /dicomweb/wado với token xấu",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988027,
+    "name": "GET /dicomweb/wado với token xấu",
+    "path": "/dicomweb/wado?requestType=WADO&studyUID=1.2&seriesUID=1.2&objectUID=1.2",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == {{expected_status}}",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "{{expected_status}}"
+      }
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "const m = pm.iterationData.get('expected_message'); if (m) { pm.test('error = ' + m, () => pm.expect(pm.response.json().error).to.eql(m)); } pm.test(\"WWW-Authenticate\", () => { pm.expect(pm.response.headers.get('WWW-Authenticate') || '').to.include('Bearer realm=\"dicomweb\"'); });"
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{callBad}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988027
+  },
+  {
+   "id": "step-5",
+   "number": 5,
+   "name": "GET frame với token xấu",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988026,
+    "name": "GET frame với token xấu",
+    "path": "/dicomweb/studies/1.2/series/1.2/instances/1.2/frames/1",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == {{expected_status}}",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "{{expected_status}}"
+      }
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "const m = pm.iterationData.get('expected_message'); if (m) { pm.test('error = ' + m, () => pm.expect(pm.response.json().error).to.eql(m)); } pm.test(\"WWW-Authenticate\", () => { pm.expect(pm.response.headers.get('WWW-Authenticate') || '').to.include('Bearer realm=\"dicomweb\"'); });"
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{callBad}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988026
+  }
+ ]
+}

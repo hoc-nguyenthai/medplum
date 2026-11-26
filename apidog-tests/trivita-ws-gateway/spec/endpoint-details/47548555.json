@@ -1,0 +1,37 @@
+{
+ "id": 47548555,
+ "name": "Cấu hình Hub FHIRcast",
+ "method": "get",
+ "path": "/hub/.well-known/fhircast-configuration",
+ "parameters": {
+  "path": [],
+  "query": [],
+  "cookie": [],
+  "header": []
+ },
+ "auth": {},
+ "securityScheme": {},
+ "requestBody": {
+  "type": "none",
+  "parameters": [],
+  "required": false,
+  "additionalContentTypes": [],
+  "oasExtensions": ""
+ },
+ "responses": [
+  {
+   "id": "104197491",
+   "name": "",
+   "code": "200",
+   "contentType": "json",
+   "jsonSchema": {
+    "$ref": "#/definitions/19029579"
+   },
+   "itemSchema": {},
+   "description": "OK",
+   "mediaType": "application/json",
+   "headers": [],
+   "oasExtensions": ""
+  }
+ ]
+}

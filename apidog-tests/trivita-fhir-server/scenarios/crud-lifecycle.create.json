@@ -1,0 +1,10 @@
+{
+ "name": "Vòng đời Patient (CRUD, history, vread, patch, expunge)",
+ "description": "Tạo → đọc → sửa → history → vread → PATCH → xóa mềm → 410 → expunge → 404.",
+ "priority": 0,
+ "folderId": 0,
+ "tags": [
+  "crud",
+  "p0"
+ ]
+}

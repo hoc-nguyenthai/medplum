@@ -1,0 +1,200 @@
+[
+  {
+    "case_id": "AC-01",
+    "case_group": "Positive",
+    "description": "client_credentials h\u1ee3p l\u1ec7",
+    "expected_status": "201",
+    "expected_code": "",
+    "expected_message": "",
+    "admin_body": "{\"name\": \"QA client {{$timestamp}}\", \"grantType\": [\"client_credentials\"]}"
+  },
+  {
+    "case_id": "AC-02",
+    "case_group": "Positive",
+    "description": "client authorization_code c\u00f3 redirectUris, pkceOptional",
+    "expected_status": "201",
+    "expected_code": "",
+    "expected_message": "",
+    "admin_body": "{\"name\": \"QA web {{$timestamp}}\", \"grantType\": [\"authorization_code\"], \"redirectUris\": [\"https://app.example.org/cb\"], \"pkceOptional\": true}"
+  },
+  {
+    "case_id": "AC-03",
+    "case_group": "Positive",
+    "description": "ch\u1ec9 c\u00f3 name",
+    "expected_status": "201",
+    "expected_code": "",
+    "expected_message": "",
+    "admin_body": "{\"name\": \"QA minimal {{$timestamp}}\"}"
+  },
+  {
+    "case_id": "AC-04",
+    "case_group": "Boundary",
+    "description": "secret \u0111\u00fang 32 k\u00fd t\u1ef1",
+    "expected_status": "201",
+    "expected_code": "",
+    "expected_message": "",
+    "admin_body": "{\"name\": \"QA s32 {{$timestamp}}\", \"secret\": \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}"
+  },
+  {
+    "case_id": "AC-05",
+    "case_group": "Boundary",
+    "description": "secret \u0111\u00fang 256 k\u00fd t\u1ef1",
+    "expected_status": "201",
+    "expected_code": "",
+    "expected_message": "",
+    "admin_body": "{\"name\": \"QA s256 {{$timestamp}}\", \"secret\": \"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\"}"
+  },
+  {
+    "case_id": "AC-06",
+    "case_group": "Boundary",
+    "description": "secret 31 k\u00fd t\u1ef1",
+    "expected_status": "400",
+    "expected_code": "invalid",
+    "expected_message": "secret must be between 32 and 256 characters",
+    "admin_body": "{\"name\": \"QA s31 {{$timestamp}}\", \"secret\": \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}"
+  },
+  {
+    "case_id": "AC-07",
+    "case_group": "Boundary",
+    "description": "secret 257 k\u00fd t\u1ef1",
+    "expected_status": "400",
+    "expected_code": "invalid",
+    "expected_message": "secret must be between 32 and 256 characters",
+    "admin_body": "{\"name\": \"QA s257 {{$timestamp}}\", \"secret\": \"ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\"}"
+  },
+  {
+    "case_id": "AC-08",
+    "case_group": "Negative",
+    "description": "name r\u1ed7ng",
+    "expected_status": "400",
+    "expected_code": "invalid",
+    "expected_message": "Client name is required",
+    "admin_body": "{\"name\": \"\"}"
+  },
+  {
+    "case_id": "AC-09",
+    "case_group": "Negative",
+    "description": "name ch\u1ec9 kho\u1ea3ng tr\u1eafng",
+    "expected_status": "400",
+    "expected_code": "invalid",
+    "expected_message": "Client name is required",
+    "admin_body": "{\"name\": \"   \"}"
+  },
+  {
+    "case_id": "AC-10",
+    "case_group": "Negative",
+    "description": "thi\u1ebfu name",
+    "expected_status": "400",
+    "expected_code": "invalid",
+    "expected_message": "Client name is required",
+    "admin_body": "{\"description\": \"khong co ten\"}"
+  },
+  {
+    "case_id": "AC-11",
+    "case_group": "Negative",
+    "description": "tr\u01b0\u1eddng l\u1ea1 status",
+    "expected_status": "400",
+    "expected_code": "invalid",
+    "expected_message": "Unsupported field: status",
+    "admin_body": "{\"name\": \"QA x\", \"status\": \"off\"}"
+  },
+  {
+    "case_id": "AC-12",
+    "case_group": "Negative",
+    "description": "grantType ngo\u00e0i danh s\u00e1ch",
+    "expected_status": "400",
+    "expected_code": "invalid",
+    "expected_message": "Unsupported grantType: password",
+    "admin_body": "{\"name\": \"QA x\", \"grantType\": [\"password\"]}"
+  },
+  {
+    "case_id": "AC-13",
+    "case_group": "Negative",
+    "description": "redirectUris kh\u00f4ng tuy\u1ec7t \u0111\u1ed1i",
+    "expected_status": "400",
+    "expected_code": "invalid",
+    "expected_message": "Invalid redirect URI",
+    "admin_body": "{\"name\": \"QA x\", \"redirectUris\": [\"not-a-url\"]}"
+  },
+  {
+    "case_id": "AC-14",
+    "case_group": "Negative",
+    "description": "redirectUris scheme ftp",
+    "expected_status": "400",
+    "expected_code": "invalid",
+    "expected_message": "Invalid redirect URI",
+    "admin_body": "{\"name\": \"QA x\", \"redirectUris\": [\"ftp://x.example.org/cb\"]}"
+  },
+  {
+    "case_id": "AC-15",
+    "case_group": "Negative",
+    "description": "redirectUris c\u00f3 fragment",
+    "expected_status": "400",
+    "expected_code": "invalid",
+    "expected_message": "Invalid redirect URI",
+    "admin_body": "{\"name\": \"QA x\", \"redirectUris\": [\"https://x.example.org/cb#frag\"]}"
+  },
+  {
+    "case_id": "AC-16",
+    "case_group": "Negative",
+    "description": "launchUri scheme ftp",
+    "expected_status": "400",
+    "expected_code": "invalid",
+    "expected_message": "Invalid launch URI",
+    "admin_body": "{\"name\": \"QA x\", \"launchUri\": \"ftp://x.example.org/launch\"}"
+  },
+  {
+    "case_id": "AC-17",
+    "case_group": "Negative",
+    "description": "accessPolicy kh\u00f4ng t\u1ed3n t\u1ea1i",
+    "expected_status": "400",
+    "expected_code": "invalid",
+    "expected_message": "Invalid access policy",
+    "admin_body": "{\"name\": \"QA x\", \"accessPolicy\": {\"reference\": \"AccessPolicy/00000000-0000-4000-8000-000000000000\"}}"
+  },
+  {
+    "case_id": "AC-18",
+    "case_group": "Negative",
+    "description": "redirectUris sai ki\u1ec3u (chu\u1ed7i)",
+    "expected_status": "400",
+    "expected_code": "invalid",
+    "expected_message": "Invalid client body",
+    "admin_body": "{\"name\": \"QA x\", \"redirectUris\": \"https://x.example.org/cb\"}"
+  },
+  {
+    "case_id": "AC-19",
+    "case_group": "Negative",
+    "description": "body l\u00e0 m\u1ea3ng, kh\u00f4ng ph\u1ea3i object",
+    "expected_status": "400",
+    "expected_code": "invalid",
+    "expected_message": "Content could not be parsed",
+    "admin_body": "[]"
+  },
+  {
+    "case_id": "AC-20",
+    "case_group": "Negative",
+    "description": "JSON h\u1ecfng",
+    "expected_status": "400",
+    "expected_code": "invalid",
+    "expected_message": "Content could not be parsed",
+    "admin_body": "{"
+  },
+  {
+    "case_id": "AC-21",
+    "case_group": "Security",
+    "description": "name ch\u1ee9a HTML \u0111\u01b0\u1ee3c l\u01b0u nguy\u00ean",
+    "expected_status": "201",
+    "expected_code": "",
+    "expected_message": "",
+    "admin_body": "{\"name\": \"<img src=x onerror=alert(1)> {{$timestamp}}\"}"
+  },
+  {
+    "case_id": "AC-22",
+    "case_group": "Security",
+    "description": "name r\u1ea5t d\u00e0i 5000 k\u00fd t\u1ef1 kh\u00f4ng g\u00e2y 500",
+    "expected_status": "201",
+    "expected_code": "",
+    "expected_message": "",
+    "admin_body": "{\"name\": \"nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn\"}"
+  }
+]

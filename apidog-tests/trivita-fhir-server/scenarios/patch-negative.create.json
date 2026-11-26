@@ -1,0 +1,10 @@
+{
+ "name": "PATCH Patient: JSON Patch hợp lệ và lỗi",
+ "description": "Mỗi dòng: tạo Patient mới rồi PATCH theo data.",
+ "priority": 1,
+ "folderId": 0,
+ "tags": [
+  "patch",
+  "negative"
+ ]
+}

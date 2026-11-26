@@ -281,14 +281,14 @@ Metadata của tài nguyên được bảo vệ theo RFC 9728: cho client biết
 **Thứ tự kiểm tra:**
 1. Hạn mức IP (429).
 2. Có tham số `resource`? Không: `resource` = `<base>/` (có dấu `/` cuối).
-3. Có: phải đúng **một** giá trị **và** bắt đầu bằng `AUTH_BASE_URL` (so tiền tố chuỗi); sai một trong hai: `400` văn bản `Invalid resource URL`.
+3. Có: phải đúng **một** giá trị **và** là `AUTH_BASE_URL` hoặc nằm dưới nó (bắt đầu bằng `AUTH_BASE_URL` và sau đó hết chuỗi hoặc là `/`, `?`, `#`); sai một trong hai: `400` văn bản `Invalid resource URL`. Địa chỉ nhái tiền tố (`<base>.evil.example/`, `<base>@evil.example/`, `<base>:1/`, `<base>evil`) bị từ chối (sửa 2026-11-25; trước đó so tiền tố chuỗi trần nên lọt).
 4. Trả tài liệu với `resource` đã chọn.
 
 | # | Trường hợp | Điều kiện | HTTP | Header phản hồi riêng | Body | Tác dụng phụ |
 |---|---|---|---|---|---|---|
 | C1 | Mặc định | không có `resource` | 200 | `Cache-Control: public, max-age=300` | `resource` = `<base>/` | không |
-| C2 | `resource` hợp lệ | một giá trị, bắt đầu bằng `<base>` (ví dụ `<base>/fhir/R4`) | 200 | như C1 | `resource` = giá trị đã gửi, nguyên văn | không |
-| C3 | `resource` lạ | giá trị không bắt đầu bằng `<base>` (ví dụ `https://evil.example/`), hoặc rỗng (`resource=`) | 400 | - (`Content-Type: text/plain`, `Cache-Control: no-store`) | văn bản `Invalid resource URL` | không |
+| C2 | `resource` hợp lệ | một giá trị, là `<base>` hoặc nằm dưới `<base>` (ví dụ `<base>/fhir/R4`, `<base>?x=1`) | 200 | như C1 | `resource` = giá trị đã gửi, nguyên văn | không |
+| C3 | `resource` lạ | giá trị không phải `<base>` hay nằm dưới `<base>` (ví dụ `https://evil.example/`, hoặc nhái tiền tố `<base>.evil.example/`), hoặc rỗng (`resource=`) | 400 | - (`Content-Type: text/plain`, `Cache-Control: no-store`) | văn bản `Invalid resource URL` | không |
 | C4 | `resource` lặp | `?resource=a&resource=b` | 400 | như C3 | `Invalid resource URL` | không |
 | C5 | Vượt hạn mức IP | quá `AUTH_RATE_LIMIT` | 429 | `Retry-After: 1` | `{"error":"Too many requests"}` | tăng bộ đếm |
 

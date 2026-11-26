@@ -1,0 +1,7 @@
+case_id,case_group,description,expected_status,bad_kind,expected_message
+AZ-01,Security,Chuỗi rác (không phải JWT),401,garbage,Token không hợp lệ
+AZ-02,Security,Ba đoạn nhưng không phải base64 JWT,401,three-parts,Token không hợp lệ
+AZ-03,Security,JWT hợp lệ nhưng alg=none (bỏ chữ ký),401,alg-none,Token không hợp lệ
+AZ-04,Security,JWT thật bị sửa chữ ký (hai ký tự cuối),401,tampered,Token không hợp lệ
+AZ-05,Security,JWT thật bị cắt mất phần chữ ký,401,no-signature,Token không hợp lệ
+AZ-06,Security,Authorization: Bearer rỗng,401,empty,

@@ -377,6 +377,18 @@ func TestWellKnownAndJWKS(t *testing.T) {
 	if r := a.do("GET", "/.well-known/oauth-protected-resource?resource="+url.QueryEscape(custom), "", nil); r.status != 200 || r.json()["resource"] != custom {
 		t.Errorf("resource hợp lệ: %d %s", r.status, r.body)
 	}
+	// địa chỉ NHÁI tiền tố (host dài hơn base) phải bị từ chối; base đứng một mình và base + ?, #, / thì hợp lệ
+	base := a.c.Settings.BaseURL
+	for _, bad := range []string{base + ".evil.example/", base + "evil", base + "@evil.example/", base + ":1/"} {
+		if r := a.do("GET", "/.well-known/oauth-protected-resource?resource="+url.QueryEscape(bad), "", nil); r.status != 400 || r.body != "Invalid resource URL" {
+			t.Errorf("resource nhái tiền tố %q: %d %q", bad, r.status, r.body)
+		}
+	}
+	for _, good := range []string{base, base + "/", base + "/fhir/R4?x=1", base + "?x=1", base + "#frag"} {
+		if r := a.do("GET", "/.well-known/oauth-protected-resource?resource="+url.QueryEscape(good), "", nil); r.status != 200 || r.json()["resource"] != good {
+			t.Errorf("resource hợp lệ %q: %d %s", good, r.status, r.body)
+		}
+	}
 }
 
 // token_use phải được kiểm riêng, không chỉ dựa vào aud: token có aud và login_id hợp lệ nhưng không phải loại access vẫn bị từ chối.

@@ -1,0 +1,134 @@
+{
+ "id": 47548500,
+ "name": "Xóa resource",
+ "method": "delete",
+ "path": "/fhir/R4/{resourceType}/{id}",
+ "parameters": {
+  "path": [
+   {
+    "id": "resourceType#0",
+    "name": "resourceType",
+    "required": true,
+    "enable": true,
+    "description": "Loại resource",
+    "example": "",
+    "type": "string",
+    "schema": {
+     "type": "string"
+    }
+   },
+   {
+    "id": "id#0",
+    "name": "id",
+    "required": true,
+    "enable": true,
+    "description": "Id",
+    "example": "",
+    "type": "string",
+    "schema": {
+     "type": "string"
+    }
+   }
+  ],
+  "query": [],
+  "cookie": [],
+  "header": []
+ },
+ "auth": {
+  "type": "securityscheme"
+ },
+ "securityScheme": {
+  "schemeGroups": [
+   {
+    "id": "k3zjLhSXMO676dsFClAJp",
+    "schemeIds": [
+     646419
+    ]
+   }
+  ],
+  "required": true,
+  "use": {
+   "id": "k3zjLhSXMO676dsFClAJp",
+   "configs": {
+    "646419": {
+     "authConfigs": {
+      "x-apidog": {
+       "value": "{{apiKey}}"
+      }
+     }
+    }
+   }
+  },
+  "scopes": {
+   "k3zjLhSXMO676dsFClAJp": {
+    "646419": []
+   }
+  }
+ },
+ "requestBody": {
+  "type": "none",
+  "parameters": [],
+  "required": false,
+  "additionalContentTypes": [],
+  "oasExtensions": ""
+ },
+ "responses": [
+  {
+   "id": "173000015",
+   "name": "",
+   "code": "204",
+   "contentType": "noContent",
+   "jsonSchema": {
+    "type": "object",
+    "properties": {}
+   },
+   "itemSchema": {},
+   "description": "No Content",
+   "mediaType": "",
+   "headers": [],
+   "oasExtensions": ""
+  },
+  {
+   "id": "116814231",
+   "name": "",
+   "code": "401",
+   "contentType": "json",
+   "jsonSchema": {
+    "$ref": "#/definitions/19029533"
+   },
+   "itemSchema": {},
+   "description": "Thiếu hoặc sai Bearer token",
+   "mediaType": "application/fhir+json",
+   "headers": [],
+   "oasExtensions": ""
+  },
+  {
+   "id": "184529915",
+   "name": "",
+   "code": "403",
+   "contentType": "json",
+   "jsonSchema": {
+    "$ref": "#/definitions/19029533"
+   },
+   "itemSchema": {},
+   "description": "Token không đủ quyền (cần quyền write)",
+   "mediaType": "application/fhir+json",
+   "headers": [],
+   "oasExtensions": ""
+  },
+  {
+   "id": "198377788",
+   "name": "",
+   "code": "404",
+   "contentType": "json",
+   "jsonSchema": {
+    "$ref": "#/definitions/19029533"
+   },
+   "itemSchema": {},
+   "description": "Không tồn tại",
+   "mediaType": "application/fhir+json",
+   "headers": [],
+   "oasExtensions": ""
+  }
+ ]
+}

@@ -1,0 +1,18 @@
+{
+ "id": "auth-token",
+ "name": "Token client_credentials (module Trivita Auth)",
+ "method": "post",
+ "path": "{{authUrl}}/oauth2/token",
+ "parameters": {
+  "path": [],
+  "query": [],
+  "header": [],
+  "cookie": []
+ },
+ "auth": {
+  "type": "noauth"
+ },
+ "securityScheme": {},
+ "requestBody": {},
+ "responses": []
+}

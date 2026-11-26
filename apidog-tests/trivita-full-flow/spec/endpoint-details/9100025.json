@@ -1,0 +1,1 @@
+{"id": 9100025, "name": "dicomweb: WADO-RS frame 1 đúng byte đã STOW", "method": "get", "path": "{{dicomUrl}}/dicomweb/studies/{{studyUid}}/series/{{seriesUid}}/instances/{{sop}}/frames/1", "parameters": {"path": [], "query": [], "header": [], "cookie": []}, "auth": {}, "securityScheme": {}, "requestBody": null, "responses": []}
