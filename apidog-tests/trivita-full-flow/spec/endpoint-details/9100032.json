@@ -1,1 +1,0 @@
-{"id": 9100032, "name": "ws-gateway: đóng ngữ cảnh Patient-close", "method": "post", "path": "{{wsUrl}}/fhircast/STU3/{{topic}}", "parameters": {"path": [], "query": [], "header": [], "cookie": []}, "auth": {}, "securityScheme": {}, "requestBody": null, "responses": []}

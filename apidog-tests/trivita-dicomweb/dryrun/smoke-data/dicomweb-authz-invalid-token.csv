@@ -1,2 +1,0 @@
-case_id,case_group,description,expected_status,bad_kind,expected_message
-AZ-01,Security,Chuỗi rác (không phải JWT),401,garbage,Token không hợp lệ

@@ -1,1 +1,0 @@
-{"id": 9100059, "name": "fhir: GET /fhir/R4/Patient với token sai -> 401", "method": "get", "path": "{{fhirUrl}}/fhir/R4/Patient", "parameters": {"path": [], "query": [], "header": [], "cookie": []}, "auth": {}, "securityScheme": {}, "requestBody": null, "responses": []}

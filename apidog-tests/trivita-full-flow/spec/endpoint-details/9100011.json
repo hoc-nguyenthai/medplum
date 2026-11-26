@@ -1,1 +1,0 @@
-{"id": 9100011, "name": "fhir: GET Patient/{id}/_history -> 2 phiên bản", "method": "get", "path": "{{fhirUrl}}/fhir/R4/Patient/{{patient_id}}/_history", "parameters": {"path": [], "query": [], "header": [], "cookie": []}, "auth": {}, "securityScheme": {}, "requestBody": null, "responses": []}

@@ -1,1 +1,0 @@
-{"id": 9100004, "name": "Lấy token client_credentials (auth)", "method": "post", "path": "{{authUrl}}/oauth2/token", "parameters": {"path": [], "query": [], "header": [], "cookie": []}, "auth": {}, "securityScheme": {}, "requestBody": null, "responses": []}

@@ -1,1 +1,0 @@
-{"id": 9100007, "name": "fhir: POST Patient", "method": "post", "path": "{{fhirUrl}}/fhir/R4/Patient", "parameters": {"path": [], "query": [], "header": [], "cookie": []}, "auth": {}, "securityScheme": {}, "requestBody": null, "responses": []}

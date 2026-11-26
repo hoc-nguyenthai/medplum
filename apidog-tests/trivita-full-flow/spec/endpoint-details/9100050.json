@@ -1,1 +1,0 @@
-{"id": 9100050, "name": "ws-gateway: GET /fhircast/STU3/{topic} không token -> 401", "method": "get", "path": "{{wsUrl}}/fhircast/STU3/qa-no-token", "parameters": {"path": [], "query": [], "header": [], "cookie": []}, "auth": {}, "securityScheme": {}, "requestBody": null, "responses": []}

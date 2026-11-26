@@ -1,1 +1,0 @@
-{"id": 9100035, "name": "fhir: DELETE Patient (xóa mềm)", "method": "delete", "path": "{{fhirUrl}}/fhir/R4/Patient/{{patient_id}}", "parameters": {"path": [], "query": [], "header": [], "cookie": []}, "auth": {}, "securityScheme": {}, "requestBody": null, "responses": []}

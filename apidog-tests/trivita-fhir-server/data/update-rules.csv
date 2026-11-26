@@ -1,2 +1,0 @@
-case_id,case_group,description,expected_status
-TC-UR-01,Positive,chuỗi quy tắc phiên bản/điều kiện/Prefer của PUT,200

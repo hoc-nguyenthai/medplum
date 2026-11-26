@@ -1,2 +1,0 @@
-﻿case_id,case_group,description,expected_status
-FN-01,Security,Thiếu Authorization trên 4 service + route công khai,401

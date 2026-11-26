@@ -1,1 +1,0 @@
-{"id": 9100009, "name": "fhir: tìm Patient theo identifier -> đúng 1", "method": "get", "path": "{{fhirUrl}}/fhir/R4/Patient", "parameters": {"path": [], "query": [], "header": [], "cookie": []}, "auth": {}, "securityScheme": {}, "requestBody": null, "responses": []}

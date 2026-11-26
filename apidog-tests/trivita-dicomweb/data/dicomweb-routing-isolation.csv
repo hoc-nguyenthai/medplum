@@ -1,2 +1,0 @@
-case_id,case_group,description,expected_status
-RT-01,Security,"Token thường: tiền tố, cô lập project, 501, 404",200

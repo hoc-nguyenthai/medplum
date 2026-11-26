@@ -1,1 +1,0 @@
-{"name": "Auth | SCIM v2 Users: tạo, đọc, lọc, sửa, xóa", "description": "Cần AUTH_SCIM_ENABLED=true và project có feature scim (AUTH_DEFAULT_PROJECT_FEATURES=scim lúc seed). Admin Bearer tạo/đọc/lọc/PATCH/PUT/xóa user SCIM; thiếu token 401 hai dòng WWW-Authenticate; client không admin 403.", "folderId": 0, "priority": 2, "tags": ["trivita-auth", "ai-generated"]}

@@ -1,1 +1,0 @@
-{"name": "Auth | GET /oauth2/userinfo theo scope (data-driven)", "description": "Đăng nhập với scope khác nhau rồi đọc userinfo: claim chỉ xuất hiện khi scope có đúng từ (openid/email/profile).", "folderId": 0, "priority": 1, "tags": ["trivita-auth", "ai-generated"]}

@@ -1,1 +1,0 @@
-{"name": "Auth | POST /oauth2/token: grant, client, scope (data-driven)", "description": "Một bước POST /oauth2/token theo từng hàng dữ liệu: thiếu/sai grant_type, client, secret, scope bị cấm (patient/, fhir.*), code sai. Thông điệp error/error_description theo mã.", "folderId": 0, "priority": 1, "tags": ["trivita-auth", "ai-generated"]}

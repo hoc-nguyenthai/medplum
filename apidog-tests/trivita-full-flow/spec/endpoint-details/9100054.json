@@ -1,1 +1,0 @@
-{"id": 9100054, "name": "dicomweb: ngoài tiền tố GET /fhir/R4/Patient -> 404 (không qua xác thực)", "method": "get", "path": "{{dicomUrl}}/fhir/R4/Patient", "parameters": {"path": [], "query": [], "header": [], "cookie": []}, "auth": {}, "securityScheme": {}, "requestBody": null, "responses": []}

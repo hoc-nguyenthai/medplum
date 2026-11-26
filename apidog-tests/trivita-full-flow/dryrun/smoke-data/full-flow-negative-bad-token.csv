@@ -1,2 +1,0 @@
-case_id,case_group,description,expected_status,bad_kind
-FB-01,Negative,Chuỗi rác (không phải JWT),401,garbage

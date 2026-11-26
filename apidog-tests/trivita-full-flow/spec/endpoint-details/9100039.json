@@ -1,1 +1,0 @@
-{"id": 9100039, "name": "fhir: POST Patient/{id}/$expunge (xóa vĩnh viễn)", "method": "post", "path": "{{fhirUrl}}/fhir/R4/Patient/{{patient_id}}/$expunge", "parameters": {"path": [], "query": [], "header": [], "cookie": []}, "auth": {}, "securityScheme": {}, "requestBody": null, "responses": []}

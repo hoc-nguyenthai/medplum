@@ -1,1 +1,0 @@
-{"id": 9100052, "name": "fhir: GET /fhir/R4/metadata không token -> 200 (công khai)", "method": "get", "path": "{{fhirUrl}}/fhir/R4/metadata", "parameters": {"path": [], "query": [], "header": [], "cookie": []}, "auth": {}, "securityScheme": {}, "requestBody": null, "responses": []}

@@ -1,7 +1,0 @@
-Dataset Name,case_id,case_group,description,expected_status,bad_kind
-FB-01,FB-01,Negative,Chuỗi rác (không phải JWT),401,garbage
-FB-02,FB-02,Negative,Ba đoạn không phải JWT,401,three-parts
-FB-03,FB-03,Security,"JWT alg=none, bỏ chữ ký",401,alg-none
-FB-04,FB-04,Security,Chuỗi SQL injection,401,sqli
-FB-05,FB-05,Boundary,Token dài 4096 ký tự,401,long
-FB-06,FB-06,Negative,Giá trị là chữ Bearer,401,bearer-word

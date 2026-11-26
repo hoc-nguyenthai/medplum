@@ -1,5 +1,0 @@
-Dataset Name,case_id,case_group,description,expected_status,expected_code,expected_message,ui_scope,present,absent
-UI-01,UI-01,Positive,scope chỉ openid → chỉ có sub,200,,,openid,sub,"email,given_name,name"
-UI-02,UI-02,Positive,"scope có email → có email, không có tên",200,,,openid email,"sub,email,email_verified","given_name,family_name"
-UI-03,UI-03,Positive,"scope có profile → có tên, không có email",200,,,openid profile,"sub,name,given_name,family_name,locale",email
-UI-04,UI-04,Boundary,khớp theo từ: 'emailx' không cho email,200,,,openid emailx,sub,email

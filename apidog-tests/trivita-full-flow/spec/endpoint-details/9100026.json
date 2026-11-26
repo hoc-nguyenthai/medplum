@@ -1,1 +1,0 @@
-{"id": 9100026, "name": "fhir: GET DicomStudy thấy study do dicomweb ghi (schema dùng chung)", "method": "get", "path": "{{fhirUrl}}/fhir/R4/DicomStudy", "parameters": {"path": [], "query": [], "header": [], "cookie": []}, "auth": {}, "securityScheme": {}, "requestBody": null, "responses": []}

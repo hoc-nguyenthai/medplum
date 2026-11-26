@@ -1,9 +1,0 @@
-{
- "name": "Batch và transaction (luồng)",
- "description": "batch: entry lỗi không rollback; transaction: urn:uuid được viết lại, entry lỗi rollback cả giao dịch.",
- "priority": 1,
- "folderId": 0,
- "tags": [
-  "batch"
- ]
-}

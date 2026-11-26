@@ -1,7 +1,0 @@
-case_id,case_group,description,expected_status,expected_code,expected_message,resource
-WK-01,Positive,resource bằng chính base URL,200,,,{{authUrl}}
-WK-02,Positive,resource là đường con của base URL,200,,,{{authUrl}}/fhir/R4
-WK-03,Security,resource ngoài base URL bị từ chối,400,,Invalid resource URL,https://evil.example/
-WK-04,Security,resource rỗng,400,,Invalid resource URL,
-WK-05,Security,resource nhái tiền tố (base + .evil.example),400,,Invalid resource URL,{{authUrl}}.evil.example/
-WK-06,Security,resource kiểu file://,400,,Invalid resource URL,file:///etc/passwd

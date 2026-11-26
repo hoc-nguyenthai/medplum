@@ -1,9 +1,0 @@
-# Chồng lên docker-compose.full.yml: bật Hub FHIRcast của ws-gateway (chỉ local). JWT của auth, JWKS qua mạng compose.
-services:
-  ws-gateway:
-    environment:
-      FHIRCAST_ENABLED: "true"
-      FHIRCAST_JWKS_URL: http://auth:8000/.well-known/jwks.json
-      FHIRCAST_JWT_ISSUER: http://localhost:${AUTH_PORT_PUBLISHED:-8006}
-      FHIRCAST_JWT_AUDIENCE: http://localhost:${AUTH_PORT_PUBLISHED:-8006}
-      FHIRCAST_PUBLIC_URL: ws://localhost:${WS_GATEWAY_PORT:-8007}

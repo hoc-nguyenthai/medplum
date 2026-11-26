@@ -1,1 +1,0 @@
-{"id": 9100065, "name": "auth: token scope fhircast/*", "method": "post", "path": "{{authUrl}}/oauth2/token", "parameters": {"path": [], "query": [], "header": [], "cookie": []}, "auth": {}, "securityScheme": {}, "requestBody": null, "responses": []}

@@ -1,9 +1,0 @@
-{
- "name": "ValueSet/$expand",
- "description": "Mỗi dòng: tạo CodeSystem + ValueSet include rồi $expand theo data.",
- "priority": 1,
- "folderId": 0,
- "tags": [
-  "terminology"
- ]
-}

@@ -1,4 +1,0 @@
-Dataset Name,case_id,case_group,description,expected_status,expected_code,expected_message,x_project
-TC-PH-01,TC-PH-01,Security,X-Fhir-Project khác project của token,403,forbidden,Token không được chọn project khác,project-khac
-TC-PH-02,TC-PH-02,Boundary,X-Fhir-Project dài 129 ký tự,403,forbidden,,aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-TC-PH-03,TC-PH-03,Security,X-Fhir-Project chứa SQLi,403,forbidden,,x'; DROP TABLE y;--

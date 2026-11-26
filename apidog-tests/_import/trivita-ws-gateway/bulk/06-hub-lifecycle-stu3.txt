@@ -1,4 +1,0 @@
-Dataset Name,case_id,case_group,description,expected_status,expected_code,open_event,close_event,open_type,context_json
-LC-STU3-01,LC-STU3-01,Positive,Patient-open → GET → close → hủy,202,,Patient-open,Patient-close,Patient,"[{""key"":""patient"",""resource"":{""resourceType"":""Patient"",""id"":""qa-patient-1""}}]"
-LC-STU3-02,LC-STU3-02,Positive,ImagingStudy-open → GET → close → hủy,202,,ImagingStudy-open,ImagingStudy-close,ImagingStudy,"[{""key"":""study"",""resource"":{""resourceType"":""ImagingStudy"",""id"":""qa-study-1"",""status"":""available""}}]"
-LC-STU3-03,LC-STU3-03,Positive,Encounter-open → GET → close → hủy,202,,Encounter-open,Encounter-close,Encounter,"[{""key"":""encounter"",""resource"":{""resourceType"":""Encounter"",""id"":""qa-enc-1"",""status"":""in-progress""}}]"

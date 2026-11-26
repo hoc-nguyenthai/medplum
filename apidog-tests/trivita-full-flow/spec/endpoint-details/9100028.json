@@ -1,1 +1,0 @@
-{"id": 9100028, "name": "ws-gateway: GET .well-known/fhircast-configuration (công khai)", "method": "get", "path": "{{wsUrl}}/fhircast/STU3/.well-known/fhircast-configuration", "parameters": {"path": [], "query": [], "header": [], "cookie": []}, "auth": {}, "securityScheme": {}, "requestBody": null, "responses": []}

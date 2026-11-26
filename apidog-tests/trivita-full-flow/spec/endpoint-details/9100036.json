@@ -1,1 +1,0 @@
-{"id": 9100036, "name": "fhir: GET Patient đã xóa -> 410", "method": "get", "path": "{{fhirUrl}}/fhir/R4/Patient/{{patient_id}}", "parameters": {"path": [], "query": [], "header": [], "cookie": []}, "auth": {}, "securityScheme": {}, "requestBody": null, "responses": []}

@@ -1,7 +1,0 @@
-Dataset Name,case_id,case_group,description,expected_status,expected_code,expected_message,cond,put_body
-TC-CU-01,TC-CU-01,Negative,PUT không query,400,invalid,Thao tác có điều kiện cần tiêu chí search,,"{""resourceType"":""Patient""}"
-TC-CU-02,TC-CU-02,Negative,PUT chỉ _count,400,invalid,Thao tác có điều kiện cần tiêu chí search,_count=1,"{""resourceType"":""Patient""}"
-TC-CU-03,TC-CU-03,Negative,PUT tham số lạ,400,invalid,tham số search không hợp lệ: zzz,zzz=1,"{""resourceType"":""Patient""}"
-TC-CU-04,TC-CU-04,Negative,0 khớp nhưng thân có id,400,invalid,PUT có điều kiện không khớp resource nào thì không được kèm id,identifier=urn:trivita:qa-none|{{case_id}}-{{$timestamp}},"{""resourceType"":""Patient"",""id"":""abc""}"
-TC-CU-05,TC-CU-05,Negative,thân hỏng,400,invalid,JSON không hợp lệ,identifier=urn:trivita:qa-none|x,{
-TC-CU-06,TC-CU-06,Positive,"0 khớp, thân không id → tạo mới",201,,,identifier=urn:trivita:qa-none|{{case_id}}-{{$timestamp}},"{""resourceType"":""Patient"",""identifier"":[{""system"":""urn:trivita:qa-none"",""value"":""cu-06""}]}"

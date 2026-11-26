@@ -1,1 +1,0 @@
-{"id": 9100066, "name": "ws-gateway: token scope fhircast/* dùng được ở hub", "method": "get", "path": "{{wsUrl}}/fhircast/STU3/{{topic}}", "parameters": {"path": [], "query": [], "header": [], "cookie": []}, "auth": {}, "securityScheme": {}, "requestBody": null, "responses": []}

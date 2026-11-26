@@ -1,9 +1,0 @@
-{
- "name": "Ghi có điều kiện (If-None-Exist, PUT theo query)",
- "description": "POST If-None-Exist: 0/1/nhiều khớp; PUT ?identifier=: 0 khớp tạo mới, 1 khớp cập nhật, nhiều khớp 412, If-Match lệch, id lệch.",
- "priority": 1,
- "folderId": 0,
- "tags": [
-  "conditional"
- ]
-}

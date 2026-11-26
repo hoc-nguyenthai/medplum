@@ -1,1 +1,0 @@
-{"id": 9000003, "name": "dicomweb: GET /projects/{projectId}/dicomweb/studies", "method": "get", "path": "{{dicomUrl}}/projects/{{projectId}}/dicomweb/studies", "parameters": {"path": [], "query": [], "header": [], "cookie": []}, "auth": {}, "securityScheme": {}, "requestBody": null, "responses": []}

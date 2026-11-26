@@ -1,7 +1,0 @@
-Dataset Name,case_id,case_group,description,expected_status,expected_code,topic_path,body_json,expected_message
-TP-01,TP-01,Positive,topic đường dẫn khớp event[hub.topic],202,,qa-path-match,"{""id"":""qa-ev-1"",""timestamp"":""2026-11-25T10:00:00.000Z"",""event"":{""hub.topic"":""qa-path-match"",""hub.event"":""heartbeat"",""context"":[]}}",
-TP-02,TP-02,Negative,lệch topic (cờ ALLOW_TOPIC_MISMATCH tắt mặc định) → Topic mismatch,400,,qa-path-a,"{""id"":""qa-ev-1"",""timestamp"":""2026-11-25T10:00:00.000Z"",""event"":{""hub.topic"":""qa-path-b"",""hub.event"":""heartbeat"",""context"":[]}}",Topic mismatch
-TP-03,TP-03,Negative,thân {} → Missing event ID,400,,qa-path-match,{},Missing event ID
-TP-04,TP-04,Negative,thân dạng đăng ký gửi nhầm vào /{topic} → Missing event ID,400,,qa-path-match,"{""hub.channel.type"":""websocket"",""hub.mode"":""subscribe"",""hub.topic"":""qa-val-topic"",""hub.events"":""Patient-open,Patient-close""}",Missing event ID
-TP-05,TP-05,Negative,thông điệp thiếu context + lệch topic: thông điệp ValidateEvent đi trước,400,,qa-path-a,"{""id"":""qa-ev-1"",""timestamp"":""2026-11-25T10:00:00.000Z"",""event"":{""hub.topic"":""qa-path-b"",""hub.event"":""heartbeat""}}",Missing event.context
-TP-06,TP-06,Boundary,topic đường dẫn mã hóa %2F khớp event có '/',202,,a%2Fb,"{""id"":""qa-ev-1"",""timestamp"":""2026-11-25T10:00:00.000Z"",""event"":{""hub.topic"":""a/b"",""hub.event"":""heartbeat"",""context"":[]}}",

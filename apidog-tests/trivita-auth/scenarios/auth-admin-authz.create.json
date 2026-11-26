@@ -1,1 +1,0 @@
-{"name": "Auth | Admin: phân quyền (client không admin, project khác, membership lạ)", "description": "client_credentials chưa nâng admin → 403; admin gọi project khác hoặc membership không tồn tại → 403 chung (không cho dò id); Basic không được chấp nhận.", "folderId": 0, "priority": 1, "tags": ["trivita-auth", "ai-generated"]}

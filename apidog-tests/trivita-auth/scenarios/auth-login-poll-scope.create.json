@@ -1,1 +1,0 @@
-{"name": "Auth | GET /auth/login/{login}, /auth/scope, /auth/profile", "description": "Login đang dở: GET /auth/login/{id} phát code mới và vô hiệu code cũ; /auth/scope thu hẹp scope (mở rộng bị chặn 'Invalid scope'); /auth/profile thiếu trường; login đã cấp token không đọc lại được.", "folderId": 0, "priority": 1, "tags": ["trivita-auth", "ai-generated"]}

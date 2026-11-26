@@ -1,9 +1,0 @@
-{
- "name": "CodeSystem/$lookup",
- "description": "Mỗi dòng: tạo CodeSystem rồi $lookup theo data (tên tham số cũng là biến để bỏ tham số bằng tham số đệm _s/_c/_p).",
- "priority": 1,
- "folderId": 0,
- "tags": [
-  "terminology"
- ]
-}

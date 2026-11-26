@@ -1,1 +1,0 @@
-{"id": 9100021, "name": "dicomweb: STOW-RS dạng metadata 1 instance (200)", "method": "post", "path": "{{dicomUrl}}/dicomweb/studies", "parameters": {"path": [], "query": [], "header": [], "cookie": []}, "auth": {}, "securityScheme": {}, "requestBody": null, "responses": []}

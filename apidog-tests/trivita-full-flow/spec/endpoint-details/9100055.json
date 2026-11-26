@@ -1,1 +1,0 @@
-{"id": 9100055, "name": "auth: POST /oauth2/token thiếu client_secret -> 4xx", "method": "post", "path": "{{authUrl}}/oauth2/token", "parameters": {"path": [], "query": [], "header": [], "cookie": []}, "auth": {}, "securityScheme": {}, "requestBody": null, "responses": []}

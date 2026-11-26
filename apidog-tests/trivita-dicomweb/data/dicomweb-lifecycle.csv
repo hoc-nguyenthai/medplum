@@ -1,3 +1,0 @@
-case_id,case_group,description,expected_status,frames,rows,px,f1,f2
-LC-01,Positive,3 frame 2x2 8 bit (12 byte),200,3,2,ABCDEFGHIJKL,ABCD,EFGH
-LC-02,Boundary,"2 frame 3x3 8 bit (18 byte), kích thước ảnh khác",200,2,3,abcdefghiJKLMNOPQR,abcdefghi,JKLMNOPQR

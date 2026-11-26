@@ -1,4 +1,0 @@
-Dataset Name,case_id,case_group,description,expected_status,expected_code,oauth_scope
-SC-01,SC-01,Positive,scope fhircast/* được chấp nhận (đối chứng),202,,fhircast/*
-SC-02,SC-02,Security,token không có scope fhircast/ → 403 Forbidden (FHIRCAST_REQUIRE_SCOPE=true),403,,openid
-SC-03,SC-03,Security,token chỉ có scope SMART khác → 403,403,,system/Patient.rs

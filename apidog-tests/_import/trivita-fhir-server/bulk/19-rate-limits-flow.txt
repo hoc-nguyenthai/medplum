@@ -1,2 +1,0 @@
-Dataset Name,case_id,case_group,description,expected_status,expected_code,expected_message
-TC-RL-01,TC-RL-01,Positive,xem hạn mức điểm của chính project; project khác 403; không token 401,200,,

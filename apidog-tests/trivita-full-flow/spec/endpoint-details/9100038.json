@@ -1,1 +1,0 @@
-{"id": 9100038, "name": "auth: đổi code lấy token admin", "method": "post", "path": "{{authUrl}}/oauth2/token", "parameters": {"path": [], "query": [], "header": [], "cookie": []}, "auth": {}, "securityScheme": {}, "requestBody": null, "responses": []}

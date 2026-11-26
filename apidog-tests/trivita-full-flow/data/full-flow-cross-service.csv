@@ -1,2 +1,0 @@
-case_id,case_group,description,expected_status
-FX-01,Positive,"Một JWT, nhiều service; logout ở auth",200

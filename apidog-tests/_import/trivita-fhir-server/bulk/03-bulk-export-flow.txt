@@ -1,2 +1,0 @@
-Dataset Name,case_id,case_group,description,expected_status,expected_code,expected_message
-TC-BX-01,TC-BX-01,Positive,$export async → poll → manifest → tải ndjson → DELETE job,202,,

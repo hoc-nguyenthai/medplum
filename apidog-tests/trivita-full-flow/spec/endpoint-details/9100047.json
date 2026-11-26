@@ -1,1 +1,0 @@
-{"id": 9100047, "name": "auth: GET /auth/me không token -> 401", "method": "get", "path": "{{authUrl}}/auth/me", "parameters": {"path": [], "query": [], "header": [], "cookie": []}, "auth": {}, "securityScheme": {}, "requestBody": null, "responses": []}

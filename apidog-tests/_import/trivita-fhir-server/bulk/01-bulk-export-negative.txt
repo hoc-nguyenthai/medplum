@@ -1,6 +1,0 @@
-Dataset Name,case_id,case_group,description,expected_status,expected_code,expected_message,prefer,out_fmt,etype,since
-TC-BXN-01,TC-BXN-01,Negative,thiếu Prefer respond-async,400,invalid,Bulk export cần header Prefer: respond-async,handling=lenient,ndjson,Patient,2020-01-01T00:00:00Z
-TC-BXN-02,TC-BXN-02,Negative,_outputFormat=csv,400,invalid,"_outputFormat chỉ hỗ trợ ndjson, nhận csv",respond-async,csv,Patient,2020-01-01T00:00:00Z
-TC-BXN-03,TC-BXN-03,Negative,_type có loại lạ,400,invalid,_type không hợp lệ: Foo,respond-async,ndjson,"Patient,Foo",2020-01-01T00:00:00Z
-TC-BXN-04,TC-BXN-04,Negative,_since chỉ có ngày,400,invalid,_since phải là instant RFC3339,respond-async,ndjson,Patient,2026-01-01
-TC-BXN-05,TC-BXN-05,Security,_type chứa SQLi,400,invalid,_type không hợp lệ,respond-async,ndjson,Patient%3BDROP%20TABLE%20x,2020-01-01T00:00:00Z

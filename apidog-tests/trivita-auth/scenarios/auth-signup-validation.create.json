@@ -1,1 +1,0 @@
-{"name": "Auth | POST /auth/newuser: kiểm tra đầu vào (data-driven)", "description": "Phân vùng tương đương và biên của firstName/lastName (1-128), email (3-72), password (8 ký tự đến 72 byte), trùng email, chuỗi nguy hiểm. Hàng 200 tạo user qa.* (dọn bằng cách xóa DB test).", "folderId": 0, "priority": 1, "tags": ["trivita-auth", "ai-generated"]}

@@ -1,1 +1,0 @@
-{"id": 9100020, "name": "fhir: DELETE bulkdata/{id}/status (dọn job)", "method": "delete", "path": "{{fhirUrl}}/fhir/R4/bulkdata/{{job_id}}/status", "parameters": {"path": [], "query": [], "header": [], "cookie": []}, "auth": {}, "securityScheme": {}, "requestBody": null, "responses": []}

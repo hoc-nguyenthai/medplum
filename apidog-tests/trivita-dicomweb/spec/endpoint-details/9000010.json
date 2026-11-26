@@ -1,1 +1,0 @@
-{"id": 9000010, "name": "dicomweb: POST /dicomweb/series (chưa cài)", "method": "post", "path": "{{dicomUrl}}/dicomweb/series", "parameters": {"path": [], "query": [], "header": [], "cookie": []}, "auth": {}, "securityScheme": {}, "requestBody": null, "responses": []}

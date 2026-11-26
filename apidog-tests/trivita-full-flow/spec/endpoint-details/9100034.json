@@ -1,1 +1,0 @@
-{"id": 9100034, "name": "fhir: DELETE Observation", "method": "delete", "path": "{{fhirUrl}}/fhir/R4/Observation/{{obs_id}}", "parameters": {"path": [], "query": [], "header": [], "cookie": []}, "auth": {}, "securityScheme": {}, "requestBody": null, "responses": []}

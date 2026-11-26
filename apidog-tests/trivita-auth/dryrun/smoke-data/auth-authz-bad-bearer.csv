@@ -1,2 +1,0 @@
-case_id,case_group,description,expected_status,expected_code,expected_message,accessToken
-AZ-01,Security,Bearer rỗng,401,login,,

@@ -1,1 +1,0 @@
-{"id": 9100044, "name": "fhir-server: GET /healthz", "method": "get", "path": "{{fhirUrl}}/healthz", "parameters": {"path": [], "query": [], "header": [], "cookie": []}, "auth": {}, "securityScheme": {}, "requestBody": null, "responses": []}

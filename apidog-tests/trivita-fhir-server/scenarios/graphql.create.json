@@ -1,9 +1,0 @@
-{
- "name": "POST $graphql (chỉ đọc)",
- "description": "Đọc, danh sách, connection; lỗi cấp field trả 200 + errors; lỗi cú pháp 400.",
- "priority": 1,
- "folderId": 0,
- "tags": [
-  "graphql"
- ]
-}

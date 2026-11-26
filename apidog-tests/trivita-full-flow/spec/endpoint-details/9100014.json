@@ -1,1 +1,0 @@
-{"id": 9100014, "name": "fhir: GET $export (Prefer: respond-async) -> 202", "method": "get", "path": "{{fhirUrl}}/fhir/R4/$export", "parameters": {"path": [], "query": [], "header": [], "cookie": []}, "auth": {}, "securityScheme": {}, "requestBody": null, "responses": []}

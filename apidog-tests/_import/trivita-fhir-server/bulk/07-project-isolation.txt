@@ -1,2 +1,0 @@
-Dataset Name,case_id,case_group,description,expected_status,expected_code,expected_message
-TC-PI-01,TC-PI-01,Security,project B không thấy dữ liệu của project A,404,,

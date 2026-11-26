@@ -1,9 +1,0 @@
-Dataset Name,case_id,case_group,description,expected_status,expected_code,expected_message,family,given,gender,birth_date
-TC-CR-01,TC-CR-01,Positive,"Patient nam, ngày sinh đầy đủ",201,,,Nguyen,Van A,male,1980-01-01
-TC-CR-02,TC-CR-02,Positive,Patient nữ,201,,,Tran,Thi B,female,1999-12-31
-TC-CR-03,TC-CR-03,Positive,gender other,201,,,Le,C,other,1975-05-05
-TC-CR-04,TC-CR-04,Boundary,ngày sinh tối thiểu hợp lý 1900-01-01,201,,,Pham,Cu,male,1900-01-01
-TC-CR-05,TC-CR-05,Boundary,ngày sinh chỉ có năm (FHIR date một phần),201,,,Hoang,D,female,2000
-TC-CR-06,TC-CR-06,Positive,tên tiếng Việt có dấu,201,,,Nguyễn,Văn Á,male,1990-02-03
-TC-CR-07,TC-CR-07,Security,"chuỗi giống XSS trong tên được lưu nguyên văn, không thực thi",201,,,<script>alert(1)</script>,x,female,1991-01-01
-TC-CR-08,TC-CR-08,Security,chuỗi giống SQLi trong tên được lưu nguyên văn,201,,,Robert'); DROP TABLE fhir_resource;--,x,male,1992-01-01

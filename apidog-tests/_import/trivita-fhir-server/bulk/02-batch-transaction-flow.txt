@@ -1,2 +1,0 @@
-Dataset Name,case_id,case_group,description,expected_status,expected_code,expected_message
-TC-BF-01,TC-BF-01,Positive,"batch (lỗi từng entry), transaction urn:uuid, rollback khi 1 entry lỗi",200,,

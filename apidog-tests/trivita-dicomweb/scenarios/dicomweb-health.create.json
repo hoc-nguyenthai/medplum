@@ -1,9 +1,0 @@
-{
- "name": "DICOMweb: health smoke",
- "description": "Bốn probe không cần token: /health/live, /health/ready, /health/startup, /healthz (200, thân JSON, không bị hạn mức IP).",
- "folderId": 0,
- "priority": 0,
- "tags": [
-  "dicomweb"
- ]
-}

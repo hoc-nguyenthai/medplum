@@ -1,1 +1,0 @@
-{"id": 9100056, "name": "auth: token hợp lệ (đối chứng)", "method": "post", "path": "{{authUrl}}/oauth2/token", "parameters": {"path": [], "query": [], "header": [], "cookie": []}, "auth": {}, "securityScheme": {}, "requestBody": null, "responses": []}

@@ -1,2 +1,0 @@
-case_id,case_group,description,expected_status,req_path,accept,expected_ct,expect_body,expected_message
-RM-01,Positive,"Frame 1 (multipart/related, đúng byte ABCD)",200,/dicomweb/studies/1.2.826.0.1.3680043.9.7777.200.1/series/1.2.826.0.1.3680043.9.7777.200.1.1/instances/1.2.826.0.1.3680043.9.7777.200.1.1.1/frames/1,,multipart/related,ABCD,

@@ -1,1 +1,0 @@
-{"id": 9000001, "name": "auth: POST /oauth2/token", "method": "post", "path": "{{authUrl}}/oauth2/token", "parameters": {"path": [], "query": [], "header": [], "cookie": []}, "auth": {}, "securityScheme": {}, "requestBody": null, "responses": []}

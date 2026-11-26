@@ -1,2 +1,0 @@
-case_id,case_group,description,expected_status,expected_code,expected_message,grant_type,tc_client_id,tc_client_secret,tc_scope,tc_code
-TK-01,Positive,client_credentials hợp lệ scope openid,200,,,client_credentials,{{clientId}},{{clientSecret}},openid,

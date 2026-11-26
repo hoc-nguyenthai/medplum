@@ -1,8 +1,0 @@
-# fhir-worker khi fhir-server dùng JWT của auth (docker-compose.auth.yml): job mang chữ ký quyền của người gọi và fhir-worker phải mở được chữ ký đó, nên cần CÙNG
-# FHIR_JOB_SIGNING_KEY với fhir-server (>= 32 ký tự) và biết JWT đang bật (FHIR_JWT_ISSUER, chỉ để biết có JWT, worker không kiểm token).
-#   FHIR_JOB_SIGNING_KEY=$(openssl rand -hex 24) docker compose -f docker-compose.yml -f docker-compose.auth.yml -f docker-compose.split.yml -f docker-compose.split-auth.yml up --build
-services:
-  fhir-worker:
-    environment:
-      FHIR_JWT_ISSUER: http://localhost:${AUTH_PORT_PUBLISHED:-8006}
-      FHIR_JOB_SIGNING_KEY: ${FHIR_JOB_SIGNING_KEY:?đặt FHIR_JOB_SIGNING_KEY (>= 32 ký tự, giống fhir-server)}

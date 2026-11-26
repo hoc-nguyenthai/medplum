@@ -1,1 +1,0 @@
-{"id": 9100012, "name": "fhir: POST Observation gắn Patient", "method": "post", "path": "{{fhirUrl}}/fhir/R4/Observation", "parameters": {"path": [], "query": [], "header": [], "cookie": []}, "auth": {}, "securityScheme": {}, "requestBody": null, "responses": []}

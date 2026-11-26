@@ -1,2 +1,0 @@
-case_id,case_group,description,expected_status,expected_code,expected_message,ui_scope,present,absent
-UI-01,Positive,scope chỉ openid → chỉ có sub,200,,,openid,sub,"email,given_name,name"

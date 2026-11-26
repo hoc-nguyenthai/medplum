@@ -1,9 +1,0 @@
-{
- "name": "Smoke fhir-server",
- "description": "Healthz, readyz, metadata công khai, 401 khi thiếu token, tìm kiếm Patient có token.",
- "priority": 0,
- "folderId": 0,
- "tags": [
-  "smoke"
- ]
-}

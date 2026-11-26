@@ -1,1 +1,0 @@
-{"id": 9100023, "name": "dicomweb: WADO-RS metadata instance", "method": "get", "path": "{{dicomUrl}}/dicomweb/studies/{{studyUid}}/series/{{seriesUid}}/instances/{{sop}}/metadata", "parameters": {"path": [], "query": [], "header": [], "cookie": []}, "auth": {}, "securityScheme": {}, "requestBody": null, "responses": []}

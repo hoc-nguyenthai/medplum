@@ -1,1 +1,0 @@
-{"name": "Auth | Vòng đời đăng nhập admin: login → token → me → userinfo → revoke", "description": "Admin của project seed đăng nhập email+mật khẩu, đổi code lấy token, đọc me/userinfo/mfa status, introspect rồi thu hồi phiên: token chết ngay.", "folderId": 0, "priority": 0, "tags": ["trivita-auth", "ai-generated"]}
