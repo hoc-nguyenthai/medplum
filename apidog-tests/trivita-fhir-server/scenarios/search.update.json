@@ -1,0 +1,444 @@
+{
+ "steps": [
+  {
+   "id": "step-1",
+   "number": 1,
+   "name": "Đăng nhập admin project (auth /auth/login)",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988336,
+    "name": "Đăng nhập admin project (auth /auth/login)",
+    "path": "{{authUrl}}/auth/login",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "json",
+     "data": "{\"email\": \"{{adminEmail}}\", \"password\": \"{{adminPassword}}\", \"clientId\": \"{{clientId}}\", \"scope\": \"openid profile email\"}"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.code exists",
+       "subject": "responseJson",
+       "comparison": "exists",
+       "path": "$.code",
+       "value": "",
+       "extractSettings": {
+        "expression": "$.code"
+       }
+      }
+     },
+     {
+      "type": "extractor",
+      "enable": true,
+      "data": {
+       "variableType": "local",
+       "variableName": "adm_code",
+       "expression": "$.code",
+       "subject": "responseJson"
+      }
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988336
+  },
+  {
+   "id": "step-2",
+   "number": 2,
+   "name": "Đổi code lấy token admin (authorization_code)",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988335,
+    "name": "Đổi code lấy token admin (authorization_code)",
+    "path": "{{authUrl}}/oauth2/token",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "x-www-form-urlencoded",
+     "parameters": [
+      {
+       "name": "grant_type",
+       "value": "authorization_code",
+       "enable": true,
+       "type": "string"
+      },
+      {
+       "name": "code",
+       "value": "{{adm_code}}",
+       "enable": true,
+       "type": "string"
+      },
+      {
+       "name": "client_id",
+       "value": "{{clientId}}",
+       "enable": true,
+       "type": "string"
+      },
+      {
+       "name": "client_secret",
+       "value": "{{clientSecret}}",
+       "enable": true,
+       "type": "string"
+      }
+     ]
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.access_token exists",
+       "subject": "responseJson",
+       "comparison": "exists",
+       "path": "$.access_token",
+       "value": "",
+       "extractSettings": {
+        "expression": "$.access_token"
+       }
+      }
+     },
+     {
+      "type": "extractor",
+      "enable": true,
+      "data": {
+       "variableType": "local",
+       "variableName": "bearerToken",
+       "expression": "$.access_token",
+       "subject": "responseJson"
+      }
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988335
+  },
+  {
+   "id": "step-3",
+   "number": 3,
+   "name": "(setup) Patient 1 (male, 1980-01-01)",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988334,
+    "name": "(setup) Patient 1 (male, 1980-01-01)",
+    "path": "/fhir/R4/Patient",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "json",
+     "data": "{\"resourceType\": \"Patient\", \"name\": [{\"family\": \"Qa-{{case_id}}-{{$timestamp}}\", \"given\": [\"Qa\"]}], \"gender\": \"male\", \"birthDate\": \"1980-01-01\"}"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 201",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "201"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.id exists",
+       "subject": "responseJson",
+       "comparison": "exists",
+       "path": "$.id",
+       "value": "",
+       "extractSettings": {
+        "expression": "$.id"
+       }
+      }
+     },
+     {
+      "type": "extractor",
+      "enable": true,
+      "data": {
+       "variableType": "local",
+       "variableName": "patient_id",
+       "expression": "$.id",
+       "subject": "responseJson"
+      }
+     },
+     {
+      "type": "extractor",
+      "enable": true,
+      "data": {
+       "variableType": "local",
+       "variableName": "marker",
+       "expression": "$.name[0].family",
+       "subject": "responseJson"
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{bearerToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988334
+  },
+  {
+   "id": "step-4",
+   "number": 4,
+   "name": "(setup) Patient 2 (female, 1990-06-15)",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988333,
+    "name": "(setup) Patient 2 (female, 1990-06-15)",
+    "path": "/fhir/R4/Patient",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "json",
+     "data": "{\"resourceType\": \"Patient\", \"name\": [{\"family\": \"{{marker}}\", \"given\": [\"Qa\"]}], \"gender\": \"female\", \"birthDate\": \"1990-06-15\"}"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 201",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "201"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.id exists",
+       "subject": "responseJson",
+       "comparison": "exists",
+       "path": "$.id",
+       "value": "",
+       "extractSettings": {
+        "expression": "$.id"
+       }
+      }
+     },
+     {
+      "type": "extractor",
+      "enable": true,
+      "data": {
+       "variableType": "local",
+       "variableName": "p2_id",
+       "expression": "$.id",
+       "subject": "responseJson"
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{bearerToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988333
+  },
+  {
+   "id": "step-5",
+   "number": 5,
+   "name": "(setup) Patient 3 (female, 2000-12-31)",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988332,
+    "name": "(setup) Patient 3 (female, 2000-12-31)",
+    "path": "/fhir/R4/Patient",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "json",
+     "data": "{\"resourceType\": \"Patient\", \"name\": [{\"family\": \"{{marker}}\", \"given\": [\"Qa\"]}], \"gender\": \"female\", \"birthDate\": \"2000-12-31\"}"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 201",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "201"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.id exists",
+       "subject": "responseJson",
+       "comparison": "exists",
+       "path": "$.id",
+       "value": "",
+       "extractSettings": {
+        "expression": "$.id"
+       }
+      }
+     },
+     {
+      "type": "extractor",
+      "enable": true,
+      "data": {
+       "variableType": "local",
+       "variableName": "p3_id",
+       "expression": "$.id",
+       "subject": "responseJson"
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{bearerToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988332
+  },
+  {
+   "id": "step-6",
+   "number": 6,
+   "name": "GET /Patient?family={marker}{query}",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988500,
+    "name": "GET /Patient?family={marker}{query}",
+    "path": "/fhir/R4/Patient?family={{marker}}{{query}}",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == {{expected_status}}",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "{{expected_status}}"
+      }
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "const code = pm.iterationData.get('expected_code'); const msg = pm.iterationData.get('expected_message'); let b = {}; try { b = pm.response.json(); } catch (x) {} const issue = (b.issue && b.issue[0]) || {}; const text = (issue.details && issue.details.text) || (b.errors && b.errors[0] && b.errors[0].message) || ''; if (code) { pm.test('issue.code == ' + code, () => pm.expect(issue.code).to.eql(code)); } if (msg) { pm.test('thông điệp chứa: ' + msg, () => pm.expect(text).to.include(msg)); }"
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "const g = k => pm.iterationData.get(k); const b = pm.response.json(); const n = (b.entry || []).length; const has = k => g(k) !== undefined && g(k) !== ''; if (has('expected_entries')) { pm.test('số entry == ' + g('expected_entries'), () => pm.expect(n).to.eql(Number(g('expected_entries')))); } if (has('expected_total')) { pm.test('total == ' + g('expected_total'), () => pm.expect(b.total).to.eql(Number(g('expected_total')))); } const rel = r => (b.link || []).some(l => l.relation === r); if (has('expected_next')) { pm.test('link next == ' + g('expected_next'), () => pm.expect(rel('next')).to.eql(g('expected_next') === 'true')); } if (has('expected_prev')) { pm.test('link previous == ' + g('expected_prev'), () => pm.expect(rel('previous')).to.eql(g('expected_prev') === 'true')); } if (has('expected_first_birthdate')) { pm.test('entry[0].birthDate == ' + g('expected_first_birthdate'), () => pm.expect(b.entry[0].resource.birthDate).to.eql(g('expected_first_birthdate'))); }"
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{bearerToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988500
+  }
+ ]
+}

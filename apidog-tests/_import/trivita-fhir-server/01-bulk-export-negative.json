@@ -1,0 +1,62 @@
+[
+  {
+    "case_id": "TC-BXN-01",
+    "case_group": "Negative",
+    "description": "thi\u1ebfu Prefer respond-async",
+    "expected_status": "400",
+    "expected_code": "invalid",
+    "expected_message": "Bulk export c\u1ea7n header Prefer: respond-async",
+    "prefer": "handling=lenient",
+    "out_fmt": "ndjson",
+    "etype": "Patient",
+    "since": "2020-01-01T00:00:00Z"
+  },
+  {
+    "case_id": "TC-BXN-02",
+    "case_group": "Negative",
+    "description": "_outputFormat=csv",
+    "expected_status": "400",
+    "expected_code": "invalid",
+    "expected_message": "_outputFormat ch\u1ec9 h\u1ed7 tr\u1ee3 ndjson, nh\u1eadn csv",
+    "prefer": "respond-async",
+    "out_fmt": "csv",
+    "etype": "Patient",
+    "since": "2020-01-01T00:00:00Z"
+  },
+  {
+    "case_id": "TC-BXN-03",
+    "case_group": "Negative",
+    "description": "_type c\u00f3 lo\u1ea1i l\u1ea1",
+    "expected_status": "400",
+    "expected_code": "invalid",
+    "expected_message": "_type kh\u00f4ng h\u1ee3p l\u1ec7: Foo",
+    "prefer": "respond-async",
+    "out_fmt": "ndjson",
+    "etype": "Patient,Foo",
+    "since": "2020-01-01T00:00:00Z"
+  },
+  {
+    "case_id": "TC-BXN-04",
+    "case_group": "Negative",
+    "description": "_since ch\u1ec9 c\u00f3 ng\u00e0y",
+    "expected_status": "400",
+    "expected_code": "invalid",
+    "expected_message": "_since ph\u1ea3i l\u00e0 instant RFC3339",
+    "prefer": "respond-async",
+    "out_fmt": "ndjson",
+    "etype": "Patient",
+    "since": "2026-01-01"
+  },
+  {
+    "case_id": "TC-BXN-05",
+    "case_group": "Security",
+    "description": "_type ch\u1ee9a SQLi",
+    "expected_status": "400",
+    "expected_code": "invalid",
+    "expected_message": "_type kh\u00f4ng h\u1ee3p l\u1ec7",
+    "prefer": "respond-async",
+    "out_fmt": "ndjson",
+    "etype": "Patient%3BDROP%20TABLE%20x",
+    "since": "2020-01-01T00:00:00Z"
+  }
+]

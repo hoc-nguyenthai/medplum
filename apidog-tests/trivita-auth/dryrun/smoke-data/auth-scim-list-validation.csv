@@ -1,0 +1,2 @@
+case_id,case_group,description,expected_status,expected_code,expected_message,sc_filter,sc_start,sc_count
+SL-01,Positive,liệt kê mặc định,200,,,"userName eq ""khong-co-ai""",1,10

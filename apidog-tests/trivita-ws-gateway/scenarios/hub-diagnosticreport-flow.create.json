@@ -1,0 +1,10 @@
+{
+ "name": "Hub DiagnosticReport open/update/close",
+ "description": "DiagnosticReport-open → update đúng phiên bản → update phiên bản cũ (409/400) → close. Phiên bản context.versionId theo FHIRcast STU3.",
+ "folderId": 0,
+ "priority": 1,
+ "tags": [
+  "ws-gateway",
+  "fhircast"
+ ]
+}

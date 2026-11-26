@@ -1,0 +1,1 @@
+{"name": "Auth | POST /admin/projects/{id}/client: đầu vào (data-driven)", "description": "Phân vùng/biên của name, secret (32..256), grantType, redirectUris, launchUri, accessPolicy, trường lạ, JSON hỏng. Hàng 201 tạo client qa.* trong project seed.", "folderId": 0, "priority": 1, "tags": ["trivita-auth", "ai-generated"]}

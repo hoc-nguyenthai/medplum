@@ -1,0 +1,1 @@
+{"id": 9100045, "name": "dicomweb: GET /healthz", "method": "get", "path": "{{dicomUrl}}/healthz", "parameters": {"path": [], "query": [], "header": [], "cookie": []}, "auth": {}, "securityScheme": {}, "requestBody": null, "responses": []}

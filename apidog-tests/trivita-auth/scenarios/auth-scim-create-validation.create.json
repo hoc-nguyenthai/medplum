@@ -1,0 +1,1 @@
+{"name": "Auth | POST /scim/v2/Users: đầu vào (data-driven)", "description": "Trường bắt buộc (userName, emails[0].value, name), định dạng email, RelatedPerson thiếu patient, JSON hỏng. Cần SCIM bật.", "folderId": 0, "priority": 2, "tags": ["trivita-auth", "ai-generated"]}

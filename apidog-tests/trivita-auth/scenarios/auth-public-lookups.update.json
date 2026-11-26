@@ -1,0 +1,509 @@
+{
+ "steps": [
+  {
+   "id": "step-1",
+   "number": 1,
+   "name": "clientinfo: client seed",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988473,
+    "name": "clientinfo: client seed",
+    "path": "/auth/clientinfo/{{clientId}}",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.secret not exists",
+       "subject": "responseJson",
+       "comparison": "notExist",
+       "path": "$.secret",
+       "value": "",
+       "extractSettings": {
+        "expression": "$.secret"
+       }
+      }
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988473
+  },
+  {
+   "id": "step-2",
+   "number": 2,
+   "name": "clientinfo: client không tồn tại → 404",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988316,
+    "name": "clientinfo: client không tồn tại → 404",
+    "path": "/auth/clientinfo/00000000-0000-4000-8000-000000000000",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 404",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "404"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.issue[0].code == not-found",
+       "subject": "responseJson",
+       "comparison": "equal",
+       "path": "$.issue[0].code",
+       "value": "not-found",
+       "extractSettings": {
+        "expression": "$.issue[0].code"
+       }
+      }
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988316
+  },
+  {
+   "id": "step-3",
+   "number": 3,
+   "name": "clientinfo: redirect_uri lạ → 400",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988315,
+    "name": "clientinfo: redirect_uri lạ → 400",
+    "path": "/auth/clientinfo/{{clientId}}?redirect_uri=https%3A%2F%2Fevil.example%2Fcb",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 400",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "400"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.issue[0].details.text == Invalid redirect URI",
+       "subject": "responseJson",
+       "comparison": "equal",
+       "path": "$.issue[0].details.text",
+       "value": "Invalid redirect URI",
+       "extractSettings": {
+        "expression": "$.issue[0].details.text"
+       }
+      }
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988315
+  },
+  {
+   "id": "step-4",
+   "number": 4,
+   "name": "method: email admin → mật khẩu ({})",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988452,
+    "name": "method: email admin → mật khẩu ({})",
+    "path": "/auth/method",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "json",
+     "data": "{\"email\": \"{{adminEmail}}\"}"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988452
+  },
+  {
+   "id": "step-5",
+   "number": 5,
+   "name": "method: email sai → 400",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988314,
+    "name": "method: email sai → 400",
+    "path": "/auth/method",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "json",
+     "data": "{\"email\": \"khong-phai-email\"}"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 400",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "400"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.issue[0].details.text == Valid email address is required",
+       "subject": "responseJson",
+       "comparison": "equal",
+       "path": "$.issue[0].details.text",
+       "value": "Valid email address is required",
+       "extractSettings": {
+        "expression": "$.issue[0].details.text"
+       }
+      }
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988314
+  },
+  {
+   "id": "step-6",
+   "number": 6,
+   "name": "resetpassword: có tài khoản → 200 All OK",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988451,
+    "name": "resetpassword: có tài khoản → 200 All OK",
+    "path": "/auth/resetpassword",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "json",
+     "data": "{\"email\": \"{{adminEmail}}\", \"sendEmail\": false}"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.issue[0].details.text == All OK",
+       "subject": "responseJson",
+       "comparison": "equal",
+       "path": "$.issue[0].details.text",
+       "value": "All OK",
+       "extractSettings": {
+        "expression": "$.issue[0].details.text"
+       }
+      }
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988451
+  },
+  {
+   "id": "step-7",
+   "number": 7,
+   "name": "resetpassword: không có tài khoản → 200 giống hệt (chống dò)",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988450,
+    "name": "resetpassword: không có tài khoản → 200 giống hệt (chống dò)",
+    "path": "/auth/resetpassword",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "json",
+     "data": "{\"email\": \"khong.ton.tai@example.org\", \"sendEmail\": false}"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.issue[0].details.text == All OK",
+       "subject": "responseJson",
+       "comparison": "equal",
+       "path": "$.issue[0].details.text",
+       "value": "All OK",
+       "extractSettings": {
+        "expression": "$.issue[0].details.text"
+       }
+      }
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988450
+  },
+  {
+   "id": "step-8",
+   "number": 8,
+   "name": "resetpassword: email sai → 400",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988313,
+    "name": "resetpassword: email sai → 400",
+    "path": "/auth/resetpassword",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "json",
+     "data": "{\"email\": \"x\"}"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 400",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "400"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.issue[0].details.text == Valid email address is required",
+       "subject": "responseJson",
+       "comparison": "equal",
+       "path": "$.issue[0].details.text",
+       "value": "Valid email address is required",
+       "extractSettings": {
+        "expression": "$.issue[0].details.text"
+       }
+      }
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988313
+  },
+  {
+   "id": "step-9",
+   "number": 9,
+   "name": "resetpassword: projectId không phải UUID → 400",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988312,
+    "name": "resetpassword: projectId không phải UUID → 400",
+    "path": "/auth/resetpassword",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "json",
+     "data": "{\"email\": \"{{adminEmail}}\", \"projectId\": \"abc\"}"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 400",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "400"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.issue[0].details.text == Invalid projectId",
+       "subject": "responseJson",
+       "comparison": "equal",
+       "path": "$.issue[0].details.text",
+       "value": "Invalid projectId",
+       "extractSettings": {
+        "expression": "$.issue[0].details.text"
+       }
+      }
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988312
+  }
+ ]
+}

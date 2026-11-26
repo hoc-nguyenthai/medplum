@@ -1,0 +1,1 @@
+{"id": 9100042, "name": "auth: sau logout /auth/me -> 401", "method": "get", "path": "{{authUrl}}/auth/me", "parameters": {"path": [], "query": [], "header": [], "cookie": []}, "auth": {}, "securityScheme": {}, "requestBody": null, "responses": []}

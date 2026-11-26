@@ -1,0 +1,7 @@
+Dataset Name,case_id,case_group,description,expected_status,expected_code,expected_message,extra_name,extra_value,count,expected_entries
+TC-SP-01,TC-SP-01,Positive,"form hợp lệ, _count=2",200,,,_format,json,2,2
+TC-SP-02,TC-SP-02,Positive,_count=0 không entry,200,,,_format,json,0,0
+TC-SP-03,TC-SP-03,Positive,_count=100 trả đủ 2,200,,,_format,json,100,2
+TC-SP-04,TC-SP-04,Negative,_count không phải số,400,invalid,_count không hợp lệ,_format,json,abc,
+TC-SP-05,TC-SP-05,Negative,tham số lạ trong form,400,invalid,tham số search không hợp lệ: zzz,zzz,1,2,
+TC-SP-06,TC-SP-06,Negative,_total sai trong form,400,invalid,_total không hợp lệ,_total,x,2,

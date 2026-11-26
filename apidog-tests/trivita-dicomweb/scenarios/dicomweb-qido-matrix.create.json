@@ -1,0 +1,10 @@
+{
+ "name": "DICOMweb: QIDO-RS /studies (data-driven)",
+ "description": "Seed 2 study cố định bằng STOW-RS (idempotent) rồi tìm study theo từng tổ hợp: khớp chính xác, OR, tiền tố, khoảng ngày, modality, tag hex, phân trang, giá trị sai (400), chuỗi tấn công. Mỗi dòng chạy lại bước seed (200 vì idempotent).",
+ "folderId": 0,
+ "priority": 1,
+ "tags": [
+  "dicomweb",
+  "qido"
+ ]
+}

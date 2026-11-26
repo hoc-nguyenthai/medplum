@@ -1,0 +1,11 @@
+{
+ "name": "DICOMweb: authz — token sai (data-driven)",
+ "description": "Lấy token thật rồi biến thành token xấu theo từng dòng (rác, alg=none, sửa chữ ký, cắt chữ ký, rỗng) và gọi QIDO, STOW, WADO-URI, frame: mọi route DICOMweb phải 401 kèm WWW-Authenticate.",
+ "folderId": 0,
+ "priority": 1,
+ "tags": [
+  "dicomweb",
+  "authz",
+  "security"
+ ]
+}

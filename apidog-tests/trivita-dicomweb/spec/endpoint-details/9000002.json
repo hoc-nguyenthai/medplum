@@ -1,0 +1,1 @@
+{"id": 9000002, "name": "dicomweb: GET theo đường dẫn trong dữ liệu", "method": "get", "path": "{{dicomUrl}}{{req_path}}", "parameters": {"path": [], "query": [], "header": [], "cookie": []}, "auth": {}, "securityScheme": {}, "requestBody": null, "responses": []}

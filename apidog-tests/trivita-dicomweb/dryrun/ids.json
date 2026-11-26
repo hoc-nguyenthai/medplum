@@ -1,0 +1,23 @@
+{
+ "project": 1380475,
+ "module": 1533160,
+ "branch": {
+  "name": "ai/20261125-from-main-trivita-platform-tests",
+  "id": 1432970
+ },
+ "environment": {
+  "id": 7022270,
+  "name": "Trivita Local DICOMweb"
+ },
+ "folderId": 1246003,
+ "scenarios": {
+  "dicomweb-authz-invalid-token": 1998567,
+  "dicomweb-health": 1998573,
+  "dicomweb-lifecycle": 1998577,
+  "dicomweb-qido-matrix": 1998597,
+  "dicomweb-retrieve-matrix": 1998599,
+  "dicomweb-routing-isolation": 1998600,
+  "dicomweb-stow-validation": 1998607
+ },
+ "testData": {}
+}

@@ -1,0 +1,10 @@
+{
+ "name": "Project/{id}/$rate-limits",
+ "description": "Admin xem hạn mức của chính project (enabled true/false tùy cấu hình).",
+ "priority": 2,
+ "folderId": 0,
+ "tags": [
+  "rate-limit",
+  "admin"
+ ]
+}

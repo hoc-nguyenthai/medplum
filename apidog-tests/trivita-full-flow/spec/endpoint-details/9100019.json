@@ -1,0 +1,1 @@
+{"id": 9100019, "name": "fhir: GET Binary/{id} (ndjson từ kho dùng chung)", "method": "get", "path": "{{fhirUrl}}/fhir/R4/Binary/{{bin_id}}", "parameters": {"path": [], "query": [], "header": [], "cookie": []}, "auth": {}, "securityScheme": {}, "requestBody": null, "responses": []}

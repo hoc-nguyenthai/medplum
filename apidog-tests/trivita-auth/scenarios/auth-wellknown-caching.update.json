@@ -1,0 +1,154 @@
+{
+ "steps": [
+  {
+   "id": "step-1",
+   "number": 1,
+   "name": "JWKS lần 1: lưu ETag",
+   "type": "http",
+   "bindType": "API",
+   "syncMode": "MANUAL",
+   "bindId": 47548420,
+   "httpApiCase": {
+    "type": "DEBUG_CASE",
+    "name": "JWKS lần 1: lưu ETag",
+    "path": "/.well-known/jwks.json",
+    "method": "get",
+    "apiDetailId": 47548420,
+    "projectId": 1380475,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "const e = pm.response.headers.get('ETag'); pm.test('có ETag', () => pm.expect(e).to.be.a('string').and.not.empty); pm.variables.set('etag', e);"
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "pm.test('Cache-Control public, max-age=300', () => pm.expect(pm.response.headers.get('Cache-Control')).to.include('max-age=300'));"
+     }
+    ],
+    "id": 65402198
+   },
+   "relatedId": 65402198
+  },
+  {
+   "id": "step-2",
+   "number": 2,
+   "name": "JWKS lần 2: If-None-Match đúng ETag → 304",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988396,
+    "name": "JWKS lần 2: If-None-Match đúng ETag → 304",
+    "path": "/.well-known/jwks.json",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [
+      {
+       "name": "If-None-Match",
+       "value": "{{etag}}",
+       "enable": true
+      }
+     ],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 304",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "304"
+      }
+     }
+    ],
+    "auth": {},
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988396
+  },
+  {
+   "id": "step-3",
+   "number": 3,
+   "name": "JWKS: If-None-Match lạ → 200",
+   "type": "http",
+   "bindType": "API",
+   "syncMode": "MANUAL",
+   "bindId": 47548420,
+   "httpApiCase": {
+    "type": "DEBUG_CASE",
+    "name": "JWKS: If-None-Match lạ → 200",
+    "path": "/.well-known/jwks.json",
+    "method": "get",
+    "apiDetailId": 47548420,
+    "projectId": 1380475,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [
+      {
+       "name": "If-None-Match",
+       "value": "\"khong-khop\"",
+       "enable": true
+      }
+     ],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "pm.test(\"$.keys is array\", () => pm.expect(Array.isArray(pm.response.json().keys)).to.eql(true));"
+     }
+    ],
+    "id": 65402197
+   },
+   "relatedId": 65402197
+  }
+ ]
+}

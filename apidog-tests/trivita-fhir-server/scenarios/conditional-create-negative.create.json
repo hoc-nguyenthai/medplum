@@ -1,0 +1,10 @@
+{
+ "name": "POST If-None-Exist: điều kiện sai",
+ "description": "Header If-None-Exist thiếu tiêu chí, tham số lạ, mã hóa hỏng.",
+ "priority": 1,
+ "folderId": 0,
+ "tags": [
+  "conditional",
+  "negative"
+ ]
+}

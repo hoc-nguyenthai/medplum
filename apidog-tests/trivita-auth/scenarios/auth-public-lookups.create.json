@@ -1,0 +1,1 @@
+{"name": "Auth | Route công khai: clientinfo, method, resetpassword", "description": "clientinfo: client seed 200, lạ 404, redirect_uri lạ 400. method: email hợp lệ 200 '{}', sai 400. resetpassword luôn 200 'All OK' cho email hợp lệ (có tài khoản hay không), email/projectId sai 400.", "folderId": 0, "priority": 2, "tags": ["trivita-auth", "ai-generated"]}

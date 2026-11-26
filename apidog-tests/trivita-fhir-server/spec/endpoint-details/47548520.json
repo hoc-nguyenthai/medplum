@@ -1,0 +1,183 @@
+{
+ "id": 47548520,
+ "name": "ValueSet/$expand",
+ "method": "get",
+ "path": "/fhir/R4/ValueSet/$expand",
+ "parameters": {
+  "path": [],
+  "query": [
+   {
+    "id": "1VPdDltbcs",
+    "name": "url",
+    "required": true,
+    "enable": true,
+    "description": "Canonical URL của ValueSet, có thể kèm |version",
+    "example": "",
+    "type": "string",
+    "schema": {
+     "type": "string"
+    }
+   },
+   {
+    "id": "Aj2b8J8Blw",
+    "name": "valueSetVersion",
+    "required": false,
+    "enable": true,
+    "description": "Phiên bản ValueSet (nếu url không có |version)",
+    "example": "",
+    "type": "string",
+    "schema": {
+     "type": "string"
+    }
+   },
+   {
+    "id": "E4C6Qzm5Et",
+    "name": "filter",
+    "required": false,
+    "enable": true,
+    "description": "Lọc code/display chứa chuỗi này",
+    "example": "",
+    "type": "string",
+    "schema": {
+     "type": "string"
+    }
+   },
+   {
+    "id": "pweOCAzSZY",
+    "name": "count",
+    "required": false,
+    "enable": true,
+    "description": "Số code tối đa",
+    "example": "",
+    "type": "integer",
+    "schema": {
+     "type": "integer"
+    }
+   },
+   {
+    "id": "FrlLDK1bub",
+    "name": "offset",
+    "required": false,
+    "enable": true,
+    "description": "Vị trí bắt đầu",
+    "example": "",
+    "type": "integer",
+    "schema": {
+     "type": "integer"
+    }
+   }
+  ],
+  "cookie": [],
+  "header": []
+ },
+ "auth": {
+  "type": "securityscheme"
+ },
+ "securityScheme": {
+  "schemeGroups": [
+   {
+    "id": "m9VzKbFn5i4lEoohb-qHR",
+    "schemeIds": [
+     646419
+    ]
+   }
+  ],
+  "required": true,
+  "use": {
+   "id": "m9VzKbFn5i4lEoohb-qHR",
+   "configs": {
+    "646419": {
+     "authConfigs": {
+      "x-apidog": {
+       "value": "{{apiKey}}"
+      }
+     }
+    }
+   }
+  },
+  "scopes": {
+   "m9VzKbFn5i4lEoohb-qHR": {
+    "646419": []
+   }
+  }
+ },
+ "requestBody": {
+  "type": "none",
+  "parameters": [],
+  "required": false,
+  "additionalContentTypes": [],
+  "oasExtensions": ""
+ },
+ "responses": [
+  {
+   "id": "164292091",
+   "name": "",
+   "code": "200",
+   "contentType": "json",
+   "jsonSchema": {
+    "$ref": "#/definitions/19029542"
+   },
+   "itemSchema": {},
+   "description": "OK",
+   "mediaType": "application/fhir+json",
+   "headers": [],
+   "oasExtensions": ""
+  },
+  {
+   "id": "193976247",
+   "name": "",
+   "code": "400",
+   "contentType": "json",
+   "jsonSchema": {
+    "$ref": "#/definitions/19029533"
+   },
+   "itemSchema": {},
+   "description": "Thiếu url hoặc tham số sai",
+   "mediaType": "application/fhir+json",
+   "headers": [],
+   "oasExtensions": ""
+  },
+  {
+   "id": "101774922",
+   "name": "",
+   "code": "401",
+   "contentType": "json",
+   "jsonSchema": {
+    "$ref": "#/definitions/19029533"
+   },
+   "itemSchema": {},
+   "description": "Thiếu hoặc sai Bearer token",
+   "mediaType": "application/fhir+json",
+   "headers": [],
+   "oasExtensions": ""
+  },
+  {
+   "id": "195287311",
+   "name": "",
+   "code": "403",
+   "contentType": "json",
+   "jsonSchema": {
+    "$ref": "#/definitions/19029533"
+   },
+   "itemSchema": {},
+   "description": "Token không đủ quyền (cần quyền read)",
+   "mediaType": "application/fhir+json",
+   "headers": [],
+   "oasExtensions": ""
+  },
+  {
+   "id": "111510931",
+   "name": "",
+   "code": "404",
+   "contentType": "json",
+   "jsonSchema": {
+    "$ref": "#/definitions/19029533"
+   },
+   "itemSchema": {},
+   "description": "Không tìm thấy ValueSet",
+   "mediaType": "application/fhir+json",
+   "headers": [],
+   "oasExtensions": ""
+  }
+ ]
+}

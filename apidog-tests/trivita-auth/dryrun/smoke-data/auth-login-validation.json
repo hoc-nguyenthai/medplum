@@ -1,0 +1,14 @@
+[
+ {
+  "case_id": "LG-01",
+  "case_group": "Positive",
+  "description": "admin seed đăng nhập đúng",
+  "expected_status": "200",
+  "expected_code": "",
+  "expected_message": "",
+  "lg_email": "{{adminEmail}}",
+  "lg_password": "{{adminPassword}}",
+  "lg_client": "{{clientId}}",
+  "lg_project": "null"
+ }
+]

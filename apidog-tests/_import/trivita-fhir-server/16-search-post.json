@@ -1,0 +1,74 @@
+[
+  {
+    "case_id": "TC-SP-01",
+    "case_group": "Positive",
+    "description": "form h\u1ee3p l\u1ec7, _count=2",
+    "expected_status": "200",
+    "expected_code": "",
+    "expected_message": "",
+    "extra_name": "_format",
+    "extra_value": "json",
+    "count": "2",
+    "expected_entries": "2"
+  },
+  {
+    "case_id": "TC-SP-02",
+    "case_group": "Positive",
+    "description": "_count=0 kh\u00f4ng entry",
+    "expected_status": "200",
+    "expected_code": "",
+    "expected_message": "",
+    "extra_name": "_format",
+    "extra_value": "json",
+    "count": "0",
+    "expected_entries": "0"
+  },
+  {
+    "case_id": "TC-SP-03",
+    "case_group": "Positive",
+    "description": "_count=100 tr\u1ea3 \u0111\u1ee7 2",
+    "expected_status": "200",
+    "expected_code": "",
+    "expected_message": "",
+    "extra_name": "_format",
+    "extra_value": "json",
+    "count": "100",
+    "expected_entries": "2"
+  },
+  {
+    "case_id": "TC-SP-04",
+    "case_group": "Negative",
+    "description": "_count kh\u00f4ng ph\u1ea3i s\u1ed1",
+    "expected_status": "400",
+    "expected_code": "invalid",
+    "expected_message": "_count kh\u00f4ng h\u1ee3p l\u1ec7",
+    "extra_name": "_format",
+    "extra_value": "json",
+    "count": "abc",
+    "expected_entries": ""
+  },
+  {
+    "case_id": "TC-SP-05",
+    "case_group": "Negative",
+    "description": "tham s\u1ed1 l\u1ea1 trong form",
+    "expected_status": "400",
+    "expected_code": "invalid",
+    "expected_message": "tham s\u1ed1 search kh\u00f4ng h\u1ee3p l\u1ec7: zzz",
+    "extra_name": "zzz",
+    "extra_value": "1",
+    "count": "2",
+    "expected_entries": ""
+  },
+  {
+    "case_id": "TC-SP-06",
+    "case_group": "Negative",
+    "description": "_total sai trong form",
+    "expected_status": "400",
+    "expected_code": "invalid",
+    "expected_message": "_total kh\u00f4ng h\u1ee3p l\u1ec7",
+    "extra_name": "_total",
+    "extra_value": "x",
+    "count": "2",
+    "expected_entries": ""
+  }
+]

@@ -1,0 +1,2497 @@
+{
+ "steps": [
+  {
+   "id": "step-1",
+   "number": 1,
+   "name": "auth: GET /health/live",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988102,
+    "name": "auth: GET /health/live",
+    "path": "{{authUrl}}/health/live",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988102
+  },
+  {
+   "id": "step-2",
+   "number": 2,
+   "name": "fhir-server: GET /healthz",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988101,
+    "name": "fhir-server: GET /healthz",
+    "path": "{{fhirUrl}}/healthz",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988101
+  },
+  {
+   "id": "step-3",
+   "number": 3,
+   "name": "dicomweb: GET /healthz",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988100,
+    "name": "dicomweb: GET /healthz",
+    "path": "{{dicomUrl}}/healthz",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988100
+  },
+  {
+   "id": "step-4",
+   "number": 4,
+   "name": "ws-gateway: GET /healthz",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988099,
+    "name": "ws-gateway: GET /healthz",
+    "path": "{{wsUrl}}/healthz",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988099
+  },
+  {
+   "id": "step-5",
+   "number": 5,
+   "name": "Lấy token client_credentials (auth)",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988098,
+    "name": "Lấy token client_credentials (auth)",
+    "path": "{{authUrl}}/oauth2/token",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "x-www-form-urlencoded",
+     "parameters": [
+      {
+       "name": "grant_type",
+       "value": "client_credentials",
+       "enable": true,
+       "type": "string"
+      },
+      {
+       "name": "client_id",
+       "value": "{{clientId}}",
+       "enable": true,
+       "type": "string"
+      },
+      {
+       "name": "client_secret",
+       "value": "{{clientSecret}}",
+       "enable": true,
+       "type": "string"
+      }
+     ]
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.access_token exists",
+       "subject": "responseJson",
+       "comparison": "exists",
+       "path": "$.access_token",
+       "value": "",
+       "extractSettings": {
+        "expression": "$.access_token"
+       }
+      }
+     },
+     {
+      "type": "extractor",
+      "enable": true,
+      "data": {
+       "variableType": "local",
+       "variableName": "accessToken",
+       "expression": "$.access_token",
+       "subject": "responseJson"
+      }
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "const base = '1.2.826.0.1.3680043.9.7777.' + Date.now() + (100 + Math.floor(Math.random() * 900));\npm.variables.set('studyUid', base + '.1'); pm.variables.set('seriesUid', base + '.1.1'); pm.variables.set('sop', base + '.1.1.1');\npm.variables.set('pid', 'QA-FF-' + Date.now());\npm.variables.set('topic', 'qa-ff-' + Date.now() + '-' + Math.floor(Math.random() * 1000000));"
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988098
+  },
+  {
+   "id": "step-6",
+   "number": 6,
+   "name": "auth: POST /oauth2/introspect token vừa cấp -> active",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988097,
+    "name": "auth: POST /oauth2/introspect token vừa cấp -> active",
+    "path": "{{authUrl}}/oauth2/introspect",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "x-www-form-urlencoded",
+     "parameters": [
+      {
+       "name": "token",
+       "value": "{{accessToken}}",
+       "enable": true,
+       "type": "string"
+      }
+     ]
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.active == true",
+       "subject": "responseJson",
+       "comparison": "equal",
+       "path": "$.active",
+       "value": "true",
+       "extractSettings": {
+        "expression": "$.active"
+       }
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.client_id == {{clientId}}",
+       "subject": "responseJson",
+       "comparison": "equal",
+       "path": "$.client_id",
+       "value": "{{clientId}}",
+       "extractSettings": {
+        "expression": "$.client_id"
+       }
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{accessToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988097
+  },
+  {
+   "id": "step-7",
+   "number": 7,
+   "name": "auth: GET /auth/me của ClientApplication",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988096,
+    "name": "auth: GET /auth/me của ClientApplication",
+    "path": "{{authUrl}}/auth/me",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.project.id exists",
+       "subject": "responseJson",
+       "comparison": "exists",
+       "path": "$.project.id",
+       "value": "",
+       "extractSettings": {
+        "expression": "$.project.id"
+       }
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{accessToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988096
+  },
+  {
+   "id": "step-8",
+   "number": 8,
+   "name": "fhir: POST Patient",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988095,
+    "name": "fhir: POST Patient",
+    "path": "{{fhirUrl}}/fhir/R4/Patient",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "json",
+     "data": "{\"resourceType\": \"Patient\", \"identifier\": [{\"system\": \"urn:trivita:qa-mrn\", \"value\": \"{{pid}}\"}], \"name\": [{\"family\": \"FullFlowQa\", \"given\": [\"Qa\"]}], \"gender\": \"male\"}"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 201",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "201"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.resourceType == Patient",
+       "subject": "responseJson",
+       "comparison": "equal",
+       "path": "$.resourceType",
+       "value": "Patient",
+       "extractSettings": {
+        "expression": "$.resourceType"
+       }
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.id exists",
+       "subject": "responseJson",
+       "comparison": "exists",
+       "path": "$.id",
+       "value": "",
+       "extractSettings": {
+        "expression": "$.id"
+       }
+      }
+     },
+     {
+      "type": "extractor",
+      "enable": true,
+      "data": {
+       "variableType": "local",
+       "variableName": "patient_id",
+       "expression": "$.id",
+       "subject": "responseJson"
+      }
+     },
+     {
+      "type": "extractor",
+      "enable": true,
+      "data": {
+       "variableType": "local",
+       "variableName": "v1",
+       "expression": "$.meta.versionId",
+       "subject": "responseJson"
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{accessToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988095
+  },
+  {
+   "id": "step-9",
+   "number": 9,
+   "name": "fhir: GET Patient/{id}",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988094,
+    "name": "fhir: GET Patient/{id}",
+    "path": "{{fhirUrl}}/fhir/R4/Patient/{{patient_id}}",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.id == {{patient_id}}",
+       "subject": "responseJson",
+       "comparison": "equal",
+       "path": "$.id",
+       "value": "{{patient_id}}",
+       "extractSettings": {
+        "expression": "$.id"
+       }
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.meta.versionId == {{v1}}",
+       "subject": "responseJson",
+       "comparison": "equal",
+       "path": "$.meta.versionId",
+       "value": "{{v1}}",
+       "extractSettings": {
+        "expression": "$.meta.versionId"
+       }
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{accessToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988094
+  },
+  {
+   "id": "step-10",
+   "number": 10,
+   "name": "fhir: tìm Patient theo identifier -> đúng 1",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988093,
+    "name": "fhir: tìm Patient theo identifier -> đúng 1",
+    "path": "{{fhirUrl}}/fhir/R4/Patient?identifier=urn%3Atrivita%3Aqa-mrn%7C{{pid}}",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.resourceType == Bundle",
+       "subject": "responseJson",
+       "comparison": "equal",
+       "path": "$.resourceType",
+       "value": "Bundle",
+       "extractSettings": {
+        "expression": "$.resourceType"
+       }
+      }
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "pm.test(\"đúng 1 entry\", () => { pm.expect(pm.response.json().entry.length).to.eql(1); });"
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{accessToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988093
+  },
+  {
+   "id": "step-11",
+   "number": 11,
+   "name": "fhir: PUT Patient/{id} đổi gender (phiên bản 2)",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988092,
+    "name": "fhir: PUT Patient/{id} đổi gender (phiên bản 2)",
+    "path": "{{fhirUrl}}/fhir/R4/Patient/{{patient_id}}",
+    "method": "put",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "json",
+     "data": "{\"resourceType\": \"Patient\", \"id\": \"{{patient_id}}\", \"identifier\": [{\"system\": \"urn:trivita:qa-mrn\", \"value\": \"{{pid}}\"}], \"name\": [{\"family\": \"FullFlowQa\", \"given\": [\"Qa\"]}], \"gender\": \"female\"}"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.gender == female",
+       "subject": "responseJson",
+       "comparison": "equal",
+       "path": "$.gender",
+       "value": "female",
+       "extractSettings": {
+        "expression": "$.gender"
+       }
+      }
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "pm.test(\"versionId đổi\", () => { pm.expect(pm.response.json().meta.versionId).to.not.eql(pm.variables.get('v1')); });"
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{accessToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988092
+  },
+  {
+   "id": "step-12",
+   "number": 12,
+   "name": "fhir: GET Patient/{id}/_history -> 2 phiên bản",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988091,
+    "name": "fhir: GET Patient/{id}/_history -> 2 phiên bản",
+    "path": "{{fhirUrl}}/fhir/R4/Patient/{{patient_id}}/_history",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.type == history",
+       "subject": "responseJson",
+       "comparison": "equal",
+       "path": "$.type",
+       "value": "history",
+       "extractSettings": {
+        "expression": "$.type"
+       }
+      }
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "pm.test(\"2 entry\", () => { pm.expect(pm.response.json().entry.length).to.eql(2); });"
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{accessToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988091
+  },
+  {
+   "id": "step-13",
+   "number": 13,
+   "name": "fhir: POST Observation gắn Patient",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988090,
+    "name": "fhir: POST Observation gắn Patient",
+    "path": "{{fhirUrl}}/fhir/R4/Observation",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "json",
+     "data": "{\"resourceType\": \"Observation\", \"status\": \"final\", \"code\": {\"text\": \"qa full flow\"}, \"subject\": {\"reference\": \"Patient/{{patient_id}}\"}, \"valueString\": \"ok\"}"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 201",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "201"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.id exists",
+       "subject": "responseJson",
+       "comparison": "exists",
+       "path": "$.id",
+       "value": "",
+       "extractSettings": {
+        "expression": "$.id"
+       }
+      }
+     },
+     {
+      "type": "extractor",
+      "enable": true,
+      "data": {
+       "variableType": "local",
+       "variableName": "obs_id",
+       "expression": "$.id",
+       "subject": "responseJson"
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{accessToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988090
+  },
+  {
+   "id": "step-14",
+   "number": 14,
+   "name": "fhir: GET Patient/{id}/$everything có Patient + Observation",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988089,
+    "name": "fhir: GET Patient/{id}/$everything có Patient + Observation",
+    "path": "{{fhirUrl}}/fhir/R4/Patient/{{patient_id}}/$everything",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.resourceType == Bundle",
+       "subject": "responseJson",
+       "comparison": "equal",
+       "path": "$.resourceType",
+       "value": "Bundle",
+       "extractSettings": {
+        "expression": "$.resourceType"
+       }
+      }
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "pm.test(\"có cả Patient và Observation\", () => { const ty = (pm.response.json().entry || []).map(e => e.resource.resourceType); pm.expect(ty).to.include('Patient'); pm.expect(ty).to.include('Observation'); });"
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{accessToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988089
+  },
+  {
+   "id": "step-15",
+   "number": 15,
+   "name": "fhir: GET $export (Prefer: respond-async) -> 202",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988088,
+    "name": "fhir: GET $export (Prefer: respond-async) -> 202",
+    "path": "{{fhirUrl}}/fhir/R4/$export?_type=Patient&_outputFormat=ndjson",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [
+      {
+       "name": "Prefer",
+       "value": "respond-async",
+       "enable": true
+      }
+     ],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 202",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "202"
+      }
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "pm.test(\"Content-Location có id job\", () => { const m = (pm.response.headers.get('Content-Location') || '').match(/bulkdata\\/([^\\/]+)\\/status/); pm.expect(m).to.not.eql(null); pm.variables.set('job_id', m[1]); });"
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{accessToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988088
+  },
+  {
+   "id": "step-16",
+   "number": 16,
+   "name": "fhir: GET bulkdata/{id}/status (lần 1)",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988087,
+    "name": "fhir: GET bulkdata/{id}/status (lần 1)",
+    "path": "{{fhirUrl}}/fhir/R4/bulkdata/{{job_id}}/status",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "pm.test(\"202 hoặc 200\", () => { pm.expect([200, 202]).to.include(pm.response.code); });"
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "const t0 = Date.now(); while (Date.now() - t0 < 3000) {}"
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{accessToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988087
+  },
+  {
+   "id": "step-17",
+   "number": 17,
+   "name": "fhir: GET bulkdata/{id}/status (lần 2)",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988086,
+    "name": "fhir: GET bulkdata/{id}/status (lần 2)",
+    "path": "{{fhirUrl}}/fhir/R4/bulkdata/{{job_id}}/status",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "pm.test(\"202 hoặc 200\", () => { pm.expect([200, 202]).to.include(pm.response.code); });"
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "const t0 = Date.now(); while (Date.now() - t0 < 3000) {}"
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{accessToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988086
+  },
+  {
+   "id": "step-18",
+   "number": 18,
+   "name": "fhir: GET bulkdata/{id}/status (lần 3)",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988085,
+    "name": "fhir: GET bulkdata/{id}/status (lần 3)",
+    "path": "{{fhirUrl}}/fhir/R4/bulkdata/{{job_id}}/status",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "pm.test(\"202 hoặc 200\", () => { pm.expect([200, 202]).to.include(pm.response.code); });"
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "const t0 = Date.now(); while (Date.now() - t0 < 3000) {}"
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{accessToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988085
+  },
+  {
+   "id": "step-19",
+   "number": 19,
+   "name": "fhir: GET bulkdata/{id}/status -> 200 manifest (do fhir-worker chạy)",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988084,
+    "name": "fhir: GET bulkdata/{id}/status -> 200 manifest (do fhir-worker chạy)",
+    "path": "{{fhirUrl}}/fhir/R4/bulkdata/{{job_id}}/status",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "pm.test(\"$.output is array\", () => pm.expect(Array.isArray(pm.response.json().output)).to.eql(true));"
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "pm.test(\"có file output\", () => { const u = (pm.response.json().output || [])[0]; pm.expect(u).to.not.eql(undefined); pm.variables.set('bin_id', String(u.url).split('/').pop()); });"
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{accessToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988084
+  },
+  {
+   "id": "step-20",
+   "number": 20,
+   "name": "fhir: GET Binary/{id} (ndjson từ kho dùng chung)",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988083,
+    "name": "fhir: GET Binary/{id} (ndjson từ kho dùng chung)",
+    "path": "{{fhirUrl}}/fhir/R4/Binary/{{bin_id}}",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [
+      {
+       "name": "Accept",
+       "value": "application/fhir+ndjson",
+       "enable": true
+      }
+     ],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "pm.test(\"ndjson chứa Patient\", () => { pm.expect(pm.response.text()).to.include('\"resourceType\":\"Patient\"'); });"
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{accessToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988083
+  },
+  {
+   "id": "step-21",
+   "number": 21,
+   "name": "fhir: DELETE bulkdata/{id}/status (dọn job)",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988082,
+    "name": "fhir: DELETE bulkdata/{id}/status (dọn job)",
+    "path": "{{fhirUrl}}/fhir/R4/bulkdata/{{job_id}}/status",
+    "method": "delete",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 202",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "202"
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{accessToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988082
+  },
+  {
+   "id": "step-22",
+   "number": 22,
+   "name": "dicomweb: STOW-RS dạng metadata 1 instance (200)",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988081,
+    "name": "dicomweb: STOW-RS dạng metadata 1 instance (200)",
+    "path": "{{dicomUrl}}/dicomweb/studies",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [
+      {
+       "name": "Content-Type",
+       "value": "multipart/related; type=\"application/dicom+json\"; boundary=qa-ff-bnd",
+       "enable": true
+      }
+     ],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "raw",
+     "data": "--qa-ff-bnd\r\nContent-Type: application/dicom+json\r\n\r\n[{\"00080016\":{\"vr\":\"UI\",\"Value\":[\"1.2.840.10008.5.1.4.1.1.2\"]},\"00080018\":{\"vr\":\"UI\",\"Value\":[\"{{sop}}\"]},\"00080060\":{\"vr\":\"CS\",\"Value\":[\"CT\"]},\"00080020\":{\"vr\":\"DA\",\"Value\":[\"20240102\"]},\"00100010\":{\"vr\":\"PN\",\"Value\":[{\"Alphabetic\":\"Qa^FullFlow\"}]},\"00100020\":{\"vr\":\"LO\",\"Value\":[\"{{pid}}\"]},\"0020000D\":{\"vr\":\"UI\",\"Value\":[\"{{studyUid}}\"]},\"0020000E\":{\"vr\":\"UI\",\"Value\":[\"{{seriesUid}}\"]},\"00280002\":{\"vr\":\"US\",\"Value\":[1]},\"00280004\":{\"vr\":\"CS\",\"Value\":[\"MONOCHROME2\"]},\"00280008\":{\"vr\":\"IS\",\"Value\":[\"1\"]},\"00280010\":{\"vr\":\"US\",\"Value\":[2]},\"00280011\":{\"vr\":\"US\",\"Value\":[2]},\"00280100\":{\"vr\":\"US\",\"Value\":[8]},\"00280101\":{\"vr\":\"US\",\"Value\":[8]},\"00280102\":{\"vr\":\"US\",\"Value\":[7]},\"00280103\":{\"vr\":\"US\",\"Value\":[0]},\"7FE00010\":{\"vr\":\"OB\",\"BulkDataURI\":\"urn:qa:ff-px\"}}]\r\n--qa-ff-bnd\r\nContent-Location: urn:qa:ff-px\r\nContent-Type: application/octet-stream\r\n\r\nFFLW\r\n--qa-ff-bnd--\r\n"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "pm.test(\"ReferencedSOPSequence 1 phần tử, không Failed\", () => { const j = pm.response.json(); pm.expect(j['00081199'].Value.length).to.eql(1); pm.expect(j['00081198']).to.eql(undefined); });"
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{accessToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988081
+  },
+  {
+   "id": "step-23",
+   "number": 23,
+   "name": "dicomweb: QIDO-RS study theo StudyInstanceUID -> 1",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988080,
+    "name": "dicomweb: QIDO-RS study theo StudyInstanceUID -> 1",
+    "path": "{{dicomUrl}}/dicomweb/studies?StudyInstanceUID={{studyUid}}",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "pm.test(\"đúng 1 study\", () => { const j = pm.response.json(); pm.expect(j.length).to.eql(1); pm.expect(j[0]['0020000D'].Value[0]).to.eql(pm.variables.get('studyUid')); });"
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{accessToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988080
+  },
+  {
+   "id": "step-24",
+   "number": 24,
+   "name": "dicomweb: WADO-RS metadata instance",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988079,
+    "name": "dicomweb: WADO-RS metadata instance",
+    "path": "{{dicomUrl}}/dicomweb/studies/{{studyUid}}/series/{{seriesUid}}/instances/{{sop}}/metadata",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "pm.test(\"có SOPInstanceUID\", () => { pm.expect(pm.response.text()).to.include(pm.variables.get('sop')); });"
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{accessToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988079
+  },
+  {
+   "id": "step-25",
+   "number": 25,
+   "name": "dicomweb: WADO-RS tải instance (Part 10)",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988078,
+    "name": "dicomweb: WADO-RS tải instance (Part 10)",
+    "path": "{{dicomUrl}}/dicomweb/studies/{{studyUid}}/series/{{seriesUid}}/instances/{{sop}}",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "pm.test(\"multipart/related, có DICM\", () => { pm.expect(pm.response.headers.get('Content-Type')).to.include('multipart/related'); pm.expect(pm.response.text()).to.include('DICM'); });"
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{accessToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988078
+  },
+  {
+   "id": "step-26",
+   "number": 26,
+   "name": "dicomweb: WADO-RS frame 1 đúng byte đã STOW",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988077,
+    "name": "dicomweb: WADO-RS frame 1 đúng byte đã STOW",
+    "path": "{{dicomUrl}}/dicomweb/studies/{{studyUid}}/series/{{seriesUid}}/instances/{{sop}}/frames/1",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "pm.test(\"body chứa FFLW\", () => { pm.expect(pm.response.text()).to.include('FFLW'); });"
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{accessToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988077
+  },
+  {
+   "id": "step-27",
+   "number": 27,
+   "name": "fhir: GET DicomStudy thấy study do dicomweb ghi (schema dùng chung)",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988076,
+    "name": "fhir: GET DicomStudy thấy study do dicomweb ghi (schema dùng chung)",
+    "path": "{{fhirUrl}}/fhir/R4/DicomStudy?_count=50",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "pm.test(\"study có trong kết quả\", () => { pm.expect(pm.response.text()).to.include(pm.variables.get('studyUid')); });"
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{accessToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988076
+  },
+  {
+   "id": "step-28",
+   "number": 28,
+   "name": "auth: token client_credentials scope fhircast/* cho ws-gateway",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988075,
+    "name": "auth: token client_credentials scope fhircast/* cho ws-gateway",
+    "path": "{{authUrl}}/oauth2/token",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "x-www-form-urlencoded",
+     "parameters": [
+      {
+       "name": "grant_type",
+       "value": "client_credentials",
+       "enable": true,
+       "type": "string"
+      },
+      {
+       "name": "client_id",
+       "value": "{{clientId}}",
+       "enable": true,
+       "type": "string"
+      },
+      {
+       "name": "client_secret",
+       "value": "{{clientSecret}}",
+       "enable": true,
+       "type": "string"
+      },
+      {
+       "name": "scope",
+       "value": "fhircast/*",
+       "enable": true,
+       "type": "string"
+      }
+     ]
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.access_token exists",
+       "subject": "responseJson",
+       "comparison": "exists",
+       "path": "$.access_token",
+       "value": "",
+       "extractSettings": {
+        "expression": "$.access_token"
+       }
+      }
+     },
+     {
+      "type": "extractor",
+      "enable": true,
+      "data": {
+       "variableType": "local",
+       "variableName": "wsToken",
+       "expression": "$.access_token",
+       "subject": "responseJson"
+      }
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988075
+  },
+  {
+   "id": "step-29",
+   "number": 29,
+   "name": "ws-gateway: GET .well-known/fhircast-configuration (công khai)",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988074,
+    "name": "ws-gateway: GET .well-known/fhircast-configuration (công khai)",
+    "path": "{{wsUrl}}/fhircast/STU3/.well-known/fhircast-configuration",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988074
+  },
+  {
+   "id": "step-30",
+   "number": 30,
+   "name": "ws-gateway: subscribe websocket (STU3)",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988073,
+    "name": "ws-gateway: subscribe websocket (STU3)",
+    "path": "{{wsUrl}}/fhircast/STU3",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "json",
+     "data": "{\"hub.channel.type\": \"websocket\", \"hub.mode\": \"subscribe\", \"hub.topic\": \"{{topic}}\", \"hub.events\": \"Patient-open,Patient-close\"}"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 202",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "202"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$['hub.channel.endpoint'] exists",
+       "subject": "responseJson",
+       "comparison": "exists",
+       "path": "$['hub.channel.endpoint']",
+       "value": "",
+       "extractSettings": {
+        "expression": "$['hub.channel.endpoint']"
+       }
+      }
+     },
+     {
+      "type": "extractor",
+      "enable": true,
+      "data": {
+       "variableType": "local",
+       "variableName": "channel_endpoint",
+       "expression": "$['hub.channel.endpoint']",
+       "subject": "responseJson"
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{wsToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988073
+  },
+  {
+   "id": "step-31",
+   "number": 31,
+   "name": "ws-gateway: mở ngữ cảnh Patient-open theo Patient vừa tạo",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988072,
+    "name": "ws-gateway: mở ngữ cảnh Patient-open theo Patient vừa tạo",
+    "path": "{{wsUrl}}/fhircast/STU3/{{topic}}",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "json",
+     "data": "{\"id\":\"qa-ff-{{$timestamp}}\",\"timestamp\":\"2026-11-25T10:00:00.000Z\",\"event\":{\"hub.topic\":\"{{topic}}\",\"hub.event\":\"Patient-open\",\"context\":[{\"key\":\"patient\",\"resource\":{\"resourceType\":\"Patient\",\"id\":\"{{patient_id}}\"}}]}}"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 202",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "202"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.success == true",
+       "subject": "responseJson",
+       "comparison": "equal",
+       "path": "$.success",
+       "value": "true",
+       "extractSettings": {
+        "expression": "$.success"
+       }
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{wsToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988072
+  },
+  {
+   "id": "step-32",
+   "number": 32,
+   "name": "ws-gateway: GET ngữ cảnh hiện tại = Patient",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988071,
+    "name": "ws-gateway: GET ngữ cảnh hiện tại = Patient",
+    "path": "{{wsUrl}}/fhircast/STU3/{{topic}}",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "pm.test(\"context.type\", () => { pm.expect(pm.response.json()['context.type']).to.eql('Patient'); });"
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{wsToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988071
+  },
+  {
+   "id": "step-33",
+   "number": 33,
+   "name": "ws-gateway: đóng ngữ cảnh Patient-close",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988070,
+    "name": "ws-gateway: đóng ngữ cảnh Patient-close",
+    "path": "{{wsUrl}}/fhircast/STU3/{{topic}}",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "json",
+     "data": "{\"id\":\"qa-ff-{{$timestamp}}\",\"timestamp\":\"2026-11-25T10:00:00.000Z\",\"event\":{\"hub.topic\":\"{{topic}}\",\"hub.event\":\"Patient-close\",\"context\":[{\"key\":\"patient\",\"resource\":{\"resourceType\":\"Patient\",\"id\":\"{{patient_id}}\"}}]}}"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 202",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "202"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.success == true",
+       "subject": "responseJson",
+       "comparison": "equal",
+       "path": "$.success",
+       "value": "true",
+       "extractSettings": {
+        "expression": "$.success"
+       }
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{wsToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988070
+  },
+  {
+   "id": "step-34",
+   "number": 34,
+   "name": "ws-gateway: unsubscribe",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988069,
+    "name": "ws-gateway: unsubscribe",
+    "path": "{{wsUrl}}/fhircast/STU3",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "json",
+     "data": "{\"hub.channel.type\":\"websocket\",\"hub.mode\":\"unsubscribe\",\"hub.topic\":\"{{topic}}\",\"hub.channel.endpoint\":\"{{channel_endpoint}}\"}"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 202",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "202"
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{wsToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988069
+  },
+  {
+   "id": "step-35",
+   "number": 35,
+   "name": "fhir: DELETE Observation",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988068,
+    "name": "fhir: DELETE Observation",
+    "path": "{{fhirUrl}}/fhir/R4/Observation/{{obs_id}}",
+    "method": "delete",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 204",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "204"
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{accessToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988068
+  },
+  {
+   "id": "step-36",
+   "number": 36,
+   "name": "fhir: DELETE Patient (xóa mềm)",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988067,
+    "name": "fhir: DELETE Patient (xóa mềm)",
+    "path": "{{fhirUrl}}/fhir/R4/Patient/{{patient_id}}",
+    "method": "delete",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 204",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "204"
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{accessToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988067
+  },
+  {
+   "id": "step-37",
+   "number": 37,
+   "name": "fhir: GET Patient đã xóa -> 410",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988066,
+    "name": "fhir: GET Patient đã xóa -> 410",
+    "path": "{{fhirUrl}}/fhir/R4/Patient/{{patient_id}}",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 410",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "410"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.issue[0].code == deleted",
+       "subject": "responseJson",
+       "comparison": "equal",
+       "path": "$.issue[0].code",
+       "value": "deleted",
+       "extractSettings": {
+        "expression": "$.issue[0].code"
+       }
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{accessToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988066
+  },
+  {
+   "id": "step-38",
+   "number": 38,
+   "name": "auth: đăng nhập admin project (để $expunge)",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988065,
+    "name": "auth: đăng nhập admin project (để $expunge)",
+    "path": "{{authUrl}}/auth/login",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "json",
+     "data": "{\"email\": \"{{adminEmail}}\", \"password\": \"{{adminPassword}}\", \"clientId\": \"{{clientId}}\", \"scope\": \"openid profile email\"}"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.code exists",
+       "subject": "responseJson",
+       "comparison": "exists",
+       "path": "$.code",
+       "value": "",
+       "extractSettings": {
+        "expression": "$.code"
+       }
+      }
+     },
+     {
+      "type": "extractor",
+      "enable": true,
+      "data": {
+       "variableType": "local",
+       "variableName": "adm_code",
+       "expression": "$.code",
+       "subject": "responseJson"
+      }
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988065
+  },
+  {
+   "id": "step-39",
+   "number": 39,
+   "name": "auth: đổi code lấy token admin",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988064,
+    "name": "auth: đổi code lấy token admin",
+    "path": "{{authUrl}}/oauth2/token",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "x-www-form-urlencoded",
+     "parameters": [
+      {
+       "name": "grant_type",
+       "value": "authorization_code",
+       "enable": true,
+       "type": "string"
+      },
+      {
+       "name": "code",
+       "value": "{{adm_code}}",
+       "enable": true,
+       "type": "string"
+      },
+      {
+       "name": "client_id",
+       "value": "{{clientId}}",
+       "enable": true,
+       "type": "string"
+      },
+      {
+       "name": "client_secret",
+       "value": "{{clientSecret}}",
+       "enable": true,
+       "type": "string"
+      }
+     ]
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.access_token exists",
+       "subject": "responseJson",
+       "comparison": "exists",
+       "path": "$.access_token",
+       "value": "",
+       "extractSettings": {
+        "expression": "$.access_token"
+       }
+      }
+     },
+     {
+      "type": "extractor",
+      "enable": true,
+      "data": {
+       "variableType": "local",
+       "variableName": "adminToken",
+       "expression": "$.access_token",
+       "subject": "responseJson"
+      }
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988064
+  },
+  {
+   "id": "step-40",
+   "number": 40,
+   "name": "fhir: POST Patient/{id}/$expunge (xóa vĩnh viễn)",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988063,
+    "name": "fhir: POST Patient/{id}/$expunge (xóa vĩnh viễn)",
+    "path": "{{fhirUrl}}/fhir/R4/Patient/{{patient_id}}/$expunge",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{adminToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988063
+  },
+  {
+   "id": "step-41",
+   "number": 41,
+   "name": "fhir: POST Observation/{id}/$expunge",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988062,
+    "name": "fhir: POST Observation/{id}/$expunge",
+    "path": "{{fhirUrl}}/fhir/R4/Observation/{{obs_id}}/$expunge",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{adminToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988062
+  },
+  {
+   "id": "step-42",
+   "number": 42,
+   "name": "auth: POST /oauth2/logout thu hồi phiên của token",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 0,
+    "name": "auth: POST /oauth2/logout thu hồi phiên của token",
+    "path": "{{authUrl}}/oauth2/logout",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{accessToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   }
+  },
+  {
+   "id": "step-43",
+   "number": 43,
+   "name": "auth: sau logout /auth/me -> 401",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 0,
+    "name": "auth: sau logout /auth/me -> 401",
+    "path": "{{authUrl}}/auth/me",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 401",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "401"
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{accessToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   }
+  }
+ ]
+}

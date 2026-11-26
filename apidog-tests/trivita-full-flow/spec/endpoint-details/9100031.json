@@ -1,0 +1,1 @@
+{"id": 9100031, "name": "ws-gateway: GET ngữ cảnh hiện tại = Patient", "method": "get", "path": "{{wsUrl}}/fhircast/STU3/{{topic}}", "parameters": {"path": [], "query": [], "header": [], "cookie": []}, "auth": {}, "securityScheme": {}, "requestBody": null, "responses": []}

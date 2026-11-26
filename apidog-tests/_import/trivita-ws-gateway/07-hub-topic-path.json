@@ -1,0 +1,62 @@
+[
+  {
+    "case_id": "TP-01",
+    "case_group": "Positive",
+    "description": "topic \u0111\u01b0\u1eddng d\u1eabn kh\u1edbp event[hub.topic]",
+    "expected_status": "202",
+    "expected_code": "",
+    "topic_path": "qa-path-match",
+    "body_json": "{\"id\":\"qa-ev-1\",\"timestamp\":\"2026-11-25T10:00:00.000Z\",\"event\":{\"hub.topic\":\"qa-path-match\",\"hub.event\":\"heartbeat\",\"context\":[]}}",
+    "expected_message": ""
+  },
+  {
+    "case_id": "TP-02",
+    "case_group": "Negative",
+    "description": "l\u1ec7ch topic (c\u1edd ALLOW_TOPIC_MISMATCH t\u1eaft m\u1eb7c \u0111\u1ecbnh) \u2192 Topic mismatch",
+    "expected_status": "400",
+    "expected_code": "",
+    "topic_path": "qa-path-a",
+    "body_json": "{\"id\":\"qa-ev-1\",\"timestamp\":\"2026-11-25T10:00:00.000Z\",\"event\":{\"hub.topic\":\"qa-path-b\",\"hub.event\":\"heartbeat\",\"context\":[]}}",
+    "expected_message": "Topic mismatch"
+  },
+  {
+    "case_id": "TP-03",
+    "case_group": "Negative",
+    "description": "th\u00e2n {} \u2192 Missing event ID",
+    "expected_status": "400",
+    "expected_code": "",
+    "topic_path": "qa-path-match",
+    "body_json": "{}",
+    "expected_message": "Missing event ID"
+  },
+  {
+    "case_id": "TP-04",
+    "case_group": "Negative",
+    "description": "th\u00e2n d\u1ea1ng \u0111\u0103ng k\u00fd g\u1eedi nh\u1ea7m v\u00e0o /{topic} \u2192 Missing event ID",
+    "expected_status": "400",
+    "expected_code": "",
+    "topic_path": "qa-path-match",
+    "body_json": "{\"hub.channel.type\":\"websocket\",\"hub.mode\":\"subscribe\",\"hub.topic\":\"qa-val-topic\",\"hub.events\":\"Patient-open,Patient-close\"}",
+    "expected_message": "Missing event ID"
+  },
+  {
+    "case_id": "TP-05",
+    "case_group": "Negative",
+    "description": "th\u00f4ng \u0111i\u1ec7p thi\u1ebfu context + l\u1ec7ch topic: th\u00f4ng \u0111i\u1ec7p ValidateEvent \u0111i tr\u01b0\u1edbc",
+    "expected_status": "400",
+    "expected_code": "",
+    "topic_path": "qa-path-a",
+    "body_json": "{\"id\":\"qa-ev-1\",\"timestamp\":\"2026-11-25T10:00:00.000Z\",\"event\":{\"hub.topic\":\"qa-path-b\",\"hub.event\":\"heartbeat\"}}",
+    "expected_message": "Missing event.context"
+  },
+  {
+    "case_id": "TP-06",
+    "case_group": "Boundary",
+    "description": "topic \u0111\u01b0\u1eddng d\u1eabn m\u00e3 h\u00f3a %2F kh\u1edbp event c\u00f3 '/'",
+    "expected_status": "202",
+    "expected_code": "",
+    "topic_path": "a%2Fb",
+    "body_json": "{\"id\":\"qa-ev-1\",\"timestamp\":\"2026-11-25T10:00:00.000Z\",\"event\":{\"hub.topic\":\"a/b\",\"hub.event\":\"heartbeat\",\"context\":[]}}",
+    "expected_message": ""
+  }
+]

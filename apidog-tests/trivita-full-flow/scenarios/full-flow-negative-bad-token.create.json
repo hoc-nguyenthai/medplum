@@ -1,0 +1,11 @@
+{
+ "name": "Full flow negative: token sai → 401 trên cả 4 service",
+ "description": "Cùng một token sai (chuỗi rác, 3 đoạn, alg=none, SQLi, quá dài, chữ Bearer) bị 4 service cùng từ chối 401; có bước đối chứng với token hợp lệ để chứng minh hạ tầng đang chạy.",
+ "folderId": 0,
+ "priority": 1,
+ "tags": [
+  "full-flow",
+  "negative",
+  "security"
+ ]
+}

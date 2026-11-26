@@ -1,0 +1,92 @@
+{
+  "version": 1,
+  "updatedAt": "2026-11-25T14:19:24.930Z",
+  "projects": {
+    "1380475": {
+      "branches": {
+        "1413093": {
+          "projectId": 1380475,
+          "branchId": 1413093,
+          "name": "ai/20261025-from-main-nurse-tests",
+          "branchKind": "ai",
+          "branchType": "SPRINT",
+          "isAiBranch": true,
+          "isAiWritableBranch": true,
+          "automationLifecycleStatus": "ACTIVE",
+          "isArchived": false,
+          "fetchedAt": "2026-11-25T14:19:12.657Z",
+          "lastKnownStatus": "ACTIVE"
+        },
+        "1413227": {
+          "projectId": 1380475,
+          "branchId": 1413227,
+          "name": "ai/20261025-from-main-identity-tests",
+          "branchKind": "ai",
+          "branchType": "SPRINT",
+          "isAiBranch": true,
+          "isAiWritableBranch": true,
+          "automationLifecycleStatus": "ACTIVE",
+          "isArchived": false,
+          "fetchedAt": "2026-11-25T14:19:12.658Z",
+          "lastKnownStatus": "ACTIVE"
+        },
+        "1432970": {
+          "projectId": 1380475,
+          "branchId": 1432970,
+          "name": "ai/20261125-from-main-trivita-platform-tests",
+          "branchKind": "ai",
+          "branchType": "SPRINT",
+          "sourceBranchId": 1386232,
+          "isAiBranch": true,
+          "isAiWritableBranch": true,
+          "automationLifecycleStatus": "ACTIVE",
+          "isArchived": false,
+          "fetchedAt": "2026-11-25T14:19:24.930Z",
+          "lastKnownStatus": "ACTIVE"
+        }
+      },
+      "recentEvents": [
+        {
+          "type": "branch_recorded",
+          "projectId": 1380475,
+          "branchId": 1413093,
+          "createdAt": "2026-11-25T14:19:12.657Z"
+        },
+        {
+          "type": "branch_recorded",
+          "projectId": 1380475,
+          "branchId": 1413227,
+          "createdAt": "2026-11-25T14:19:12.658Z"
+        },
+        {
+          "type": "branch_recorded",
+          "projectId": 1380475,
+          "branchId": 1432970,
+          "sourceBranchId": 1386232,
+          "createdAt": "2026-11-25T14:19:24.930Z"
+        }
+      ]
+    }
+  },
+  "recentEvents": [
+    {
+      "type": "branch_recorded",
+      "projectId": 1380475,
+      "branchId": 1413093,
+      "createdAt": "2026-11-25T14:19:12.657Z"
+    },
+    {
+      "type": "branch_recorded",
+      "projectId": 1380475,
+      "branchId": 1413227,
+      "createdAt": "2026-11-25T14:19:12.658Z"
+    },
+    {
+      "type": "branch_recorded",
+      "projectId": 1380475,
+      "branchId": 1432970,
+      "sourceBranchId": 1386232,
+      "createdAt": "2026-11-25T14:19:24.930Z"
+    }
+  ]
+}

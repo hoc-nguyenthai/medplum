@@ -1,0 +1,106 @@
+{
+ "slug": "rate-limits-flow",
+ "name": "Project/{id}/$rate-limits",
+ "priority": 2,
+ "steps": [
+  {
+   "name": "Đăng nhập admin project (auth /auth/login)",
+   "endpointId": "auth-login",
+   "method": "POST",
+   "path": "{{authUrl}}/auth/login",
+   "body": "{\"email\": \"{{adminEmail}}\", \"password\": \"{{adminPassword}}\", \"clientId\": \"{{clientId}}\", \"scope\": \"openid profile email\"}",
+   "auth": "none",
+   "assertions": [
+    "status == 200",
+    "$.code exists"
+   ],
+   "postProcessors": [
+    {
+     "type": "extractor",
+     "data": {
+      "variableName": "adm_code",
+      "expression": "$.code",
+      "subject": "responseJson"
+     }
+    }
+   ]
+  },
+  {
+   "name": "Đổi code lấy token admin (authorization_code)",
+   "endpointId": "auth-token",
+   "method": "POST",
+   "path": "{{authUrl}}/oauth2/token",
+   "form": {
+    "grant_type": "authorization_code",
+    "code": "{{adm_code}}",
+    "client_id": "{{clientId}}",
+    "client_secret": "{{clientSecret}}"
+   },
+   "auth": "none",
+   "assertions": [
+    "status == 200",
+    "$.access_token exists"
+   ],
+   "postProcessors": [
+    {
+     "type": "extractor",
+     "data": {
+      "variableName": "bearerToken",
+      "expression": "$.access_token",
+      "subject": "responseJson"
+     }
+    }
+   ],
+   "custom": true
+  },
+  {
+   "name": "GET Project/{projectId}/$rate-limits",
+   "endpointId": 47548513,
+   "method": "GET",
+   "path": "/fhir/R4/Project/{{projectId}}/$rate-limits",
+   "auth": "Bearer {{bearerToken}}",
+   "assertions": [
+    "status == 200",
+    "$.resourceType == Parameters"
+   ],
+   "postProcessors": [
+    {
+     "type": "customScript",
+     "data": {
+      "script": "const p = pm.response.json().parameter.find(x => x.name === 'enabled'); pm.test('có tham số enabled', () => pm.expect(p).to.not.eql(undefined));"
+     }
+    }
+   ]
+  },
+  {
+   "name": "GET Project/khac/$rate-limits → 403",
+   "endpointId": 47548513,
+   "method": "GET",
+   "path": "/fhir/R4/Project/project-khac/$rate-limits",
+   "auth": "Bearer {{bearerToken}}",
+   "assertions": [
+    "status == 403"
+   ],
+   "postProcessors": [
+    {
+     "type": "customScript",
+     "data": {
+      "script": "pm.test('thông điệp', () => pm.expect(pm.response.json().issue[0].details.text).to.include('Chỉ quản trị của chính project này được xem hạn mức'));"
+     }
+    }
+   ],
+   "custom": true
+  },
+  {
+   "name": "GET $rate-limits không token → 401",
+   "endpointId": 47548513,
+   "method": "GET",
+   "path": "/fhir/R4/Project/{{projectId}}/$rate-limits",
+   "auth": "none",
+   "assertions": [
+    "status == 401"
+   ],
+   "custom": true
+  }
+ ]
+}

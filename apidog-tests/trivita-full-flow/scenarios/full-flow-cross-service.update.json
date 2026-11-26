@@ -1,0 +1,459 @@
+{
+ "steps": [
+  {
+   "id": "step-1",
+   "number": 1,
+   "name": "Lấy token client_credentials (auth)",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988053,
+    "name": "Lấy token client_credentials (auth)",
+    "path": "{{authUrl}}/oauth2/token",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "x-www-form-urlencoded",
+     "parameters": [
+      {
+       "name": "grant_type",
+       "value": "client_credentials",
+       "enable": true,
+       "type": "string"
+      },
+      {
+       "name": "client_id",
+       "value": "{{clientId}}",
+       "enable": true,
+       "type": "string"
+      },
+      {
+       "name": "client_secret",
+       "value": "{{clientSecret}}",
+       "enable": true,
+       "type": "string"
+      }
+     ]
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.access_token exists",
+       "subject": "responseJson",
+       "comparison": "exists",
+       "path": "$.access_token",
+       "value": "",
+       "extractSettings": {
+        "expression": "$.access_token"
+       }
+      }
+     },
+     {
+      "type": "extractor",
+      "enable": true,
+      "data": {
+       "variableType": "local",
+       "variableName": "accessToken",
+       "expression": "$.access_token",
+       "subject": "responseJson"
+      }
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "const base = '1.2.826.0.1.3680043.9.7777.' + Date.now() + (100 + Math.floor(Math.random() * 900));\npm.variables.set('studyUid', base + '.1'); pm.variables.set('seriesUid', base + '.1.1'); pm.variables.set('sop', base + '.1.1.1');\npm.variables.set('pid', 'QA-FF-' + Date.now());\npm.variables.set('topic', 'qa-ff-' + Date.now() + '-' + Math.floor(Math.random() * 1000000));"
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988053
+  },
+  {
+   "id": "step-2",
+   "number": 2,
+   "name": "fhir: token của auth dùng được ở fhir-server",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988052,
+    "name": "fhir: token của auth dùng được ở fhir-server",
+    "path": "{{fhirUrl}}/fhir/R4/Patient?_count=1",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{accessToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988052
+  },
+  {
+   "id": "step-3",
+   "number": 3,
+   "name": "dicomweb: cùng token dùng được ở dicomweb",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988051,
+    "name": "dicomweb: cùng token dùng được ở dicomweb",
+    "path": "{{dicomUrl}}/dicomweb/studies",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{accessToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988051
+  },
+  {
+   "id": "step-4",
+   "number": 4,
+   "name": "auth: token scope fhircast/*",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988050,
+    "name": "auth: token scope fhircast/*",
+    "path": "{{authUrl}}/oauth2/token",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "x-www-form-urlencoded",
+     "parameters": [
+      {
+       "name": "grant_type",
+       "value": "client_credentials",
+       "enable": true,
+       "type": "string"
+      },
+      {
+       "name": "client_id",
+       "value": "{{clientId}}",
+       "enable": true,
+       "type": "string"
+      },
+      {
+       "name": "client_secret",
+       "value": "{{clientSecret}}",
+       "enable": true,
+       "type": "string"
+      },
+      {
+       "name": "scope",
+       "value": "fhircast/*",
+       "enable": true,
+       "type": "string"
+      }
+     ]
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.access_token exists",
+       "subject": "responseJson",
+       "comparison": "exists",
+       "path": "$.access_token",
+       "value": "",
+       "extractSettings": {
+        "expression": "$.access_token"
+       }
+      }
+     },
+     {
+      "type": "extractor",
+      "enable": true,
+      "data": {
+       "variableType": "local",
+       "variableName": "wsToken",
+       "expression": "$.access_token",
+       "subject": "responseJson"
+      }
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988050
+  },
+  {
+   "id": "step-5",
+   "number": 5,
+   "name": "ws-gateway: token scope fhircast/* dùng được ở hub",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988049,
+    "name": "ws-gateway: token scope fhircast/* dùng được ở hub",
+    "path": "{{wsUrl}}/fhircast/STU3/{{topic}}",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{wsToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988049
+  },
+  {
+   "id": "step-6",
+   "number": 6,
+   "name": "auth: POST /oauth2/logout thu hồi phiên của token",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988048,
+    "name": "auth: POST /oauth2/logout thu hồi phiên của token",
+    "path": "{{authUrl}}/oauth2/logout",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{accessToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988048
+  },
+  {
+   "id": "step-7",
+   "number": 7,
+   "name": "auth: sau logout /auth/me -> 401",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988047,
+    "name": "auth: sau logout /auth/me -> 401",
+    "path": "{{authUrl}}/auth/me",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 401",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "401"
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{accessToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988047
+  },
+  {
+   "id": "step-8",
+   "number": 8,
+   "name": "fhir: token đã logout ở auth khi dùng ở fhir-server (ghi nhận hành vi: 200 hoặc 401)",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988046,
+    "name": "fhir: token đã logout ở auth khi dùng ở fhir-server (ghi nhận hành vi: 200 hoặc 401)",
+    "path": "{{fhirUrl}}/fhir/R4/Patient?_count=1",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "pm.test(\"200 (JWT chỉ kiểm chữ ký) hoặc 401 (kiểm thu hồi): ghi nhận, không khẳng định\", () => { pm.expect([200, 401]).to.include(pm.response.code); });"
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{accessToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988046
+  }
+ ]
+}

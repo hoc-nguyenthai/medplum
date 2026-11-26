@@ -1,0 +1,10 @@
+[
+ {
+  "case_id": "SC-01",
+  "case_group": "Positive",
+  "description": "scope fhircast/* được chấp nhận (đối chứng)",
+  "expected_status": "202",
+  "expected_code": "",
+  "oauth_scope": "fhircast/*"
+ }
+]

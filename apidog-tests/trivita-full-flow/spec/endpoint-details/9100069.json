@@ -1,0 +1,1 @@
+{"id": 9100069, "name": "fhir: token đã logout ở auth khi dùng ở fhir-server (ghi nhận hành vi: 200 hoặc 401)", "method": "get", "path": "{{fhirUrl}}/fhir/R4/Patient", "parameters": {"path": [], "query": [], "header": [], "cookie": []}, "auth": {}, "securityScheme": {}, "requestBody": null, "responses": []}

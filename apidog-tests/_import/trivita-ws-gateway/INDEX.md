@@ -1,0 +1,19 @@
+# Import test data — Trivita WS Gateway
+
+Branch `ai/20261125-from-main-trivita-platform-tests` · folder scenario **Trivita WS Gateway** · 9 file / 14 scenario (scenario không có file là scenario tĩnh, không cần import).
+
+Cách nhanh (Bulk Edit): mở bộ Test Data → **Bulk Edit** → dán toàn bộ nội dung file ở cột *File dán Bulk Edit* → OK (app tự lưu). Cách import file: mở scenario trong folder → tab **Test Data** → Mở bộ Test Data đã tạo sẵn (tên ở cột *Bộ Test Data*) → Import/Export → Import (đặt mã hóa **UTF-8** nếu có ô chọn) → chọn file ở cột *File* (hộp chọn file: `Cmd+Shift+G`, dán đường dẫn). Giữ nguyên tên cột (step dùng `{{tên_cột}}`).
+
+| # | Scenario (tên trong app) | ID | Bộ Test Data (đã tạo sẵn, rỗng) | File dán Bulk Edit | File import | Dòng |
+|---|---|---|---|---|---|---|
+| 1 | Hub authz: scope | 1998581 | `hub-authz-scope` | `/Users/hocnt84/Documents/TRIVITAAI/trivita-codebase-v1/apidog-tests/_import/trivita-ws-gateway/bulk/01-hub-authz-scope.txt` | `/Users/hocnt84/Documents/TRIVITAAI/trivita-codebase-v1/apidog-tests/_import/trivita-ws-gateway/01-hub-authz-scope.json` | 3 |
+| 2 | Hub authz: token sai | 1998579 | `hub-authz-bad-token` | `/Users/hocnt84/Documents/TRIVITAAI/trivita-codebase-v1/apidog-tests/_import/trivita-ws-gateway/bulk/02-hub-authz-bad-token.txt` | `/Users/hocnt84/Documents/TRIVITAAI/trivita-codebase-v1/apidog-tests/_import/trivita-ws-gateway/02-hub-authz-bad-token.json` | 6 |
+| 3 | Hub GET topic (STU3) | 1998606 | `hub-get-topic` | `/Users/hocnt84/Documents/TRIVITAAI/trivita-codebase-v1/apidog-tests/_import/trivita-ws-gateway/bulk/03-hub-get-topic.txt` | `/Users/hocnt84/Documents/TRIVITAAI/trivita-codebase-v1/apidog-tests/_import/trivita-ws-gateway/03-hub-get-topic.json` | 9 |
+| 4 | Hub lifecycle HUB | 1998610 | `hub-lifecycle-hub-alias` | `/Users/hocnt84/Documents/TRIVITAAI/trivita-codebase-v1/apidog-tests/_import/trivita-ws-gateway/bulk/04-hub-lifecycle-hub-alias.txt` | `/Users/hocnt84/Documents/TRIVITAAI/trivita-codebase-v1/apidog-tests/_import/trivita-ws-gateway/04-hub-lifecycle-hub-alias.json` | 3 |
+| 5 | Hub lifecycle STU2 | 1998613 | `hub-lifecycle-stu2` | `/Users/hocnt84/Documents/TRIVITAAI/trivita-codebase-v1/apidog-tests/_import/trivita-ws-gateway/bulk/05-hub-lifecycle-stu2.txt` | `/Users/hocnt84/Documents/TRIVITAAI/trivita-codebase-v1/apidog-tests/_import/trivita-ws-gateway/05-hub-lifecycle-stu2.json` | 3 |
+| 6 | Hub lifecycle STU3 | 1998619 | `hub-lifecycle-stu3` | `/Users/hocnt84/Documents/TRIVITAAI/trivita-codebase-v1/apidog-tests/_import/trivita-ws-gateway/bulk/06-hub-lifecycle-stu3.txt` | `/Users/hocnt84/Documents/TRIVITAAI/trivita-codebase-v1/apidog-tests/_import/trivita-ws-gateway/06-hub-lifecycle-stu3.json` | 3 |
+| 7 | Hub POST {v}/{topic} khớp topic | 1998625 | `hub-topic-path` | `/Users/hocnt84/Documents/TRIVITAAI/trivita-codebase-v1/apidog-tests/_import/trivita-ws-gateway/bulk/07-hub-topic-path.txt` | `/Users/hocnt84/Documents/TRIVITAAI/trivita-codebase-v1/apidog-tests/_import/trivita-ws-gateway/07-hub-topic-path.json` | 6 |
+| 8 | Hub validation đăng ký/hủy | 1998631 | `hub-validation-subscribe` | `/Users/hocnt84/Documents/TRIVITAAI/trivita-codebase-v1/apidog-tests/_import/trivita-ws-gateway/bulk/08-hub-validation-subscribe.txt` | `/Users/hocnt84/Documents/TRIVITAAI/trivita-codebase-v1/apidog-tests/_import/trivita-ws-gateway/08-hub-validation-subscribe.json` | 34 |
+| 9 | Hub validation đổi ngữ cảnh | 1998628 | `hub-validation-event` | `/Users/hocnt84/Documents/TRIVITAAI/trivita-codebase-v1/apidog-tests/_import/trivita-ws-gateway/bulk/09-hub-validation-event.txt` | `/Users/hocnt84/Documents/TRIVITAAI/trivita-codebase-v1/apidog-tests/_import/trivita-ws-gateway/09-hub-validation-event.json` | 21 |
+
+Scenario tĩnh (không cần import): Discovery well-known (1998568); Health smoke (1998575); Hub content-type form (1998584); Hub DiagnosticReport open/update/close (1998586); Hub từ chối khi không có token (9 route) (1998622)

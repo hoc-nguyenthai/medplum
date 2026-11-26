@@ -1,0 +1,262 @@
+{
+ "id": 47548499,
+ "name": "Cập nhật resource",
+ "method": "put",
+ "path": "/fhir/R4/{resourceType}/{id}",
+ "parameters": {
+  "path": [
+   {
+    "id": "resourceType#0",
+    "name": "resourceType",
+    "required": true,
+    "enable": true,
+    "description": "Loại resource",
+    "example": "",
+    "type": "string",
+    "schema": {
+     "type": "string"
+    }
+   },
+   {
+    "id": "id#0",
+    "name": "id",
+    "required": true,
+    "enable": true,
+    "description": "Id",
+    "example": "",
+    "type": "string",
+    "schema": {
+     "type": "string"
+    }
+   }
+  ],
+  "query": [],
+  "cookie": [],
+  "header": [
+   {
+    "id": "UJRi95bOX3",
+    "name": "If-Match",
+    "required": false,
+    "enable": true,
+    "description": "ETag phiên bản đang sửa, ví dụ W/\\",
+    "example": "",
+    "type": "string",
+    "schema": {
+     "type": "string"
+    }
+   }
+  ]
+ },
+ "auth": {
+  "type": "securityscheme"
+ },
+ "securityScheme": {
+  "schemeGroups": [
+   {
+    "id": "fuJZ8KEypInNZK71ZZWDk",
+    "schemeIds": [
+     646419
+    ]
+   }
+  ],
+  "required": true,
+  "use": {
+   "id": "fuJZ8KEypInNZK71ZZWDk",
+   "configs": {
+    "646419": {
+     "authConfigs": {
+      "x-apidog": {
+       "value": "{{apiKey}}"
+      }
+     }
+    }
+   }
+  },
+  "scopes": {
+   "fuJZ8KEypInNZK71ZZWDk": {
+    "646419": []
+   }
+  }
+ },
+ "requestBody": {
+  "type": "application/json",
+  "jsonSchema": {
+   "$ref": "#/definitions/19029565"
+  },
+  "parameters": [],
+  "mediaType": "application/fhir+json",
+  "oasExtensions": "",
+  "required": true,
+  "additionalContentTypes": []
+ },
+ "responses": [
+  {
+   "id": "117642562",
+   "name": "",
+   "code": "200",
+   "contentType": "json",
+   "jsonSchema": {
+    "$ref": "#/definitions/19029557"
+   },
+   "itemSchema": {},
+   "description": "Đã cập nhật; header ETag mới",
+   "mediaType": "application/json",
+   "headers": [],
+   "oasExtensions": "",
+   "additionalContent": [
+    {
+     "contentType": "json",
+     "mediaType": "application/fhir+json",
+     "jsonSchema": {
+      "$ref": "#/components/schemas/httpapi.FHIRResource"
+     },
+     "examples": {}
+    }
+   ]
+  },
+  {
+   "id": "163804676",
+   "name": "",
+   "code": "201",
+   "contentType": "json",
+   "jsonSchema": {
+    "$ref": "#/definitions/19029557"
+   },
+   "itemSchema": {},
+   "description": "Tạo mới (update-as-create)",
+   "mediaType": "application/json",
+   "headers": [],
+   "oasExtensions": "",
+   "additionalContent": [
+    {
+     "contentType": "json",
+     "mediaType": "application/fhir+json",
+     "jsonSchema": {
+      "$ref": "#/components/schemas/httpapi.FHIRResource"
+     },
+     "examples": {}
+    }
+   ]
+  },
+  {
+   "id": "129425379",
+   "name": "",
+   "code": "400",
+   "contentType": "json",
+   "jsonSchema": {
+    "$ref": "#/definitions/19029533"
+   },
+   "itemSchema": {},
+   "description": "Sai cấu trúc hoặc id không khớp",
+   "mediaType": "application/json",
+   "headers": [],
+   "oasExtensions": "",
+   "additionalContent": [
+    {
+     "contentType": "json",
+     "mediaType": "application/fhir+json",
+     "jsonSchema": {
+      "$ref": "#/components/schemas/fhir.OperationOutcome"
+     },
+     "examples": {}
+    }
+   ]
+  },
+  {
+   "id": "163131419",
+   "name": "",
+   "code": "401",
+   "contentType": "json",
+   "jsonSchema": {
+    "$ref": "#/definitions/19029533"
+   },
+   "itemSchema": {},
+   "description": "Thiếu hoặc sai Bearer token",
+   "mediaType": "application/json",
+   "headers": [],
+   "oasExtensions": "",
+   "additionalContent": [
+    {
+     "contentType": "json",
+     "mediaType": "application/fhir+json",
+     "jsonSchema": {
+      "$ref": "#/components/schemas/fhir.OperationOutcome"
+     },
+     "examples": {}
+    }
+   ]
+  },
+  {
+   "id": "120243309",
+   "name": "",
+   "code": "403",
+   "contentType": "json",
+   "jsonSchema": {
+    "$ref": "#/definitions/19029533"
+   },
+   "itemSchema": {},
+   "description": "Token không đủ quyền (cần quyền write)",
+   "mediaType": "application/json",
+   "headers": [],
+   "oasExtensions": "",
+   "additionalContent": [
+    {
+     "contentType": "json",
+     "mediaType": "application/fhir+json",
+     "jsonSchema": {
+      "$ref": "#/components/schemas/fhir.OperationOutcome"
+     },
+     "examples": {}
+    }
+   ]
+  },
+  {
+   "id": "188940578",
+   "name": "",
+   "code": "404",
+   "contentType": "json",
+   "jsonSchema": {
+    "$ref": "#/definitions/19029533"
+   },
+   "itemSchema": {},
+   "description": "Không tồn tại và update-as-create đang tắt",
+   "mediaType": "application/json",
+   "headers": [],
+   "oasExtensions": "",
+   "additionalContent": [
+    {
+     "contentType": "json",
+     "mediaType": "application/fhir+json",
+     "jsonSchema": {
+      "$ref": "#/components/schemas/fhir.OperationOutcome"
+     },
+     "examples": {}
+    }
+   ]
+  },
+  {
+   "id": "148730190",
+   "name": "",
+   "code": "412",
+   "contentType": "json",
+   "jsonSchema": {
+    "$ref": "#/definitions/19029533"
+   },
+   "itemSchema": {},
+   "description": "If-Match không khớp phiên bản hiện tại",
+   "mediaType": "application/json",
+   "headers": [],
+   "oasExtensions": "",
+   "additionalContent": [
+    {
+     "contentType": "json",
+     "mediaType": "application/fhir+json",
+     "jsonSchema": {
+      "$ref": "#/components/schemas/fhir.OperationOutcome"
+     },
+     "examples": {}
+    }
+   ]
+  }
+ ]
+}

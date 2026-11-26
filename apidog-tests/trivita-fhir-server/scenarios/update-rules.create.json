@@ -1,0 +1,9 @@
+{
+ "name": "PUT/GET: If-Match, If-None-Match, Prefer, id lệch",
+ "description": "Quy tắc phiên bản của PUT và đọc có điều kiện; Prefer return=minimal/OperationOutcome.",
+ "priority": 1,
+ "folderId": 0,
+ "tags": [
+  "update"
+ ]
+}

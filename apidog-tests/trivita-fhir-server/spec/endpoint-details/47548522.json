@@ -1,0 +1,51 @@
+{
+ "id": 47548522,
+ "name": "Readiness probe (kiểm tra phụ thuộc)",
+ "method": "get",
+ "path": "/readyz",
+ "parameters": {
+  "path": [],
+  "query": [],
+  "cookie": [],
+  "header": []
+ },
+ "auth": {},
+ "securityScheme": {},
+ "requestBody": {
+  "type": "none",
+  "parameters": [],
+  "required": false,
+  "additionalContentTypes": [],
+  "oasExtensions": ""
+ },
+ "responses": [
+  {
+   "id": "145731248",
+   "name": "",
+   "code": "200",
+   "contentType": "json",
+   "jsonSchema": {
+    "$ref": "#/definitions/19029566"
+   },
+   "itemSchema": {},
+   "description": "OK",
+   "mediaType": "application/json",
+   "headers": [],
+   "oasExtensions": ""
+  },
+  {
+   "id": "138575129",
+   "name": "",
+   "code": "503",
+   "contentType": "json",
+   "jsonSchema": {
+    "$ref": "#/definitions/19029566"
+   },
+   "itemSchema": {},
+   "description": "Service Unavailable",
+   "mediaType": "application/json",
+   "headers": [],
+   "oasExtensions": ""
+  }
+ ]
+}

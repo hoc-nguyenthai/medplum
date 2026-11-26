@@ -1,0 +1,180 @@
+{
+ "steps": [
+  {
+   "id": "step-1",
+   "number": 1,
+   "name": "GET /health/live",
+   "type": "http",
+   "bindType": "API",
+   "syncMode": "MANUAL",
+   "bindId": 47548542,
+   "httpApiCase": {
+    "type": "DEBUG_CASE",
+    "name": "GET /health/live",
+    "path": "/health/live",
+    "method": "get",
+    "apiDetailId": 47548542,
+    "projectId": 1380475,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "id": 65400434
+   },
+   "relatedId": 65400434
+  },
+  {
+   "id": "step-2",
+   "number": 2,
+   "name": "GET /health/ready",
+   "type": "http",
+   "bindType": "API",
+   "syncMode": "MANUAL",
+   "bindId": 47548543,
+   "httpApiCase": {
+    "type": "DEBUG_CASE",
+    "name": "GET /health/ready",
+    "path": "/health/ready",
+    "method": "get",
+    "apiDetailId": 47548543,
+    "projectId": 1380475,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "id": 65400433
+   },
+   "relatedId": 65400433
+  },
+  {
+   "id": "step-3",
+   "number": 3,
+   "name": "GET /health/startup",
+   "type": "http",
+   "bindType": "API",
+   "syncMode": "MANUAL",
+   "bindId": 47548544,
+   "httpApiCase": {
+    "type": "DEBUG_CASE",
+    "name": "GET /health/startup",
+    "path": "/health/startup",
+    "method": "get",
+    "apiDetailId": 47548544,
+    "projectId": 1380475,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "id": 65400432
+   },
+   "relatedId": 65400432
+  },
+  {
+   "id": "step-4",
+   "number": 4,
+   "name": "GET /healthz",
+   "type": "http",
+   "bindType": "API",
+   "syncMode": "MANUAL",
+   "bindId": 47548545,
+   "httpApiCase": {
+    "type": "DEBUG_CASE",
+    "name": "GET /healthz",
+    "path": "/healthz",
+    "method": "get",
+    "apiDetailId": 47548545,
+    "projectId": 1380475,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "id": 65400431
+   },
+   "relatedId": 65400431
+  }
+ ]
+}

@@ -1,0 +1,10 @@
+{
+ "name": "Bulk export $export (async) đầu-cuối",
+ "description": "Cần fhir-worker chạy: 202 + Content-Location → poll status → manifest 200 → tải ndjson từ Binary → DELETE → 404/410.",
+ "priority": 1,
+ "folderId": 0,
+ "tags": [
+  "bulk",
+  "async"
+ ]
+}

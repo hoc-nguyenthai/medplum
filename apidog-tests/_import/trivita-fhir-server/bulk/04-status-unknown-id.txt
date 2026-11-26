@@ -1,0 +1,6 @@
+Dataset Name,case_id,case_group,description,expected_status,expected_code,expected_message,job_id
+TC-ST-01,TC-ST-01,Negative,id dạng chuỗi lạ,404,not-found,,khong-co
+TC-ST-02,TC-ST-02,Negative,UUID chưa có,404,not-found,,00000000-0000-4000-8000-000000000000
+TC-ST-03,TC-ST-03,Security,dấu hiệu path traversal đã mã hóa,404,not-found,,..%2F..%2Fetc%2Fpasswd
+TC-ST-04,TC-ST-04,Security,SQLi trong id,404,not-found,,x'%20OR%201=1--
+TC-ST-05,TC-ST-05,Boundary,id rất dài (512 ký tự),404,not-found,,aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa

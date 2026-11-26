@@ -1,0 +1,53 @@
+{
+ "slug": "health-smoke",
+ "name": "Health smoke",
+ "priority": 0,
+ "steps": [
+  {
+   "name": "GET /health/live",
+   "endpointId": 47548558,
+   "method": "GET",
+   "path": "/health/live",
+   "assertions": [
+    "status == 200",
+    "$.status == ok"
+   ],
+   "auth": "none"
+  },
+  {
+   "name": "GET /health/startup",
+   "endpointId": 47548560,
+   "method": "GET",
+   "path": "/health/startup",
+   "assertions": [
+    "status == 200",
+    "$.status == ok"
+   ],
+   "auth": "none"
+  },
+  {
+   "name": "GET /healthz",
+   "endpointId": 47548561,
+   "method": "GET",
+   "path": "/healthz",
+   "assertions": [
+    "status == 200",
+    "$.status == ok"
+   ],
+   "auth": "none"
+  },
+  {
+   "name": "GET /health/ready (Redis ping được)",
+   "endpointId": 47548559,
+   "method": "GET",
+   "path": "/health/ready",
+   "assertions": [
+    "status == 200",
+    "$.ready == true",
+    "$.checks.redis == true",
+    "$.checks.accepting_traffic == true"
+   ],
+   "auth": "none"
+  }
+ ]
+}

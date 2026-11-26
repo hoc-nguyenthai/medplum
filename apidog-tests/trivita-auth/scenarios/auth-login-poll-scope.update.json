@@ -1,0 +1,745 @@
+{
+ "steps": [
+  {
+   "id": "step-1",
+   "number": 1,
+   "name": "Đăng nhập admin",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988446,
+    "name": "Đăng nhập admin",
+    "path": "/auth/login",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "json",
+     "data": "{\"email\": \"{{adminEmail}}\", \"password\": \"{{adminPassword}}\", \"clientId\": \"{{clientId}}\", \"scope\": \"openid profile email\"}"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.code exists",
+       "subject": "responseJson",
+       "comparison": "exists",
+       "path": "$.code",
+       "value": "",
+       "extractSettings": {
+        "expression": "$.code"
+       }
+      }
+     },
+     {
+      "type": "extractor",
+      "enable": true,
+      "data": {
+       "variableType": "local",
+       "variableName": "loginId",
+       "expression": "$.login",
+       "subject": "responseJson"
+      }
+     },
+     {
+      "type": "extractor",
+      "enable": true,
+      "data": {
+       "variableType": "local",
+       "variableName": "code",
+       "expression": "$.code",
+       "subject": "responseJson"
+      }
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988446
+  },
+  {
+   "id": "step-2",
+   "number": 2,
+   "name": "GET /auth/login/{login} phát code mới",
+   "type": "http",
+   "bindType": "API",
+   "syncMode": "MANUAL",
+   "bindId": 47548453,
+   "httpApiCase": {
+    "type": "DEBUG_CASE",
+    "name": "GET /auth/login/{login} phát code mới",
+    "path": "/auth/login/{login}",
+    "method": "get",
+    "apiDetailId": 47548453,
+    "projectId": 1380475,
+    "parameters": {
+     "path": [
+      {
+       "name": "login",
+       "value": "{{loginId}}",
+       "enable": true
+      }
+     ],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.code exists",
+       "subject": "responseJson",
+       "comparison": "exists",
+       "path": "$.code",
+       "value": "",
+       "extractSettings": {
+        "expression": "$.code"
+       }
+      }
+     },
+     {
+      "type": "extractor",
+      "enable": true,
+      "data": {
+       "variableType": "local",
+       "variableName": "code2",
+       "expression": "$.code",
+       "subject": "responseJson"
+      }
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "id": 65401434
+   },
+   "relatedId": 65401434
+  },
+  {
+   "id": "step-3",
+   "number": 3,
+   "name": "Code cũ bị vô hiệu → Invalid code",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988286,
+    "name": "Code cũ bị vô hiệu → Invalid code",
+    "path": "/oauth2/token",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "x-www-form-urlencoded",
+     "parameters": [
+      {
+       "name": "grant_type",
+       "value": "authorization_code",
+       "enable": true,
+       "type": "string"
+      },
+      {
+       "name": "code",
+       "value": "{{code}}",
+       "enable": true,
+       "type": "string"
+      },
+      {
+       "name": "client_id",
+       "value": "{{clientId}}",
+       "enable": true,
+       "type": "string"
+      },
+      {
+       "name": "client_secret",
+       "value": "{{clientSecret}}",
+       "enable": true,
+       "type": "string"
+      }
+     ]
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 400",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "400"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.error == invalid_request",
+       "subject": "responseJson",
+       "comparison": "equal",
+       "path": "$.error",
+       "value": "invalid_request",
+       "extractSettings": {
+        "expression": "$.error"
+       }
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.error_description == Invalid code",
+       "subject": "responseJson",
+       "comparison": "equal",
+       "path": "$.error_description",
+       "value": "Invalid code",
+       "extractSettings": {
+        "expression": "$.error_description"
+       }
+      }
+     }
+    ],
+    "auth": {},
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988286
+  },
+  {
+   "id": "step-4",
+   "number": 4,
+   "name": "Scope mở rộng hơn lúc đăng nhập → 400 Invalid scope",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988285,
+    "name": "Scope mở rộng hơn lúc đăng nhập → 400 Invalid scope",
+    "path": "/auth/scope",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "json",
+     "data": "{\"login\": \"{{loginId}}\", \"scope\": \"openid profile email offline_access\"}"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 400",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "400"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.issue[0].details.text == Invalid scope",
+       "subject": "responseJson",
+       "comparison": "equal",
+       "path": "$.issue[0].details.text",
+       "value": "Invalid scope",
+       "extractSettings": {
+        "expression": "$.issue[0].details.text"
+       }
+      }
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988285
+  },
+  {
+   "id": "step-5",
+   "number": 5,
+   "name": "Thiếu scope → 400 Missing scope",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988284,
+    "name": "Thiếu scope → 400 Missing scope",
+    "path": "/auth/scope",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "json",
+     "data": "{\"login\": \"{{loginId}}\"}"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 400",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "400"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.issue[0].details.text == Missing scope",
+       "subject": "responseJson",
+       "comparison": "equal",
+       "path": "$.issue[0].details.text",
+       "value": "Missing scope",
+       "extractSettings": {
+        "expression": "$.issue[0].details.text"
+       }
+      }
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988284
+  },
+  {
+   "id": "step-6",
+   "number": 6,
+   "name": "Thu hẹp scope → code mới",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988445,
+    "name": "Thu hẹp scope → code mới",
+    "path": "/auth/scope",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "json",
+     "data": "{\"login\": \"{{loginId}}\", \"scope\": \"openid profile\"}"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.code exists",
+       "subject": "responseJson",
+       "comparison": "exists",
+       "path": "$.code",
+       "value": "",
+       "extractSettings": {
+        "expression": "$.code"
+       }
+      }
+     },
+     {
+      "type": "extractor",
+      "enable": true,
+      "data": {
+       "variableType": "local",
+       "variableName": "code3",
+       "expression": "$.code",
+       "subject": "responseJson"
+      }
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988445
+  },
+  {
+   "id": "step-7",
+   "number": 7,
+   "name": "Thiếu profile → 400 Missing profile",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988283,
+    "name": "Thiếu profile → 400 Missing profile",
+    "path": "/auth/profile",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "json",
+     "data": "{\"login\": \"{{loginId}}\"}"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 400",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "400"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.issue[0].details.text == Missing profile",
+       "subject": "responseJson",
+       "comparison": "equal",
+       "path": "$.issue[0].details.text",
+       "value": "Missing profile",
+       "extractSettings": {
+        "expression": "$.issue[0].details.text"
+       }
+      }
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988283
+  },
+  {
+   "id": "step-8",
+   "number": 8,
+   "name": "Đổi code mới nhất lấy token",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988282,
+    "name": "Đổi code mới nhất lấy token",
+    "path": "/oauth2/token",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "x-www-form-urlencoded",
+     "parameters": [
+      {
+       "name": "grant_type",
+       "value": "authorization_code",
+       "enable": true,
+       "type": "string"
+      },
+      {
+       "name": "code",
+       "value": "{{code3}}",
+       "enable": true,
+       "type": "string"
+      },
+      {
+       "name": "client_id",
+       "value": "{{clientId}}",
+       "enable": true,
+       "type": "string"
+      },
+      {
+       "name": "client_secret",
+       "value": "{{clientSecret}}",
+       "enable": true,
+       "type": "string"
+      }
+     ]
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.scope == openid profile",
+       "subject": "responseJson",
+       "comparison": "equal",
+       "path": "$.scope",
+       "value": "openid profile",
+       "extractSettings": {
+        "expression": "$.scope"
+       }
+      }
+     }
+    ],
+    "auth": {},
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988282
+  },
+  {
+   "id": "step-9",
+   "number": 9,
+   "name": "Login đã cấp token: GET /auth/login → 400 Login already granted",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988281,
+    "name": "Login đã cấp token: GET /auth/login → 400 Login already granted",
+    "path": "/auth/login/{{loginId}}",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 400",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "400"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.issue[0].details.text == Login already granted",
+       "subject": "responseJson",
+       "comparison": "equal",
+       "path": "$.issue[0].details.text",
+       "value": "Login already granted",
+       "extractSettings": {
+        "expression": "$.issue[0].details.text"
+       }
+      }
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988281
+  },
+  {
+   "id": "step-10",
+   "number": 10,
+   "name": "GET /auth/login/abc → 400 Login ID is required",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988280,
+    "name": "GET /auth/login/abc → 400 Login ID is required",
+    "path": "/auth/login/abc",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 400",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "400"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.issue[0].details.text == Login ID is required",
+       "subject": "responseJson",
+       "comparison": "equal",
+       "path": "$.issue[0].details.text",
+       "value": "Login ID is required",
+       "extractSettings": {
+        "expression": "$.issue[0].details.text"
+       }
+      }
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988280
+  },
+  {
+   "id": "step-11",
+   "number": 11,
+   "name": "GET /auth/login/<uuid lạ> → 404",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988279,
+    "name": "GET /auth/login/<uuid lạ> → 404",
+    "path": "/auth/login/00000000-0000-4000-8000-000000000000",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 404",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "404"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.issue[0].code == not-found",
+       "subject": "responseJson",
+       "comparison": "equal",
+       "path": "$.issue[0].code",
+       "value": "not-found",
+       "extractSettings": {
+        "expression": "$.issue[0].code"
+       }
+      }
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988279
+  }
+ ]
+}

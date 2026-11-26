@@ -1,0 +1,1 @@
+{"id": 9100005, "name": "auth: POST /oauth2/introspect token vừa cấp -> active", "method": "post", "path": "{{authUrl}}/oauth2/introspect", "parameters": {"path": [], "query": [], "header": [], "cookie": []}, "auth": {}, "securityScheme": {}, "requestBody": null, "responses": []}

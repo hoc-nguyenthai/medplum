@@ -1,0 +1,29 @@
+[
+  {
+    "case_id": "TC-PH-01",
+    "case_group": "Security",
+    "description": "X-Fhir-Project kh\u00e1c project c\u1ee7a token",
+    "expected_status": "403",
+    "expected_code": "forbidden",
+    "expected_message": "Token kh\u00f4ng \u0111\u01b0\u1ee3c ch\u1ecdn project kh\u00e1c",
+    "x_project": "project-khac"
+  },
+  {
+    "case_id": "TC-PH-02",
+    "case_group": "Boundary",
+    "description": "X-Fhir-Project d\u00e0i 129 k\u00fd t\u1ef1",
+    "expected_status": "403",
+    "expected_code": "forbidden",
+    "expected_message": "",
+    "x_project": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  {
+    "case_id": "TC-PH-03",
+    "case_group": "Security",
+    "description": "X-Fhir-Project ch\u1ee9a SQLi",
+    "expected_status": "403",
+    "expected_code": "forbidden",
+    "expected_message": "",
+    "x_project": "x'; DROP TABLE y;--"
+  }
+]

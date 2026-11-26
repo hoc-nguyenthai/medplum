@@ -1,0 +1,11 @@
+[
+ {
+  "case_id": "TC-AN-01",
+  "case_group": "Security",
+  "description": "token không phải JWT",
+  "expected_status": "401",
+  "expected_code": "login",
+  "expected_message": "Token không hợp lệ",
+  "bad_token": "not-a-jwt"
+ }
+]

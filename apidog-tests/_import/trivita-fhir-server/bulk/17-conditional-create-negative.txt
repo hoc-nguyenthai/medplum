@@ -1,0 +1,6 @@
+Dataset Name,case_id,case_group,description,expected_status,expected_code,expected_message,cond
+TC-CC-01,TC-CC-01,Positive,If-None-Exist không khớp resource nào → tạo mới,201,,,identifier=urn:trivita:qa-none|{{case_id}}-{{$timestamp}}
+TC-CC-02,TC-CC-02,Negative,If-None-Exist chỉ có _count (không tiêu chí),400,invalid,Thao tác có điều kiện cần tiêu chí search,_count=1
+TC-CC-03,TC-CC-03,Negative,If-None-Exist tham số lạ,400,invalid,tham số search không hợp lệ: zzz,zzz=1
+TC-CC-04,TC-CC-04,Negative,If-None-Exist mã hóa hỏng,400,invalid,If-None-Exist không hợp lệ,a=%zz
+TC-CC-05,TC-CC-05,Security,If-None-Exist chứa SQLi → không lỗi 5xx,201,,,identifier=x'%20OR%201=1--

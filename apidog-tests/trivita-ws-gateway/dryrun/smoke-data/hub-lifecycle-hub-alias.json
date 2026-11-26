@@ -1,0 +1,13 @@
+[
+ {
+  "case_id": "LC-HUB-01",
+  "case_group": "Positive",
+  "description": "Patient-open → GET → close → hủy",
+  "expected_status": "202",
+  "expected_code": "",
+  "open_event": "Patient-open",
+  "close_event": "Patient-close",
+  "open_type": "Patient",
+  "context_json": "[{\"key\":\"patient\",\"resource\":{\"resourceType\":\"Patient\",\"id\":\"qa-patient-1\"}}]"
+ }
+]

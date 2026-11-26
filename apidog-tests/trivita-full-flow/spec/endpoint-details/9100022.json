@@ -1,0 +1,1 @@
+{"id": 9100022, "name": "dicomweb: QIDO-RS study theo StudyInstanceUID -> 1", "method": "get", "path": "{{dicomUrl}}/dicomweb/studies", "parameters": {"path": [], "query": [], "header": [], "cookie": []}, "auth": {}, "securityScheme": {}, "requestBody": null, "responses": []}

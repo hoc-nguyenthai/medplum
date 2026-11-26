@@ -1,0 +1,14 @@
+[
+ {
+  "case_id": "TC-CR-01",
+  "case_group": "Positive",
+  "description": "Patient nam, ngày sinh đầy đủ",
+  "expected_status": "201",
+  "expected_code": "",
+  "expected_message": "",
+  "family": "Nguyen",
+  "given": "Van A",
+  "gender": "male",
+  "birth_date": "1980-01-01"
+ }
+]

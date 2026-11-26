@@ -1,0 +1,1 @@
+{"id": 9100024, "name": "dicomweb: WADO-RS tải instance (Part 10)", "method": "get", "path": "{{dicomUrl}}/dicomweb/studies/{{studyUid}}/series/{{seriesUid}}/instances/{{sop}}", "parameters": {"path": [], "query": [], "header": [], "cookie": []}, "auth": {}, "securityScheme": {}, "requestBody": null, "responses": []}

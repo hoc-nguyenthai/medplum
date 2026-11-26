@@ -1,0 +1,1 @@
+{"name": "Auth | POST /admin/projects/{id}/sites: tên, miền, cặp khóa (data-driven)", "description": "Biên tên 1..100, ≤ 20 site, định dạng miền, cặp Google/reCAPTCHA đi cùng nhau, giá trị ≤ 512. Hàng cuối xóa hết site.", "folderId": 0, "priority": 1, "tags": ["trivita-auth", "ai-generated"]}

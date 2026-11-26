@@ -1,0 +1,1 @@
+{"name": "Auth | JWKS ETag và 304", "description": "GET JWKS lấy ETag rồi gửi lại If-None-Match: 304 không body. Kiểm Cache-Control public, max-age=300.", "folderId": 0, "priority": 1, "tags": ["trivita-auth", "ai-generated"]}

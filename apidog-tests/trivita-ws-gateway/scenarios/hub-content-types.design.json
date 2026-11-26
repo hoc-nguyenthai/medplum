@@ -1,0 +1,144 @@
+{
+ "slug": "hub-content-types",
+ "name": "Hub content-type form",
+ "priority": 2,
+ "steps": [
+  {
+   "name": "Chuẩn bị: lấy token client_credentials từ auth và đặt topic",
+   "endpointId": 47548561,
+   "method": "GET",
+   "path": "/healthz",
+   "assertions": [
+    "status == 200"
+   ],
+   "postProcessors": [
+    {
+     "type": "customScript",
+     "data": {
+      "script": "\nconst scope = pm.iterationData.get('oauth_scope') || 'fhircast/*';\nconst authUrl = pm.variables.get('authUrl') || pm.environment.get('authUrl');\nconst set = (k, v) => { try { pm.variables.set(k, v); } catch (e) {} try { pm.environment.set(k, v); } catch (e) {} };\nset('topic', 'qa-' + Date.now() + '-' + Math.floor(Math.random() * 1000000));\npm.sendRequest({\n  url: authUrl + '/oauth2/token', method: 'POST',\n  header: { 'Content-Type': 'application/x-www-form-urlencoded' },\n  body: { mode: 'urlencoded', urlencoded: [\n    { key: 'grant_type', value: 'client_credentials' },\n    { key: 'client_id', value: pm.variables.get('clientId') || pm.environment.get('clientId') },\n    { key: 'client_secret', value: pm.variables.get('clientSecret') || pm.environment.get('clientSecret') },\n    { key: 'scope', value: scope } ] }\n}, (err, res) => {\n  pm.test('token client_credentials 200', () => { pm.expect(err).to.eql(null); pm.expect(res.code).to.eql(200); });\n  if (!err && res.code === 200) { set('access_token', res.json().access_token); }\n});\n"
+     }
+    }
+   ],
+   "auth": "none"
+  },
+  {
+   "name": "Đăng ký bằng form (events có khoảng trắng)",
+   "endpointId": 47548550,
+   "method": "POST",
+   "path": "/fhircast/STU3",
+   "auth": "Bearer {{access_token}}",
+   "form": {
+    "hub.channel.type": "websocket",
+    "hub.mode": "subscribe",
+    "hub.topic": "{{topic}}",
+    "hub.events": "Patient-open, Patient-close"
+   },
+   "assertions": [
+    "status == 202",
+    "$['hub.channel.endpoint'] exists"
+   ],
+   "postProcessors": [
+    {
+     "type": "extractor",
+     "data": {
+      "variableName": "channel_endpoint",
+      "expression": "$['hub.channel.endpoint']",
+      "subject": "responseJson"
+     }
+    },
+    {
+     "type": "customScript",
+     "data": {
+      "script": "if (pm.response.code === 202) { pm.test('hub.channel.endpoint', () => pm.expect(pm.response.json()['hub.channel.endpoint']).to.match(/\\/ws\\/fhircast\\/[0-9a-f-]{36}$/)); }"
+     }
+    }
+   ]
+  },
+  {
+   "name": "Form channel.type=webhook → 400",
+   "endpointId": 47548550,
+   "method": "POST",
+   "path": "/fhircast/STU3",
+   "auth": "Bearer {{access_token}}",
+   "form": {
+    "hub.channel.type": "webhook",
+    "hub.mode": "subscribe",
+    "hub.topic": "{{topic}}",
+    "hub.events": "Patient-open"
+   },
+   "assertions": [
+    "status == 400"
+   ],
+   "postProcessors": [
+    {
+     "type": "customScript",
+     "data": {
+      "script": "pm.test('thông điệp lỗi', () => pm.expect(pm.response.json().issue[0].details.text).to.eql(\"Invalid hub.channel.type\"));"
+     }
+    }
+   ]
+  },
+  {
+   "name": "Form có id+timestamp → rẽ sang đổi ngữ cảnh: Missing event payload",
+   "endpointId": 47548550,
+   "method": "POST",
+   "path": "/fhircast/STU3",
+   "auth": "Bearer {{access_token}}",
+   "form": {
+    "id": "1",
+    "timestamp": "x"
+   },
+   "assertions": [
+    "status == 400"
+   ],
+   "postProcessors": [
+    {
+     "type": "customScript",
+     "data": {
+      "script": "pm.test('thông điệp lỗi', () => pm.expect(pm.response.json().issue[0].details.text).to.eql(\"Missing event payload\"));"
+     }
+    }
+   ]
+  },
+  {
+   "name": "Hủy bằng form",
+   "endpointId": 47548550,
+   "method": "POST",
+   "path": "/fhircast/STU3",
+   "auth": "Bearer {{access_token}}",
+   "form": {
+    "hub.channel.type": "websocket",
+    "hub.mode": "unsubscribe",
+    "hub.topic": "{{topic}}",
+    "hub.channel.endpoint": "{{channel_endpoint}}"
+   },
+   "assertions": [
+    "status == 202"
+   ]
+  },
+  {
+   "name": "Hủy lại bằng form → 400 Invalid endpoint",
+   "endpointId": 47548550,
+   "method": "POST",
+   "path": "/fhircast/STU3",
+   "auth": "Bearer {{access_token}}",
+   "form": {
+    "hub.channel.type": "websocket",
+    "hub.mode": "unsubscribe",
+    "hub.topic": "{{topic}}",
+    "hub.channel.endpoint": "{{channel_endpoint}}"
+   },
+   "assertions": [
+    "status == 400"
+   ],
+   "postProcessors": [
+    {
+     "type": "customScript",
+     "data": {
+      "script": "pm.test('thông điệp lỗi', () => pm.expect(pm.response.json().issue[0].details.text).to.eql(\"Invalid endpoint\"));"
+     }
+    }
+   ]
+  }
+ ]
+}

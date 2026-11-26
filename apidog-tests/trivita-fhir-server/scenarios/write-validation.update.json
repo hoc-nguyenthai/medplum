@@ -1,0 +1,228 @@
+{
+ "steps": [
+  {
+   "id": "step-1",
+   "number": 1,
+   "name": "Đăng nhập admin project (auth /auth/login)",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988395,
+    "name": "Đăng nhập admin project (auth /auth/login)",
+    "path": "{{authUrl}}/auth/login",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "json",
+     "data": "{\"email\": \"{{adminEmail}}\", \"password\": \"{{adminPassword}}\", \"clientId\": \"{{clientId}}\", \"scope\": \"openid profile email\"}"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.code exists",
+       "subject": "responseJson",
+       "comparison": "exists",
+       "path": "$.code",
+       "value": "",
+       "extractSettings": {
+        "expression": "$.code"
+       }
+      }
+     },
+     {
+      "type": "extractor",
+      "enable": true,
+      "data": {
+       "variableType": "local",
+       "variableName": "adm_code",
+       "expression": "$.code",
+       "subject": "responseJson"
+      }
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988395
+  },
+  {
+   "id": "step-2",
+   "number": 2,
+   "name": "Đổi code lấy token admin (authorization_code)",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988394,
+    "name": "Đổi code lấy token admin (authorization_code)",
+    "path": "{{authUrl}}/oauth2/token",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "x-www-form-urlencoded",
+     "parameters": [
+      {
+       "name": "grant_type",
+       "value": "authorization_code",
+       "enable": true,
+       "type": "string"
+      },
+      {
+       "name": "code",
+       "value": "{{adm_code}}",
+       "enable": true,
+       "type": "string"
+      },
+      {
+       "name": "client_id",
+       "value": "{{clientId}}",
+       "enable": true,
+       "type": "string"
+      },
+      {
+       "name": "client_secret",
+       "value": "{{clientSecret}}",
+       "enable": true,
+       "type": "string"
+      }
+     ]
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.access_token exists",
+       "subject": "responseJson",
+       "comparison": "exists",
+       "path": "$.access_token",
+       "value": "",
+       "extractSettings": {
+        "expression": "$.access_token"
+       }
+      }
+     },
+     {
+      "type": "extractor",
+      "enable": true,
+      "data": {
+       "variableType": "local",
+       "variableName": "bearerToken",
+       "expression": "$.access_token",
+       "subject": "responseJson"
+      }
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988394
+  },
+  {
+   "id": "step-3",
+   "number": 3,
+   "name": "POST /{resourceType} theo data",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988510,
+    "name": "POST /{resourceType} theo data",
+    "path": "/fhir/R4/{{resource_type}}",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [
+      {
+       "name": "Content-Type",
+       "value": "{{content_type}}",
+       "enable": true
+      }
+     ],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "json",
+     "data": "{{body}}"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == {{expected_status}}",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "{{expected_status}}"
+      }
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "const code = pm.iterationData.get('expected_code'); const msg = pm.iterationData.get('expected_message'); let b = {}; try { b = pm.response.json(); } catch (x) {} const issue = (b.issue && b.issue[0]) || {}; const text = (issue.details && issue.details.text) || (b.errors && b.errors[0] && b.errors[0].message) || ''; if (code) { pm.test('issue.code == ' + code, () => pm.expect(issue.code).to.eql(code)); } if (msg) { pm.test('thông điệp chứa: ' + msg, () => pm.expect(text).to.include(msg)); }"
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "const f = pm.iterationData.get('forbidden_id'); if (f) { pm.test('id client gửi bị ghi đè', () => pm.expect(pm.response.json().id).to.not.eql(f)); } const p = pm.iterationData.get('forbidden_project'); if (p) { pm.test('meta.project không phải giá trị client gửi', () => pm.expect((pm.response.json().meta || {}).project).to.not.eql(p)); }"
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{bearerToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988510
+  }
+ ]
+}

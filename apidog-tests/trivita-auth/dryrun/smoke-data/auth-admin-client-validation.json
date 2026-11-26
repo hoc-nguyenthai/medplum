@@ -1,0 +1,11 @@
+[
+ {
+  "case_id": "AC-01",
+  "case_group": "Positive",
+  "description": "client_credentials hợp lệ",
+  "expected_status": "201",
+  "expected_code": "",
+  "expected_message": "",
+  "admin_body": "{\"name\": \"QA client {{$timestamp}}\", \"grantType\": [\"client_credentials\"]}"
+ }
+]

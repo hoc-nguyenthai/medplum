@@ -1,0 +1,62 @@
+[
+ {
+  "case_id": "TP-01",
+  "case_group": "Positive",
+  "description": "topic đường dẫn khớp event[hub.topic]",
+  "expected_status": "202",
+  "expected_code": "",
+  "topic_path": "qa-path-match",
+  "body_json": "{\"id\":\"qa-ev-1\",\"timestamp\":\"2026-11-25T10:00:00.000Z\",\"event\":{\"hub.topic\":\"qa-path-match\",\"hub.event\":\"heartbeat\",\"context\":[]}}",
+  "expected_message": ""
+ },
+ {
+  "case_id": "TP-02",
+  "case_group": "Negative",
+  "description": "lệch topic (cờ ALLOW_TOPIC_MISMATCH tắt mặc định) → Topic mismatch",
+  "expected_status": "400",
+  "expected_code": "",
+  "topic_path": "qa-path-a",
+  "body_json": "{\"id\":\"qa-ev-1\",\"timestamp\":\"2026-11-25T10:00:00.000Z\",\"event\":{\"hub.topic\":\"qa-path-b\",\"hub.event\":\"heartbeat\",\"context\":[]}}",
+  "expected_message": "Topic mismatch"
+ },
+ {
+  "case_id": "TP-03",
+  "case_group": "Negative",
+  "description": "thân {} → Missing event ID",
+  "expected_status": "400",
+  "expected_code": "",
+  "topic_path": "qa-path-match",
+  "body_json": "{}",
+  "expected_message": "Missing event ID"
+ },
+ {
+  "case_id": "TP-04",
+  "case_group": "Negative",
+  "description": "thân dạng đăng ký gửi nhầm vào /{topic} → Missing event ID",
+  "expected_status": "400",
+  "expected_code": "",
+  "topic_path": "qa-path-match",
+  "body_json": "{\"hub.channel.type\":\"websocket\",\"hub.mode\":\"subscribe\",\"hub.topic\":\"qa-val-topic\",\"hub.events\":\"Patient-open,Patient-close\"}",
+  "expected_message": "Missing event ID"
+ },
+ {
+  "case_id": "TP-05",
+  "case_group": "Negative",
+  "description": "thông điệp thiếu context + lệch topic: thông điệp ValidateEvent đi trước",
+  "expected_status": "400",
+  "expected_code": "",
+  "topic_path": "qa-path-a",
+  "body_json": "{\"id\":\"qa-ev-1\",\"timestamp\":\"2026-11-25T10:00:00.000Z\",\"event\":{\"hub.topic\":\"qa-path-b\",\"hub.event\":\"heartbeat\"}}",
+  "expected_message": "Missing event.context"
+ },
+ {
+  "case_id": "TP-06",
+  "case_group": "Boundary",
+  "description": "topic đường dẫn mã hóa %2F khớp event có '/'",
+  "expected_status": "202",
+  "expected_code": "",
+  "topic_path": "a%2Fb",
+  "body_json": "{\"id\":\"qa-ev-1\",\"timestamp\":\"2026-11-25T10:00:00.000Z\",\"event\":{\"hub.topic\":\"a/b\",\"hub.event\":\"heartbeat\",\"context\":[]}}",
+  "expected_message": ""
+ }
+]

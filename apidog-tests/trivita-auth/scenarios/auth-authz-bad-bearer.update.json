@@ -1,0 +1,474 @@
+{
+ "steps": [
+  {
+   "id": "step-1",
+   "number": 1,
+   "name": "GET /auth/me",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988243,
+    "name": "GET /auth/me",
+    "path": "/auth/me",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == {{expected_status}}",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "{{expected_status}}"
+      }
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "const c = pm.iterationData.get('expected_code'), m = pm.iterationData.get('expected_message'); let j = {}; try { j = pm.response.json(); } catch (e) {} const is = j.issue || []; if (c) { pm.test('issue code = ' + c, () => pm.expect(is.length ? is[0].code : '').to.eql(c)); } if (m) { pm.test('details.text = ' + m, () => pm.expect(is.map(i => (i.details || {}).text)).to.include(m)); }"
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{accessToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988243
+  },
+  {
+   "id": "step-2",
+   "number": 2,
+   "name": "POST /auth/revoke",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988242,
+    "name": "POST /auth/revoke",
+    "path": "/auth/revoke",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "json",
+     "data": "{\"loginId\": \"00000000-0000-4000-8000-000000000000\"}"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == {{expected_status}}",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "{{expected_status}}"
+      }
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "const c = pm.iterationData.get('expected_code'), m = pm.iterationData.get('expected_message'); let j = {}; try { j = pm.response.json(); } catch (e) {} const is = j.issue || []; if (c) { pm.test('issue code = ' + c, () => pm.expect(is.length ? is[0].code : '').to.eql(c)); } if (m) { pm.test('details.text = ' + m, () => pm.expect(is.map(i => (i.details || {}).text)).to.include(m)); }"
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{accessToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988242
+  },
+  {
+   "id": "step-3",
+   "number": 3,
+   "name": "POST /auth/changepassword",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988241,
+    "name": "POST /auth/changepassword",
+    "path": "/auth/changepassword",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "json",
+     "data": "{\"oldPassword\": \"x\", \"newPassword\": \"Aa-123456-xx\"}"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == {{expected_status}}",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "{{expected_status}}"
+      }
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "const c = pm.iterationData.get('expected_code'), m = pm.iterationData.get('expected_message'); let j = {}; try { j = pm.response.json(); } catch (e) {} const is = j.issue || []; if (c) { pm.test('issue code = ' + c, () => pm.expect(is.length ? is[0].code : '').to.eql(c)); } if (m) { pm.test('details.text = ' + m, () => pm.expect(is.map(i => (i.details || {}).text)).to.include(m)); }"
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{accessToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988241
+  },
+  {
+   "id": "step-4",
+   "number": 4,
+   "name": "GET /auth/mfa/status",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988240,
+    "name": "GET /auth/mfa/status",
+    "path": "/auth/mfa/status",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == {{expected_status}}",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "{{expected_status}}"
+      }
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "const c = pm.iterationData.get('expected_code'), m = pm.iterationData.get('expected_message'); let j = {}; try { j = pm.response.json(); } catch (e) {} const is = j.issue || []; if (c) { pm.test('issue code = ' + c, () => pm.expect(is.length ? is[0].code : '').to.eql(c)); } if (m) { pm.test('details.text = ' + m, () => pm.expect(is.map(i => (i.details || {}).text)).to.include(m)); }"
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{accessToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988240
+  },
+  {
+   "id": "step-5",
+   "number": 5,
+   "name": "POST /oauth2/introspect",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988239,
+    "name": "POST /oauth2/introspect",
+    "path": "/oauth2/introspect",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "x-www-form-urlencoded",
+     "parameters": [
+      {
+       "name": "token",
+       "value": "x",
+       "enable": true,
+       "type": "string"
+      }
+     ]
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == {{expected_status}}",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "{{expected_status}}"
+      }
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "const c = pm.iterationData.get('expected_code'), m = pm.iterationData.get('expected_message'); let j = {}; try { j = pm.response.json(); } catch (e) {} const is = j.issue || []; if (c) { pm.test('issue code = ' + c, () => pm.expect(is.length ? is[0].code : '').to.eql(c)); } if (m) { pm.test('details.text = ' + m, () => pm.expect(is.map(i => (i.details || {}).text)).to.include(m)); }"
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{accessToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988239
+  },
+  {
+   "id": "step-6",
+   "number": 6,
+   "name": "GET /oauth2/userinfo",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988238,
+    "name": "GET /oauth2/userinfo",
+    "path": "/oauth2/userinfo",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == {{expected_status}}",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "{{expected_status}}"
+      }
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "const c = pm.iterationData.get('expected_code'), m = pm.iterationData.get('expected_message'); let j = {}; try { j = pm.response.json(); } catch (e) {} const is = j.issue || []; if (c) { pm.test('issue code = ' + c, () => pm.expect(is.length ? is[0].code : '').to.eql(c)); } if (m) { pm.test('details.text = ' + m, () => pm.expect(is.map(i => (i.details || {}).text)).to.include(m)); }"
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{accessToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988238
+  },
+  {
+   "id": "step-7",
+   "number": 7,
+   "name": "POST /oauth2/logout",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988237,
+    "name": "POST /oauth2/logout",
+    "path": "/oauth2/logout",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == {{expected_status}}",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "{{expected_status}}"
+      }
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "const c = pm.iterationData.get('expected_code'), m = pm.iterationData.get('expected_message'); let j = {}; try { j = pm.response.json(); } catch (e) {} const is = j.issue || []; if (c) { pm.test('issue code = ' + c, () => pm.expect(is.length ? is[0].code : '').to.eql(c)); } if (m) { pm.test('details.text = ' + m, () => pm.expect(is.map(i => (i.details || {}).text)).to.include(m)); }"
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{accessToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988237
+  },
+  {
+   "id": "step-8",
+   "number": 8,
+   "name": "GET /admin/projects/{id}",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988236,
+    "name": "GET /admin/projects/{id}",
+    "path": "/admin/projects/{{projectId}}",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == {{expected_status}}",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "{{expected_status}}"
+      }
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "const c = pm.iterationData.get('expected_code'), m = pm.iterationData.get('expected_message'); let j = {}; try { j = pm.response.json(); } catch (e) {} const is = j.issue || []; if (c) { pm.test('issue code = ' + c, () => pm.expect(is.length ? is[0].code : '').to.eql(c)); } if (m) { pm.test('details.text = ' + m, () => pm.expect(is.map(i => (i.details || {}).text)).to.include(m)); }"
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{accessToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988236
+  },
+  {
+   "id": "step-9",
+   "number": 9,
+   "name": "POST /admin/projects/{id}/settings",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988235,
+    "name": "POST /admin/projects/{id}/settings",
+    "path": "/admin/projects/{{projectId}}/settings",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "json",
+     "data": "[]"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == {{expected_status}}",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "{{expected_status}}"
+      }
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "const c = pm.iterationData.get('expected_code'), m = pm.iterationData.get('expected_message'); let j = {}; try { j = pm.response.json(); } catch (e) {} const is = j.issue || []; if (c) { pm.test('issue code = ' + c, () => pm.expect(is.length ? is[0].code : '').to.eql(c)); } if (m) { pm.test('details.text = ' + m, () => pm.expect(is.map(i => (i.details || {}).text)).to.include(m)); }"
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{accessToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988235
+  }
+ ]
+}

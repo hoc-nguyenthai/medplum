@@ -1,0 +1,10 @@
+{
+ "name": "bulkdata/job status: id không tồn tại",
+ "description": "GET/DELETE bulkdata/{id}/status và GET job/{id}/status với id lạ đều 404.",
+ "priority": 2,
+ "folderId": 0,
+ "tags": [
+  "bulk",
+  "negative"
+ ]
+}

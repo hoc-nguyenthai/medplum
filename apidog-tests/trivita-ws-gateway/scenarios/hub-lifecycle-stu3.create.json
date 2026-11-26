@@ -1,0 +1,10 @@
+{
+ "name": "Hub lifecycle STU3",
+ "description": "Đăng ký → mở ngữ cảnh → GET → heartbeat → đóng → hủy trên /fhircast/STU3 (data: Patient/ImagingStudy/Encounter).",
+ "folderId": 0,
+ "priority": 0,
+ "tags": [
+  "ws-gateway",
+  "fhircast"
+ ]
+}

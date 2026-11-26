@@ -1,0 +1,1040 @@
+{
+ "steps": [
+  {
+   "id": "step-1",
+   "number": 1,
+   "name": "Lấy token client_credentials",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988344,
+    "name": "Lấy token client_credentials",
+    "path": "/oauth2/token",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "x-www-form-urlencoded",
+     "parameters": [
+      {
+       "name": "grant_type",
+       "value": "client_credentials",
+       "enable": true,
+       "type": "string"
+      },
+      {
+       "name": "client_id",
+       "value": "{{clientId}}",
+       "enable": true,
+       "type": "string"
+      },
+      {
+       "name": "client_secret",
+       "value": "{{clientSecret}}",
+       "enable": true,
+       "type": "string"
+      }
+     ]
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.access_token exists",
+       "subject": "responseJson",
+       "comparison": "exists",
+       "path": "$.access_token",
+       "value": "",
+       "extractSettings": {
+        "expression": "$.access_token"
+       }
+      }
+     },
+     {
+      "type": "extractor",
+      "enable": true,
+      "data": {
+       "variableType": "local",
+       "variableName": "ccToken",
+       "expression": "$.access_token",
+       "subject": "responseJson"
+      }
+     }
+    ],
+    "auth": {},
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988344
+  },
+  {
+   "id": "step-2",
+   "number": 2,
+   "name": "Đăng nhập admin (email + mật khẩu)",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988457,
+    "name": "Đăng nhập admin (email + mật khẩu)",
+    "path": "/auth/login",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "json",
+     "data": "{\"email\": \"{{adminEmail}}\", \"password\": \"{{adminPassword}}\", \"clientId\": \"{{clientId}}\", \"scope\": \"openid profile email\"}"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.code exists",
+       "subject": "responseJson",
+       "comparison": "exists",
+       "path": "$.code",
+       "value": "",
+       "extractSettings": {
+        "expression": "$.code"
+       }
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.login exists",
+       "subject": "responseJson",
+       "comparison": "exists",
+       "path": "$.login",
+       "value": "",
+       "extractSettings": {
+        "expression": "$.login"
+       }
+      }
+     },
+     {
+      "type": "extractor",
+      "enable": true,
+      "data": {
+       "variableType": "local",
+       "variableName": "loginId",
+       "expression": "$.login",
+       "subject": "responseJson"
+      }
+     },
+     {
+      "type": "extractor",
+      "enable": true,
+      "data": {
+       "variableType": "local",
+       "variableName": "code",
+       "expression": "$.code",
+       "subject": "responseJson"
+      }
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988457
+  },
+  {
+   "id": "step-3",
+   "number": 3,
+   "name": "Đổi code lấy token (authorization_code)",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988343,
+    "name": "Đổi code lấy token (authorization_code)",
+    "path": "/oauth2/token",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "x-www-form-urlencoded",
+     "parameters": [
+      {
+       "name": "grant_type",
+       "value": "authorization_code",
+       "enable": true,
+       "type": "string"
+      },
+      {
+       "name": "code",
+       "value": "{{code}}",
+       "enable": true,
+       "type": "string"
+      },
+      {
+       "name": "client_id",
+       "value": "{{clientId}}",
+       "enable": true,
+       "type": "string"
+      },
+      {
+       "name": "client_secret",
+       "value": "{{clientSecret}}",
+       "enable": true,
+       "type": "string"
+      }
+     ]
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.access_token exists",
+       "subject": "responseJson",
+       "comparison": "exists",
+       "path": "$.access_token",
+       "value": "",
+       "extractSettings": {
+        "expression": "$.access_token"
+       }
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.token_type == Bearer",
+       "subject": "responseJson",
+       "comparison": "equal",
+       "path": "$.token_type",
+       "value": "Bearer",
+       "extractSettings": {
+        "expression": "$.token_type"
+       }
+      }
+     },
+     {
+      "type": "extractor",
+      "enable": true,
+      "data": {
+       "variableType": "local",
+       "variableName": "userToken",
+       "expression": "$.access_token",
+       "subject": "responseJson"
+      }
+     }
+    ],
+    "auth": {},
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988343
+  },
+  {
+   "id": "step-4",
+   "number": 4,
+   "name": "Sinh userName/email duy nhất",
+   "type": "http",
+   "bindType": "API",
+   "syncMode": "MANUAL",
+   "bindId": 47548474,
+   "httpApiCase": {
+    "type": "DEBUG_CASE",
+    "name": "Sinh userName/email duy nhất",
+    "path": "/health/live",
+    "method": "get",
+    "apiDetailId": 47548474,
+    "projectId": 1380475,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "const t = Date.now(); pm.variables.set('scimEmail', 'qa.scim.' + t + '@example.org');"
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "id": 65401521
+   },
+   "relatedId": 65401521
+  },
+  {
+   "id": "step-5",
+   "number": 5,
+   "name": "POST /scim/v2/Users",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988456,
+    "name": "POST /scim/v2/Users",
+    "path": "/scim/v2/Users",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "json",
+     "data": "{\"schemas\": [\"urn:ietf:params:scim:schemas:core:2.0:User\"], \"userName\": \"{{scimEmail}}\", \"name\": {\"givenName\": \"QA\", \"familyName\": \"Scim\"}, \"emails\": [{\"value\": \"{{scimEmail}}\"}], \"userType\": \"Practitioner\", \"active\": true}"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 201",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "201"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.id exists",
+       "subject": "responseJson",
+       "comparison": "exists",
+       "path": "$.id",
+       "value": "",
+       "extractSettings": {
+        "expression": "$.id"
+       }
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.active == true",
+       "subject": "responseJson",
+       "comparison": "equal",
+       "path": "$.active",
+       "value": "true",
+       "extractSettings": {
+        "expression": "$.active"
+       }
+      }
+     },
+     {
+      "type": "extractor",
+      "enable": true,
+      "data": {
+       "variableType": "local",
+       "variableName": "scimId",
+       "expression": "$.id",
+       "subject": "responseJson"
+      }
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "pm.test('Location trỏ /scim/v2/Users/<id>', () => pm.expect(pm.response.headers.get('Location')).to.include('/scim/v2/Users/'));"
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{userToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988456
+  },
+  {
+   "id": "step-6",
+   "number": 6,
+   "name": "GET /scim/v2/Users/{id}",
+   "type": "http",
+   "bindType": "API",
+   "syncMode": "MANUAL",
+   "bindId": 47548487,
+   "httpApiCase": {
+    "type": "DEBUG_CASE",
+    "name": "GET /scim/v2/Users/{id}",
+    "path": "/scim/v2/Users/{id}",
+    "method": "get",
+    "apiDetailId": 47548487,
+    "projectId": 1380475,
+    "parameters": {
+     "path": [
+      {
+       "name": "id",
+       "value": "{{scimId}}",
+       "enable": true
+      }
+     ],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.id == {{scimId}}",
+       "subject": "responseJson",
+       "comparison": "equal",
+       "path": "$.id",
+       "value": "{{scimId}}",
+       "extractSettings": {
+        "expression": "$.id"
+       }
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.name.givenName == QA",
+       "subject": "responseJson",
+       "comparison": "equal",
+       "path": "$.name.givenName",
+       "value": "QA",
+       "extractSettings": {
+        "expression": "$.name.givenName"
+       }
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{userToken}}"
+     }
+    },
+    "id": 65401519
+   },
+   "relatedId": 65401519
+  },
+  {
+   "id": "step-7",
+   "number": 7,
+   "name": "GET list lọc userName eq",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988474,
+    "name": "GET list lọc userName eq",
+    "path": "/scim/v2/Users?filter=userName%20eq%20%22{{scimEmail}}%22",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.totalResults == 1",
+       "subject": "responseJson",
+       "comparison": "equal",
+       "path": "$.totalResults",
+       "value": "1",
+       "extractSettings": {
+        "expression": "$.totalResults"
+       }
+      }
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "pm.test(\"$.Resources is array\", () => pm.expect(Array.isArray(pm.response.json().Resources)).to.eql(true));"
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{userToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988474
+  },
+  {
+   "id": "step-8",
+   "number": 8,
+   "name": "PATCH replace name.givenName",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988455,
+    "name": "PATCH replace name.givenName",
+    "path": "/scim/v2/Users/{{scimId}}",
+    "method": "patch",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "json",
+     "data": "{\"schemas\": [\"urn:ietf:params:scim:api:messages:2.0:PatchOp\"], \"Operations\": [{\"op\": \"replace\", \"path\": \"name.givenName\", \"value\": \"Updated\"}]}"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{userToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988455
+  },
+  {
+   "id": "step-9",
+   "number": 9,
+   "name": "PUT thay thế user",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988454,
+    "name": "PUT thay thế user",
+    "path": "/scim/v2/Users/{{scimId}}",
+    "method": "put",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "json",
+     "data": "{\"schemas\": [\"urn:ietf:params:scim:schemas:core:2.0:User\"], \"userName\": \"{{scimEmail}}\", \"name\": {\"givenName\": \"Put\", \"familyName\": \"Scim\"}, \"emails\": [{\"value\": \"{{scimEmail}}\"}], \"active\": true}"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{userToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988454
+  },
+  {
+   "id": "step-10",
+   "number": 10,
+   "name": "PATCH thiếu schema PatchOp → 400",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988342,
+    "name": "PATCH thiếu schema PatchOp → 400",
+    "path": "/scim/v2/Users/{{scimId}}",
+    "method": "patch",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "json",
+     "data": "{\"schemas\": [\"x\"], \"Operations\": []}"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 400",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "400"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.scimType == invalidSyntax",
+       "subject": "responseJson",
+       "comparison": "equal",
+       "path": "$.scimType",
+       "value": "invalidSyntax",
+       "extractSettings": {
+        "expression": "$.scimType"
+       }
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{userToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988342
+  },
+  {
+   "id": "step-11",
+   "number": 11,
+   "name": "PATCH remove active → 400 mutability",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988341,
+    "name": "PATCH remove active → 400 mutability",
+    "path": "/scim/v2/Users/{{scimId}}",
+    "method": "patch",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "json",
+     "data": "{\"schemas\": [\"urn:ietf:params:scim:api:messages:2.0:PatchOp\"], \"Operations\": [{\"op\": \"remove\", \"path\": \"active\"}]}"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 400",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "400"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.scimType == mutability",
+       "subject": "responseJson",
+       "comparison": "equal",
+       "path": "$.scimType",
+       "value": "mutability",
+       "extractSettings": {
+        "expression": "$.scimType"
+       }
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{userToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988341
+  },
+  {
+   "id": "step-12",
+   "number": 12,
+   "name": "DELETE user → 204",
+   "type": "http",
+   "bindType": "API",
+   "syncMode": "MANUAL",
+   "bindId": 47548489,
+   "httpApiCase": {
+    "type": "DEBUG_CASE",
+    "name": "DELETE user → 204",
+    "path": "/scim/v2/Users/{id}",
+    "method": "delete",
+    "apiDetailId": 47548489,
+    "projectId": 1380475,
+    "parameters": {
+     "path": [
+      {
+       "name": "id",
+       "value": "{{scimId}}",
+       "enable": true
+      }
+     ],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 204",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "204"
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{userToken}}"
+     }
+    },
+    "id": 65401515
+   },
+   "relatedId": 65401515
+  },
+  {
+   "id": "step-13",
+   "number": 13,
+   "name": "GET sau khi xóa → 404 SCIM Error",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988340,
+    "name": "GET sau khi xóa → 404 SCIM Error",
+    "path": "/scim/v2/Users/{{scimId}}",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 404",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "404"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.detail == Not found",
+       "subject": "responseJson",
+       "comparison": "equal",
+       "path": "$.detail",
+       "value": "Not found",
+       "extractSettings": {
+        "expression": "$.detail"
+       }
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{userToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988340
+  },
+  {
+   "id": "step-14",
+   "number": 14,
+   "name": "Không token → 401 + hai dòng WWW-Authenticate",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988339,
+    "name": "Không token → 401 + hai dòng WWW-Authenticate",
+    "path": "/scim/v2/Users",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 401",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "401"
+      }
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "const h = pm.response.headers.get('WWW-Authenticate') || ''; pm.test('có Bearer realm=scim', () => pm.expect(h).to.include('Bearer realm=\"scim\"'));"
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988339
+  },
+  {
+   "id": "step-15",
+   "number": 15,
+   "name": "Client không admin → 403",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988338,
+    "name": "Client không admin → 403",
+    "path": "/scim/v2/Users",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 403",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "403"
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{ccToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988338
+  },
+  {
+   "id": "step-16",
+   "number": 16,
+   "name": "DELETE lần hai id đã xóa → 404",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988337,
+    "name": "DELETE lần hai id đã xóa → 404",
+    "path": "/scim/v2/Users/{{scimId}}",
+    "method": "delete",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 404",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "404"
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{userToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988337
+  }
+ ]
+}

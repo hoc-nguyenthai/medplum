@@ -1,0 +1,98 @@
+[
+ {
+  "case_id": "TC-CR-01",
+  "case_group": "Positive",
+  "description": "Patient nam, ngày sinh đầy đủ",
+  "expected_status": "201",
+  "expected_code": "",
+  "expected_message": "",
+  "family": "Nguyen",
+  "given": "Van A",
+  "gender": "male",
+  "birth_date": "1980-01-01"
+ },
+ {
+  "case_id": "TC-CR-02",
+  "case_group": "Positive",
+  "description": "Patient nữ",
+  "expected_status": "201",
+  "expected_code": "",
+  "expected_message": "",
+  "family": "Tran",
+  "given": "Thi B",
+  "gender": "female",
+  "birth_date": "1999-12-31"
+ },
+ {
+  "case_id": "TC-CR-03",
+  "case_group": "Positive",
+  "description": "gender other",
+  "expected_status": "201",
+  "expected_code": "",
+  "expected_message": "",
+  "family": "Le",
+  "given": "C",
+  "gender": "other",
+  "birth_date": "1975-05-05"
+ },
+ {
+  "case_id": "TC-CR-04",
+  "case_group": "Boundary",
+  "description": "ngày sinh tối thiểu hợp lý 1900-01-01",
+  "expected_status": "201",
+  "expected_code": "",
+  "expected_message": "",
+  "family": "Pham",
+  "given": "Cu",
+  "gender": "male",
+  "birth_date": "1900-01-01"
+ },
+ {
+  "case_id": "TC-CR-05",
+  "case_group": "Boundary",
+  "description": "ngày sinh chỉ có năm (FHIR date một phần)",
+  "expected_status": "201",
+  "expected_code": "",
+  "expected_message": "",
+  "family": "Hoang",
+  "given": "D",
+  "gender": "female",
+  "birth_date": "2000"
+ },
+ {
+  "case_id": "TC-CR-06",
+  "case_group": "Positive",
+  "description": "tên tiếng Việt có dấu",
+  "expected_status": "201",
+  "expected_code": "",
+  "expected_message": "",
+  "family": "Nguyễn",
+  "given": "Văn Á",
+  "gender": "male",
+  "birth_date": "1990-02-03"
+ },
+ {
+  "case_id": "TC-CR-07",
+  "case_group": "Security",
+  "description": "chuỗi giống XSS trong tên được lưu nguyên văn, không thực thi",
+  "expected_status": "201",
+  "expected_code": "",
+  "expected_message": "",
+  "family": "<script>alert(1)</script>",
+  "given": "x",
+  "gender": "female",
+  "birth_date": "1991-01-01"
+ },
+ {
+  "case_id": "TC-CR-08",
+  "case_group": "Security",
+  "description": "chuỗi giống SQLi trong tên được lưu nguyên văn",
+  "expected_status": "201",
+  "expected_code": "",
+  "expected_message": "",
+  "family": "Robert'); DROP TABLE fhir_resource;--",
+  "given": "x",
+  "gender": "male",
+  "birth_date": "1992-01-01"
+ }
+]

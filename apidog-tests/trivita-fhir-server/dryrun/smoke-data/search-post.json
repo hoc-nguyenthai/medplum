@@ -1,0 +1,14 @@
+[
+ {
+  "case_id": "TC-SP-01",
+  "case_group": "Positive",
+  "description": "form hợp lệ, _count=2",
+  "expected_status": "200",
+  "expected_code": "",
+  "expected_message": "",
+  "extra_name": "_format",
+  "extra_value": "json",
+  "count": "2",
+  "expected_entries": "2"
+ }
+]

@@ -1,0 +1,7 @@
+Dataset Name,case_id,case_group,description,expected_status,expected_code,expected_message,scope_name,token_scope,st_get,st_post,st_put,st_reindex,st_delete,msg_reindex,msg_get,msg_post
+TC-AZ-01,TC-AZ-01,Positive,"client seed không xin scope (fhir.write, KHÔNG phải admin): ghi được, $reindex bị chặn",403,,,x_no_scope,1,200,201,200,403,204,Token không đủ quyền cho thao tác này,,
+TC-AZ-02,TC-AZ-02,Security,chỉ scope đọc system/Patient.rs: ghi bị chặn ở Guard,403,,,scope,system/Patient.rs,200,403,403,403,403,Token không đủ quyền cho thao tác này,,Token không đủ quyền cho thao tác này
+TC-AZ-03,TC-AZ-03,Security,"system/Patient.cruds: ghi được, không có quyền admin ($reindex)",403,,,scope,system/Patient.cruds,200,201,200,403,204,Token không đủ quyền cho thao tác này,,
+TC-AZ-04,TC-AZ-04,Security,chỉ quyền Observation: Patient bị chặn theo SMART,403,,,scope,system/Observation.cruds,403,403,403,403,403,,Token thiếu quyền r (SMART) trên Patient,Token thiếu quyền c (SMART) trên Patient
+TC-AZ-05,TC-AZ-05,Security,system/Patient.r: chỉ đọc theo id,403,,,scope,system/Patient.r,200,403,403,403,403,,,Token không đủ quyền cho thao tác này
+TC-AZ-06,TC-AZ-06,Security,"system/Patient.ru: đọc và sửa, không tạo/xóa",403,,,scope,system/Patient.ru,200,403,200,403,403,,,Token thiếu quyền c (SMART) trên Patient

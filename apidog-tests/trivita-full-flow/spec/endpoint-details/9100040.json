@@ -1,0 +1,1 @@
+{"id": 9100040, "name": "fhir: POST Observation/{id}/$expunge", "method": "post", "path": "{{fhirUrl}}/fhir/R4/Observation/{{obs_id}}/$expunge", "parameters": {"path": [], "query": [], "header": [], "cookie": []}, "auth": {}, "securityScheme": {}, "requestBody": null, "responses": []}

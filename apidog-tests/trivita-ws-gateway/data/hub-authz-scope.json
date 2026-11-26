@@ -1,0 +1,26 @@
+[
+ {
+  "case_id": "SC-01",
+  "case_group": "Positive",
+  "description": "scope fhircast/* được chấp nhận (đối chứng)",
+  "expected_status": "202",
+  "expected_code": "",
+  "oauth_scope": "fhircast/*"
+ },
+ {
+  "case_id": "SC-02",
+  "case_group": "Security",
+  "description": "token không có scope fhircast/ → 403 Forbidden (FHIRCAST_REQUIRE_SCOPE=true)",
+  "expected_status": "403",
+  "expected_code": "",
+  "oauth_scope": "openid"
+ },
+ {
+  "case_id": "SC-03",
+  "case_group": "Security",
+  "description": "token chỉ có scope SMART khác → 403",
+  "expected_status": "403",
+  "expected_code": "",
+  "oauth_scope": "system/Patient.rs"
+ }
+]

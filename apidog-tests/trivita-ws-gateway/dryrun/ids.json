@@ -1,0 +1,30 @@
+{
+ "project": 1380475,
+ "module": 1533161,
+ "branch": {
+  "name": "ai/20261125-from-main-trivita-platform-tests",
+  "id": 1432970
+ },
+ "environment": {
+  "id": 7022271,
+  "name": "Trivita Local WS"
+ },
+ "folderId": 1246004,
+ "scenarios": {
+  "discovery": 1998568,
+  "health-smoke": 1998575,
+  "hub-authz-bad-token": 1998579,
+  "hub-authz-scope": 1998581,
+  "hub-content-types": 1998584,
+  "hub-diagnosticreport-flow": 1998586,
+  "hub-get-topic": 1998606,
+  "hub-lifecycle-hub-alias": 1998610,
+  "hub-lifecycle-stu2": 1998613,
+  "hub-lifecycle-stu3": 1998619,
+  "hub-requires-auth-all-routes": 1998622,
+  "hub-topic-path": 1998625,
+  "hub-validation-event": 1998628,
+  "hub-validation-subscribe": 1998631
+ },
+ "testData": {}
+}

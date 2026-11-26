@@ -1,0 +1,61 @@
+{
+ "slug": "dicomweb-stow-validation",
+ "name": "DICOMweb: STOW-RS validation (data-driven)",
+ "priority": 1,
+ "steps": [
+  {
+   "name": "Lấy access token (client_credentials của auth)",
+   "endpointId": 9000001,
+   "path": "{{authUrl}}/oauth2/token",
+   "auth": "none",
+   "custom": true,
+   "form": {
+    "grant_type": "client_credentials",
+    "client_id": "{{clientId}}",
+    "client_secret": "{{clientSecret}}"
+   },
+   "assertions": [
+    "status == 200",
+    "$.access_token exists"
+   ],
+   "postProcessors": [
+    {
+     "type": "customScript",
+     "data": {
+      "script": "const tok = pm.response.json().access_token; pm.variables.set('accessToken', tok);\ntry { const p = JSON.parse(atob(tok.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))); pm.variables.set('projectId', p.fhir_project || ''); } catch (e) { pm.variables.set('projectId', ''); }\nconst base = '1.2.826.0.1.3680043.9.7777.' + Date.now() + (100 + Math.floor(Math.random() * 900));\npm.variables.set('studyUid', base + '.1'); pm.variables.set('seriesUid', base + '.1.1'); pm.variables.set('sop1', base + '.1.1.1'); pm.variables.set('sop2', base + '.1.1.2');\npm.variables.set('series2Uid', base + '.1.2'); pm.variables.set('sop3', base + '.1.2.1'); pm.variables.set('otherStudyUid', base + '.9');\npm.variables.set('pid', 'QA-' + Date.now());"
+     }
+    }
+   ]
+  },
+  {
+   "name": "STOW-RS theo dữ liệu",
+   "endpointId": 47548526,
+   "path": "/dicomweb/studies",
+   "auth": "Bearer {{accessToken}}",
+   "custom": true,
+   "method": "post",
+   "headers": {
+    "Content-Type": "{{ct}}"
+   },
+   "body": "{{raw_body}}",
+   "bodyType": "raw",
+   "assertions": [
+    "status == {{expected_status}}"
+   ],
+   "postProcessors": [
+    {
+     "type": "customScript",
+     "data": {
+      "script": "const m = pm.iterationData.get('expected_message'); if (m) { pm.test('error = ' + m, () => pm.expect(pm.response.json().error).to.eql(m)); }"
+     }
+    },
+    {
+     "type": "customScript",
+     "data": {
+      "script": "if (pm.iterationData.get('expect_failed') === '1') { pm.test('có FailedSOPSequence (00081198)', () => pm.expect(pm.response.json()['00081198']).to.be.an('object')); }"
+     }
+    }
+   ]
+  }
+ ]
+}

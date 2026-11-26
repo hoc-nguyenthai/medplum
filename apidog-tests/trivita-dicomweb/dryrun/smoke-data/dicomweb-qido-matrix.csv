@@ -1,0 +1,2 @@
+case_id,case_group,description,expected_status,PatientID,PatientName,StudyDate,ModalitiesInStudy,AccessionNumber,limit,offset,tag_hex,expected_count,expect_warning,expected_message
+QD-01,Positive,PatientID khớp chính xác 1 study,200,QA-QIDO-1,,,,,,,,1,,

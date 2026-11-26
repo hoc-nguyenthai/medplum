@@ -1,0 +1,10 @@
+{
+ "name": "DICOMweb: lifecycle STOW → QIDO → WADO",
+ "description": "Luồng chính: token → STOW-RS dạng metadata (200, idempotent, study sai 409, một phần 202) → QIDO 4 cấp + phân trang + Warning → WADO-RS metadata/tải/frame/bulkdata/rendered → WADO-URI. Pixel là chuỗi ASCII nên so khớp từng byte. Mỗi dòng dữ liệu = một hình dạng ảnh (số frame, kích thước).",
+ "folderId": 0,
+ "priority": 0,
+ "tags": [
+  "dicomweb",
+  "lifecycle"
+ ]
+}

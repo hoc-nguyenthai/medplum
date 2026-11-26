@@ -1,0 +1,1 @@
+{"name": "Auth | Phản hồi lỗi chung: Content-Type, thiếu Bearer, introspect rỗng", "description": "T1: /oauth2/token nhận JSON → 400 văn bản 'Unsupported content type'; thiếu Bearer → 401 + WWW-Authenticate; introspect không token → 400; token lạ → active:false; header bảo mật.", "folderId": 0, "priority": 1, "tags": ["trivita-auth", "ai-generated"]}

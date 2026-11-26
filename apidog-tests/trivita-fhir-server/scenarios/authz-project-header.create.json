@@ -1,0 +1,10 @@
+{
+ "name": "Header X-Fhir-Project với token thường",
+ "description": "Chỉ super-admin được chọn project bằng header; token thường bị 403.",
+ "priority": 2,
+ "folderId": 0,
+ "tags": [
+  "authz",
+  "security"
+ ]
+}

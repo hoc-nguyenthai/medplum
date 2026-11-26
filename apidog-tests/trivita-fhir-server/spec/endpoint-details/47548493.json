@@ -1,0 +1,37 @@
+{
+ "id": 47548493,
+ "name": "CapabilityStatement",
+ "method": "get",
+ "path": "/fhir/R4/metadata",
+ "parameters": {
+  "path": [],
+  "query": [],
+  "cookie": [],
+  "header": []
+ },
+ "auth": {},
+ "securityScheme": {},
+ "requestBody": {
+  "type": "none",
+  "parameters": [],
+  "required": false,
+  "additionalContentTypes": [],
+  "oasExtensions": ""
+ },
+ "responses": [
+  {
+   "id": "111530634",
+   "name": "",
+   "code": "200",
+   "contentType": "json",
+   "jsonSchema": {
+    "$ref": "#/definitions/19029505"
+   },
+   "itemSchema": {},
+   "description": "OK",
+   "mediaType": "application/fhir+json",
+   "headers": [],
+   "oasExtensions": ""
+  }
+ ]
+}

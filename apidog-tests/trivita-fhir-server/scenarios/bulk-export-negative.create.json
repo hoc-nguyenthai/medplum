@@ -1,0 +1,10 @@
+{
+ "name": "$export: tham số sai",
+ "description": "Mọi ca đều bị từ chối trước khi tạo job (không có tác dụng phụ).",
+ "priority": 1,
+ "folderId": 0,
+ "tags": [
+  "bulk",
+  "negative"
+ ]
+}

@@ -1,0 +1,10 @@
+{
+ "name": "DICOMweb: STOW-RS validation (data-driven)",
+ "description": "Một bước STOW-RS theo từng dòng: Content-Type, boundary, thân multipart, metadata JSON, bulkdata, UID (rỗng/sai/65 ký tự/đúng 64), dạng tệp không phải DICOM. Lỗi cả yêu cầu: 415/400; lỗi từng instance: 409 + FailedSOPSequence.",
+ "folderId": 0,
+ "priority": 1,
+ "tags": [
+  "dicomweb",
+  "validation"
+ ]
+}

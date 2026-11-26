@@ -1,0 +1,12 @@
+[
+ {
+  "case_id": "TP-01",
+  "case_group": "Positive",
+  "description": "topic đường dẫn khớp event[hub.topic]",
+  "expected_status": "202",
+  "expected_code": "",
+  "topic_path": "qa-path-match",
+  "body_json": "{\"id\":\"qa-ev-1\",\"timestamp\":\"2026-11-25T10:00:00.000Z\",\"event\":{\"hub.topic\":\"qa-path-match\",\"hub.event\":\"heartbeat\",\"context\":[]}}",
+  "expected_message": ""
+ }
+]

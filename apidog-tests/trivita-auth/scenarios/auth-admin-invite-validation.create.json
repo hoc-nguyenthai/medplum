@@ -1,0 +1,1 @@
+{"name": "Auth | POST /admin/projects/{id}/invite: đầu vào (data-driven)", "description": "Trường bắt buộc (resourceType, firstName, lastName, email|externalId), định dạng email, scope, trường lạ, policy lạ. Hàng 200 tạo user/membership qa.iv.*.", "folderId": 0, "priority": 1, "tags": ["trivita-auth", "ai-generated"]}

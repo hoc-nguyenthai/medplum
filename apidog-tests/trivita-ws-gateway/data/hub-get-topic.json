@@ -1,0 +1,83 @@
+[
+ {
+  "case_id": "GT-01",
+  "case_group": "Positive",
+  "description": "topic chưa từng dùng: STU3 trả context rỗng",
+  "expected_status": "200",
+  "expected_code": "",
+  "topic_enc": "qa-never-used-0001",
+  "expected_message": ""
+ },
+ {
+  "case_id": "GT-02",
+  "case_group": "Boundary",
+  "description": "topic có '/' mã hóa %2F",
+  "expected_status": "200",
+  "expected_code": "",
+  "topic_enc": "a%2Fb",
+  "expected_message": ""
+ },
+ {
+  "case_id": "GT-03",
+  "case_group": "Boundary",
+  "description": "topic có '%' mã hóa %25",
+  "expected_status": "200",
+  "expected_code": "",
+  "topic_enc": "100%25",
+  "expected_message": ""
+ },
+ {
+  "case_id": "GT-04",
+  "case_group": "Boundary",
+  "description": "topic có khoảng trắng %20",
+  "expected_status": "200",
+  "expected_code": "",
+  "topic_enc": "a%20b",
+  "expected_message": ""
+ },
+ {
+  "case_id": "GT-05",
+  "case_group": "Boundary",
+  "description": "topic Unicode (bác sĩ)",
+  "expected_status": "200",
+  "expected_code": "",
+  "topic_enc": "b%C3%A1c-s%C4%A9",
+  "expected_message": ""
+ },
+ {
+  "case_id": "GT-06",
+  "case_group": "Boundary",
+  "description": "topic đúng 256 byte",
+  "expected_status": "200",
+  "expected_code": "",
+  "topic_enc": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "expected_message": ""
+ },
+ {
+  "case_id": "GT-07",
+  "case_group": "Boundary",
+  "description": "topic 257 byte",
+  "expected_status": "400",
+  "expected_code": "",
+  "topic_enc": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "expected_message": "Invalid hub.topic"
+ },
+ {
+  "case_id": "GT-08",
+  "case_group": "Negative",
+  "description": "topic có ký tự điều khiển %00",
+  "expected_status": "400",
+  "expected_code": "",
+  "topic_enc": "a%00b",
+  "expected_message": "Invalid hub.topic"
+ },
+ {
+  "case_id": "GT-09",
+  "case_group": "Security",
+  "description": "topic kiểu path traversal mã hóa",
+  "expected_status": "200",
+  "expected_code": "",
+  "topic_enc": "..%2F..%2Fetc%2Fpasswd",
+  "expected_message": ""
+ }
+]

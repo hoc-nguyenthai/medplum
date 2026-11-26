@@ -1,0 +1,15 @@
+[
+ {
+  "case_id": "TC-EV-01",
+  "case_group": "Positive",
+  "description": "đủ hồ sơ: Patient + Observation + Condition",
+  "expected_status": "200",
+  "expected_code": "",
+  "expected_message": "",
+  "ev_count": "100",
+  "ev_type": "Patient,Observation,Condition",
+  "ev_since": "1970-01-01T00:00:00Z",
+  "expected_entries": "3",
+  "expected_total": "3"
+ }
+]

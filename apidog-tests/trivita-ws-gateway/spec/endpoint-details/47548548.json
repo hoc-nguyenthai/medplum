@@ -1,0 +1,167 @@
+{
+ "id": 47548548,
+ "name": "Ngữ cảnh hiện tại (STU2)",
+ "method": "get",
+ "path": "/fhircast/STU2/{topic}",
+ "parameters": {
+  "path": [
+   {
+    "id": "topic#0",
+    "name": "topic",
+    "required": true,
+    "enable": true,
+    "description": "Topic (đã mã hóa URL)",
+    "example": "",
+    "type": "string",
+    "schema": {
+     "type": "string"
+    }
+   }
+  ],
+  "query": [],
+  "cookie": [],
+  "header": []
+ },
+ "auth": {
+  "type": "securityscheme"
+ },
+ "securityScheme": {
+  "schemeGroups": [
+   {
+    "id": "CEx5ML8NClwXi5weCx5Wq",
+    "schemeIds": [
+     646421
+    ]
+   }
+  ],
+  "required": true,
+  "use": {
+   "id": "CEx5ML8NClwXi5weCx5Wq",
+   "configs": {
+    "646421": {
+     "authConfigs": {
+      "x-apidog": {
+       "value": "{{apiKey}}"
+      }
+     }
+    }
+   }
+  },
+  "scopes": {
+   "CEx5ML8NClwXi5weCx5Wq": {
+    "646421": []
+   }
+  }
+ },
+ "requestBody": {
+  "type": "none",
+  "parameters": [],
+  "required": false,
+  "additionalContentTypes": [],
+  "oasExtensions": ""
+ },
+ "responses": [
+  {
+   "id": "145580809",
+   "name": "",
+   "code": "200",
+   "contentType": "json",
+   "jsonSchema": {
+    "type": "array",
+    "items": {
+     "$ref": "#/definitions/19029573"
+    }
+   },
+   "itemSchema": {},
+   "description": "OK",
+   "mediaType": "application/json",
+   "headers": [],
+   "oasExtensions": "",
+   "additionalContent": [
+    {
+     "contentType": "json",
+     "mediaType": "application/fhir+json",
+     "jsonSchema": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/httpapi.FhircastContextItem"
+      }
+     },
+     "examples": {}
+    }
+   ]
+  },
+  {
+   "id": "108683223",
+   "name": "",
+   "code": "401",
+   "contentType": "json",
+   "jsonSchema": {
+    "$ref": "#/definitions/19029581"
+   },
+   "itemSchema": {},
+   "description": "Thiếu hoặc sai Bearer token",
+   "mediaType": "application/json",
+   "headers": [],
+   "oasExtensions": "",
+   "additionalContent": [
+    {
+     "contentType": "json",
+     "mediaType": "application/fhir+json",
+     "jsonSchema": {
+      "$ref": "#/components/schemas/httpapi.OperationOutcome"
+     },
+     "examples": {}
+    }
+   ]
+  },
+  {
+   "id": "173486719",
+   "name": "",
+   "code": "403",
+   "contentType": "json",
+   "jsonSchema": {
+    "$ref": "#/definitions/19029581"
+   },
+   "itemSchema": {},
+   "description": "Token thiếu project hoặc scope fhircast/*",
+   "mediaType": "application/json",
+   "headers": [],
+   "oasExtensions": "",
+   "additionalContent": [
+    {
+     "contentType": "json",
+     "mediaType": "application/fhir+json",
+     "jsonSchema": {
+      "$ref": "#/components/schemas/httpapi.OperationOutcome"
+     },
+     "examples": {}
+    }
+   ]
+  },
+  {
+   "id": "196589116",
+   "name": "",
+   "code": "500",
+   "contentType": "json",
+   "jsonSchema": {
+    "$ref": "#/definitions/19029581"
+   },
+   "itemSchema": {},
+   "description": "Lỗi hạ tầng (Redis)",
+   "mediaType": "application/json",
+   "headers": [],
+   "oasExtensions": "",
+   "additionalContent": [
+    {
+     "contentType": "json",
+     "mediaType": "application/fhir+json",
+     "jsonSchema": {
+      "$ref": "#/components/schemas/httpapi.OperationOutcome"
+     },
+     "examples": {}
+    }
+   ]
+  }
+ ]
+}

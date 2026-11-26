@@ -1,0 +1,22 @@
+Dataset Name,case_id,case_group,description,expected_status,expected_code,expected_message,firstName,lastName,email,password
+NU-01,NU-01,Positive,đăng ký hợp lệ,200,,,QA,Valid,qa.nu01.{{$timestamp}}{{$randomInt}}@example.org,Qa-Valid-2026-xK9
+NU-02,NU-02,Boundary,firstName đúng 128 ký tự,200,,,GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG,Valid,qa.nu02.{{$timestamp}}{{$randomInt}}@example.org,Qa-Valid-2026-xK9
+NU-03,NU-03,Boundary,firstName 129 ký tự,400,invalid,First name must be between 1 and 128 characters,GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG,Valid,qa.nu03.{{$timestamp}}{{$randomInt}}@example.org,Qa-Valid-2026-xK9
+NU-04,NU-04,Boundary,lastName đúng 128 ký tự,200,,,QA,GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG,qa.nu04.{{$timestamp}}{{$randomInt}}@example.org,Qa-Valid-2026-xK9
+NU-05,NU-05,Boundary,lastName 129 ký tự,400,invalid,Last name must be between 1 and 128 characters,QA,GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG,qa.nu05.{{$timestamp}}{{$randomInt}}@example.org,Qa-Valid-2026-xK9
+NU-06,NU-06,Negative,firstName rỗng,400,invalid,First name must be between 1 and 128 characters,,Valid,qa.nu06.{{$timestamp}}{{$randomInt}}@example.org,Qa-Valid-2026-xK9
+NU-07,NU-07,Negative,lastName rỗng,400,invalid,Last name must be between 1 and 128 characters,QA,,qa.nu07.{{$timestamp}}{{$randomInt}}@example.org,Qa-Valid-2026-xK9
+NU-08,NU-08,Negative,email không có @,400,invalid,Valid email address between 3 and 72 characters is required,QA,Valid,khong-phai-email,Qa-Valid-2026-xK9
+NU-09,NU-09,Boundary,email 73 ký tự (vượt 72),400,invalid,Valid email address between 3 and 72 characters is required,QA,Valid,qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq@example.org,Qa-Valid-2026-xK9
+NU-10,NU-10,Negative,email rỗng,400,invalid,Valid email address between 3 and 72 characters is required,QA,Valid,,Qa-Valid-2026-xK9
+NU-11,NU-11,Boundary,password 7 ký tự,400,invalid,Password must be at least 8 characters,QA,Valid,qa.nu11.{{$timestamp}}{{$randomInt}}@example.org,Aa1-xyz
+NU-12,NU-12,Boundary,password đúng 8 ký tự,200,,,QA,Valid,qa.nu12.{{$timestamp}}{{$randomInt}}@example.org,Aa1-xyzK
+NU-13,NU-13,Boundary,password đúng 72 byte ASCII,200,,,QA,Valid,qa.nu13.{{$timestamp}}{{$randomInt}}@example.org,Aa1-kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+NU-14,NU-14,Boundary,password 73 byte,400,invalid,Password must be no more than 72 characters,QA,Valid,qa.nu14.{{$timestamp}}{{$randomInt}}@example.org,Aa1-kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+NU-15,NU-15,Boundary,password 36 ký tự é = 72 byte (giới hạn tính theo byte),200,,,QA,Valid,qa.nu15.{{$timestamp}}{{$randomInt}}@example.org,éééééééééééééééééééééééééééééééééééé
+NU-16,NU-16,Boundary,password 37 ký tự é = 74 byte,400,invalid,Password must be no more than 72 characters,QA,Valid,qa.nu16.{{$timestamp}}{{$randomInt}}@example.org,ééééééééééééééééééééééééééééééééééééé
+NU-17,NU-17,Negative,nhiều lỗi cùng lúc: validator gom issue đầu là firstName,400,invalid,First name must be between 1 and 128 characters,,,x,1
+NU-18,NU-18,Negative,email đã đăng ký (email admin seed),400,invalid,Email already registered,QA,Dup,{{adminEmail}},Qa-Valid-2026-xK9
+NU-19,NU-19,Security,"firstName chứa HTML/script được lưu nguyên, không lỗi 500",200,,,<script>alert(1)</script>,Valid,qa.nu19.{{$timestamp}}{{$randomInt}}@example.org,Qa-Valid-2026-xK9
+NU-20,NU-20,Security,lastName chứa chuỗi tiêm SQL,200,,,QA,'; DROP TABLE users;--,qa.nu20.{{$timestamp}}{{$randomInt}}@example.org,Qa-Valid-2026-xK9
+NU-21,NU-21,Security,email chứa khoảng trắng và dấu nháy,400,invalid,Valid email address between 3 and 72 characters is required,QA,Valid,a b'c@example.org,Qa-Valid-2026-xK9

@@ -1,0 +1,571 @@
+{
+ "steps": [
+  {
+   "id": "step-1",
+   "number": 1,
+   "name": "auth: GET /health/live",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988192,
+    "name": "auth: GET /health/live",
+    "path": "{{authUrl}}/health/live",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988192
+  },
+  {
+   "id": "step-2",
+   "number": 2,
+   "name": "fhir-server: GET /healthz",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988191,
+    "name": "fhir-server: GET /healthz",
+    "path": "{{fhirUrl}}/healthz",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988191
+  },
+  {
+   "id": "step-3",
+   "number": 3,
+   "name": "dicomweb: GET /healthz",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988190,
+    "name": "dicomweb: GET /healthz",
+    "path": "{{dicomUrl}}/healthz",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988190
+  },
+  {
+   "id": "step-4",
+   "number": 4,
+   "name": "ws-gateway: GET /healthz",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988189,
+    "name": "ws-gateway: GET /healthz",
+    "path": "{{wsUrl}}/healthz",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988189
+  },
+  {
+   "id": "step-5",
+   "number": 5,
+   "name": "auth: GET /auth/me không token -> 401",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988188,
+    "name": "auth: GET /auth/me không token -> 401",
+    "path": "{{authUrl}}/auth/me",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 401",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "401"
+      }
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988188
+  },
+  {
+   "id": "step-6",
+   "number": 6,
+   "name": "fhir: GET /fhir/R4/Patient không token -> 401",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988187,
+    "name": "fhir: GET /fhir/R4/Patient không token -> 401",
+    "path": "{{fhirUrl}}/fhir/R4/Patient",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 401",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "401"
+      }
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988187
+  },
+  {
+   "id": "step-7",
+   "number": 7,
+   "name": "dicomweb: GET /dicomweb/studies không token -> 401",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988186,
+    "name": "dicomweb: GET /dicomweb/studies không token -> 401",
+    "path": "{{dicomUrl}}/dicomweb/studies",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 401",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "401"
+      }
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988186
+  },
+  {
+   "id": "step-8",
+   "number": 8,
+   "name": "ws-gateway: GET /fhircast/STU3/{topic} không token -> 401",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988185,
+    "name": "ws-gateway: GET /fhircast/STU3/{topic} không token -> 401",
+    "path": "{{wsUrl}}/fhircast/STU3/qa-no-token",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 401",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "401"
+      }
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988185
+  },
+  {
+   "id": "step-9",
+   "number": 9,
+   "name": "auth: GET /.well-known/jwks.json không token -> 200 (công khai)",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988184,
+    "name": "auth: GET /.well-known/jwks.json không token -> 200 (công khai)",
+    "path": "{{authUrl}}/.well-known/jwks.json",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988184
+  },
+  {
+   "id": "step-10",
+   "number": 10,
+   "name": "fhir: GET /fhir/R4/metadata không token -> 200 (công khai)",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988183,
+    "name": "fhir: GET /fhir/R4/metadata không token -> 200 (công khai)",
+    "path": "{{fhirUrl}}/fhir/R4/metadata",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988183
+  },
+  {
+   "id": "step-11",
+   "number": 11,
+   "name": "ws-gateway: GET /fhircast/STU3/.well-known/fhircast-configuration không token -> 200 (công khai)",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988182,
+    "name": "ws-gateway: GET /fhircast/STU3/.well-known/fhircast-configuration không token -> 200 (công khai)",
+    "path": "{{wsUrl}}/fhircast/STU3/.well-known/fhircast-configuration",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988182
+  },
+  {
+   "id": "step-12",
+   "number": 12,
+   "name": "dicomweb: ngoài tiền tố GET /fhir/R4/Patient -> 404 (không qua xác thực)",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988181,
+    "name": "dicomweb: ngoài tiền tố GET /fhir/R4/Patient -> 404 (không qua xác thực)",
+    "path": "{{dicomUrl}}/fhir/R4/Patient",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 404",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "404"
+      }
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988181
+  },
+  {
+   "id": "step-13",
+   "number": 13,
+   "name": "auth: POST /oauth2/token thiếu client_secret -> 4xx",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988180,
+    "name": "auth: POST /oauth2/token thiếu client_secret -> 4xx",
+    "path": "{{authUrl}}/oauth2/token",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "x-www-form-urlencoded",
+     "parameters": [
+      {
+       "name": "grant_type",
+       "value": "client_credentials",
+       "enable": true,
+       "type": "string"
+      },
+      {
+       "name": "client_id",
+       "value": "{{clientId}}",
+       "enable": true,
+       "type": "string"
+      }
+     ]
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "pm.test(\"không phải 2xx/5xx\", () => { pm.expect(pm.response.code).to.be.within(400, 499); });"
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988180
+  }
+ ]
+}

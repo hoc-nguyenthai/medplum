@@ -1,0 +1,9 @@
+{
+ "name": "Tìm kiếm Patient: lọc, sắp xếp, phân trang, lỗi",
+ "description": "Mỗi dòng: tạo 3 Patient cùng family duy nhất (nam 1980-01-01, nữ 1990-06-15, nữ 2000-12-31) rồi GET /Patient?family=…{query}.",
+ "priority": 1,
+ "folderId": 0,
+ "tags": [
+  "search"
+ ]
+}

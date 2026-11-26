@@ -1,0 +1,11 @@
+{
+ "name": "DICOMweb: bốn tiền tố, cô lập project, route chưa cài",
+ "description": "Không token (401), bốn tiền tố tương đương (200), projectId/X-Fhir-Project khác project của token (403), route lạ/DELETE/POST /series (501), ngoài tiền tố (404), header bảo mật.",
+ "folderId": 0,
+ "priority": 1,
+ "tags": [
+  "dicomweb",
+  "authz",
+  "routing"
+ ]
+}

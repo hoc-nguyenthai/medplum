@@ -1,0 +1,1 @@
+{"id": 9100013, "name": "fhir: GET Patient/{id}/$everything có Patient + Observation", "method": "get", "path": "{{fhirUrl}}/fhir/R4/Patient/{{patient_id}}/$everything", "parameters": {"path": [], "query": [], "header": [], "cookie": []}, "auth": {}, "securityScheme": {}, "requestBody": null, "responses": []}

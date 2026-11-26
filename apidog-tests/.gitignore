@@ -1,0 +1,4 @@
+# Report chạy thử chứa credential tạm (mật khẩu, secret, token) và sinh lại mỗi lần chạy
+*/dryrun/reports/
+# Gói import sinh bởi build_import_bundle.py
+_import/*.zip

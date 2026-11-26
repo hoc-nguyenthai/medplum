@@ -1,0 +1,1 @@
+{"id": 9100016, "name": "fhir: GET bulkdata/{id}/status (lần 2)", "method": "get", "path": "{{fhirUrl}}/fhir/R4/bulkdata/{{job_id}}/status", "parameters": {"path": [], "query": [], "header": [], "cookie": []}, "auth": {}, "securityScheme": {}, "requestBody": null, "responses": []}

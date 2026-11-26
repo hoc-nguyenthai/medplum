@@ -1,0 +1,1 @@
+{"name": "Auth | Authz: Bearer sai trên mọi route bảo vệ → 401 (data-driven)", "description": "Với mỗi token xấu, gọi mọi route cần Bearer (me, revoke, changepassword, mfa/status, introspect, userinfo, logout, admin) và đòi 401 + OperationOutcome code=login, không lộ thông tin.", "folderId": 0, "priority": 1, "tags": ["trivita-auth", "ai-generated"]}

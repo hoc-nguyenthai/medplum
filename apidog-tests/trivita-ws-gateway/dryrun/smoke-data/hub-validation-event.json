@@ -1,0 +1,11 @@
+[
+ {
+  "case_id": "SE-01",
+  "case_group": "Negative",
+  "description": "id rỗng",
+  "expected_status": "400",
+  "expected_code": "",
+  "body_json": "{\"id\":\"\",\"timestamp\":\"2026-11-25T10:00:00.000Z\",\"event\":{\"hub.topic\":\"qa-ev-topic\",\"hub.event\":\"heartbeat\",\"context\":[]}}",
+  "expected_message": "Missing event ID"
+ }
+]

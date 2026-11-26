@@ -1,0 +1,326 @@
+{
+ "steps": [
+  {
+   "id": "step-1",
+   "number": 1,
+   "name": "auth: token hợp lệ (đối chứng)",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988176,
+    "name": "auth: token hợp lệ (đối chứng)",
+    "path": "{{authUrl}}/oauth2/token",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "x-www-form-urlencoded",
+     "parameters": [
+      {
+       "name": "grant_type",
+       "value": "client_credentials",
+       "enable": true,
+       "type": "string"
+      },
+      {
+       "name": "client_id",
+       "value": "{{clientId}}",
+       "enable": true,
+       "type": "string"
+      },
+      {
+       "name": "client_secret",
+       "value": "{{clientSecret}}",
+       "enable": true,
+       "type": "string"
+      }
+     ]
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.access_token exists",
+       "subject": "responseJson",
+       "comparison": "exists",
+       "path": "$.access_token",
+       "value": "",
+       "extractSettings": {
+        "expression": "$.access_token"
+       }
+      }
+     },
+     {
+      "type": "extractor",
+      "enable": true,
+      "data": {
+       "variableType": "local",
+       "variableName": "accessToken",
+       "expression": "$.access_token",
+       "subject": "responseJson"
+      }
+     },
+     {
+      "type": "customScript",
+      "enable": true,
+      "data": "const k = pm.iterationData.get('bad_kind'); const m = {garbage: 'not-a-jwt', 'three-parts': 'aaa.bbb.ccc', sqli: \"' OR '1'='1\", 'bearer-word': 'Bearer', long: 'A'.repeat(4096),\n  'alg-none': ['eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0', 'eyJzdWIiOiJxYSJ9', ''].join('.')};\npm.variables.set('bad_token', m[k]);"
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988176
+  },
+  {
+   "id": "step-2",
+   "number": 2,
+   "name": "đối chứng: fhir GET Patient với token hợp lệ -> 200",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988175,
+    "name": "đối chứng: fhir GET Patient với token hợp lệ -> 200",
+    "path": "{{fhirUrl}}/fhir/R4/Patient?_count=1",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{accessToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988175
+  },
+  {
+   "id": "step-3",
+   "number": 3,
+   "name": "auth: GET /auth/me với token sai -> 401",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988174,
+    "name": "auth: GET /auth/me với token sai -> 401",
+    "path": "{{authUrl}}/auth/me",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == {{expected_status}}",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "{{expected_status}}"
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{bad_token}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988174
+  },
+  {
+   "id": "step-4",
+   "number": 4,
+   "name": "fhir: GET /fhir/R4/Patient với token sai -> 401",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988173,
+    "name": "fhir: GET /fhir/R4/Patient với token sai -> 401",
+    "path": "{{fhirUrl}}/fhir/R4/Patient",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == {{expected_status}}",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "{{expected_status}}"
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{bad_token}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988173
+  },
+  {
+   "id": "step-5",
+   "number": 5,
+   "name": "dicomweb: GET /dicomweb/studies với token sai -> 401",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988172,
+    "name": "dicomweb: GET /dicomweb/studies với token sai -> 401",
+    "path": "{{dicomUrl}}/dicomweb/studies",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == {{expected_status}}",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "{{expected_status}}"
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{bad_token}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988172
+  },
+  {
+   "id": "step-6",
+   "number": 6,
+   "name": "ws-gateway: GET /fhircast/STU3/{topic} với token sai -> 401",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988171,
+    "name": "ws-gateway: GET /fhircast/STU3/{topic} với token sai -> 401",
+    "path": "{{wsUrl}}/fhircast/STU3/qa-no-token",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == {{expected_status}}",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "{{expected_status}}"
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{bad_token}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988171
+  }
+ ]
+}

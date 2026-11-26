@@ -1,0 +1,47 @@
+[
+ {
+  "case_id": "TC-ST-01",
+  "case_group": "Negative",
+  "description": "id dạng chuỗi lạ",
+  "expected_status": "404",
+  "expected_code": "not-found",
+  "expected_message": "",
+  "job_id": "khong-co"
+ },
+ {
+  "case_id": "TC-ST-02",
+  "case_group": "Negative",
+  "description": "UUID chưa có",
+  "expected_status": "404",
+  "expected_code": "not-found",
+  "expected_message": "",
+  "job_id": "00000000-0000-4000-8000-000000000000"
+ },
+ {
+  "case_id": "TC-ST-03",
+  "case_group": "Security",
+  "description": "dấu hiệu path traversal đã mã hóa",
+  "expected_status": "404",
+  "expected_code": "not-found",
+  "expected_message": "",
+  "job_id": "..%2F..%2Fetc%2Fpasswd"
+ },
+ {
+  "case_id": "TC-ST-04",
+  "case_group": "Security",
+  "description": "SQLi trong id",
+  "expected_status": "404",
+  "expected_code": "not-found",
+  "expected_message": "",
+  "job_id": "x'%20OR%201=1--"
+ },
+ {
+  "case_id": "TC-ST-05",
+  "case_group": "Boundary",
+  "description": "id rất dài (512 ký tự)",
+  "expected_status": "404",
+  "expected_code": "not-found",
+  "expected_message": "",
+  "job_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ }
+]

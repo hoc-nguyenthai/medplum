@@ -1,0 +1,155 @@
+[
+  {
+    "case_id": "AS-01",
+    "case_group": "Positive",
+    "description": "appName h\u1ee3p l\u1ec7",
+    "expected_status": "200",
+    "expected_code": "",
+    "expected_message": "",
+    "admin_body": "[{\"name\": \"appName\", \"valueString\": \"QA App\"}]"
+  },
+  {
+    "case_id": "AS-02",
+    "case_group": "Boundary",
+    "description": "appName \u0111\u00fang 100 k\u00fd t\u1ef1",
+    "expected_status": "200",
+    "expected_code": "",
+    "expected_message": "",
+    "admin_body": "[{\"name\": \"appName\", \"valueString\": \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}]"
+  },
+  {
+    "case_id": "AS-03",
+    "case_group": "Boundary",
+    "description": "appName 101 k\u00fd t\u1ef1",
+    "expected_status": "400",
+    "expected_code": "invalid",
+    "expected_message": "appName must be a string of 1 to 100 characters",
+    "admin_body": "[{\"name\": \"appName\", \"valueString\": \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}]"
+  },
+  {
+    "case_id": "AS-04",
+    "case_group": "Negative",
+    "description": "appName r\u1ed7ng",
+    "expected_status": "400",
+    "expected_code": "invalid",
+    "expected_message": "appName must be a string of 1 to 100 characters",
+    "admin_body": "[{\"name\": \"appName\", \"valueString\": \"\"}]"
+  },
+  {
+    "case_id": "AS-05",
+    "case_group": "Negative",
+    "description": "t\u00ean ngo\u00e0i allowlist",
+    "expected_status": "400",
+    "expected_code": "invalid",
+    "expected_message": "Setting is not allowed: allow-dangerous-redirect",
+    "admin_body": "[{\"name\": \"allow-dangerous-redirect\", \"valueString\": \"x\"}]"
+  },
+  {
+    "case_id": "AS-06",
+    "case_group": "Negative",
+    "description": "tr\u00f9ng t\u00ean appName",
+    "expected_status": "400",
+    "expected_code": "invalid",
+    "expected_message": "Duplicate setting: appName",
+    "admin_body": "[{\"name\": \"appName\", \"valueString\": \"a\"}, {\"name\": \"appName\", \"valueString\": \"b\"}]"
+  },
+  {
+    "case_id": "AS-07",
+    "case_group": "Positive",
+    "description": "mfaRequired=false",
+    "expected_status": "200",
+    "expected_code": "",
+    "expected_message": "",
+    "admin_body": "[{\"name\": \"mfaRequired\", \"valueBoolean\": false}]"
+  },
+  {
+    "case_id": "AS-08",
+    "case_group": "Negative",
+    "description": "mfaRequired ki\u1ec3u chu\u1ed7i h\u1ee3p l\u1ec7 c\u00fa ph\u00e1p nh\u01b0ng sai ki\u1ec3u gi\u00e1 tr\u1ecb",
+    "expected_status": "400",
+    "expected_code": "invalid",
+    "expected_message": "mfaRequired must be a boolean",
+    "admin_body": "[{\"name\": \"mfaRequired\", \"valueString\": \"true\"}]"
+  },
+  {
+    "case_id": "AS-09",
+    "case_group": "Negative",
+    "description": "allowedMfaMethods ngo\u00e0i totp/email",
+    "expected_status": "400",
+    "expected_code": "invalid",
+    "expected_message": "allowedMfaMethods must list \"totp\" and/or \"email\"",
+    "admin_body": "[{\"name\": \"allowedMfaMethods\", \"valueString\": \"sms\"}]"
+  },
+  {
+    "case_id": "AS-10",
+    "case_group": "Positive",
+    "description": "allowedMfaMethods totp,email",
+    "expected_status": "200",
+    "expected_code": "",
+    "expected_message": "",
+    "admin_body": "[{\"name\": \"allowedMfaMethods\", \"valueString\": \"totp,email\"}]"
+  },
+  {
+    "case_id": "AS-11",
+    "case_group": "Negative",
+    "description": "allowedPractitionerEmailDomain c\u00f3 @",
+    "expected_status": "400",
+    "expected_code": "invalid",
+    "expected_message": "allowedPractitionerEmailDomain must be a domain name such as example.org",
+    "admin_body": "[{\"name\": \"allowedPractitionerEmailDomain\", \"valueString\": \"a@example.org\"}]"
+  },
+  {
+    "case_id": "AS-12",
+    "case_group": "Negative",
+    "description": "allowedPractitionerEmailDomain kh\u00f4ng c\u00f3 d\u1ea5u ch\u1ea5m",
+    "expected_status": "400",
+    "expected_code": "invalid",
+    "expected_message": "allowedPractitionerEmailDomain must be a domain name such as example.org",
+    "admin_body": "[{\"name\": \"allowedPractitionerEmailDomain\", \"valueString\": \"localhost\"}]"
+  },
+  {
+    "case_id": "AS-13",
+    "case_group": "Positive",
+    "description": "allowedPractitionerEmailDomain nhi\u1ec1u m\u1ee5c (\u0111\u01b0\u1ee3c ph\u00e9p)",
+    "expected_status": "200",
+    "expected_code": "",
+    "expected_message": "",
+    "admin_body": "[{\"name\": \"allowedPractitionerEmailDomain\", \"valueString\": \"example.org\"}, {\"name\": \"allowedPractitionerEmailDomain\", \"valueString\": \"example.com\"}]"
+  },
+  {
+    "case_id": "AS-14",
+    "case_group": "Negative",
+    "description": "body kh\u00f4ng ph\u1ea3i m\u1ea3ng",
+    "expected_status": "400",
+    "expected_code": "invalid",
+    "expected_message": "Content could not be parsed",
+    "admin_body": "{}"
+  },
+  {
+    "case_id": "AS-15",
+    "case_group": "Negative",
+    "description": "body null",
+    "expected_status": "400",
+    "expected_code": "invalid",
+    "expected_message": "Content could not be parsed",
+    "admin_body": "null"
+  },
+  {
+    "case_id": "AS-16",
+    "case_group": "Negative",
+    "description": "valueBoolean l\u00e0 chu\u1ed7i (sai ki\u1ec3u JSON)",
+    "expected_status": "400",
+    "expected_code": "invalid",
+    "expected_message": "Content could not be parsed",
+    "admin_body": "[{\"name\":\"mfaRequired\",\"valueBoolean\":\"yes\"}]"
+  },
+  {
+    "case_id": "AS-99",
+    "case_group": "Positive",
+    "description": "\u0111\u1eb7t l\u1ea1i r\u1ed7ng (d\u1ecdn d\u1eb9p, ch\u1ea1y cu\u1ed1i)",
+    "expected_status": "200",
+    "expected_code": "",
+    "expected_message": "",
+    "admin_body": "[]"
+  }
+]

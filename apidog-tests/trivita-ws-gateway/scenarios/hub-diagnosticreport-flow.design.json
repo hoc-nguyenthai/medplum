@@ -1,0 +1,189 @@
+{
+ "slug": "hub-diagnosticreport-flow",
+ "name": "Hub DiagnosticReport open/update/close",
+ "priority": 1,
+ "steps": [
+  {
+   "name": "Chuẩn bị: lấy token client_credentials từ auth và đặt topic",
+   "endpointId": 47548561,
+   "method": "GET",
+   "path": "/healthz",
+   "assertions": [
+    "status == 200"
+   ],
+   "postProcessors": [
+    {
+     "type": "customScript",
+     "data": {
+      "script": "\nconst scope = pm.iterationData.get('oauth_scope') || 'fhircast/*';\nconst authUrl = pm.variables.get('authUrl') || pm.environment.get('authUrl');\nconst set = (k, v) => { try { pm.variables.set(k, v); } catch (e) {} try { pm.environment.set(k, v); } catch (e) {} };\nset('topic', 'qa-' + Date.now() + '-' + Math.floor(Math.random() * 1000000));\npm.sendRequest({\n  url: authUrl + '/oauth2/token', method: 'POST',\n  header: { 'Content-Type': 'application/x-www-form-urlencoded' },\n  body: { mode: 'urlencoded', urlencoded: [\n    { key: 'grant_type', value: 'client_credentials' },\n    { key: 'client_id', value: pm.variables.get('clientId') || pm.environment.get('clientId') },\n    { key: 'client_secret', value: pm.variables.get('clientSecret') || pm.environment.get('clientSecret') },\n    { key: 'scope', value: scope } ] }\n}, (err, res) => {\n  pm.test('token client_credentials 200', () => { pm.expect(err).to.eql(null); pm.expect(res.code).to.eql(200); });\n  if (!err && res.code === 200) { set('access_token', res.json().access_token); }\n});\n"
+     }
+    }
+   ],
+   "auth": "none"
+  },
+  {
+   "name": "Mở DiagnosticReport",
+   "endpointId": 47548553,
+   "method": "POST",
+   "path": "/fhircast/STU3/{{topic}}",
+   "auth": "Bearer {{access_token}}",
+   "body": "{\"id\":\"qa-{{$timestamp}}\",\"timestamp\":\"2026-11-25T10:00:00.000Z\",\"event\":{\"hub.topic\":\"{{topic}}\",\"hub.event\":\"DiagnosticReport-open\",\"context\":[{\"key\":\"report\",\"resource\":{\"resourceType\":\"DiagnosticReport\",\"id\":\"qa-dr-1\",\"status\":\"preliminary\"}}]}}",
+   "assertions": [
+    "status == 202",
+    "$.event.event['context.versionId'] exists"
+   ],
+   "postProcessors": [
+    {
+     "type": "extractor",
+     "data": {
+      "variableName": "ctx_version",
+      "expression": "$.event.event['context.versionId']",
+      "subject": "responseJson"
+     }
+    }
+   ]
+  },
+  {
+   "name": "GET: context.type DiagnosticReport",
+   "endpointId": 47548552,
+   "method": "GET",
+   "path": "/fhircast/STU3/{{topic}}",
+   "auth": "Bearer {{access_token}}",
+   "assertions": [
+    "status == 200",
+    "$['context.type'] == DiagnosticReport",
+    "$['context.versionId'] == {{ctx_version}}"
+   ]
+  },
+  {
+   "name": "Update sai phiên bản → 400 Expected event.context.versionId",
+   "endpointId": 47548553,
+   "method": "POST",
+   "path": "/fhircast/STU3/{{topic}}",
+   "auth": "Bearer {{access_token}}",
+   "body": "{\"id\":\"qa-{{$timestamp}}\",\"timestamp\":\"2026-11-25T10:00:00.000Z\",\"event\":{\"hub.topic\":\"{{topic}}\",\"hub.event\":\"DiagnosticReport-update\",\"context\":[{\"key\":\"report\",\"resource\":{\"resourceType\":\"DiagnosticReport\",\"id\":\"qa-dr-1\",\"status\":\"preliminary\"}},{\"key\":\"updates\",\"resource\":{\"resourceType\":\"Bundle\",\"type\":\"transaction\",\"entry\":[{\"fullUrl\":\"urn:uuid:qa-obs-1\",\"request\":{\"method\":\"PUT\",\"url\":\"Observation/qa-obs-1\"},\"resource\":{\"resourceType\":\"Observation\",\"id\":\"qa-obs-1\",\"status\":\"final\",\"code\":{\"text\":\"qa\"}}}]}}],\"context.versionId\":\"khong-phai-phien-ban-hien-tai\"}}",
+   "assertions": [
+    "status == 400"
+   ],
+   "postProcessors": [
+    {
+     "type": "customScript",
+     "data": {
+      "script": "pm.test('thông điệp Expected ...', () => pm.expect(pm.response.json().issue[0].details.text).to.include(\"Expected event.context.versionId to be '\" + pm.variables.get('ctx_version') + \"', received 'khong-phai-phien-ban-hien-tai'\"));"
+     }
+    }
+   ]
+  },
+  {
+   "name": "Update thiếu bundle updates → 400",
+   "endpointId": 47548553,
+   "method": "POST",
+   "path": "/fhircast/STU3/{{topic}}",
+   "auth": "Bearer {{access_token}}",
+   "body": "{\"id\":\"qa-{{$timestamp}}\",\"timestamp\":\"2026-11-25T10:00:00.000Z\",\"event\":{\"hub.topic\":\"{{topic}}\",\"hub.event\":\"DiagnosticReport-update\",\"context\":[{\"key\":\"report\",\"resource\":{\"resourceType\":\"DiagnosticReport\",\"id\":\"qa-dr-1\",\"status\":\"preliminary\"}}],\"context.versionId\":\"{{ctx_version}}\"}}",
+   "assertions": [
+    "status == 400"
+   ],
+   "postProcessors": [
+    {
+     "type": "customScript",
+     "data": {
+      "script": "pm.test('thông điệp lỗi', () => pm.expect(pm.response.json().issue[0].details.text).to.eql(\"Update event requires an update bundle in the context\"));"
+     }
+    }
+   ]
+  },
+  {
+   "name": "Update có entry POST → 400 (chỉ PUT/DELETE)",
+   "endpointId": 47548553,
+   "method": "POST",
+   "path": "/fhircast/STU3/{{topic}}",
+   "auth": "Bearer {{access_token}}",
+   "body": "{\"id\":\"qa-{{$timestamp}}\",\"timestamp\":\"2026-11-25T10:00:00.000Z\",\"event\":{\"hub.topic\":\"{{topic}}\",\"hub.event\":\"DiagnosticReport-update\",\"context\":[{\"key\":\"report\",\"resource\":{\"resourceType\":\"DiagnosticReport\",\"id\":\"qa-dr-1\",\"status\":\"preliminary\"}},{\"key\":\"updates\",\"resource\":{\"resourceType\":\"Bundle\",\"type\":\"transaction\",\"entry\":[{\"fullUrl\":\"urn:uuid:x\",\"request\":{\"method\":\"POST\",\"url\":\"Observation\"},\"resource\":{\"resourceType\":\"Observation\",\"status\":\"final\"}}]}}],\"context.versionId\":\"{{ctx_version}}\"}}",
+   "assertions": [
+    "status == 400"
+   ],
+   "postProcessors": [
+    {
+     "type": "customScript",
+     "data": {
+      "script": "pm.test('thông điệp lỗi', () => pm.expect(pm.response.json().issue[0].details.text).to.eql(\"Update bundle contains bad entry with request.method = 'POST', only 'PUT' and 'DELETE' are supported by an update event\"));"
+     }
+    }
+   ]
+  },
+  {
+   "name": "Update hợp lệ → 202, có priorVersionId và versionId mới",
+   "endpointId": 47548553,
+   "method": "POST",
+   "path": "/fhircast/STU3/{{topic}}",
+   "auth": "Bearer {{access_token}}",
+   "body": "{\"id\":\"qa-{{$timestamp}}\",\"timestamp\":\"2026-11-25T10:00:00.000Z\",\"event\":{\"hub.topic\":\"{{topic}}\",\"hub.event\":\"DiagnosticReport-update\",\"context\":[{\"key\":\"report\",\"resource\":{\"resourceType\":\"DiagnosticReport\",\"id\":\"qa-dr-1\",\"status\":\"preliminary\"}},{\"key\":\"updates\",\"resource\":{\"resourceType\":\"Bundle\",\"type\":\"transaction\",\"entry\":[{\"fullUrl\":\"urn:uuid:qa-obs-1\",\"request\":{\"method\":\"PUT\",\"url\":\"Observation/qa-obs-1\"},\"resource\":{\"resourceType\":\"Observation\",\"id\":\"qa-obs-1\",\"status\":\"final\",\"code\":{\"text\":\"qa\"}}}]}}],\"context.versionId\":\"{{ctx_version}}\"}}",
+   "assertions": [
+    "status == 202",
+    "$.event.event['context.priorVersionId'] == {{ctx_version}}",
+    "$.event.event['context.versionId'] exists"
+   ],
+   "postProcessors": [
+    {
+     "type": "extractor",
+     "data": {
+      "variableName": "ctx_version_2",
+      "expression": "$.event.event['context.versionId']",
+      "subject": "responseJson"
+     }
+    }
+   ]
+  },
+  {
+   "name": "Update lại bằng phiên bản CŨ → 400 (không còn khớp)",
+   "endpointId": 47548553,
+   "method": "POST",
+   "path": "/fhircast/STU3/{{topic}}",
+   "auth": "Bearer {{access_token}}",
+   "body": "{\"id\":\"qa-{{$timestamp}}\",\"timestamp\":\"2026-11-25T10:00:00.000Z\",\"event\":{\"hub.topic\":\"{{topic}}\",\"hub.event\":\"DiagnosticReport-update\",\"context\":[{\"key\":\"report\",\"resource\":{\"resourceType\":\"DiagnosticReport\",\"id\":\"qa-dr-1\",\"status\":\"preliminary\"}},{\"key\":\"updates\",\"resource\":{\"resourceType\":\"Bundle\",\"type\":\"transaction\",\"entry\":[{\"fullUrl\":\"urn:uuid:qa-obs-1\",\"request\":{\"method\":\"PUT\",\"url\":\"Observation/qa-obs-1\"},\"resource\":{\"resourceType\":\"Observation\",\"id\":\"qa-obs-1\",\"status\":\"final\",\"code\":{\"text\":\"qa\"}}}]}}],\"context.versionId\":\"{{ctx_version}}\"}}",
+   "assertions": [
+    "status == 400"
+   ],
+   "postProcessors": [
+    {
+     "type": "customScript",
+     "data": {
+      "script": "pm.test('báo phiên bản hiện tại', () => pm.expect(pm.response.json().issue[0].details.text).to.include(\"Expected event.context.versionId to be '\" + pm.variables.get('ctx_version_2') + \"'\"));"
+     }
+    }
+   ]
+  },
+  {
+   "name": "Đóng DiagnosticReport",
+   "endpointId": 47548553,
+   "method": "POST",
+   "path": "/fhircast/STU3/{{topic}}",
+   "auth": "Bearer {{access_token}}",
+   "body": "{\"id\":\"qa-{{$timestamp}}\",\"timestamp\":\"2026-11-25T10:00:00.000Z\",\"event\":{\"hub.topic\":\"{{topic}}\",\"hub.event\":\"DiagnosticReport-close\",\"context\":[{\"key\":\"report\",\"resource\":{\"resourceType\":\"DiagnosticReport\",\"id\":\"qa-dr-1\",\"status\":\"preliminary\"}}]}}",
+   "assertions": [
+    "status == 202"
+   ],
+   "postProcessors": []
+  },
+  {
+   "name": "Update khi đã đóng → 400 No DiagnosticReport currently open",
+   "endpointId": 47548553,
+   "method": "POST",
+   "path": "/fhircast/STU3/{{topic}}",
+   "auth": "Bearer {{access_token}}",
+   "body": "{\"id\":\"qa-{{$timestamp}}\",\"timestamp\":\"2026-11-25T10:00:00.000Z\",\"event\":{\"hub.topic\":\"{{topic}}\",\"hub.event\":\"DiagnosticReport-update\",\"context\":[{\"key\":\"report\",\"resource\":{\"resourceType\":\"DiagnosticReport\",\"id\":\"qa-dr-1\",\"status\":\"preliminary\"}},{\"key\":\"updates\",\"resource\":{\"resourceType\":\"Bundle\",\"type\":\"transaction\",\"entry\":[{\"fullUrl\":\"urn:uuid:qa-obs-1\",\"request\":{\"method\":\"PUT\",\"url\":\"Observation/qa-obs-1\"},\"resource\":{\"resourceType\":\"Observation\",\"id\":\"qa-obs-1\",\"status\":\"final\",\"code\":{\"text\":\"qa\"}}}]}}],\"context.versionId\":\"{{ctx_version_2}}\"}}",
+   "assertions": [
+    "status == 400"
+   ],
+   "postProcessors": [
+    {
+     "type": "customScript",
+     "data": {
+      "script": "pm.test('thông điệp lỗi', () => pm.expect(pm.response.json().issue[0].details.text).to.eql(\"No DiagnosticReport currently open for this topic\"));"
+     }
+    }
+   ]
+  }
+ ]
+}

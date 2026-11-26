@@ -1,0 +1,1 @@
+{"name": "Auth | GET /scim/v2/Users: filter, phân trang (data-driven)", "description": "filter chỉ hỗ trợ userName eq; startIndex/count phải là số; count âm/0 và startIndex<1 được chuẩn hóa. Cần SCIM bật.", "folderId": 0, "priority": 2, "tags": ["trivita-auth", "ai-generated"]}

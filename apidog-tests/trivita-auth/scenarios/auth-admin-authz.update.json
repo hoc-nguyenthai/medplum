@@ -1,0 +1,747 @@
+{
+ "steps": [
+  {
+   "id": "step-1",
+   "number": 1,
+   "name": "Lấy token client_credentials",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988045,
+    "name": "Lấy token client_credentials",
+    "path": "/oauth2/token",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "x-www-form-urlencoded",
+     "parameters": [
+      {
+       "name": "grant_type",
+       "value": "client_credentials",
+       "enable": true,
+       "type": "string"
+      },
+      {
+       "name": "client_id",
+       "value": "{{clientId}}",
+       "enable": true,
+       "type": "string"
+      },
+      {
+       "name": "client_secret",
+       "value": "{{clientSecret}}",
+       "enable": true,
+       "type": "string"
+      }
+     ]
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.access_token exists",
+       "subject": "responseJson",
+       "comparison": "exists",
+       "path": "$.access_token",
+       "value": "",
+       "extractSettings": {
+        "expression": "$.access_token"
+       }
+      }
+     },
+     {
+      "type": "extractor",
+      "enable": true,
+      "data": {
+       "variableType": "local",
+       "variableName": "ccToken",
+       "expression": "$.access_token",
+       "subject": "responseJson"
+      }
+     }
+    ],
+    "auth": {},
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988045
+  },
+  {
+   "id": "step-2",
+   "number": 2,
+   "name": "Đăng nhập admin (email + mật khẩu)",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988405,
+    "name": "Đăng nhập admin (email + mật khẩu)",
+    "path": "/auth/login",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "json",
+     "data": "{\"email\": \"{{adminEmail}}\", \"password\": \"{{adminPassword}}\", \"clientId\": \"{{clientId}}\", \"scope\": \"openid profile email\"}"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.code exists",
+       "subject": "responseJson",
+       "comparison": "exists",
+       "path": "$.code",
+       "value": "",
+       "extractSettings": {
+        "expression": "$.code"
+       }
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.login exists",
+       "subject": "responseJson",
+       "comparison": "exists",
+       "path": "$.login",
+       "value": "",
+       "extractSettings": {
+        "expression": "$.login"
+       }
+      }
+     },
+     {
+      "type": "extractor",
+      "enable": true,
+      "data": {
+       "variableType": "local",
+       "variableName": "loginId",
+       "expression": "$.login",
+       "subject": "responseJson"
+      }
+     },
+     {
+      "type": "extractor",
+      "enable": true,
+      "data": {
+       "variableType": "local",
+       "variableName": "code",
+       "expression": "$.code",
+       "subject": "responseJson"
+      }
+     }
+    ],
+    "auth": {
+     "type": "noauth"
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988405
+  },
+  {
+   "id": "step-3",
+   "number": 3,
+   "name": "Đổi code lấy token (authorization_code)",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988044,
+    "name": "Đổi code lấy token (authorization_code)",
+    "path": "/oauth2/token",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "x-www-form-urlencoded",
+     "parameters": [
+      {
+       "name": "grant_type",
+       "value": "authorization_code",
+       "enable": true,
+       "type": "string"
+      },
+      {
+       "name": "code",
+       "value": "{{code}}",
+       "enable": true,
+       "type": "string"
+      },
+      {
+       "name": "client_id",
+       "value": "{{clientId}}",
+       "enable": true,
+       "type": "string"
+      },
+      {
+       "name": "client_secret",
+       "value": "{{clientSecret}}",
+       "enable": true,
+       "type": "string"
+      }
+     ]
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 200",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "200"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.access_token exists",
+       "subject": "responseJson",
+       "comparison": "exists",
+       "path": "$.access_token",
+       "value": "",
+       "extractSettings": {
+        "expression": "$.access_token"
+       }
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.token_type == Bearer",
+       "subject": "responseJson",
+       "comparison": "equal",
+       "path": "$.token_type",
+       "value": "Bearer",
+       "extractSettings": {
+        "expression": "$.token_type"
+       }
+      }
+     },
+     {
+      "type": "extractor",
+      "enable": true,
+      "data": {
+       "variableType": "local",
+       "variableName": "userToken",
+       "expression": "$.access_token",
+       "subject": "responseJson"
+      }
+     }
+    ],
+    "auth": {},
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988044
+  },
+  {
+   "id": "step-4",
+   "number": 4,
+   "name": "Client chưa admin đọc project → 403",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988043,
+    "name": "Client chưa admin đọc project → 403",
+    "path": "/admin/projects/{{projectId}}",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 403",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "403"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.issue[0].code == forbidden",
+       "subject": "responseJson",
+       "comparison": "equal",
+       "path": "$.issue[0].code",
+       "value": "forbidden",
+       "extractSettings": {
+        "expression": "$.issue[0].code"
+       }
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{ccToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988043
+  },
+  {
+   "id": "step-5",
+   "number": 5,
+   "name": "Client chưa admin tạo client → 403",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988042,
+    "name": "Client chưa admin tạo client → 403",
+    "path": "/admin/projects/{{projectId}}/client",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "json",
+     "data": "{\"name\": \"khong-duoc\"}"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 403",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "403"
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{ccToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988042
+  },
+  {
+   "id": "step-6",
+   "number": 6,
+   "name": "Client chưa admin mời user → 403",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988041,
+    "name": "Client chưa admin mời user → 403",
+    "path": "/admin/projects/{{projectId}}/invite",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "json",
+     "data": "{\"resourceType\": \"Practitioner\", \"firstName\": \"A\", \"lastName\": \"B\", \"email\": \"qa.never@example.org\", \"sendEmail\": false}"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 403",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "403"
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{ccToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988041
+  },
+  {
+   "id": "step-7",
+   "number": 7,
+   "name": "Admin đọc project khác → 403",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988040,
+    "name": "Admin đọc project khác → 403",
+    "path": "/admin/projects/00000000-0000-4000-8000-000000000001",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 403",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "403"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.issue[0].details.text == Forbidden",
+       "subject": "responseJson",
+       "comparison": "equal",
+       "path": "$.issue[0].details.text",
+       "value": "Forbidden",
+       "extractSettings": {
+        "expression": "$.issue[0].details.text"
+       }
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{userToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988040
+  },
+  {
+   "id": "step-8",
+   "number": 8,
+   "name": "Admin đặt setting ở project khác → 403",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988039,
+    "name": "Admin đặt setting ở project khác → 403",
+    "path": "/admin/projects/00000000-0000-4000-8000-000000000001/settings",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "json",
+     "data": "[]"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 403",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "403"
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{userToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988039
+  },
+  {
+   "id": "step-9",
+   "number": 9,
+   "name": "Admin đọc membership không tồn tại → 403 chung",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988038,
+    "name": "Admin đọc membership không tồn tại → 403 chung",
+    "path": "/admin/projects/{{projectId}}/members/00000000-0000-4000-8000-000000000000",
+    "method": "get",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 403",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "403"
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{userToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988038
+  },
+  {
+   "id": "step-10",
+   "number": 10,
+   "name": "Admin xóa membership không tồn tại → 403 chung",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988037,
+    "name": "Admin xóa membership không tồn tại → 403 chung",
+    "path": "/admin/projects/{{projectId}}/members/00000000-0000-4000-8000-000000000000",
+    "method": "delete",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "none"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 403",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "403"
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{userToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988037
+  },
+  {
+   "id": "step-11",
+   "number": 11,
+   "name": "Admin xoay secret client không tồn tại → 403 chung",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988036,
+    "name": "Admin xoay secret client không tồn tại → 403 chung",
+    "path": "/admin/projects/{{projectId}}/client/00000000-0000-4000-8000-000000000000/rotate-secret",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "json",
+     "data": "{}"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 403",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "403"
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{userToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988036
+  },
+  {
+   "id": "step-12",
+   "number": 12,
+   "name": "Body hỏng của người không admin vẫn nhận 400 trước 403 (thứ tự kiểm tra)",
+   "type": "customHttp",
+   "customHttpRequest": {
+    "id": 988035,
+    "name": "Body hỏng của người không admin vẫn nhận 400 trước 403 (thứ tự kiểm tra)",
+    "path": "/admin/projects/{{projectId}}/client",
+    "method": "post",
+    "folderId": 0,
+    "parameters": {
+     "path": [],
+     "query": [],
+     "header": [],
+     "cookie": []
+    },
+    "requestBody": {
+     "type": "json",
+     "data": "{"
+    },
+    "preProcessors": [],
+    "postProcessors": [
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "status == 400",
+       "subject": "httpCode",
+       "comparison": "equal",
+       "path": "",
+       "value": "400"
+      }
+     },
+     {
+      "type": "assertion",
+      "enable": true,
+      "data": {
+       "name": "$.issue[0].details.text == Content could not be parsed",
+       "subject": "responseJson",
+       "comparison": "equal",
+       "path": "$.issue[0].details.text",
+       "value": "Content could not be parsed",
+       "extractSettings": {
+        "expression": "$.issue[0].details.text"
+       }
+      }
+     }
+    ],
+    "auth": {
+     "type": "bearer",
+     "bearer": {
+      "token": "{{ccToken}}"
+     }
+    },
+    "advancedSettings": {},
+    "commonParameters": {},
+    "projectId": 1380475
+   },
+   "relatedId": 988035
+  }
+ ]
+}

@@ -1,0 +1,278 @@
+{
+ "id": 47548494,
+ "name": "Tìm kiếm theo loại resource",
+ "method": "get",
+ "path": "/fhir/R4/{resourceType}",
+ "parameters": {
+  "path": [
+   {
+    "id": "resourceType#0",
+    "name": "resourceType",
+    "required": true,
+    "enable": true,
+    "description": "Loại resource, ví dụ Patient",
+    "example": "",
+    "type": "string",
+    "schema": {
+     "type": "string"
+    }
+   }
+  ],
+  "query": [
+   {
+    "id": "jTUJmrDi7W",
+    "name": "_count",
+    "required": false,
+    "enable": true,
+    "description": "Số kết quả mỗi trang. Ví dụ: 10",
+    "example": "",
+    "type": "integer",
+    "schema": {
+     "type": "integer"
+    }
+   },
+   {
+    "id": "FNWA9fVf8s",
+    "name": "_offset",
+    "required": false,
+    "enable": true,
+    "description": "Vị trí bắt đầu (phân trang)",
+    "example": "",
+    "type": "integer",
+    "schema": {
+     "type": "integer"
+    }
+   },
+   {
+    "id": "fZKIH3M0sI",
+    "name": "_sort",
+    "required": false,
+    "enable": true,
+    "description": "Sắp xếp, phân cách bằng dấu phẩy; tiền tố - để giảm dần. Ví dụ: -_lastUpdated,family",
+    "example": "",
+    "type": "string",
+    "schema": {
+     "type": "string"
+    }
+   },
+   {
+    "id": "NfHR1VZa8g",
+    "name": "_total",
+    "required": false,
+    "enable": true,
+    "description": "Cách tính tổng",
+    "example": "",
+    "type": "string",
+    "schema": {
+     "type": "string",
+     "enum": [
+      "none",
+      "estimate",
+      "accurate"
+     ]
+    }
+   },
+   {
+    "id": "iIdwMLG9Hh",
+    "name": "_summary",
+    "required": false,
+    "enable": true,
+    "description": "Rút gọn kết quả",
+    "example": "",
+    "type": "string",
+    "schema": {
+     "type": "string",
+     "enum": [
+      "true",
+      "text",
+      "data",
+      "count",
+      "false"
+     ]
+    }
+   },
+   {
+    "id": "cqRhAJ0rIJ",
+    "name": "_elements",
+    "required": false,
+    "enable": true,
+    "description": "Chỉ trả các phần tử này, phân cách bằng dấu phẩy",
+    "example": "",
+    "type": "string",
+    "schema": {
+     "type": "string"
+    }
+   },
+   {
+    "id": "XZQvowsAFz",
+    "name": "_include",
+    "required": false,
+    "enable": true,
+    "description": "Kèm resource được tham chiếu. Ví dụ: Observation:subject",
+    "example": "",
+    "type": "string",
+    "schema": {
+     "type": "string"
+    }
+   },
+   {
+    "id": "roarnCFVSU",
+    "name": "_revinclude",
+    "required": false,
+    "enable": true,
+    "description": "Kèm resource tham chiếu tới kết quả. Ví dụ: Observation:subject",
+    "example": "",
+    "type": "string",
+    "schema": {
+     "type": "string"
+    }
+   },
+   {
+    "id": "qE1WCqP7sM",
+    "name": "_id",
+    "required": false,
+    "enable": true,
+    "description": "Lọc theo id (nhiều giá trị cách nhau bằng dấu phẩy)",
+    "example": "",
+    "type": "string",
+    "schema": {
+     "type": "string"
+    }
+   },
+   {
+    "id": "66H6UfhHna",
+    "name": "_compartment",
+    "required": false,
+    "enable": true,
+    "description": "Giới hạn trong compartment của một bệnh nhân. Dạng Patient/<id>, chỉ loại thuộc compartment Patient. Ví dụ: Patient/123",
+    "example": "",
+    "type": "string",
+    "schema": {
+     "type": "string"
+    }
+   },
+   {
+    "id": "fJAY6gXSpV",
+    "name": "_lastUpdated",
+    "required": false,
+    "enable": true,
+    "description": "Lọc theo thời điểm cập nhật, hỗ trợ tiền tố ge/le/gt/lt. Ví dụ: ge2026-01-01",
+    "example": "",
+    "type": "string",
+    "schema": {
+     "type": "string"
+    }
+   },
+   {
+    "id": "wVg1Fb24fb",
+    "name": "_filter",
+    "required": false,
+    "enable": true,
+    "description": "Biểu thức _filter của FHIR",
+    "example": "",
+    "type": "string",
+    "schema": {
+     "type": "string"
+    }
+   }
+  ],
+  "cookie": [],
+  "header": []
+ },
+ "auth": {
+  "type": "securityscheme"
+ },
+ "securityScheme": {
+  "schemeGroups": [
+   {
+    "id": "mga75kz5sCE4BZNNNrdSg",
+    "schemeIds": [
+     646419
+    ]
+   }
+  ],
+  "required": true,
+  "use": {
+   "id": "mga75kz5sCE4BZNNNrdSg",
+   "configs": {
+    "646419": {
+     "authConfigs": {
+      "x-apidog": {
+       "value": "{{apiKey}}"
+      }
+     }
+    }
+   }
+  },
+  "scopes": {
+   "mga75kz5sCE4BZNNNrdSg": {
+    "646419": []
+   }
+  }
+ },
+ "requestBody": {
+  "type": "none",
+  "parameters": [],
+  "required": false,
+  "additionalContentTypes": [],
+  "oasExtensions": ""
+ },
+ "responses": [
+  {
+   "id": "143268828",
+   "name": "",
+   "code": "200",
+   "contentType": "json",
+   "jsonSchema": {
+    "$ref": "#/definitions/19029499"
+   },
+   "itemSchema": {},
+   "description": "OK",
+   "mediaType": "application/fhir+json",
+   "headers": [],
+   "oasExtensions": ""
+  },
+  {
+   "id": "187774688",
+   "name": "",
+   "code": "400",
+   "contentType": "json",
+   "jsonSchema": {
+    "$ref": "#/definitions/19029533"
+   },
+   "itemSchema": {},
+   "description": "Search param không hợp lệ hoặc không hỗ trợ",
+   "mediaType": "application/fhir+json",
+   "headers": [],
+   "oasExtensions": ""
+  },
+  {
+   "id": "124576970",
+   "name": "",
+   "code": "401",
+   "contentType": "json",
+   "jsonSchema": {
+    "$ref": "#/definitions/19029533"
+   },
+   "itemSchema": {},
+   "description": "Thiếu hoặc sai Bearer token",
+   "mediaType": "application/fhir+json",
+   "headers": [],
+   "oasExtensions": ""
+  },
+  {
+   "id": "178219045",
+   "name": "",
+   "code": "403",
+   "contentType": "json",
+   "jsonSchema": {
+    "$ref": "#/definitions/19029533"
+   },
+   "itemSchema": {},
+   "description": "Token không đủ quyền (cần quyền read)",
+   "mediaType": "application/fhir+json",
+   "headers": [],
+   "oasExtensions": ""
+  }
+ ]
+}
